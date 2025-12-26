@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الإعدادات - Smart Shop</title>
+    <title>الطابعات - Smart Shop</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -96,7 +96,7 @@
         <!-- Header -->
         <header
             class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
-            <h2 class="text-xl font-bold text-white">الإعدادات العامة</h2>
+            <h2 class="text-xl font-bold text-white">إعدادات الطابعات</h2>
             <div class="flex items-center gap-4">
                 <button
                     class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
@@ -113,22 +113,22 @@
                     <div
                         class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
                         <nav class="flex flex-col">
-                            <a href="/settings.html"
-                                class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary">
+                            <a href="settings.html"
+                                class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">store</span>
                                 <span class="font-bold">إعدادات المتجر</span>
                             </a>
-                            <a href="/invoices.html"
+                            <a href="invoices.html"
                                 class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">receipt</span>
                                 <span class="font-bold">الفواتير والضريبة</span>
                             </a>
-                            <a href="/printers.html"
-                                class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
+                            <a href="printers.html"
+                                class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary">
                                 <span class="material-icons-round">print</span>
                                 <span class="font-bold">الطابعات</span>
                             </a>
-                            <a href="/users.html"
+                            <a href="users.html"
                                 class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">group</span>
                                 <span class="font-bold">المستخدمين</span>
@@ -137,81 +137,54 @@
                     </div>
                 </div>
 
-                <!-- Settings Content -->
+                <!-- Printers Content -->
                 <div class="lg:col-span-2 space-y-6">
-                    <!-- General Info -->
                     <section
                         class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                         <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <span class="material-icons-round text-primary">store</span>
-                            بيانات المتجر
-                        </h3>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">اسم المتجر</label>
-                                <input type="text" value="متجر Smart Shop للإلكترونيات"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">رقم الهاتف</label>
-                                <input type="text" value="0512345678"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-400 mb-2">العنوان</label>
-                                <input type="text" value="الرياض، المملكة العربية السعودية"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-400 mb-2">وصف مختصر</label>
-                                <textarea rows="3"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">أفضل متجر لبيع الإلكترونيات الحديثة وملحقاتها</textarea>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Preferences -->
-                    <section
-                        class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
-                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <span class="material-icons-round text-primary">tune</span>
-                            تفضيلات النظام
+                            <span class="material-icons-round text-primary">print</span>
+                            الطابعات المتاحة
                         </h3>
 
                         <div class="space-y-4">
+                            <!-- Printer 1 -->
                             <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">الوضع الليلي</h4>
-                                    <p class="text-xs text-gray-400">تفعيل الوضع المظلم بشكل دائم</p>
+                                <div class="flex items-center gap-4">
+                                    <span class="material-icons-round text-2xl text-accent">check_circle</span>
+                                    <div>
+                                        <h4 class="font-bold text-white">Epson TM-T88VI</h4>
+                                        <p class="text-xs text-gray-400">طابعة الإيصالات الحرارية (الافتراضية)</p>
+                                    </div>
                                 </div>
-                                <div
-                                    class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="toggle" id="toggle-dark"
-                                        class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
-                                        checked />
-                                    <label for="toggle-dark"
-                                        class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                <div class="flex items-center gap-2">
+                                    <button class="text-gray-400 hover:text-white"><span class="material-icons-round">settings</span></button>
                                 </div>
                             </div>
-
-                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">الإشعارات الصوتية</h4>
-                                    <p class="text-xs text-gray-400">تشغيل صوت عند إتمام عملية بيع</p>
+                            <!-- Printer 2 -->
+                             <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div class="flex items-center gap-4">
+                                     <span class="material-icons-round text-2xl text-gray-500">radio_button_unchecked</span>
+                                    <div>
+                                        <h4 class="font-bold text-white">HP LaserJet Pro M404dn</h4>
+                                        <p class="text-xs text-gray-400">طابعة ليزر A4</p>
+                                    </div>
                                 </div>
-                                <div
-                                    class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="toggle" id="toggle-sound"
-                                        class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
-                                        checked />
-                                    <label for="toggle-sound"
-                                        class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                <div class="flex items-center gap-2">
+                                     <button class="text-gray-400 hover:text-white"><span class="material-icons-round">settings</span></button>
+                                    <button class="text-gray-400 hover:text-primary"><span class="material-icons-round">check_circle_outline</span></button>
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="mt-6">
+                             <button class="w-full bg-primary/10 hover:bg-primary/20 text-primary px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                                <span class="material-icons-round">add_circle</span>
+                                إضافة طابعة جديدة
+                            </button>
+                        </div>
                     </section>
                 </div>
+
             </div>
         </div>
 
