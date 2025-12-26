@@ -39,6 +39,42 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+
+        .toggle-checkbox:checked {
+            right: 0;
+            left: 1.5rem;
+        }
+
+        .success-message {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(132, 204, 22, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(132, 204, 22, 0.3);
+            color: #84CC16;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            display: none;
+            z-index: 1000;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-1rem);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
     </style>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,6 +83,14 @@
 </head>
 
 <body class="bg-dark text-white font-sans h-screen flex overflow-hidden">
+
+    <!-- Success Message -->
+    <div id="successMessage" class="success-message">
+        <div class="flex items-center gap-2">
+            <span class="material-icons-round">check_circle</span>
+            <span>تم حفظ التغييرات بنجاح</span>
+        </div>
+    </div>
 
     <!-- Sidebar -->
     <aside
@@ -98,9 +142,10 @@
             class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
             <h2 class="text-xl font-bold text-white">الإعدادات العامة</h2>
             <div class="flex items-center gap-4">
-                <button
-                    class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
-                    حفظ التغييرات
+                <button onclick="saveSettings()"
+                    class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                    <span class="material-icons-round text-sm">save</span>
+                    <span>حفظ التغييرات</span>
                 </button>
             </div>
         </header>
@@ -113,22 +158,22 @@
                     <div
                         class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
                         <nav class="flex flex-col">
-                            <a href="/settings.html"
+                            <a href="settings.html"
                                 class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary">
                                 <span class="material-icons-round">store</span>
                                 <span class="font-bold">إعدادات المتجر</span>
                             </a>
-                            <a href="/invoices.html"
+                            <a href="invoices.html"
                                 class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">receipt</span>
                                 <span class="font-bold">الفواتير والضريبة</span>
                             </a>
-                            <a href="/printers.html"
+                            <a href="printers.html"
                                 class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">print</span>
                                 <span class="font-bold">الطابعات</span>
                             </a>
-                            <a href="/users.html"
+                            <a href="users.html"
                                 class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">group</span>
                                 <span class="font-bold">المستخدمين</span>
@@ -150,22 +195,22 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2">اسم المتجر</label>
-                                <input type="text" value="متجر Smart Shop للإلكترونيات"
+                                <input type="text" id="shopName" value="متجر Smart Shop للإلكترونيات"
                                     class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2">رقم الهاتف</label>
-                                <input type="text" value="0512345678"
+                                <input type="text" id="shopPhone" value="0512345678"
                                     class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-400 mb-2">العنوان</label>
-                                <input type="text" value="الرياض، المملكة العربية السعودية"
+                                <input type="text" id="shopAddress" value="الرياض، المملكة العربية السعودية"
                                     class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-400 mb-2">وصف مختصر</label>
-                                <textarea rows="3"
+                                <textarea rows="3" id="shopDescription"
                                     class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">أفضل متجر لبيع الإلكترونيات الحديثة وملحقاتها</textarea>
                             </div>
                         </div>
@@ -216,6 +261,69 @@
         </div>
 
     </main>
+
+    <script>
+        // Load saved settings on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+        });
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('shopSettings');
+            
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                
+                // Load shop info
+                document.getElementById('shopName').value = settings.shopName || 'متجر Smart Shop للإلكترونيات';
+                document.getElementById('shopPhone').value = settings.shopPhone || '0512345678';
+                document.getElementById('shopAddress').value = settings.shopAddress || 'الرياض، المملكة العربية السعودية';
+                document.getElementById('shopDescription').value = settings.shopDescription || 'أفضل متجر لبيع الإلكترونيات الحديثة وملحقاتها';
+                
+                // Load preferences
+                document.getElementById('toggle-dark').checked = settings.darkMode !== false;
+                document.getElementById('toggle-sound').checked = settings.soundNotifications !== false;
+            }
+        }
+
+        // Save settings to localStorage
+        function saveSettings() {
+            const settings = {
+                shopName: document.getElementById('shopName').value,
+                shopPhone: document.getElementById('shopPhone').value,
+                shopAddress: document.getElementById('shopAddress').value,
+                shopDescription: document.getElementById('shopDescription').value,
+                darkMode: document.getElementById('toggle-dark').checked,
+                soundNotifications: document.getElementById('toggle-sound').checked,
+                lastUpdated: new Date().toISOString()
+            };
+
+            localStorage.setItem('shopSettings', JSON.stringify(settings));
+            
+            // Show success message
+            showSuccessMessage();
+        }
+
+        // Show success message
+        function showSuccessMessage() {
+            const message = document.getElementById('successMessage');
+            message.classList.add('show');
+            
+            setTimeout(() => {
+                message.classList.remove('show');
+            }, 3000);
+        }
+
+        // Optional: Auto-save on change
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('change', function() {
+                // Uncomment the line below if you want auto-save
+                // saveSettings();
+            });
+        });
+    </script>
 </body>
 
 </html>
