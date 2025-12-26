@@ -1,0 +1,4 @@
+[Fri Dec 26 16:41:09 2025] PHP 8.3.6 Development Server (http://localhost:8000) started
+[Fri Dec 26 16:41:12 2025] [::1]:46126 Accepted
+[Fri Dec 26 16:41:12 2025] [::1]:46126 [200]: GET /dashboard.php
+[Fri Dec 26 16:41:12 2025] [::1]:46126 Closing

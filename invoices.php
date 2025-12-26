@@ -1,3 +1,4 @@
+<?php require_once 'db.php'; ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 
@@ -59,27 +60,27 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-6 space-y-2 px-2 lg:px-4">
-            <a href="dashboard.html"
+            <a href="dashboard.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group">
                 <span class="material-icons-round">dashboard</span>
                 <span class="font-medium hidden lg:block">لوحة التحكم</span>
             </a>
-            <a href="pos.html"
+            <a href="pos.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group">
                 <span class="material-icons-round">point_of_sale</span>
                 <span class="font-medium hidden lg:block">نقطة البيع</span>
             </a>
-            <a href="products.html"
+            <a href="products.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group">
                 <span class="material-icons-round">inventory_2</span>
                 <span class="font-medium hidden lg:block">المنتجات</span>
             </a>
-            <a href="customers.html"
+            <a href="customers.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group">
                 <span class="material-icons-round">people</span>
                 <span class="font-medium hidden lg:block">العملاء</span>
             </a>
-            <a href="settings.html"
+            <a href="settings.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 bg-primary/10 text-primary rounded-xl transition-all group">
                 <span class="material-icons-round">settings</span>
                 <span class="font-medium hidden lg:block">الإعدادات</span>
@@ -113,22 +114,22 @@
                     <div
                         class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
                         <nav class="flex flex-col">
-                            <a href="settings.html"
+                            <a href="settings.php"
                                 class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">store</span>
                                 <span class="font-bold">إعدادات المتجر</span>
                             </a>
-                            <a href="invoices.html"
+                            <a href="invoices.php"
                                 class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary">
                                 <span class="material-icons-round">receipt</span>
                                 <span class="font-bold">الفواتير والضريبة</span>
                             </a>
-                            <a href="printers.html"
+                            <a href="printers.php"
                                 class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">print</span>
                                 <span class="font-bold">الطابعات</span>
                             </a>
-                            <a href="users.html"
+                            <a href="users.php"
                                 class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">group</span>
                                 <span class="font-bold">المستخدمين</span>
@@ -158,7 +159,11 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- All fake data will be removed -->
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-gray-500">
+                                            No data to display at this time.
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -187,108 +192,6 @@
                 </div>
             </div>
         </div>
-
     </main>
-    <script>
-        const invoices = {
-            1: {
-                id: "INV-001",
-                date: "2024-05-18",
-                customer: "محمد علي",
-                items: [
-                    { name: "سماعة لاسلكية", quantity: 1, price: 200.00 },
-                    { name: "شاحن سريع", quantity: 1, price: 50.00 }
-                ],
-                subtotal: 250.00,
-                tax: 37.50,
-                total: 287.50
-            },
-            2: {
-                id: "INV-002",
-                date: "2024-05-17",
-                customer: "فاطمة الزهراء",
-                items: [
-                    { name: "غطاء حماية للجوال", quantity: 1, price: 75.00 },
-                    { name: "لاصقة شاشة", quantity: 1, price: 75.75 }
-                ],
-                subtotal: 150.75,
-                tax: 22.61,
-                total: 173.36
-            },
-            3: {
-                id: "INV-003",
-                date: "2024-05-16",
-                customer: "عبدالله بن خالد",
-                items: [
-                    { name: "لابتوب محمول", quantity: 1, price: 450.00 },
-                     { name: "فأرة لاسلكية", quantity: 1, price: 50.00 }
-                ],
-                subtotal: 500.00,
-                tax: 75.00,
-                total: 575.00
-            }
-        };
-
-        function openInvoiceModal(invoiceId) {
-            const invoice = invoices[invoiceId];
-            const modalContent = document.getElementById('invoiceContent');
-            
-            let itemsHtml = '';
-            invoice.items.forEach(item => {
-                itemsHtml += `
-                    <tr>
-                        <td class="p-2">${item.name}</td>
-                        <td class="p-2">${item.quantity}</td>
-                        <td class="p-2">${item.price.toFixed(2)}</td>
-                        <td class="p-2">${(item.quantity * item.price).toFixed(2)}</td>
-                    </tr>
-                `;
-            });
-
-            modalContent.innerHTML = `
-                <h2 class="text-2xl font-bold mb-2">Smart Shop</h2>
-                <p class="text-gray-400">فاتورة ضريبية مبسطة</p>
-                <div class="my-6">
-                    <p><strong>رقم الفاتورة:</strong> ${invoice.id}</p>
-                    <p><strong>التاريخ:</strong> ${invoice.date}</p>
-                    <p><strong>العميل:</strong> ${invoice.customer}</p>
-                </div>
-                <table class="w-full text-right my-6">
-                    <thead>
-                        <tr class="border-b border-white/10">
-                            <th class="p-2">المنتج</th>
-                            <th class="p-2">الكمية</th>
-                            <th class="p-2">السعر</th>
-                            <th class="p-2">الإجمالي</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${itemsHtml}
-                    </tbody>
-                </table>
-                <div class="text-left mt-6">
-                    <p><strong>المجموع الفرعي:</strong> ${invoice.subtotal.toFixed(2)} ر.س</p>
-                    <p><strong>الضريبة (15%):</strong> ${invoice.tax.toFixed(2)} ر.س</p>
-                    <p class="text-xl font-bold"><strong>الإجمالي:</strong> ${invoice.total.toFixed(2)} ر.س</p>
-                </div>
-            `;
-            
-            document.getElementById('invoiceModal').classList.remove('hidden');
-        }
-
-        function closeInvoiceModal() {
-            document.getElementById('invoiceModal').classList.add('hidden');
-        }
-
-        function printInvoice() {
-            const printContents = document.getElementById('invoiceContent').innerHTML;
-            const originalContents = document.body.innerHTML;
-            document.body.innerHTML = printContents;
-            window.print();
-            document.body.innerHTML = originalContents;
-            location.reload();
-        }
-    </script>
 </body>
-
 </html>

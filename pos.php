@@ -1,3 +1,4 @@
+<?php require_once 'db.php'; ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 
@@ -59,7 +60,7 @@
         <header
             class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-10 shrink-0">
             <div class="flex items-center gap-4 flex-1">
-                <a href="dashboard.html"
+                <a href="dashboard.php"
                     class="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
                     <span class="material-icons-round">arrow_forward</span>
                 </a>
@@ -86,91 +87,9 @@
         <!-- Products Grid -->
         <div class="flex-1 overflow-y-auto p-6 z-10">
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <!-- Product Card 1 -->
-                <button
-                    class="group bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-right hover:border-primary/50 transition-all hover:scale-[1.02] relative overflow-hidden">
-                    <div class="w-full aspect-square bg-white/5 rounded-xl mb-3 relative overflow-hidden">
-                        <!-- Placeholder Image -->
-                        <div class="absolute inset-0 flex items-center justify-center text-gray-600">
-                            <span class="material-icons-round text-4xl">smartphone</span>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-white mb-1">iPhone 13</h3>
-                    <p class="text-primary font-bold">3,500 ر.س</p>
-                    <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    </div>
-                </button>
-
-                <!-- Product Card 2 -->
-                <button
-                    class="group bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-right hover:border-primary/50 transition-all hover:scale-[1.02] relative overflow-hidden">
-                    <div class="w-full aspect-square bg-white/5 rounded-xl mb-3 relative overflow-hidden">
-                        <div class="absolute inset-0 flex items-center justify-center text-gray-600">
-                            <span class="material-icons-round text-4xl">laptop</span>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-white mb-1">MacBook Air</h3>
-                    <p class="text-primary font-bold">4,200 ر.س</p>
-                    <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    </div>
-                </button>
-
-                <!-- Product Card 3 -->
-                <button
-                    class="group bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-right hover:border-primary/50 transition-all hover:scale-[1.02] relative overflow-hidden">
-                    <div class="w-full aspect-square bg-white/5 rounded-xl mb-3 relative overflow-hidden">
-                        <div class="absolute inset-0 flex items-center justify-center text-gray-600">
-                            <span class="material-icons-round text-4xl">headphones</span>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-white mb-1">Sony XM4</h3>
-                    <p class="text-primary font-bold">1,000 ر.س</p>
-                    <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    </div>
-                </button>
-
-                <!-- Product Card 4 -->
-                <button
-                    class="group bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-right hover:border-primary/50 transition-all hover:scale-[1.02] relative overflow-hidden">
-                    <div class="w-full aspect-square bg-white/5 rounded-xl mb-3 relative overflow-hidden">
-                        <div class="absolute inset-0 flex items-center justify-center text-gray-600">
-                            <span class="material-icons-round text-4xl">watch</span>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-white mb-1">Apple Watch</h3>
-                    <p class="text-primary font-bold">1,500 ر.س</p>
-                    <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    </div>
-                </button>
-
-                <!-- Product Card 5 -->
-                <button
-                    class="group bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-right hover:border-primary/50 transition-all hover:scale-[1.02] relative overflow-hidden">
-                    <div class="w-full aspect-square bg-white/5 rounded-xl mb-3 relative overflow-hidden">
-                        <div class="absolute inset-0 flex items-center justify-center text-gray-600">
-                            <span class="material-icons-round text-4xl">mouse</span>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-white mb-1">Magic Mouse</h3>
-                    <p class="text-primary font-bold">350 ر.س</p>
-                    <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    </div>
-                </button>
-
-                <!-- Repeat for demo -->
-                <button
-                    class="group bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-right hover:border-primary/50 transition-all hover:scale-[1.02] relative overflow-hidden">
-                    <div class="w-full aspect-square bg-white/5 rounded-xl mb-3 relative overflow-hidden">
-                        <div class="absolute inset-0 flex items-center justify-center text-gray-600">
-                            <span class="material-icons-round text-4xl">keyboard</span>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-white mb-1">Magic Keyboard</h3>
-                    <p class="text-primary font-bold">500 ر.س</p>
-                    <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    </div>
-                </button>
-
+                <div class="text-center py-4 text-gray-500 col-span-full">
+                    No data to display at this time.
+                </div>
             </div>
         </div>
     </div>
@@ -180,7 +99,6 @@
         <div class="p-6 border-b border-white/5">
             <div class="flex items-center justify-between mb-2">
                 <h2 class="text-xl font-bold text-white">سلة المشتريات</h2>
-                <span class="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold">3 عناصر</span>
             </div>
             <div
                 class="flex items-center gap-2 mt-4 bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/10 transition-colors">
@@ -195,7 +113,9 @@
 
         <!-- Cart Items -->
         <div class="flex-1 overflow-y-auto p-4 space-y-3">
-            <!-- All fake data will be removed -->
+            <div class="text-center py-4 text-gray-500">
+                No data to display at this time.
+            </div>
         </div>
 
         <!-- Totals & Checkout -->
@@ -203,15 +123,15 @@
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm text-gray-400">
                     <span>المجموع الفرعي</span>
-                    <span>5,500 ر.س</span>
+                    <span>0 ر.س</span>
                 </div>
                 <div class="flex justify-between text-sm text-gray-400">
                     <span>الضريبة (15%)</span>
-                    <span>825 ر.س</span>
+                    <span>0 ر.س</span>
                 </div>
                 <div class="flex justify-between text-lg font-bold text-white pt-2 border-t border-white/5">
                     <span>الإجمالي</span>
-                    <span class="text-primary">6,325 ر.س</span>
+                    <span class="text-primary">0 ر.س</span>
                 </div>
             </div>
 

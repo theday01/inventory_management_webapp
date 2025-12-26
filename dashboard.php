@@ -1,3 +1,4 @@
+<?php require_once 'db.php'; ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 
@@ -56,33 +57,33 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-6 space-y-2 px-4">
-            <a href="dashboard.html"
+            <a href="dashboard.php"
                 class="flex items-center gap-3 px-4 py-3 bg-primary/10 text-primary rounded-xl transition-all">
                 <span class="material-icons-round">dashboard</span>
                 <span class="font-medium">لوحة التحكم</span>
             </a>
-            <a href="pos.html"
+            <a href="pos.php"
                 class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
                 <span class="material-icons-round">point_of_sale</span>
                 <span class="font-medium">نقطة البيع</span>
             </a>
-            <a href="products.html"
+            <a href="products.php"
                 class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
                 <span class="material-icons-round">inventory_2</span>
                 <span class="font-medium">المنتجات</span>
             </a>
-            <a href="customers.html"
+            <a href="customers.php"
                 class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
                 <span class="material-icons-round">people</span>
                 <span class="font-medium">العملاء</span>
             </a>
-            <a href="#"
+            <a href="invoices.php"
                 class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
                 <span class="material-icons-round">receipt_long</span>
                 <span class="font-medium">الفواتير</span>
             </a>
             <div class="pt-4 mt-4 border-t border-white/5">
-                <a href="settings.html"
+                <a href="settings.php"
                     class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
                     <span class="material-icons-round">settings</span>
                     <span class="font-medium">الإعدادات</span>
@@ -91,7 +92,7 @@
         </nav>
 
         <div class="p-4 border-t border-white/5">
-            <a href="login.html"
+            <a href="login.php"
                 class="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
                 <span class="material-icons-round">logout</span>
                 <span class="font-medium">تسجيل الخروج</span>
@@ -127,7 +128,7 @@
                     class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold border border-primary/30">
                     A
                 </div>
-                <a href="pos.html"
+                <a href="pos.php"
                     class="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:-translate-y-0.5">
                     <span class="material-icons-round text-sm">add</span>
                     بيع جديد
@@ -140,60 +141,8 @@
 
             <!-- Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Card 1 -->
-                <div
-                    class="bg-dark-surface/60 backdrop-blur-md border border-white/5 p-6 rounded-2xl glass-panel group hover:border-primary/30 transition-all">
-                    <div class="flex justify-between items-start mb-4">
-                        <div
-                            class="p-3 bg-primary/10 rounded-xl text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                            <span class="material-icons-round">attach_money</span>
-                        </div>
-                        <span
-                            class="text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">+12%</span>
-                    </div>
-                    <h3 class="text-gray-400 text-sm font-medium mb-1">المبيعات اليومية</h3>
-                    <p class="text-2xl font-bold text-white">12,450 ر.س</p>
-                </div>
-
-                <!-- Card 2 -->
-                <div
-                    class="bg-dark-surface/60 backdrop-blur-md border border-white/5 p-6 rounded-2xl glass-panel group hover:border-accent/30 transition-all">
-                    <div class="flex justify-between items-start mb-4">
-                        <div
-                            class="p-3 bg-accent/10 rounded-xl text-accent group-hover:bg-accent group-hover:text-white transition-colors">
-                            <span class="material-icons-round">receipt</span>
-                        </div>
-                        <span
-                            class="text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">+5%</span>
-                    </div>
-                    <h3 class="text-gray-400 text-sm font-medium mb-1">عدد الفواتير</h3>
-                    <p class="text-2xl font-bold text-white">142 فاتورة</p>
-                </div>
-
-                <!-- Card 3 -->
-                <div
-                    class="bg-dark-surface/60 backdrop-blur-md border border-white/5 p-6 rounded-2xl glass-panel group hover:border-purple-500/30 transition-all">
-                    <div class="flex justify-between items-start mb-4">
-                        <div
-                            class="p-3 bg-purple-500/10 rounded-xl text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
-                            <span class="material-icons-round">inventory</span>
-                        </div>
-                    </div>
-                    <h3 class="text-gray-400 text-sm font-medium mb-1">المنتجات المباعة</h3>
-                    <p class="text-2xl font-bold text-white">350 منتج</p>
-                </div>
-
-                <!-- Card 4 -->
-                <div
-                    class="bg-dark-surface/60 backdrop-blur-md border border-white/5 p-6 rounded-2xl glass-panel group hover:border-orange-500/30 transition-all">
-                    <div class="flex justify-between items-start mb-4">
-                        <div
-                            class="p-3 bg-orange-500/10 rounded-xl text-orange-400 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-                            <span class="material-icons-round">show_chart</span>
-                        </div>
-                    </div>
-                    <h3 class="text-gray-400 text-sm font-medium mb-1">الأرباح الصافية</h3>
-                    <p class="text-2xl font-bold text-white">4,200 ر.س</p>
+                <div class="text-center py-4 text-gray-500">
+                    No data to display at this time.
                 </div>
             </div>
 
@@ -204,7 +153,7 @@
                     class="lg:col-span-2 bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-lg font-bold text-white">آخر العمليات</h3>
-                        <a href="#" class="text-sm text-primary hover:text-white transition-colors">عرض الكل</a>
+                        <a href="invoices.php" class="text-sm text-primary hover:text-white transition-colors">عرض الكل</a>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -218,28 +167,9 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-white/5">
-                                <tr class="group hover:bg-white/5 transition-colors">
-                                    <td class="py-4 text-sm text-white font-medium">#INV-001</td>
-                                    <td class="py-4 text-sm text-gray-300">محمد علي</td>
-                                    <td class="py-4 text-sm text-white font-bold">450 ر.س</td>
-                                    <td class="py-4"><span
-                                            class="px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-xs">مكتمل</span>
-                                    </td>
-                                </tr>
-                                <tr class="group hover:bg-white/5 transition-colors">
-                                    <td class="py-4 text-sm text-white font-medium">#INV-002</td>
-                                    <td class="py-4 text-sm text-gray-300">سارة أحمد</td>
-                                    <td class="py-4 text-sm text-white font-bold">120 ر.س</td>
-                                    <td class="py-4"><span
-                                            class="px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-xs">مكتمل</span>
-                                    </td>
-                                </tr>
-                                <tr class="group hover:bg-white/5 transition-colors">
-                                    <td class="py-4 text-sm text-white font-medium">#INV-003</td>
-                                    <td class="py-4 text-sm text-gray-300">خالد عمر</td>
-                                    <td class="py-4 text-sm text-white font-bold">1,200 ر.س</td>
-                                    <td class="py-4"><span
-                                            class="px-3 py-1 bg-orange-500/10 text-orange-400 rounded-full text-xs">معلق</span>
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-gray-500">
+                                        No data to display at this time.
                                     </td>
                                 </tr>
                             </tbody>
@@ -251,37 +181,8 @@
                 <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                     <h3 class="text-lg font-bold text-white mb-6">الأكثر مبيعاً</h3>
                     <div class="space-y-4">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center">
-                                <span class="material-icons-round text-gray-400">smartphone</span>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="text-sm font-bold text-white">iPhone 13 Pro</h4>
-                                <p class="text-xs text-gray-400">24 عملية بيع</p>
-                            </div>
-                            <span class="text-sm font-bold text-primary">12%</span>
-                        </div>
-
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center">
-                                <span class="material-icons-round text-gray-400">headphones</span>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="text-sm font-bold text-white">AirPods Max</h4>
-                                <p class="text-xs text-gray-400">18 عملية بيع</p>
-                            </div>
-                            <span class="text-sm font-bold text-primary">8%</span>
-                        </div>
-
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center">
-                                <span class="material-icons-round text-gray-400">watch</span>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="text-sm font-bold text-white">Apple Watch 7</h4>
-                                <p class="text-xs text-gray-400">12 عملية بيع</p>
-                            </div>
-                            <span class="text-sm font-bold text-primary">5%</span>
+                        <div class="text-center py-4 text-gray-500">
+                            No data to display at this time.
                         </div>
                     </div>
                     <button

@@ -1,3 +1,4 @@
+<?php require_once 'db.php'; ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 
@@ -63,24 +64,24 @@
             <p class="text-gray-400">سجّل دخولك لإدارة متاجرك</p>
         </div>
 
-        <form action="dashboard.html" class="space-y-6">
+        <form action="dashboard.php" method="POST" class="space-y-6">
             <div>
                 <label for="username" class="block text-sm font-medium text-gray-300 mb-2">اسم المستخدم</label>
-                <input type="text" id="username"
+                <input type="text" id="username" name="username"
                     class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                     placeholder="أدخل اسم المستخدم">
             </div>
 
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-300 mb-2">كلمة المرور</label>
-                <input type="password" id="password"
+                <input type="password" id="password" name="password"
                     class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                     placeholder="••••••••">
             </div>
 
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <input id="remember-me" type="checkbox"
+                    <input id="remember-me" name="remember-me" type="checkbox"
                         class="h-4 w-4 text-primary bg-dark border-gray-600 rounded focus:ring-primary cursor-pointer">
                     <label for="remember-me"
                         class="mr-2 block text-sm text-gray-400 cursor-pointer select-none">تذكرني</label>

@@ -1,3 +1,4 @@
+<?php require_once 'db.php'; ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 
@@ -59,31 +60,31 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-6 space-y-2 px-2 lg:px-4">
-            <a href="dashboard.html"
+            <a href="dashboard.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
                 title="لوحة التحكم">
                 <span class="material-icons-round">dashboard</span>
                 <span class="font-medium hidden lg:block">لوحة التحكم</span>
             </a>
-            <a href="pos.html"
+            <a href="pos.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
                 title="نقطة البيع">
                 <span class="material-icons-round">point_of_sale</span>
                 <span class="font-medium hidden lg:block">نقطة البيع</span>
             </a>
-            <a href="products.html"
+            <a href="products.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 bg-primary/10 text-primary rounded-xl transition-all group"
                 title="المنتجات">
                 <span class="material-icons-round">inventory_2</span>
                 <span class="font-medium hidden lg:block">المنتجات</span>
             </a>
-            <a href="customers.html"
+            <a href="customers.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
                 title="العملاء">
                 <span class="material-icons-round">people</span>
                 <span class="font-medium hidden lg:block">العملاء</span>
             </a>
-            <a href="settings.html"
+            <a href="settings.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
                 title="الإعدادات">
                 <span class="material-icons-round">settings</span>
@@ -167,23 +168,13 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
-                        <!-- All fake data will be removed -->
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-gray-500">
+                                No data to display at this time.
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
-            </div>
-
-            <!-- Pagination -->
-            <div class="flex items-center justify-between mt-4 text-sm text-gray-400">
-                <p>عرض 1-4 من 120 منتج</p>
-                <div class="flex gap-2">
-                    <button class="px-3 py-1 bg-white/5 rounded hover:bg-white/10 text-white disabled:opacity-50"
-                        disabled>السابق</button>
-                    <button class="px-3 py-1 bg-primary text-white rounded">1</button>
-                    <button class="px-3 py-1 bg-white/5 rounded hover:bg-white/10 text-white">2</button>
-                    <button class="px-3 py-1 bg-white/5 rounded hover:bg-white/10 text-white">3</button>
-                    <span class="px-2 self-end">...</span>
-                    <button class="px-3 py-1 bg-white/5 rounded hover:bg-white/10 text-white">التالي</button>
-                </div>
             </div>
         </div>
 

@@ -1,3 +1,4 @@
+<?php require_once 'db.php'; ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 
@@ -59,27 +60,27 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-6 space-y-2 px-2 lg:px-4">
-            <a href="dashboard.html"
+            <a href="dashboard.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group">
                 <span class="material-icons-round">dashboard</span>
                 <span class="font-medium hidden lg:block">لوحة التحكم</span>
             </a>
-            <a href="pos.html"
+            <a href="pos.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group">
                 <span class="material-icons-round">point_of_sale</span>
                 <span class="font-medium hidden lg:block">نقطة البيع</span>
             </a>
-            <a href="products.html"
+            <a href="products.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group">
                 <span class="material-icons-round">inventory_2</span>
                 <span class="font-medium hidden lg:block">المنتجات</span>
             </a>
-            <a href="customers.html"
+            <a href="customers.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 bg-primary/10 text-primary rounded-xl transition-all group">
                 <span class="material-icons-round">people</span>
                 <span class="font-medium hidden lg:block">العملاء</span>
             </a>
-            <a href="settings.html"
+            <a href="settings.php"
                 class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group">
                 <span class="material-icons-round">settings</span>
                 <span class="font-medium hidden lg:block">الإعدادات</span>
@@ -118,7 +119,9 @@
         <!-- Customers Grid -->
         <div class="flex-1 overflow-y-auto p-6 z-10">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- All fake data will be removed -->
+                <div class="text-center py-4 text-gray-500 col-span-full">
+                    No data to display at this time.
+                </div>
             </div>
         </div>
 
