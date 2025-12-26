@@ -1,41 +1,46 @@
 <?php
-session_start();
 require_once 'db.php';
 
-// Handle login form submission
+// Check if there are any users in the database
+$sql = "SELECT id FROM users LIMIT 1";
+$result = $conn->query($sql);
+
+if ($result && $result->num_rows > 0) {
+    // Users already exist, redirect to login page
+    header("Location: login.php");
+    exit();
+}
+
+// Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];
+    $password_confirm = $_POST['password_confirm'];
 
-    $stmt = $conn->prepare("SELECT id, password, role FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows == 1) {
-        $user = $result->fetch_assoc();
-        if (password_verify($password, $user['password'])) {
-            // Password is correct, start a new session
-            $_SESSION['loggedin'] = true;
-            $_SESSION['id'] = $user['id'];
-            $_SESSION['username'] = $username;
-            $_SESSION['role'] = $user['role'];
-
-            // Redirect to dashboard
-            header("location: dashboard.php");
-            exit;
-        } else {
-            // Display an error message if password is not valid
-            $login_err = "Invalid username or password.";
-        }
+    if ($password !== $password_confirm) {
+        $error = "Error: Passwords do not match.";
     } else {
-        // Display an error message if username doesn't exist
-        $login_err = "Invalid username or password.";
-    }
+        // Hash the password
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $role = 'admin';
 
-    $stmt->close();
-    $conn->close();
+        // Insert the new user into the database
+        $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $username, $hashed_password, $role);
+
+        if ($stmt->execute()) {
+            // Redirect to login page after successful registration
+            header("Location: login.php");
+            exit();
+        } else {
+            // Handle insertion error
+            echo "Error: " . $stmt->error;
+        }
+
+        $stmt->close();
+    }
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
@@ -43,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - Smart Shop</title>
+    <title>تسجيل حساب جديد - Smart Shop</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -98,54 +103,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         class="w-full max-w-md bg-dark-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl p-8 relative z-10 glass-panel">
 
         <div class="text-center mb-10">
-            <h1 class="text-3xl font-bold text-white mb-2">مرحباً بك مجدداً 👋</h1>
-            <p class="text-gray-400">سجّل دخولك لإدارة متاجرك</p>
+            <h1 class="text-3xl font-bold text-white mb-2">إنشاء حساب مسؤول</h1>
+            <p class="text-gray-400">مرحباً بك في Smart Shop. قم بإنشاء الحساب الأول ليكون حساب المدير.</p>
         </div>
 
-        <form action="login.php" method="POST" class="space-y-6">
-            <?php 
-            if(!empty($login_err)){
-                echo '<div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">' . $login_err . '</div>';
-            }        
-            ?>
+        <form action="register.php" method="POST" class="space-y-6">
+            <?php if (!empty($error)): ?>
+                <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+                    <?php echo $error; ?>
+                </div>
+            <?php endif; ?>
             <div>
                 <label for="username" class="block text-sm font-medium text-gray-300 mb-2">اسم المستخدم</label>
                 <input type="text" id="username" name="username"
                     class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
-                    placeholder="أدخل اسم المستخدم">
+                    placeholder="أدخل اسم المستخدم" required>
             </div>
 
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-300 mb-2">كلمة المرور</label>
                 <input type="password" id="password" name="password"
                     class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
-                    placeholder="••••••••">
+                    placeholder="••••••••" required>
             </div>
 
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <input id="remember-me" name="remember-me" type="checkbox"
-                        class="h-4 w-4 text-primary bg-dark border-gray-600 rounded focus:ring-primary cursor-pointer">
-                    <label for="remember-me"
-                        class="mr-2 block text-sm text-gray-400 cursor-pointer select-none">تذكرني</label>
-                </div>
-                <div class="text-sm">
-                    <a href="#" class="font-medium text-primary hover:text-primary-hover transition-colors">نسيت كلمة
-                        المرور؟</a>
-                </div>
+            <div>
+                <label for="password_confirm" class="block text-sm font-medium text-gray-300 mb-2">تأكيد كلمة المرور</label>
+                <input type="password" id="password_confirm" name="password_confirm"
+                    class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
+                    placeholder="••••••••" required>
             </div>
 
             <button type="submit"
                 class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/25 text-sm font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:-translate-y-0.5">
-                ت سجيل الدخول
+                إنشاء حساب
             </button>
         </form>
-
-        <div class="mt-6 text-center">
-            <p class="text-xs text-gray-500">نظام إدارة المتاجر الذكي الإصدار 1.0</p>
-        </div>
     </div>
 
 </body>
 
 </html>
+<?php $conn->close(); ?>

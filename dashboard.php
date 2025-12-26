@@ -1,3 +1,4 @@
+<?php require_once 'session.php'; ?>
 <?php require_once 'db.php'; ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
@@ -92,7 +93,7 @@
         </nav>
 
         <div class="p-4 border-t border-white/5">
-            <a href="login.php"
+            <a href="logout.php"
                 class="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
                 <span class="material-icons-round">logout</span>
                 <span class="font-medium">تسجيل الخروج</span>
@@ -116,18 +117,10 @@
             <div class="flex items-center gap-4">
                 <button class="md:hidden p-2 text-gray-400 hover:text-white"><span
                         class="material-icons-round">menu</span></button>
-                <h2 class="text-xl font-bold text-white">نظرة عامة</h2>
+                <h2 class="text-xl font-bold text-white">لوحة التحكم</h2>
             </div>
 
             <div class="flex items-center gap-6">
-                <div class="hidden md:flex flex-col items-end mr-4">
-                    <span class="text-sm font-bold text-white">أحمد محمد</span>
-                    <span class="text-xs text-gray-400">مدير النظام</span>
-                </div>
-                <div
-                    class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold border border-primary/30">
-                    A
-                </div>
                 <a href="pos.php"
                     class="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:-translate-y-0.5">
                     <span class="material-icons-round text-sm">add</span>
