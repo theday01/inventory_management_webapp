@@ -5,13 +5,24 @@ $username = "root";
 $password = "";
 $dbname = "smart_shop";
 
-// Connect as the new user
-$conn = new mysqli($servername, $username, $password, $dbname);
+// Connect to MySQL server without specifying a database
+$conn = new mysqli($servername, $username, $password);
 
 // Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+
+// Create database if it doesn't exist
+$sql_create_db = "CREATE DATABASE IF NOT EXISTS $dbname";
+if ($conn->query($sql_create_db) === TRUE) {
+    echo "Database '$dbname' created successfully or already exists.<br>";
+} else {
+    die("Error creating database: " . $conn->error);
+}
+
+// Select the database
+$conn->select_db($dbname);
 
 // SQL to create tables
 $sql_users = "CREATE TABLE IF NOT EXISTS users (
@@ -56,34 +67,27 @@ $sql_invoice_items = "CREATE TABLE IF NOT EXISTS invoice_items (
     FOREIGN KEY (product_id) REFERENCES products(id)
 )";
 
-if ($conn->query($sql_users) === TRUE) {
-    echo "Table 'users' created successfully<br>";
-} else {
-    echo "Error creating table 'users': " . $conn->error . "<br>";
-}
+$sql_settings = "CREATE TABLE IF NOT EXISTS settings (
+    setting_name VARCHAR(255) PRIMARY KEY,
+    setting_value TEXT NOT NULL
+)";
 
-if ($conn->query($sql_products) === TRUE) {
-    echo "Table 'products' created successfully<br>";
-} else {
-    echo "Error creating table 'products': " . $conn->error . "<br>";
-}
+// Execute table creation queries
+$tables = [
+    'users' => $sql_users,
+    'products' => $sql_products,
+    'customers' => $sql_customers,
+    'invoices' => $sql_invoices,
+    'invoice_items' => $sql_invoice_items,
+    'settings' => $sql_settings,
+];
 
-if ($conn->query($sql_customers) === TRUE) {
-    echo "Table 'customers' created successfully<br>";
-} else {
-    echo "Error creating table 'customers': " . $conn->error . "<br>";
-}
-
-if ($conn->query($sql_invoices) === TRUE) {
-    echo "Table 'invoices' created successfully<br>";
-} else {
-    echo "Error creating table 'invoices': " . $conn->error . "<br>";
-}
-
-if ($conn->query($sql_invoice_items) === TRUE) {
-    echo "Table 'invoice_items' created successfully<br>";
-} else {
-    echo "Error creating table 'invoice_items': " . $conn->error . "<br>";
+foreach ($tables as $name => $sql) {
+    if ($conn->query($sql) === TRUE) {
+        echo "Table '$name' created successfully.<br>";
+    } else {
+        echo "Error creating table '$name': " . $conn->error . "<br>";
+    }
 }
 
 $conn->close();

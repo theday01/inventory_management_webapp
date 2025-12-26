@@ -1,4 +1,43 @@
-<?php require_once 'db.php'; ?>
+<?php
+require_once 'db.php';
+
+// Handle POST request to save settings
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $settings_to_save = [
+        'shopName' => $_POST['shopName'] ?? '',
+        'shopPhone' => $_POST['shopPhone'] ?? '',
+        'shopAddress' => $_POST['shopAddress'] ?? '',
+        'shopDescription' => $_POST['shopDescription'] ?? '',
+        'darkMode' => isset($_POST['darkMode']) ? '1' : '0',
+        'soundNotifications' => isset($_POST['soundNotifications']) ? '1' : '0'
+    ];
+
+    $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+
+    foreach ($settings_to_save as $name => $value) {
+        $stmt->bind_param("sss", $name, $value, $value);
+        $stmt->execute();
+    }
+
+    $stmt->close();
+    // Redirect to avoid form resubmission
+    header("Location: settings.php?saved=true");
+    exit();
+}
+
+// Fetch all settings from the database
+$result = $conn->query("SELECT * FROM settings");
+$settings = [];
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        $settings[$row['setting_name']] = $row['setting_value'];
+    }
+}
+
+// Check if saved=true is in the URL to show the success message
+$show_success = isset($_GET['saved']) && $_GET['saved'] == 'true';
+
+?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 
@@ -86,7 +125,7 @@
 <body class="bg-dark text-white font-sans h-screen flex overflow-hidden">
 
     <!-- Success Message -->
-    <div id="successMessage" class="success-message">
+    <div id="successMessage" class="success-message <?php echo $show_success ? 'show' : ''; ?>">
         <div class="flex items-center gap-2">
             <span class="material-icons-round">check_circle</span>
             <span>تم حفظ التغييرات بنجاح</span>
@@ -138,192 +177,146 @@
             class="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none">
         </div>
 
-        <!-- Header -->
-        <header
-            class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
-            <h2 class="text-xl font-bold text-white">الإعدادات العامة</h2>
-            <div class="flex items-center gap-4">
-                <button onclick="saveSettings()"
-                    class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
-                    <span class="material-icons-round text-sm">save</span>
-                    <span>حفظ التغييرات</span>
-                </button>
-            </div>
-        </header>
+        <form method="POST" action="settings.php" class="flex-1 flex flex-col">
+            <!-- Header -->
+            <header
+                class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+                <h2 class="text-xl font-bold text-white">الإعدادات العامة</h2>
+                <div class="flex items-center gap-4">
+                    <button type="submit"
+                        class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                        <span class="material-icons-round text-sm">save</span>
+                        <span>حفظ التغييرات</span>
+                    </button>
+                </div>
+            </header>
 
-        <div class="flex-1 overflow-y-auto p-8 relative z-10">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="flex-1 overflow-y-auto p-8 relative z-10">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                <!-- Settings Menu -->
-                <div class="lg:col-span-1">
-                    <div
-                        class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
-                        <nav class="flex flex-col">
-                            <a href="settings.php"
-                                class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary">
-                                <span class="material-icons-round">store</span>
-                                <span class="font-bold">إعدادات المتجر</span>
-                            </a>
-                            <a href="invoices.php"
-                                class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                                <span class="material-icons-round">receipt</span>
-                                <span class="font-bold">الفواتير والضريبة</span>
-                            </a>
-                            <a href="printers.php"
-                                class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                                <span class="material-icons-round">print</span>
-                                <span class="font-bold">الطابعات</span>
-                            </a>
-                            <a href="users.php"
-                                class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                                <span class="material-icons-round">group</span>
-                                <span class="font-bold">المستخدمين</span>
-                            </a>
-                        </nav>
+                    <!-- Settings Menu -->
+                    <div class="lg:col-span-1">
+                        <div
+                            class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
+                            <nav class="flex flex-col">
+                                <a href="settings.php"
+                                    class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary">
+                                    <span class="material-icons-round">store</span>
+                                    <span class="font-bold">إعدادات المتجر</span>
+                                </a>
+                                <a href="invoices.php"
+                                    class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
+                                    <span class="material-icons-round">receipt</span>
+                                    <span class="font-bold">الفواتير والضريبة</span>
+                                </a>
+                                <a href="printers.php"
+                                    class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
+                                    <span class="material-icons-round">print</span>
+                                    <span class="font-bold">الطابعات</span>
+                                </a>
+                                <a href="users.php"
+                                    class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
+                                    <span class="material-icons-round">group</span>
+                                    <span class="font-bold">المستخدمين</span>
+                                </a>
+                            </nav>
+                        </div>
+                    </div>
+
+                    <!-- Settings Content -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- General Info -->
+                        <section
+                            class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+                            <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                <span class="material-icons-round text-primary">store</span>
+                                بيانات المتجر
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">اسم المتجر</label>
+                                    <input type="text" id="shopName" name="shopName" value="<?php echo htmlspecialchars($settings['shopName'] ?? ''); ?>"
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">رقم الهاتف</label>
+                                    <input type="text" id="shopPhone" name="shopPhone" value="<?php echo htmlspecialchars($settings['shopPhone'] ?? ''); ?>"
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">العنوان</label>
+                                    <input type="text" id="shopAddress" name="shopAddress" value="<?php echo htmlspecialchars($settings['shopAddress'] ?? ''); ?>"
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">وصف مختصر</label>
+                                    <textarea rows="3" id="shopDescription" name="shopDescription"
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all"><?php echo htmlspecialchars($settings['shopDescription'] ?? ''); ?></textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Preferences -->
+                        <section
+                            class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+                            <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                <span class="material-icons-round text-primary">tune</span>
+                                تفضيلات النظام
+                            </h3>
+
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                    <div>
+                                        <h4 class="font-bold text-white mb-1">الوضع الليلي</h4>
+                                        <p class="text-xs text-gray-400">تفعيل الوضع المظلم بشكل دائم</p>
+                                    </div>
+                                    <div
+                                        class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" name="darkMode" id="toggle-dark" value="1"
+                                            class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
+                                            <?php echo (isset($settings['darkMode']) && $settings['darkMode'] == '1') ? 'checked' : ''; ?> />
+                                        <label for="toggle-dark"
+                                            class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                    <div>
+                                        <h4 class="font-bold text-white mb-1">الإشعارات الصوتية</h4>
+                                        <p class="text-xs text-gray-400">تشغيل صوت عند إتمام عملية بيع</p>
+                                    </div>
+                                    <div
+                                        class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" name="soundNotifications" id="toggle-sound" value="1"
+                                            class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
+                                            <?php echo (isset($settings['soundNotifications']) && $settings['soundNotifications'] == '1') ? 'checked' : ''; ?> />
+                                        <label for="toggle-sound"
+                                            class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
                 </div>
-
-                <!-- Settings Content -->
-                <div class="lg:col-span-2 space-y-6">
-                    <!-- General Info -->
-                    <section
-                        class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
-                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <span class="material-icons-round text-primary">store</span>
-                            بيانات المتجر
-                        </h3>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">اسم المتجر</label>
-                                <input type="text" id="shopName" value="متجر Smart Shop للإلكترونيات"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">رقم الهاتف</label>
-                                <input type="text" id="shopPhone" value="0512345678"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-400 mb-2">العنوان</label>
-                                <input type="text" id="shopAddress" value="الرياض، المملكة العربية السعودية"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-400 mb-2">وصف مختصر</label>
-                                <textarea rows="3" id="shopDescription"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">أفضل متجر لبيع الإلكترونيات الحديثة وملحقاتها</textarea>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Preferences -->
-                    <section
-                        class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
-                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <span class="material-icons-round text-primary">tune</span>
-                            تفضيلات النظام
-                        </h3>
-
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">الوضع الليلي</h4>
-                                    <p class="text-xs text-gray-400">تفعيل الوضع المظلم بشكل دائم</p>
-                                </div>
-                                <div
-                                    class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="toggle" id="toggle-dark"
-                                        class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
-                                        checked />
-                                    <label for="toggle-dark"
-                                        class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">الإشعارات الصوتية</h4>
-                                    <p class="text-xs text-gray-400">تشغيل صوت عند إتمام عملية بيع</p>
-                                </div>
-                                <div
-                                    class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="toggle" id="toggle-sound"
-                                        class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
-                                        checked />
-                                    <label for="toggle-sound"
-                                        class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                </div>
             </div>
-        </div>
-
+        </form>
     </main>
 
     <script>
-        // Load saved settings on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            loadSettings();
-        });
-
-        // Load settings from localStorage
-        function loadSettings() {
-            const savedSettings = localStorage.getItem('shopSettings');
-            
-            if (savedSettings) {
-                const settings = JSON.parse(savedSettings);
-                
-                // Load shop info
-                document.getElementById('shopName').value = settings.shopName || 'متجر Smart Shop للإلكترونيات';
-                document.getElementById('shopPhone').value = settings.shopPhone || '0512345678';
-                document.getElementById('shopAddress').value = settings.shopAddress || 'الرياض، المملكة العربية السعودية';
-                document.getElementById('shopDescription').value = settings.shopDescription || 'أفضل متجر لبيع الإلكترونيات الحديثة وملحقاتها';
-                
-                // Load preferences
-                document.getElementById('toggle-dark').checked = settings.darkMode !== false;
-                document.getElementById('toggle-sound').checked = settings.soundNotifications !== false;
-            }
-        }
-
-        // Save settings to localStorage
-        function saveSettings() {
-            const settings = {
-                shopName: document.getElementById('shopName').value,
-                shopPhone: document.getElementById('shopPhone').value,
-                shopAddress: document.getElementById('shopAddress').value,
-                shopDescription: document.getElementById('shopDescription').value,
-                darkMode: document.getElementById('toggle-dark').checked,
-                soundNotifications: document.getElementById('toggle-sound').checked,
-                lastUpdated: new Date().toISOString()
-            };
-
-            localStorage.setItem('shopSettings', JSON.stringify(settings));
-            
-            // Show success message
-            showSuccessMessage();
-        }
-
-        // Show success message
-        function showSuccessMessage() {
-            const message = document.getElementById('successMessage');
-            message.classList.add('show');
-            
+        // If the success message is shown, hide it after 3 seconds
+        const message = document.getElementById('successMessage');
+        if (message.classList.contains('show')) {
             setTimeout(() => {
                 message.classList.remove('show');
+                // Optional: Remove the `saved=true` from the URL without reloading
+                if (window.history.replaceState) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('saved');
+                    window.history.replaceState({path: url.href}, '', url.href);
+                }
             }, 3000);
         }
-
-        // Optional: Auto-save on change
-        const inputs = document.querySelectorAll('input, textarea');
-        inputs.forEach(input => {
-            input.addEventListener('change', function() {
-                // Uncomment the line below if you want auto-save
-                // saveSettings();
-            });
-        });
     </script>
 </body>
 
