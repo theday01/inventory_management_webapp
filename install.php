@@ -72,6 +72,7 @@ $sql_settings = "CREATE TABLE IF NOT EXISTS settings (
     setting_value TEXT NOT NULL
 )";
 
+
 // Execute table creation queries
 $tables = [
     'users' => $sql_users,

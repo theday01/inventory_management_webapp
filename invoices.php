@@ -124,11 +124,6 @@
                                 <span class="material-icons-round">receipt</span>
                                 <span class="font-bold">الفواتير والضريبة</span>
                             </a>
-                            <a href="printers.php"
-                                class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                                <span class="material-icons-round">print</span>
-                                <span class="font-bold">الطابعات</span>
-                            </a>
                             <a href="users.php"
                                 class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
                                 <span class="material-icons-round">group</span>
