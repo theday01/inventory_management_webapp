@@ -39,7 +39,7 @@ require_once 'src/sidebar.php';
         <!-- Cards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="text-center py-4 text-gray-500">
-                No data to display at this time.
+                لا توجد أي بيانات لعرضها الآن.
             </div>
         </div>
 
@@ -66,7 +66,7 @@ require_once 'src/sidebar.php';
                         <tbody class="divide-y divide-white/5">
                             <tr>
                                 <td colspan="4" class="text-center py-4 text-gray-500">
-                                    No data to display at this time.
+                                    لا توجد أي بيانات لعرضها الآن.
                                 </td>
                             </tr>
                         </tbody>
@@ -79,7 +79,7 @@ require_once 'src/sidebar.php';
                 <h3 class="text-lg font-bold text-white mb-6">الأكثر مبيعاً</h3>
                 <div class="space-y-4">
                     <div class="text-center py-4 text-gray-500">
-                        No data to display at this time.
+                        لا توجد أي بيانات لعرضها الآن.
                     </div>
                 </div>
                 <button

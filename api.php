@@ -44,7 +44,7 @@ function getProducts($conn) {
     $search = isset($_GET['search']) ? $_GET['search'] : '';
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 
-    $sql = "SELECT p.id, p.name, p.price, p.quantity, c.name as category_name 
+    $sql = "SELECT p.id, p.name, p.price, p.quantity, p.image, c.name as category_name 
             FROM products p 
             LEFT JOIN categories c ON p.category_id = c.id
             WHERE 1=1";
@@ -80,20 +80,37 @@ function getProducts($conn) {
 }
 
 function addProduct($conn) {
-    $data = json_decode(file_get_contents('php://input'), true);
+    $data = $_POST;
+    $imagePath = null;
+
+    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        $targetDir = "src/img/uploads/";
+        $fileName = basename($_FILES["image"]["name"]);
+        $targetFilePath = $targetDir . $fileName;
+        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+
+        // Allow certain file formats
+        $allowTypes = array('jpg','png','jpeg','gif');
+        if (in_array($fileType, $allowTypes)) {
+            if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFilePath)) {
+                $imagePath = $targetFilePath;
+            }
+        }
+    }
 
     $conn->begin_transaction();
 
     try {
-        $stmt = $conn->prepare("INSERT INTO products (name, price, quantity, category_id, barcode) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sdiis", $data['name'], $data['price'], $data['quantity'], $data['category_id'], $data['barcode']);
+        $stmt = $conn->prepare("INSERT INTO products (name, price, quantity, category_id, barcode, image) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sdiiss", $data['name'], $data['price'], $data['quantity'], $data['category_id'], $data['barcode'], $imagePath);
         $stmt->execute();
         $productId = $stmt->insert_id;
         $stmt->close();
 
         if (!empty($data['fields'])) {
+            $fields = json_decode($data['fields'], true);
             $stmt = $conn->prepare("INSERT INTO product_field_values (product_id, field_id, value) VALUES (?, ?, ?)");
-            foreach ($data['fields'] as $field) {
+            foreach ($fields as $field) {
                 $stmt->bind_param("iis", $productId, $field['id'], $field['value']);
                 $stmt->execute();
             }

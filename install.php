@@ -40,6 +40,7 @@ $sql_products = "CREATE TABLE IF NOT EXISTS products (
     quantity INT(6) NOT NULL,
     category_id INT(6) UNSIGNED,
     barcode VARCHAR(255),
+    image VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )";
 
@@ -142,6 +143,43 @@ if ($conn->query($sql_fk_products_category) === TRUE) {
         }
     }
 }
+
+// -----------------------
+// Add tax settings (insert or update)
+// -----------------------
+$tax_inserts = [
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('taxEnabled', '1') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('taxRate', '20') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('taxLabel', 'TVA') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+];
+
+foreach ($tax_inserts as $q) {
+    if ($conn->query($q) === TRUE) {
+        // Success message omitted to keep output concise — uncomment if you want per-row messages
+        // echo "Tax setting applied successfully.<br>";
+    } else {
+        echo "Error applying tax setting: " . $conn->error . "<br>";
+    }
+}
+
+// Verify and display the added settings
+$result = $conn->query("SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('taxEnabled', 'taxRate', 'taxLabel')");
+if ($result) {
+    if ($result->num_rows > 0) {
+        echo "<h3>Tax settings</h3>";
+        echo "<table border='1' cellpadding='6' style='border-collapse:collapse;'>";
+        echo "<tr><th>setting_name</th><th>setting_value</th></tr>";
+        while ($row = $result->fetch_assoc()) {
+            echo "<tr><td>" . htmlspecialchars($row['setting_name']) . "</td><td>" . htmlspecialchars($row['setting_value']) . "</td></tr>";
+        }
+        echo "</table><br>";
+    } else {
+        echo "Tax settings not found after insert/update.<br>";
+    }
+} else {
+    echo "Error verifying tax settings: " . $conn->error . "<br>";
+}
+
 
 $conn->close();
 ?>

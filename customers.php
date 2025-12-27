@@ -37,7 +37,7 @@ require_once 'src/sidebar.php';
     <div class="flex-1 overflow-y-auto p-6 z-10">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div class="text-center py-4 text-gray-500 col-span-full">
-                No data to display at this time.
+                لا توجد أي بيانات لعرضها الآن.
             </div>
         </div>
     </div>
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayCustomers(customers) {
         customersGrid.innerHTML = '';
         if (customers.length === 0) {
-            customersGrid.innerHTML = '<div class="text-center py-4 text-gray-500 col-span-full">No data to display at this time.</div>';
+            customersGrid.innerHTML = '<div class="text-center py-4 text-gray-500 col-span-full">لا توجد أي بيانات لعرضها الآن.</div>';
             return;
         }
         customers.forEach(customer => {

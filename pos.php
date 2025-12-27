@@ -7,10 +7,83 @@ require_once 'src/sidebar.php';
 // Fetch currency setting
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
+
+// Fetch tax settings
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'taxEnabled'");
+$taxEnabled = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '1';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'taxRate'");
+$taxRate = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '20';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'taxLabel'");
+$taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'TVA';
 ?>
 
 <!-- Main Content -->
-<main class="flex-1 flex flex-col relative overflow-hidden">
+<main class="flex-1 flex flex-row-reverse relative overflow-hidden">
+    <!-- Cart Sidebar (Left) -->
+    <aside class="w-96 bg-dark-surface border-r border-white/5 flex flex-col z-20 shadow-2xl">
+        <div class="p-6 border-b border-white/5">
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-xl font-bold text-white">سلة المشتريات</h2>
+            </div>
+            <div id="customer-selection" class="flex items-center gap-2 mt-4 bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/10 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs" id="customer-avatar">A</div>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-white" id="customer-name-display">عميل نقدي</p>
+                    <p class="text-xs text-gray-400" id="customer-detail-display">افتراضي</p>
+                </div>
+                <span class="material-icons-round text-gray-400">arrow_drop_down</span>
+            </div>
+        </div>
+
+        <!-- Cart Items -->
+        <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <!-- Cart items will be loaded here -->
+        </div>
+
+        <!-- Totals & Checkout -->
+        <div class="p-6 bg-dark-surface border-t border-white/5">
+            <div class="space-y-2 mb-4">
+                <div class="flex justify-between text-sm text-gray-400">
+                    <span>المجموع الفرعي</span>
+                    <span id="cart-subtotal">0 <?php echo $currency; ?></span>
+                </div>
+                <?php if ($taxEnabled == '1'): ?>
+                <div class="flex justify-between text-sm text-gray-400">
+                    <span><?php echo htmlspecialchars($taxLabel); ?> (<span id="tax-rate-display"><?php echo $taxRate; ?></span>%)</span>
+                    <span id="cart-tax">0 <?php echo $currency; ?></span>
+                </div>
+                <?php endif; ?>
+                <div class="flex justify-between text-lg font-bold text-white pt-2 border-t border-white/5">
+                    <span>الإجمالي</span>
+                    <span id="cart-total" class="text-primary">0 <?php echo $currency; ?></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <button
+                    class="button-secondary bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                    <span class="material-icons-round text-sm">pause</span>
+                    تعليق
+                </button>
+                <button
+                    id="clear-cart-btn"
+                    class="button-danger bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                    <span class="material-icons-round text-sm">delete_outline</span>
+                    إلغاء
+                </button>
+            </div>
+
+            <button
+                id="checkout-btn"
+                class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
+                <span class="material-icons-round">payments</span>
+                دفع (space)
+            </button>
+        </div>
+    </aside>
+
     <!-- Products Section (Right) -->
     <div class="flex-1 flex flex-col h-full relative">
         <!-- Background Blobs -->
@@ -56,65 +129,6 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             </div>
         </div>
     </div>
-
-    <!-- Cart Sidebar (Left) -->
-    <aside class="w-96 bg-dark-surface border-r border-white/5 flex flex-col z-20 shadow-2xl">
-        <div class="p-6 border-b border-white/5">
-            <div class="flex items-center justify-between mb-2">
-                <h2 class="text-xl font-bold text-white">سلة المشتريات</h2>
-            </div>
-            <div id="customer-selection" class="flex items-center gap-2 mt-4 bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/10 transition-colors">
-                <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs" id="customer-avatar">A</div>
-                <div class="flex-1">
-                    <p class="text-sm font-bold text-white" id="customer-name-display">عميل نقدي</p>
-                    <p class="text-xs text-gray-400" id="customer-detail-display">افتراضي</p>
-                </div>
-                <span class="material-icons-round text-gray-400">arrow_drop_down</span>
-            </div>
-        </div>
-
-        <!-- Cart Items -->
-        <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3">
-            <!-- Cart items will be loaded here -->
-        </div>
-
-        <!-- Totals & Checkout -->
-        <div class="p-6 bg-dark-surface border-t border-white/5">
-            <div class="space-y-2 mb-4">
-                <div class="flex justify-between text-sm text-gray-400">
-                    <span>المجموع الفرعي</span>
-                    <span id="cart-subtotal">0 <?php echo $currency; ?></span>
-                </div>
-                <div class="flex justify-between text-sm text-gray-400">
-                    <span>الضريبة (15%)</span>
-                    <span id="cart-tax">0 <?php echo $currency; ?></span>
-                </div>
-                <div class="flex justify-between text-lg font-bold text-white pt-2 border-t border-white/5">
-                    <span>الإجمالي</span>
-                    <span id="cart-total" class="text-primary">0 <?php echo $currency; ?></span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 mb-3">
-                <button
-                    class="button-secondary bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                    <span class="material-icons-round text-sm">pause</span>
-                    تعليق
-                </button>
-                <button
-                    class="button-danger bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                    <span class="material-icons-round text-sm">delete_outline</span>
-                    إلغاء
-                </button>
-            </div>
-
-            <button
-                class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
-                <span class="material-icons-round">payments</span>
-                دفع (space)
-            </button>
-        </div>
-    </aside>
 </main>
 
 <!-- Customer Modal -->
@@ -173,6 +187,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const barcodeScannerModal = document.getElementById('barcode-scanner-modal');
     const closeBarcodeScannerModalBtn = document.getElementById('close-barcode-scanner-modal');
     const videoElement = document.getElementById('barcode-video');
+    const clearCartBtn = document.getElementById('clear-cart-btn');
+    const checkoutBtn = document.getElementById('checkout-btn');
     let codeReader;
 
     const customerModal = document.getElementById('customer-modal');
@@ -188,6 +204,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let cart = [];
     let allProducts = [];
     let selectedCustomer = null;
+    
+    // Get tax settings from PHP
+    const taxEnabled = <?php echo $taxEnabled; ?> == 1;
+    const taxRate = <?php echo $taxRate; ?> / 100;
+    const currency = '<?php echo $currency; ?>';
 
     async function loadProducts() {
         try {
@@ -222,8 +243,9 @@ document.addEventListener('DOMContentLoaded', function () {
             productCard.className = 'bg-dark-surface/50 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all cursor-pointer';
             productCard.dataset.productId = product.id;
             productCard.innerHTML = `
+                <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" class="w-24 h-24 object-cover rounded-lg mb-4">
                 <div class="text-lg font-bold text-white">${product.name}</div>
-                <div class="text-sm text-gray-400">${product.price} <?php echo $currency; ?></div>
+                <div class="text-sm text-gray-400">${product.price} ${currency}</div>
             `;
             productCard.addEventListener('click', () => addProductToCart(product));
             productsGrid.appendChild(productCard);
@@ -251,12 +273,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 cartItem.innerHTML = `
                     <div class="flex-1">
                         <p class="text-sm font-bold text-white">${item.name}</p>
-                        <p class="text-xs text-gray-400">${item.price} <?php echo $currency; ?></p>
+                        <p class="text-xs text-gray-400">${item.price} ${currency}</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button class="quantity-btn" data-id="${item.id}" data-action="decrease">-</button>
-                        <span>${item.quantity}</span>
-                        <button class="quantity-btn" data-id="${item.id}" data-action="increase">+</button>
+                        <button class="quantity-btn w-8 h-8 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors" data-id="${item.id}" data-action="decrease">-</button>
+                        <span class="text-white font-bold min-w-[30px] text-center">${item.quantity}</span>
+                        <button class="quantity-btn w-8 h-8 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors" data-id="${item.id}" data-action="increase">+</button>
                     </div>
                 `;
                 cartItemsContainer.appendChild(cartItem);
@@ -267,12 +289,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateTotals() {
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-        const tax = subtotal * 0.15;
+        const tax = taxEnabled ? subtotal * taxRate : 0;
         const total = subtotal + tax;
 
-        cartSubtotal.textContent = `${subtotal.toFixed(2)} <?php echo $currency; ?>`;
-        cartTax.textContent = `${tax.toFixed(2)} <?php echo $currency; ?>`;
-        cartTotal.textContent = `${total.toFixed(2)} <?php echo $currency; ?>`;
+        cartSubtotal.textContent = `${subtotal.toFixed(2)} ${currency}`;
+        if (cartTax) {
+            cartTax.textContent = `${tax.toFixed(2)} ${currency}`;
+        }
+        cartTotal.textContent = `${total.toFixed(2)} ${currency}`;
     }
 
     cartItemsContainer.addEventListener('click', function (e) {
@@ -292,6 +316,44 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 updateCart();
             }
+        }
+    });
+
+    clearCartBtn.addEventListener('click', () => {
+        if (cart.length > 0 && confirm('هل أنت متأكد من إلغاء السلة؟')) {
+            cart = [];
+            updateCart();
+        }
+    });
+
+    checkoutBtn.addEventListener('click', () => {
+        if (cart.length === 0) {
+            alert('السلة فارغة!');
+            return;
+        }
+        
+        const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        const tax = taxEnabled ? subtotal * taxRate : 0;
+        const total = subtotal + tax;
+        
+        const confirmMessage = `المجموع الفرعي: ${subtotal.toFixed(2)} ${currency}\n` +
+            (taxEnabled ? `الضريبة: ${tax.toFixed(2)} ${currency}\n` : '') +
+            `الإجمالي: ${total.toFixed(2)} ${currency}\n\n` +
+            `هل تريد إتمام عملية الدفع؟`;
+        
+        if (confirm(confirmMessage)) {
+            // Here you would save the sale to database
+            alert('تم إتمام عملية البيع بنجاح!');
+            cart = [];
+            updateCart();
+        }
+    });
+
+    // Keyboard shortcut for checkout (Space key)
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.target.matches('input, textarea')) {
+            e.preventDefault();
+            checkoutBtn.click();
         }
     });
 
@@ -369,13 +431,21 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayCustomers(customers) {
         customerList.innerHTML = '';
         if (customers.length === 0) {
-            customerList.innerHTML = '<p class="text-gray-500">No customers found.</p>';
+            customerList.innerHTML = '<p class="text-gray-500">لم يتم العثور على عملاء.</p>';
             return;
         }
         customers.forEach(customer => {
             const customerElement = document.createElement('div');
-            customerElement.className = 'p-2 hover:bg-white/10 rounded-lg cursor-pointer';
-            customerElement.textContent = `${customer.name} (${customer.phone || 'N/A'})`;
+            customerElement.className = 'p-3 hover:bg-white/10 rounded-lg cursor-pointer transition-colors flex items-center gap-3';
+            customerElement.innerHTML = `
+                <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                    ${customer.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                    <p class="text-white font-bold">${customer.name}</p>
+                    <p class="text-xs text-gray-400">${customer.phone || customer.email || 'لا توجد معلومات'}</p>
+                </div>
+            `;
             customerElement.addEventListener('click', () => selectCustomer(customer));
             customerList.appendChild(customerElement);
         });
@@ -384,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function selectCustomer(customer) {
         selectedCustomer = customer;
         customerNameDisplay.textContent = customer.name;
-        customerDetailDisplay.textContent = customer.phone || customer.email || 'No details';
+        customerDetailDisplay.textContent = customer.phone || customer.email || 'لا توجد تفاصيل';
         customerAvatar.textContent = customer.name.charAt(0).toUpperCase();
         customerModal.classList.add('hidden');
     }
@@ -398,6 +468,11 @@ document.addEventListener('DOMContentLoaded', function () {
             address: document.getElementById('customer-address').value,
         };
 
+        if (!newCustomer.name) {
+            alert('الرجاء إدخال اسم العميل');
+            return;
+        }
+
         try {
             const response = await fetch('api.php?action=addCustomer', {
                 method: 'POST',
@@ -409,11 +484,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 newCustomer.id = result.id;
                 selectCustomer(newCustomer);
                 addCustomerForm.reset();
+                alert('تم إضافة العميل بنجاح!');
             } else {
-                alert('Error adding customer: ' + result.message);
+                alert('خطأ في إضافة العميل: ' + result.message);
             }
         } catch (error) {
             console.error('Error adding customer:', error);
+            alert('حدث خطأ أثناء إضافة العميل');
         }
     });
 

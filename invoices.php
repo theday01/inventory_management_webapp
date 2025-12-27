@@ -47,7 +47,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                             <tbody>
                                 <tr>
                                     <td colspan="5" class="text-center py-4 text-gray-500">
-                                        No data to display at this time.
+                                        لا توجد أي بيانات لعرضها الآن.
                                     </td>
                                 </tr>
                             </tbody>

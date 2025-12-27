@@ -11,7 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'shopDescription' => $_POST['shopDescription'] ?? '',
         'darkMode' => isset($_POST['darkMode']) ? '1' : '0',
         'soundNotifications' => isset($_POST['soundNotifications']) ? '1' : '0',
-        'currency' => $_POST['currency'] ?? 'MAD'
+        'currency' => $_POST['currency'] ?? 'MAD',
+        'taxEnabled' => isset($_POST['taxEnabled']) ? '1' : '0',
+        'taxRate' => $_POST['taxRate'] ?? '20',
+        'taxLabel' => $_POST['taxLabel'] ?? 'TVA'
     ];
 
     $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
@@ -55,6 +58,12 @@ if ($result) {
             class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
             <h2 class="text-xl font-bold text-white">الإعدادات العامة</h2>
             <div class="flex items-center gap-4">
+                <?php if (isset($_GET['saved']) && $_GET['saved'] === 'true'): ?>
+                    <div class="bg-green-500/20 text-green-400 px-4 py-2 rounded-xl flex items-center gap-2">
+                        <span class="material-icons-round text-sm">check_circle</span>
+                        <span>تم حفظ التغييرات بنجاح</span>
+                    </div>
+                <?php endif; ?>
                 <button type="submit"
                     class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
                     <span class="material-icons-round text-sm">save</span>
@@ -115,6 +124,60 @@ if ($result) {
                                 <label class="block text-sm font-medium text-gray-400 mb-2">وصف مختصر</label>
                                 <textarea rows="3" id="shopDescription" name="shopDescription"
                                     class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all"><?php echo htmlspecialchars($settings['shopDescription'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tax Settings -->
+                    <section
+                        class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <span class="material-icons-round text-primary">receipt</span>
+                            إعدادات الضريبة
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div>
+                                    <h4 class="font-bold text-white mb-1">تفعيل الضريبة</h4>
+                                    <p class="text-xs text-gray-400">إضافة الضريبة على المبيعات</p>
+                                </div>
+                                <div
+                                    class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1"
+                                        class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
+                                        <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> />
+                                    <label for="toggle-tax"
+                                        class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">نسبة الضريبة (%)</label>
+                                    <input type="number" id="taxRate" name="taxRate" 
+                                        value="<?php echo htmlspecialchars($settings['taxRate'] ?? '20'); ?>"
+                                        step="0.01" min="0" max="100"
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                    <p class="text-xs text-gray-500 mt-1">مثال: 20 للـ 20%</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">تسمية الضريبة</label>
+                                    <input type="text" id="taxLabel" name="taxLabel" 
+                                        value="<?php echo htmlspecialchars($settings['taxLabel'] ?? 'TVA'); ?>"
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                    <p class="text-xs text-gray-500 mt-1">مثال: TVA أو ضريبة القيمة المضافة</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                                <div class="flex items-start gap-3">
+                                    <span class="material-icons-round text-blue-400 mt-0.5">info</span>
+                                    <div>
+                                        <h5 class="font-bold text-blue-400 mb-1">ملاحظة</h5>
+                                        <p class="text-sm text-blue-300">سيتم تطبيق نسبة الضريبة المحددة على جميع المبيعات في نقطة البيع. يمكنك تعطيل الضريبة في أي وقت.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>

@@ -82,6 +82,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                                 class="rounded border-gray-600 bg-dark text-primary focus:ring-primary">
                         </th>
                         <th class="p-4 text-sm font-medium text-gray-300">المنتج</th>
+                        <th class="p-4 text-sm font-medium text-gray-300">الصورة</th>
                         <th class="p-4 text-sm font-medium text-gray-300">الفئة</th>
                         <th class="p-4 text-sm font-medium text-gray-300">السعر</th>
                         <th class="p-4 text-sm font-medium text-gray-300">الكمية</th>
@@ -107,7 +108,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 <span class="material-icons-round">close</span>
             </button>
         </div>
-        <form id="product-form">
+        <form id="product-form" enctype="multipart/form-data">
             <div class="p-6 max-h-[70vh] overflow-y-auto">
                 <input type="hidden" id="product-id" name="id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -133,6 +134,10 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     <div class="mb-4 col-span-2">
                         <label for="product-barcode" class="block text-sm font-medium text-gray-300 mb-2">الباركود</label>
                         <input type="text" id="product-barcode" name="barcode" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    </div>
+                    <div class="mb-4 col-span-2">
+                        <label for="product-image" class="block text-sm font-medium text-gray-300 mb-2">صورة المنتج</label>
+                        <input type="file" id="product-image" name="image" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
                     </div>
                 </div>
 
@@ -275,6 +280,9 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                         <input type="checkbox" class="rounded border-gray-600 bg-dark text-primary focus:ring-primary">
                     </td>
                     <td class="p-4 text-sm text-gray-300">${product.name}</td>
+                    <td class="p-4 text-sm text-gray-300">
+                        <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" class="w-10 h-10 rounded-md object-cover">
+                    </td>
                     <td class="p-4 text-sm text-gray-300">${product.category_name || 'N/A'}</td>
                     <td class="p-4 text-sm text-gray-300">${product.price} <?php echo $currency; ?></td>
                     <td class="p-4 text-sm text-gray-300">${product.quantity}</td>
@@ -388,27 +396,21 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         productForm.addEventListener('submit', async function (e) {
             e.preventDefault();
             const formData = new FormData(productForm);
-            const data = {
-                name: formData.get('name'),
-                price: formData.get('price'),
-                quantity: formData.get('quantity'),
-                category_id: formData.get('category_id'),
-                barcode: formData.get('barcode'),
-                fields: [],
-            };
-
+            
+            // Append custom fields to formData
+            const customFields = [];
             for (const [key, value] of formData.entries()) {
                 if (key.startsWith('custom_fields')) {
                     const fieldId = key.match(/\[(\d+)\]/)[1];
-                    data.fields.push({ id: fieldId, value });
+                    customFields.push({ id: fieldId, value });
                 }
             }
+            formData.append('fields', JSON.stringify(customFields));
 
             try {
                 const response = await fetch('api.php?action=addProduct', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
+                    body: formData, // FormData handles the Content-Type
                 });
                 const result = await response.json();
                 if (result.success) {

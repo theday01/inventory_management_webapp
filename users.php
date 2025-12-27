@@ -76,11 +76,6 @@ $conn->close();
                             <span class="material-icons-round">store</span>
                             <span class="font-bold">إعدادات المتجر</span>
                         </a>
-                        <a href="invoices.php"
-                            class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                            <span class="material-icons-round">receipt</span>
-                            <span class="font-bold">الفواتير والضريبة</span>
-                        </a>
                         <a href="users.php"
                             class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary">
                             <span class="material-icons-round">group</span>
@@ -116,7 +111,7 @@ $conn->close();
                                 <?php if (empty($users)): ?>
                                     <tr>
                                         <td colspan="2" class="text-center py-4 text-gray-500">
-                                            No data to display at this time.
+                                            لا توجد أي بيانات لعرضها الآن.
                                         </td>
                                     </tr>
                                 <?php else: ?>
