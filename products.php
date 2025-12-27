@@ -103,8 +103,8 @@ require_once 'src/sidebar.php';
                 <span class="material-icons-round">close</span>
             </button>
         </div>
-        <div class="p-6">
-            <form id="product-form">
+        <form id="product-form">
+            <div class="p-6 max-h-[70vh] overflow-y-auto">
                 <input type="hidden" id="product-id" name="id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="mb-4">
@@ -135,12 +135,11 @@ require_once 'src/sidebar.php';
                 <div id="custom-fields-container" class="my-4 space-y-4">
                     <!-- Custom fields will be loaded here -->
                 </div>
-
-                <div class="flex justify-end gap-4 mt-6">
-                    <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ المنتج</button>
-                </div>
-            </form>
-        </div>
+            </div>
+            <div class="p-6 border-t border-white/5 flex justify-end gap-4">
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ المنتج</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -184,7 +183,7 @@ require_once 'src/sidebar.php';
                 <span class="material-icons-round">close</span>
             </button>
         </div>
-        <div class="p-6">
+        <div class="p-6 max-h-[70vh] overflow-y-auto">
             <form id="category-form">
                 <input type="hidden" id="category-id" name="id">
                 <div class="mb-4">
@@ -208,7 +207,7 @@ require_once 'src/sidebar.php';
             <hr class="border-white/10 my-6">
             <div>
                 <h4 class="text-md font-bold text-white mb-4">الفئات الحالية</h4>
-                <div id="category-list" class="space-y-2 max-h-60 overflow-y-auto">
+                <div id="category-list" class="space-y-2 max-h-80 overflow-y-auto">
                     <!-- Categories will be loaded here via JavaScript -->
                 </div>
             </div>
@@ -501,7 +500,7 @@ require_once 'src/sidebar.php';
             e.preventDefault();
             const id = categoryIdInput.value;
             const name = categoryNameInput.value;
-            const fields = categoryFieldsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+            const fields = categoryFieldsInput.value.split(/,|،/).map(s => s.trim()).filter(Boolean);
 
             const url = id ? 'api.php?action=updateCategory' : 'api.php?action=addCategory';
             const method = 'POST';
