@@ -38,6 +38,8 @@ $sql_products = "CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(255) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     quantity INT(6) NOT NULL,
+    category_id INT(6) UNSIGNED,
+    barcode VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )";
 
@@ -72,6 +74,29 @@ $sql_settings = "CREATE TABLE IF NOT EXISTS settings (
     setting_value TEXT NOT NULL
 )";
 
+$sql_categories = "CREATE TABLE IF NOT EXISTS categories (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)";
+
+$sql_category_fields = "CREATE TABLE IF NOT EXISTS category_fields (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    category_id INT(6) UNSIGNED NOT NULL,
+    field_name VARCHAR(255) NOT NULL,
+    field_type VARCHAR(50) NOT NULL,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+)";
+
+$sql_product_field_values = "CREATE TABLE IF NOT EXISTS product_field_values (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id INT(6) UNSIGNED NOT NULL,
+    field_id INT(6) UNSIGNED NOT NULL,
+    value TEXT,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (field_id) REFERENCES category_fields(id) ON DELETE CASCADE
+)";
+
 
 // Execute table creation queries
 $tables = [
@@ -81,6 +106,9 @@ $tables = [
     'invoices' => $sql_invoices,
     'invoice_items' => $sql_invoice_items,
     'settings' => $sql_settings,
+    'categories' => $sql_categories,
+    'category_fields' => $sql_category_fields,
+    'product_field_values' => $sql_product_field_values,
 ];
 
 foreach ($tables as $name => $sql) {
@@ -88,6 +116,22 @@ foreach ($tables as $name => $sql) {
         echo "Table '$name' created successfully.<br>";
     } else {
         echo "Error creating table '$name': " . $conn->error . "<br>";
+    }
+}
+
+// Add foreign key constraint to products table
+$sql_fk_products_category = "ALTER TABLE products ADD FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL";
+
+if ($conn->query($sql_fk_products_category) === TRUE) {
+    echo "Foreign key constraint added to products table successfully.<br>";
+} else {
+    // Check if the foreign key already exists to avoid error on re-run
+    if ($conn->errno != 1060 && $conn->errno != 1826) { // 1060 for duplicate column, 1826 for duplicate foreign key
+        $result = $conn->query("SHOW CREATE TABLE products");
+        $row = $result->fetch_assoc();
+        if (strpos($row['Create Table'], 'CONSTRAINT') === false || strpos($row['Create Table'], 'products_ibfk_1') === false) {
+             echo "Error adding foreign key constraint to products table: " . $conn->error . "<br>";
+        }
     }
 }
 
