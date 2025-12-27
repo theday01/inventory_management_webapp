@@ -1,184 +1,95 @@
-<?php require_once 'db.php'; ?>
-<!DOCTYPE html>
-<html lang="ar" dir="rtl" class="dark">
+<?php
+$page_title = 'المنتجات - Smart Shop';
+$current_page = 'products.php';
+require_once 'src/header.php';
+require_once 'src/sidebar.php';
+?>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المنتجات - Smart Shop</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            DEFAULT: '#0E1116',
-                            surface: '#1F2937',
-                            glass: 'rgba(14, 17, 22, 0.7)',
-                        },
-                        primary: {
-                            DEFAULT: '#3B82F6',
-                            hover: '#2563EB',
-                        },
-                        accent: {
-                            DEFAULT: '#84CC16',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Tajawal', 'sans-serif'],
-                    },
-                },
-            },
-        }
-    </script>
-    <style>
-        .glass-panel {
-            background-color: rgba(31, 41, 55, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-    </style>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-</head>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col relative overflow-hidden">
+    <div
+        class="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none">
+    </div>
 
-<body class="bg-dark text-white font-sans h-screen flex overflow-hidden">
+    <!-- Header -->
+    <header
+        class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+        <h2 class="text-xl font-bold text-white">إدارة المنتجات</h2>
 
-    <!-- Sidebar -->
-    <aside
-        class="w-20 lg:w-64 bg-dark-surface/80 backdrop-blur-xl border-l border-white/5 flex flex-col z-50 transition-all duration-300">
-        <div class="h-20 flex items-center justify-center border-b border-white/5">
-            <h1
-                class="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hidden lg:block">
-                Smart Shop</h1>
-            <span class="material-icons-round text-primary text-3xl lg:hidden">storefront</span>
+        <div class="flex items-center gap-4">
+            <button
+                class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                <span class="material-icons-round text-sm">add</span>
+                <span>منتج جديد</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Filters & Actions -->
+    <div class="p-6 pb-0 flex flex-col md:flex-row gap-4 items-center justify-between relative z-10 shrink-0">
+        <div class="flex items-center gap-4 w-full md:w-auto flex-1 max-w-2xl">
+            <div class="relative flex-1">
+                <span
+                    class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
+                <input type="text" placeholder="بحث عن اسم المنتج، الباركود..."
+                    class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+            </div>
+
+            <div class="relative min-w-[140px]">
+                <select
+                    class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+                    <option>جميع الفئات</option>
+                    <option>إلكترونيات</option>
+                    <option>ملابس</option>
+                </select>
+                <span
+                    class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+            </div>
         </div>
 
-        <nav class="flex-1 overflow-y-auto py-6 space-y-2 px-2 lg:px-4">
-            <a href="dashboard.php"
-                class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
-                title="لوحة التحكم">
-                <span class="material-icons-round">dashboard</span>
-                <span class="font-medium hidden lg:block">لوحة التحكم</span>
-            </a>
-            <a href="pos.php"
-                class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
-                title="نقطة البيع">
-                <span class="material-icons-round">point_of_sale</span>
-                <span class="font-medium hidden lg:block">نقطة البيع</span>
-            </a>
-            <a href="products.php"
-                class="flex items-center gap-3 px-3 lg:px-4 py-3 bg-primary/10 text-primary rounded-xl transition-all group"
-                title="المنتجات">
-                <span class="material-icons-round">inventory_2</span>
-                <span class="font-medium hidden lg:block">المنتجات</span>
-            </a>
-            <a href="customers.php"
-                class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
-                title="العملاء">
-                <span class="material-icons-round">people</span>
-                <span class="font-medium hidden lg:block">العملاء</span>
-            </a>
-            <a href="settings.php"
-                class="flex items-center gap-3 px-3 lg:px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
-                title="الإعدادات">
-                <span class="material-icons-round">settings</span>
-                <span class="font-medium hidden lg:block">الإعدادات</span>
-            </a>
-        </nav>
-    </aside>
+        <div class="flex items-center gap-2">
+            <button class="p-2.5 bg-white/5 rounded-xl text-white hover:bg-white/10 transition-colors tooltip"
+                title="عرض كجدول">
+                <span class="material-icons-round">table_chart</span>
+            </button>
+            <button
+                class="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors tooltip"
+                title="عرض كبطاقات">
+                <span class="material-icons-round">grid_view</span>
+            </button>
+        </div>
+    </div>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col relative overflow-hidden">
+    <!-- Products Table -->
+    <div class="flex-1 overflow-auto p-6 relative z-10">
         <div
-            class="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none">
+            class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-white/5 border-b border-white/5 text-right">
+                        <th class="p-4 text-sm font-medium text-gray-300 w-16">
+                            <input type="checkbox"
+                                class="rounded border-gray-600 bg-dark text-primary focus:ring-primary">
+                        </th>
+                        <th class="p-4 text-sm font-medium text-gray-300">المنتج</th>
+                        <th class="p-4 text-sm font-medium text-gray-300">الفئة</th>
+                        <th class="p-4 text-sm font-medium text-gray-300">السعر</th>
+                        <th class="p-4 text-sm font-medium text-gray-300">الكمية</th>
+                        <th class="p-4 text-sm font-medium text-gray-300">الحالة</th>
+                        <th class="p-4 text-sm font-medium text-gray-300 w-20"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-gray-500">
+                            No data to display at this time.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+    </div>
 
-        <!-- Header -->
-        <header
-            class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
-            <h2 class="text-xl font-bold text-white">إدارة المنتجات</h2>
+</main>
 
-            <div class="flex items-center gap-4">
-                <button
-                    class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:-translate-y-0.5">
-                    <span class="material-icons-round text-sm">add</span>
-                    <span>منتج جديد</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- Filters & Actions -->
-        <div class="p-6 pb-0 flex flex-col md:flex-row gap-4 items-center justify-between relative z-10 shrink-0">
-            <div class="flex items-center gap-4 w-full md:w-auto flex-1 max-w-2xl">
-                <div class="relative flex-1">
-                    <span
-                        class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
-                    <input type="text" placeholder="بحث عن اسم المنتج، الباركود..."
-                        class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                </div>
-
-                <div class="relative min-w-[140px]">
-                    <select
-                        class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
-                        <option>جميع الفئات</option>
-                        <option>إلكترونيات</option>
-                        <option>ملابس</option>
-                    </select>
-                    <span
-                        class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2">
-                <button class="p-2.5 bg-white/5 rounded-xl text-white hover:bg-white/10 transition-colors tooltip"
-                    title="عرض كجدول">
-                    <span class="material-icons-round">table_chart</span>
-                </button>
-                <button
-                    class="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors tooltip"
-                    title="عرض كبطاقات">
-                    <span class="material-icons-round">grid_view</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Products Table -->
-        <div class="flex-1 overflow-auto p-6 relative z-10">
-            <div
-                class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-white/5 border-b border-white/5 text-right">
-                            <th class="p-4 text-sm font-medium text-gray-300 w-16">
-                                <input type="checkbox"
-                                    class="rounded border-gray-600 bg-dark text-primary focus:ring-primary">
-                            </th>
-                            <th class="p-4 text-sm font-medium text-gray-300">المنتج</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">الفئة</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">السعر</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">الكمية</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">الحالة</th>
-                            <th class="p-4 text-sm font-medium text-gray-300 w-20"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5">
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-gray-500">
-                                No data to display at this time.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </main>
-</body>
-
-</html>
+<?php require_once 'src/footer.php'; ?>
