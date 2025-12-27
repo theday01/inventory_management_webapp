@@ -1,8 +1,19 @@
+<?php
+// Fetch shop name for the sidebar
+$shopNameResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopName'");
+$shopName = 'your store name here'; // Default value
+if ($shopNameResult && $shopNameResult->num_rows > 0) {
+    $row = $shopNameResult->fetch_assoc();
+    // Use the value from DB only if it's not empty
+    if (!empty(trim($row['setting_value']))) {
+        $shopName = $row['setting_value'];
+    }
+}
+?>
 <!-- Sidebar -->
 <aside class="w-64 bg-dark-surface/80 backdrop-blur-xl border-l border-white/5 flex flex-col hidden md:flex z-50">
     <div class="h-20 flex items-center justify-center border-b border-white/5">
-        <h1 class="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Smart
-            Shop</h1>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"><?php echo htmlspecialchars($shopName); ?></h1>
     </div>
 
     <nav class="flex-1 overflow-y-auto py-6 space-y-2 px-4">
