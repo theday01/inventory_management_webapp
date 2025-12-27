@@ -3,6 +3,10 @@ $page_title = 'نقطة البيع - Smart Shop';
 $current_page = 'pos.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
+
+// Fetch currency setting
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
+$currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 ?>
 
 <!-- Main Content -->
@@ -81,15 +85,15 @@ require_once 'src/sidebar.php';
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm text-gray-400">
                     <span>المجموع الفرعي</span>
-                    <span>0 ر.س</span>
+                    <span>0 <?php echo $currency; ?></span>
                 </div>
                 <div class="flex justify-between text-sm text-gray-400">
                     <span>الضريبة (15%)</span>
-                    <span>0 ر.س</span>
+                    <span>0 <?php echo $currency; ?></span>
                 </div>
                 <div class="flex justify-between text-lg font-bold text-white pt-2 border-t border-white/5">
                     <span>الإجمالي</span>
-                    <span class="text-primary">0 ر.س</span>
+                    <span class="text-primary">0 <?php echo $currency; ?></span>
                 </div>
             </div>
 

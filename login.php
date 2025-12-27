@@ -26,11 +26,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             exit;
         } else {
             // Display an error message if password is not valid
-            $login_err = "Invalid username or password.";
+            $login_err = "كلمة المرور غير صحيحة.";
         }
     } else {
         // Display an error message if username doesn't exist
-        $login_err = "Invalid username or password.";
+        $login_err = "كلمة المرور أو اسم المستخدم غير صحيح";
     }
 
     $stmt->close();

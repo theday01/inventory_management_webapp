@@ -49,3 +49,65 @@
 </head>
 
 <body class="bg-dark text-white font-sans min-h-screen flex overflow-hidden">
+<?php
+$show_success = isset($_GET['saved']) && $_GET['saved'] == 'true';
+if ($show_success):
+?>
+    <div id="successMessage" class="fixed top-5 right-5 bg-lime-500 text-dark-surface px-6 py-3 rounded-xl shadow-lg z-[9999] flex items-center gap-3 transform opacity-0 -translate-y-10 transition-all duration-300 ease-out">
+        <span class="material-icons-round">check_circle</span>
+        <span class="font-bold">تم حفظ التغييرات بنجاح!</span>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const message = document.getElementById('successMessage');
+            if (message) {
+                setTimeout(() => {
+                    message.classList.remove('opacity-0');
+                    message.classList.remove('-translate-y-10');
+                }, 100);
+
+                setTimeout(() => {
+                    message.classList.add('opacity-0');
+                    message.classList.add('-translate-y-10');
+                }, 3000);
+
+                if (window.history.replaceState) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('saved');
+                    window.history.replaceState({ path: url.href }, '', url.href);
+                }
+            }
+        });
+    </script>
+<?php endif; ?>
+<?php
+$error_message = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
+if (!empty($error_message)):
+?>
+    <div id="errorMessage" class="fixed top-5 right-5 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-[9999] flex items-center gap-3 transform opacity-0 -translate-y-10 transition-all duration-300 ease-out">
+        <span class="material-icons-round">error</span>
+        <span class="font-bold"><?php echo $error_message; ?></span>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const message = document.getElementById('errorMessage');
+            if (message) {
+                setTimeout(() => {
+                    message.classList.remove('opacity-0');
+                    message.classList.remove('-translate-y-10');
+                }, 100);
+
+                setTimeout(() => {
+                    message.classList.add('opacity-0');
+                    message.classList.add('-translate-y-10');
+                }, 4000); // Keep error message visible a bit longer
+
+                if (window.history.replaceState) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('error');
+                    window.history.replaceState({ path: url.href }, '', url.href);
+                }
+            }
+        });
+    </script>
+<?php endif; ?>

@@ -119,6 +119,14 @@ foreach ($tables as $name => $sql) {
     }
 }
 
+// Insert default currency setting
+$sql_insert_currency = "INSERT INTO settings (setting_name, setting_value) VALUES ('currency', 'MAD') ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)";
+if ($conn->query($sql_insert_currency) === TRUE) {
+    echo "Default currency setting inserted successfully.<br>";
+} else {
+    echo "Error inserting default currency setting: " . $conn->error . "<br>";
+}
+
 // Add foreign key constraint to products table
 $sql_fk_products_category = "ALTER TABLE products ADD FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL";
 

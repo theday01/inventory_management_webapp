@@ -1,8 +1,6 @@
 <?php
-$page_title = 'الإعدادات - Smart Shop';
-$current_page = 'settings.php';
-require_once 'src/header.php';
-require_once 'src/sidebar.php';
+require_once 'db.php';
+require_once 'session.php';
 
 // Handle POST request to save settings
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -12,7 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'shopAddress' => $_POST['shopAddress'] ?? '',
         'shopDescription' => $_POST['shopDescription'] ?? '',
         'darkMode' => isset($_POST['darkMode']) ? '1' : '0',
-        'soundNotifications' => isset($_POST['soundNotifications']) ? '1' : '0'
+        'soundNotifications' => isset($_POST['soundNotifications']) ? '1' : '0',
+        'currency' => $_POST['currency'] ?? 'MAD'
     ];
 
     $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
@@ -28,6 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 
+$page_title = 'الإعدادات - Smart Shop';
+$current_page = 'settings.php';
+require_once 'src/header.php';
+require_once 'src/sidebar.php';
+
 // Fetch all settings from the database
 $result = $conn->query("SELECT * FROM settings");
 $settings = [];
@@ -36,9 +40,6 @@ if ($result) {
         $settings[$row['setting_name']] = $row['setting_value'];
     }
 }
-
-// Check if saved=true is in the URL to show the success message
-$show_success = isset($_GET['saved']) && $_GET['saved'] == 'true';
 
 ?>
 
@@ -161,6 +162,26 @@ $show_success = isset($_GET['saved']) && $_GET['saved'] == 'true';
                                         class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
                                 </div>
                             </div>
+
+                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div>
+                                    <h4 class="font-bold text-white mb-1">العملة</h4>
+                                    <p class="text-xs text-gray-400">اختر العملة المستخدمة في النظام</p>
+                                </div>
+                                <div class="relative">
+                                    <select name="currency" id="currency"
+                                        class="w-48 bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                        <option value="MAD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'MAD') ? 'selected' : ''; ?>>الدرهم المغربي</option>
+                                        <option value="SAR" <?php echo (isset($settings['currency']) && $settings['currency'] == 'SAR') ? 'selected' : ''; ?>>ريال سعودي</option>
+                                        <option value="QAR" <?php echo (isset($settings['currency']) && $settings['currency'] == 'QAR') ? 'selected' : ''; ?>>ريال قطري</option>
+                                        <option value="BHD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'BHD') ? 'selected' : ''; ?>>دينار بحريني</option>
+                                        <option value="EGP" <?php echo (isset($settings['currency']) && $settings['currency'] == 'EGP') ? 'selected' : ''; ?>>جنيه مصري</option>
+                                        <option value="LYD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'LYD') ? 'selected' : ''; ?>>دينار ليبي</option>
+                                        <option value="DZD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'DZD') ? 'selected' : ''; ?>>دينار جزائري</option>
+                                        <option value="TND" <?php echo (isset($settings['currency']) && $settings['currency'] == 'TND') ? 'selected' : ''; ?>>دينار تونسي</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -168,21 +189,5 @@ $show_success = isset($_GET['saved']) && $_GET['saved'] == 'true';
         </div>
     </form>
 </main>
-
-<script>
-    // If the success message is shown, hide it after 3 seconds
-    const message = document.getElementById('successMessage');
-    if (message.classList.contains('show')) {
-        setTimeout(() => {
-            message.classList.remove('show');
-            // Optional: Remove the `saved=true` from the URL without reloading
-            if (window.history.replaceState) {
-                const url = new URL(window.location.href);
-                url.searchParams.delete('saved');
-                window.history.replaceState({path: url.href}, '', url.href);
-            }
-        }, 3000);
-    }
-</script>
 
 <?php require_once 'src/footer.php'; ?>

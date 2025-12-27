@@ -3,6 +3,10 @@ $page_title = 'المنتجات - Smart Shop';
 $current_page = 'products.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
+
+// Fetch currency setting
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
+$currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 ?>
 
 <!-- Main Content -->
@@ -272,7 +276,7 @@ require_once 'src/sidebar.php';
                     </td>
                     <td class="p-4 text-sm text-gray-300">${product.name}</td>
                     <td class="p-4 text-sm text-gray-300">${product.category_name || 'N/A'}</td>
-                    <td class="p-4 text-sm text-gray-300">${product.price}</td>
+                    <td class="p-4 text-sm text-gray-300">${product.price} <?php echo $currency; ?></td>
                     <td class="p-4 text-sm text-gray-300">${product.quantity}</td>
                     <td class="p-4 text-sm text-gray-300">
                         <button class="view-details-btn p-1.5 text-gray-400 hover:text-primary transition-colors" data-id="${product.id}">
@@ -328,7 +332,7 @@ require_once 'src/sidebar.php';
                 <div class="space-y-2 text-sm">
                     <div class="flex justify-between"><span class="font-medium text-gray-400">الاسم:</span><span class="text-white">${product.name}</span></div>
                     <div class="flex justify-between"><span class="font-medium text-gray-400">الفئة:</span><span class="text-white">${product.category_name}</span></div>
-                    <div class="flex justify-between"><span class="font-medium text-gray-400">السعر:</span><span class="text-white">${product.price}</span></div>
+                    <div class="flex justify-between"><span class="font-medium text-gray-400">السعر:</span><span class="text-white">${product.price} <?php echo $currency; ?></span></div>
                     <div class="flex justify-between"><span class="font-medium text-gray-400">الكمية:</span><span class="text-white">${product.quantity}</span></div>
                     <div class="flex justify-between"><span class="font-medium text-gray-400">الباركود:</span><span class="text-white">${product.barcode || 'N/A'}</span></div>
                     <hr class="border-white/10 my-3">

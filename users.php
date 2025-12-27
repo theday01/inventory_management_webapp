@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_user'])) {
     $stmt->bind_param("sss", $username, $hashed_password, $role);
 
     if ($stmt->execute()) {
-        $success_message = "User added successfully.";
+        $success_message = "تم إضافة المستخدم بنجاح";
     } else {
         // Handle insertion error
         echo "Error: " . $stmt->error;

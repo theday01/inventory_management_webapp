@@ -3,6 +3,10 @@ $page_title = 'الفواتير والضريبة - Smart Shop';
 $current_page = 'invoices.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
+
+// Fetch currency setting
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
+$currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 ?>
 
 <!-- Main Content -->

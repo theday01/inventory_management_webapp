@@ -18,7 +18,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password_confirm = $_POST['password_confirm'];
 
     if ($password !== $password_confirm) {
-        $error = "Error: Passwords do not match.";
+        header("Location: register.php?error=" . urlencode("كلمات المرور غير متطابقة."));
+        exit();
     } else {
         // Hash the password
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
@@ -30,11 +31,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($stmt->execute()) {
             // Redirect to login page after successful registration
-            header("Location: login.php");
+            header("Location: login.php?registered=true");
             exit();
         } else {
             // Handle insertion error
-            echo "Error: " . $stmt->error;
+            header("Location: register.php?error=" . urlencode("حدث خطأ أثناء إنشاء الحساب."));
+            exit();
         }
 
         $stmt->close();
@@ -90,7 +92,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 
 <body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+<?php
+$error_message = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
+if (!empty($error_message)):
+?>
+    <div id="errorMessage" class="fixed top-5 right-5 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-[9999] flex items-center gap-3 transform opacity-0 -translate-y-10 transition-all duration-300 ease-out">
+        <span class="material-icons-round">error</span>
+        <span class="font-bold"><?php echo $error_message; ?></span>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const message = document.getElementById('errorMessage');
+            if (message) {
+                setTimeout(() => {
+                    message.classList.remove('opacity-0');
+                    message.classList.remove('-translate-y-10');
+                }, 100);
 
+                setTimeout(() => {
+                    message.classList.add('opacity-0');
+                    message.classList.add('-translate-y-10');
+                }, 4000); // Keep error message visible a bit longer
+
+                if (window.history.replaceState) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('error');
+                    window.history.replaceState({ path: url.href }, '', url.href);
+                }
+            }
+        });
+    </script>
+<?php endif; ?>
     <!-- Background Decoration -->
     <div
         class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none">
