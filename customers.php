@@ -44,4 +44,119 @@ require_once 'src/sidebar.php';
 
 </main>
 
+<!-- Add/Edit Customer Modal -->
+<div id="customer-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-lg border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 id="customer-modal-title" class="text-lg font-bold text-white">إضافة عميل جديد</h3>
+            <button id="close-customer-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <form id="customer-form">
+            <div class="p-6">
+                <input type="hidden" id="customer-id" name="id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label for="customer-name" class="block text-sm font-medium text-gray-300 mb-2">الاسم</label>
+                        <input type="text" id="customer-name" name="name" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="customer-phone" class="block text-sm font-medium text-gray-300 mb-2">الهاتف</label>
+                        <input type="text" id="customer-phone" name="phone" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    </div>
+                    <div class="mb-4 col-span-2">
+                        <label for="customer-email" class="block text-sm font-medium text-gray-300 mb-2">البريد الإلكتروني</label>
+                        <input type="email" id="customer-email" name="email" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    </div>
+                    <div class="mb-4 col-span-2">
+                        <label for="customer-address" class="block text-sm font-medium text-gray-300 mb-2">العنوان</label>
+                        <input type="text" id="customer-address" name="address" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-white/5 flex justify-end gap-4">
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ العميل</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const customerModal = document.getElementById('customer-modal');
+    const addCustomerBtn = document.querySelector('button.bg-primary');
+    const closeCustomerModalBtn = document.getElementById('close-customer-modal');
+    const customerForm = document.getElementById('customer-form');
+    const customersGrid = document.querySelector('.grid');
+
+    async function loadCustomers() {
+        try {
+            const response = await fetch('api.php?action=getCustomers');
+            const result = await response.json();
+            if (result.success) {
+                displayCustomers(result.data);
+            }
+        } catch (error) {
+            console.error('Error loading customers:', error);
+        }
+    }
+
+    function displayCustomers(customers) {
+        customersGrid.innerHTML = '';
+        if (customers.length === 0) {
+            customersGrid.innerHTML = '<div class="text-center py-4 text-gray-500 col-span-full">No data to display at this time.</div>';
+            return;
+        }
+        customers.forEach(customer => {
+            const customerCard = document.createElement('div');
+            customerCard.className = 'bg-dark-surface/50 border border-white/5 rounded-2xl p-4';
+            customerCard.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-xl font-bold text-white">${customer.name.charAt(0)}</div>
+                    <div>
+                        <h3 class="font-bold text-white">${customer.name}</h3>
+                        <p class="text-sm text-gray-400">${customer.phone || ''}</p>
+                    </div>
+                </div>
+            `;
+            customersGrid.appendChild(customerCard);
+        });
+    }
+
+    addCustomerBtn.addEventListener('click', () => {
+        customerModal.classList.remove('hidden');
+    });
+
+    closeCustomerModalBtn.addEventListener('click', () => {
+        customerModal.classList.add('hidden');
+    });
+
+    customerForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const formData = new FormData(customerForm);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch('api.php?action=addCustomer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            const result = await response.json();
+            if (result.success) {
+                customerModal.classList.add('hidden');
+                customerForm.reset();
+                loadCustomers();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error adding customer:', error);
+        }
+    });
+
+    loadCustomers();
+});
+</script>
 <?php require_once 'src/footer.php'; ?>

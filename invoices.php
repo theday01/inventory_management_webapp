@@ -19,40 +19,10 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     <header
         class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
         <h2 class="text-xl font-bold text-white">الفواتير والضريبة</h2>
-        <div class="flex items-center gap-4">
-            <button
-                class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
-                حفظ التغييرات
-            </button>
-        </div>
     </header>
 
     <div class="flex-1 overflow-y-auto p-8 relative z-10">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            <!-- Settings Menu -->
-            <div class="lg:col-span-1">
-                <div
-                    class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
-                    <nav class="flex flex-col">
-                        <a href="settings.php"
-                            class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                            <span class="material-icons-round">store</span>
-                            <span class="font-bold">إعدادات المتجر</span>
-                        </a>
-                        <a href="invoices.php"
-                            class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary">
-                            <span class="material-icons-round">receipt</span>
-                            <span class="font-bold">الفواتير والضريبة</span>
-                        </a>
-                        <a href="users.php"
-                            class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                            <span class="material-icons-round">group</span>
-                            <span class="font-bold">المستخدمين</span>
-                        </a>
-                    </nav>
-                </div>
-            </div>
 
             <!-- Invoices Content -->
             <div class="lg:col-span-2 space-y-6">

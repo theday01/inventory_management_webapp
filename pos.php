@@ -29,12 +29,15 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 <div class="relative flex-1 max-w-md">
                     <span
                         class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
-                    <input type="text" placeholder="بحث عن منتج..."
+                    <input type="text" id="product-search-input" placeholder="بحث عن منتج..."
                         class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                    <button id="scan-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white">
+                        <span class="material-icons-round">qr_code_scanner</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3" id="category-filters">
                 <button
                     class="px-4 py-2 bg-primary text-white rounded-xl font-medium text-sm shadow-lg shadow-primary/20">الكل</button>
                 <button
@@ -48,10 +51,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
         <!-- Products Grid -->
         <div class="flex-1 overflow-y-auto p-6 z-10">
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <div class="text-center py-4 text-gray-500 col-span-full">
-                    No data to display at this time.
-                </div>
+            <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <!-- Products will be loaded here -->
             </div>
         </div>
     </div>
@@ -62,22 +63,19 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <div class="flex items-center justify-between mb-2">
                 <h2 class="text-xl font-bold text-white">سلة المشتريات</h2>
             </div>
-            <div
-                class="flex items-center gap-2 mt-4 bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/10 transition-colors">
-                <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs">A</div>
+            <div id="customer-selection" class="flex items-center gap-2 mt-4 bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/10 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs" id="customer-avatar">A</div>
                 <div class="flex-1">
-                    <p class="text-sm font-bold text-white">عميل نقدي</p>
-                    <p class="text-xs text-gray-400">افتراضي</p>
+                    <p class="text-sm font-bold text-white" id="customer-name-display">عميل نقدي</p>
+                    <p class="text-xs text-gray-400" id="customer-detail-display">افتراضي</p>
                 </div>
                 <span class="material-icons-round text-gray-400">arrow_drop_down</span>
             </div>
         </div>
 
         <!-- Cart Items -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-3">
-            <div class="text-center py-4 text-gray-500">
-                No data to display at this time.
-            </div>
+        <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <!-- Cart items will be loaded here -->
         </div>
 
         <!-- Totals & Checkout -->
@@ -85,15 +83,15 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm text-gray-400">
                     <span>المجموع الفرعي</span>
-                    <span>0 <?php echo $currency; ?></span>
+                    <span id="cart-subtotal">0 <?php echo $currency; ?></span>
                 </div>
                 <div class="flex justify-between text-sm text-gray-400">
                     <span>الضريبة (15%)</span>
-                    <span>0 <?php echo $currency; ?></span>
+                    <span id="cart-tax">0 <?php echo $currency; ?></span>
                 </div>
                 <div class="flex justify-between text-lg font-bold text-white pt-2 border-t border-white/5">
                     <span>الإجمالي</span>
-                    <span class="text-primary">0 <?php echo $currency; ?></span>
+                    <span id="cart-total" class="text-primary">0 <?php echo $currency; ?></span>
                 </div>
             </div>
 
@@ -118,5 +116,309 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         </div>
     </aside>
 </main>
+
+<!-- Customer Modal -->
+<div id="customer-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-lg border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">اختر عميل</h3>
+            <button id="close-customer-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="p-6">
+            <input type="text" id="customer-search" placeholder="بحث عن عميل..." class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 mb-4">
+            <div id="customer-list" class="max-h-60 overflow-y-auto"></div>
+        </div>
+        <div class="p-6 border-t border-white/5">
+            <h3 class="text-lg font-bold text-white mb-4">أو أضف عميل جديد</h3>
+            <form id="add-customer-form">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="customer-name" placeholder="الاسم" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    <input type="text" id="customer-phone" placeholder="الهاتف" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    <input type="email" id="customer-email" placeholder="البريد الإلكتروني" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2">
+                    <input type="text" id="customer-address" placeholder="العنوان" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2">
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all mt-4">إضافة عميل</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Barcode Scanner Modal -->
+<div id="barcode-scanner-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">مسح الباركود</h3>
+            <button id="close-barcode-scanner-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="p-6">
+            <video id="barcode-video" class="w-full h-auto rounded-lg"></video>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const productsGrid = document.getElementById('products-grid');
+    const cartItemsContainer = document.getElementById('cart-items');
+    const cartSubtotal = document.getElementById('cart-subtotal');
+    const cartTax = document.getElementById('cart-tax');
+    const cartTotal = document.getElementById('cart-total');
+    const searchInput = document.getElementById('product-search-input');
+    const scanBarcodeBtn = document.getElementById('scan-barcode-btn');
+    const barcodeScannerModal = document.getElementById('barcode-scanner-modal');
+    const closeBarcodeScannerModalBtn = document.getElementById('close-barcode-scanner-modal');
+    const videoElement = document.getElementById('barcode-video');
+    let codeReader;
+
+    const customerModal = document.getElementById('customer-modal');
+    const closeCustomerModalBtn = document.getElementById('close-customer-modal');
+    const customerSelection = document.getElementById('customer-selection');
+    const customerSearchInput = document.getElementById('customer-search');
+    const customerList = document.getElementById('customer-list');
+    const addCustomerForm = document.getElementById('add-customer-form');
+    const customerNameDisplay = document.getElementById('customer-name-display');
+    const customerDetailDisplay = document.getElementById('customer-detail-display');
+    const customerAvatar = document.getElementById('customer-avatar');
+
+    let cart = [];
+    let allProducts = [];
+    let selectedCustomer = null;
+
+    async function loadProducts() {
+        try {
+            const response = await fetch(`api.php?action=getProducts`);
+            const result = await response.json();
+            if (result.success) {
+                allProducts = result.data;
+                displayProducts(allProducts);
+            }
+        } catch (error) {
+            console.error('Error loading products:', error);
+        }
+    }
+
+    searchInput.addEventListener('input', () => {
+        const searchTerm = searchInput.value.toLowerCase();
+        const filteredProducts = allProducts.filter(product =>
+            product.name.toLowerCase().includes(searchTerm) ||
+            (product.barcode && product.barcode.includes(searchTerm))
+        );
+        displayProducts(filteredProducts);
+    });
+
+    function displayProducts(products) {
+        productsGrid.innerHTML = '';
+        if (products.length === 0) {
+            productsGrid.innerHTML = '<p class="text-center py-4 text-gray-500 col-span-full">لا توجد منتجات لعرضها.</p>';
+            return;
+        }
+        products.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.className = 'bg-dark-surface/50 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all cursor-pointer';
+            productCard.dataset.productId = product.id;
+            productCard.innerHTML = `
+                <div class="text-lg font-bold text-white">${product.name}</div>
+                <div class="text-sm text-gray-400">${product.price} <?php echo $currency; ?></div>
+            `;
+            productCard.addEventListener('click', () => addProductToCart(product));
+            productsGrid.appendChild(productCard);
+        });
+    }
+
+    function addProductToCart(product) {
+        const existingProduct = cart.find(item => item.id === product.id);
+        if (existingProduct) {
+            existingProduct.quantity++;
+        } else {
+            cart.push({ ...product, quantity: 1 });
+        }
+        updateCart();
+    }
+
+    function updateCart() {
+        cartItemsContainer.innerHTML = '';
+        if (cart.length === 0) {
+            cartItemsContainer.innerHTML = '<p class="text-center py-4 text-gray-500">سلة المشتريات فارغة.</p>';
+        } else {
+            cart.forEach(item => {
+                const cartItem = document.createElement('div');
+                cartItem.className = 'flex items-center justify-between bg-white/5 p-3 rounded-xl';
+                cartItem.innerHTML = `
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-white">${item.name}</p>
+                        <p class="text-xs text-gray-400">${item.price} <?php echo $currency; ?></p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="quantity-btn" data-id="${item.id}" data-action="decrease">-</button>
+                        <span>${item.quantity}</span>
+                        <button class="quantity-btn" data-id="${item.id}" data-action="increase">+</button>
+                    </div>
+                `;
+                cartItemsContainer.appendChild(cartItem);
+            });
+        }
+        updateTotals();
+    }
+
+    function updateTotals() {
+        const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        const tax = subtotal * 0.15;
+        const total = subtotal + tax;
+
+        cartSubtotal.textContent = `${subtotal.toFixed(2)} <?php echo $currency; ?>`;
+        cartTax.textContent = `${tax.toFixed(2)} <?php echo $currency; ?>`;
+        cartTotal.textContent = `${total.toFixed(2)} <?php echo $currency; ?>`;
+    }
+
+    cartItemsContainer.addEventListener('click', function (e) {
+        if (e.target.classList.contains('quantity-btn')) {
+            const id = e.target.dataset.id;
+            const action = e.target.dataset.action;
+            const item = cart.find(product => product.id == id);
+
+            if (item) {
+                if (action === 'increase') {
+                    item.quantity++;
+                } else if (action === 'decrease') {
+                    item.quantity--;
+                    if (item.quantity === 0) {
+                        cart = cart.filter(product => product.id != id);
+                    }
+                }
+                updateCart();
+            }
+        }
+    });
+
+    scanBarcodeBtn.addEventListener('click', () => {
+        barcodeScannerModal.classList.remove('hidden');
+        startBarcodeScanner();
+    });
+
+    closeBarcodeScannerModalBtn.addEventListener('click', () => {
+        barcodeScannerModal.classList.add('hidden');
+        stopBarcodeScanner();
+    });
+
+    function startBarcodeScanner() {
+        codeReader = new ZXing.BrowserMultiFormatReader();
+        codeReader.listVideoInputDevices()
+            .then((videoInputDevices) => {
+                if (videoInputDevices.length === 0) {
+                    alert('No camera found');
+                    return;
+                }
+                const firstDeviceId = videoInputDevices[0].deviceId;
+                codeReader.decodeFromVideoDevice(firstDeviceId, 'barcode-video', (result, err) => {
+                    if (result) {
+                        searchInput.value = result.text;
+                        stopBarcodeScanner();
+                        barcodeScannerModal.classList.add('hidden');
+                        
+                        const product = allProducts.find(p => p.barcode === result.text);
+                        if (product) {
+                            addProductToCart(product);
+                        }
+                    }
+                    if (err && !(err instanceof ZXing.NotFoundException)) {
+                        console.error(err);
+                    }
+                });
+            })
+            .catch((err) => {
+                console.error(err);
+            });
+    }
+
+    function stopBarcodeScanner() {
+        if (codeReader) {
+            codeReader.reset();
+        }
+    }
+
+    customerSelection.addEventListener('click', () => {
+        customerModal.classList.remove('hidden');
+        loadCustomers();
+    });
+
+    closeCustomerModalBtn.addEventListener('click', () => {
+        customerModal.classList.add('hidden');
+    });
+
+    customerSearchInput.addEventListener('input', () => {
+        loadCustomers(customerSearchInput.value);
+    });
+
+    async function loadCustomers(search = '') {
+        try {
+            const response = await fetch(`api.php?action=getCustomers&search=${search}`);
+            const result = await response.json();
+            if (result.success) {
+                displayCustomers(result.data);
+            }
+        } catch (error) {
+            console.error('Error loading customers:', error);
+        }
+    }
+
+    function displayCustomers(customers) {
+        customerList.innerHTML = '';
+        if (customers.length === 0) {
+            customerList.innerHTML = '<p class="text-gray-500">No customers found.</p>';
+            return;
+        }
+        customers.forEach(customer => {
+            const customerElement = document.createElement('div');
+            customerElement.className = 'p-2 hover:bg-white/10 rounded-lg cursor-pointer';
+            customerElement.textContent = `${customer.name} (${customer.phone || 'N/A'})`;
+            customerElement.addEventListener('click', () => selectCustomer(customer));
+            customerList.appendChild(customerElement);
+        });
+    }
+
+    function selectCustomer(customer) {
+        selectedCustomer = customer;
+        customerNameDisplay.textContent = customer.name;
+        customerDetailDisplay.textContent = customer.phone || customer.email || 'No details';
+        customerAvatar.textContent = customer.name.charAt(0).toUpperCase();
+        customerModal.classList.add('hidden');
+    }
+
+    addCustomerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newCustomer = {
+            name: document.getElementById('customer-name').value,
+            phone: document.getElementById('customer-phone').value,
+            email: document.getElementById('customer-email').value,
+            address: document.getElementById('customer-address').value,
+        };
+
+        try {
+            const response = await fetch('api.php?action=addCustomer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newCustomer),
+            });
+            const result = await response.json();
+            if (result.success) {
+                newCustomer.id = result.id;
+                selectCustomer(newCustomer);
+                addCustomerForm.reset();
+            } else {
+                alert('Error adding customer: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error adding customer:', error);
+        }
+    });
+
+    loadProducts();
+});
+</script>
 
 <?php require_once 'src/footer.php'; ?>

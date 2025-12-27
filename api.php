@@ -29,6 +29,12 @@ switch ($action) {
     case 'getCategoryFields':
         getCategoryFields($conn);
         break;
+    case 'getCustomers':
+        getCustomers($conn);
+        break;
+    case 'addCustomer':
+        addCustomer($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;
@@ -270,6 +276,45 @@ function deleteCategory($conn) {
         echo json_encode(['success' => true, 'message' => 'Category deleted successfully']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to delete category']);
+    }
+
+    $stmt->close();
+}
+
+function getCustomers($conn) {
+    $search = isset($_GET['search']) ? $_GET['search'] : '';
+
+    $sql = "SELECT * FROM customers WHERE name LIKE ? OR phone LIKE ?";
+    $stmt = $conn->prepare($sql);
+    $searchTerm = "%{$search}%";
+    $stmt->bind_param("ss", $searchTerm, $searchTerm);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $customers = [];
+    while ($row = $result->fetch_assoc()) {
+        $customers[] = $row;
+    }
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'data' => $customers]);
+}
+
+function addCustomer($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    if (empty($data['name'])) {
+        echo json_encode(['success' => false, 'message' => 'Customer name is required']);
+        return;
+    }
+
+    $stmt = $conn->prepare("INSERT INTO customers (name, phone, email, address) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $data['name'], $data['phone'], $data['email'], $data['address']);
+
+    if ($stmt->execute()) {
+        $customerId = $stmt->insert_id;
+        echo json_encode(['success' => true, 'message' => 'Customer added successfully', 'id' => $customerId]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to add customer']);
     }
 
     $stmt->close();
