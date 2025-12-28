@@ -44,6 +44,46 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     .no-print {
         display: none !important;
     }
+    
+    /* تحسين الطباعة للمنتجات الكثيرة */
+    .invoice-items-container {
+        page-break-inside: auto;
+    }
+    
+    .invoice-item-row {
+        page-break-inside: avoid;
+    }
+}
+
+/* تحسين عرض الفاتورة في Modal */
+.invoice-modal-content {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.invoice-items-scrollable {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* تحسين شريط التمرير */
+.invoice-items-scrollable::-webkit-scrollbar {
+    width: 6px;
+}
+
+.invoice-items-scrollable::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.invoice-items-scrollable::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.invoice-items-scrollable::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 </style>
 
@@ -92,11 +132,11 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     </div>
 </main>
 
-<!-- Invoice Modal -->
+<!-- Invoice Modal - محسّن -->
 <div id="invoice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto overflow-hidden flex flex-col" style="max-height: 90vh;">
         <!-- Modal Header -->
-        <div class="bg-gradient-to-r from-primary to-accent p-6 text-white no-print">
+        <div class="bg-gradient-to-r from-primary to-accent p-6 text-white no-print shrink-0">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <span class="material-icons-round text-3xl">receipt_long</span>
@@ -111,108 +151,117 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             </div>
         </div>
 
-        <!-- Invoice Content -->
-        <div id="invoice-print-area" class="p-8 bg-white text-gray-900">
-            <!-- Shop Header -->
-            <div class="text-center border-b-2 border-gray-300 pb-6 mb-6">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($shopName); ?></h1>
-                <?php if ($shopPhone): ?>
-                    <p class="text-sm text-gray-600">هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
-                <?php endif; ?>
-                <?php if ($shopAddress): ?>
-                    <p class="text-sm text-gray-600"><?php echo htmlspecialchars($shopAddress); ?></p>
-                <?php endif; ?>
-            </div>
-
-            <!-- Invoice Info -->
-            <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
-                <div>
-                    <p class="text-gray-600 mb-1">رقم الفاتورة</p>
-                    <p class="font-bold text-lg" id="invoice-number">-</p>
+        <!-- Invoice Content - مع scroll -->
+        <div class="flex-1 overflow-y-auto">
+            <div id="invoice-print-area" class="p-8 bg-white text-gray-900">
+                <!-- Shop Header -->
+                <div class="text-center border-b-2 border-gray-300 pb-6 mb-6">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($shopName); ?></h1>
+                    <?php if ($shopPhone): ?>
+                        <p class="text-sm text-gray-600">هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
+                    <?php endif; ?>
+                    <?php if ($shopAddress): ?>
+                        <p class="text-sm text-gray-600"><?php echo htmlspecialchars($shopAddress); ?></p>
+                    <?php endif; ?>
                 </div>
-                <div class="text-left">
-                    <p class="text-gray-600 mb-1">التاريخ</p>
-                    <p class="font-bold" id="invoice-date">-</p>
+
+                <!-- Invoice Info -->
+                <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
+                    <div>
+                        <p class="text-gray-600 mb-1">رقم الفاتورة</p>
+                        <p class="font-bold text-lg" id="invoice-number">-</p>
+                    </div>
+                    <div class="text-left">
+                        <p class="text-gray-600 mb-1">التاريخ</p>
+                        <p class="font-bold" id="invoice-date">-</p>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Customer Info -->
-            <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                <h3 class="font-bold text-gray-900 mb-2">معلومات العميل</h3>
-                <div id="customer-info" class="text-sm text-gray-700"></div>
-            </div>
+                <!-- Customer Info -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="font-bold text-gray-900 mb-2">معلومات العميل</h3>
+                    <div id="customer-info" class="text-sm text-gray-700"></div>
+                </div>
 
-            <!-- Items Table -->
-            <table class="w-full mb-6 text-sm">
-                <thead>
-                    <tr class="border-b-2 border-gray-300">
-                        <th class="text-right py-3 font-bold">#</th>
-                        <th class="text-right py-3 font-bold">المنتج</th>
-                        <th class="text-center py-3 font-bold">الكمية</th>
-                        <th class="text-center py-3 font-bold">السعر</th>
-                        <th class="text-left py-3 font-bold">الإجمالي</th>
-                    </tr>
-                </thead>
-                <tbody id="invoice-items"></tbody>
-            </table>
+                <!-- Items Table - مع scrolling للمنتجات الكثيرة -->
+                <div class="mb-6">
+                    <div class="invoice-items-scrollable">
+                        <table class="w-full text-sm invoice-items-container">
+                            <thead class="sticky top-0 bg-white">
+                                <tr class="border-b-2 border-gray-300">
+                                    <th class="text-right py-3 font-bold">#</th>
+                                    <th class="text-right py-3 font-bold">المنتج</th>
+                                    <th class="text-center py-3 font-bold">الكمية</th>
+                                    <th class="text-center py-3 font-bold">السعر</th>
+                                    <th class="text-left py-3 font-bold">الإجمالي</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-items"></tbody>
+                        </table>
+                    </div>
+                    <div id="items-count-badge" class="text-xs text-gray-500 mt-2 text-center hidden">
+                        <!-- سيتم عرض عدد المنتجات هنا -->
+                    </div>
+                </div>
 
-            <!-- Totals -->
-            <div class="border-t-2 border-gray-300 pt-4">
-                <div class="flex justify-end">
-                    <div class="w-64 space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">المجموع الفرعي:</span>
-                            <span class="font-medium" id="invoice-subtotal">-</span>
-                        </div>
-                        <div class="flex justify-between" id="invoice-tax-row">
-                            <span class="text-gray-600"><span id="invoice-tax-label">TVA</span> (<span id="invoice-tax-rate">20</span>%):</span>
-                            <span class="font-medium" id="invoice-tax-amount">-</span>
-                        </div>
-                        <div class="flex justify-between text-lg font-bold border-t-2 border-gray-300 pt-2">
-                            <span>الإجمالي:</span>
-                            <span class="text-primary" id="invoice-total">-</span>
+                <!-- Totals -->
+                <div class="border-t-2 border-gray-300 pt-4">
+                    <div class="flex justify-end">
+                        <div class="w-64 space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">المجموع الفرعي:</span>
+                                <span class="font-medium" id="invoice-subtotal">-</span>
+                            </div>
+                            <div class="flex justify-between" id="invoice-tax-row">
+                                <span class="text-gray-600"><span id="invoice-tax-label">TVA</span> (<span id="invoice-tax-rate">20</span>%):</span>
+                                <span class="font-medium" id="invoice-tax-amount">-</span>
+                            </div>
+                            <div class="flex justify-between text-lg font-bold border-t-2 border-gray-300 pt-2">
+                                <span>الإجمالي:</span>
+                                <span class="text-primary" id="invoice-total">-</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Footer -->
-            <div class="text-center mt-8 pt-6 border-t border-gray-200 text-xs text-gray-500">
-                <p class="font-semibold text-gray-700 mb-3" style="font-size: 14px;">شكرا لثقتكم بنا</p>
-                <?php if (!empty($shopName) || !empty($shopPhone) || !empty($shopAddress)): ?>
-                    <div class="mt-3 text-gray-600 space-y-1">
-                        <?php if (!empty($shopName)): ?>
-                            <p class="font-medium"><?php echo htmlspecialchars($shopName); ?></p>
-                        <?php endif; ?>
-                        <?php if (!empty($shopPhone)): ?>
-                            <p>هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
-                        <?php endif; ?>
-                        <?php if (!empty($shopAddress)): ?>
-                            <p><?php echo htmlspecialchars($shopAddress); ?></p>
-                        <?php endif; ?>
-                    </div>
-                <?php else: ?>
-                    <div class="mt-3 space-y-1">
-                        <p class="text-gray-600">تم تصميم وتطوير النظام من طرف حمزة سعدي 2025</p>
-                        <p class="text-gray-600">الموقع الإلكتروني: <span class="text-blue-600">https://eagleshadow.technology</span></p>
-                    </div>
-                <?php endif; ?>
+                <!-- Footer -->
+                <div class="text-center mt-8 pt-6 border-t border-gray-200 text-xs text-gray-500">
+                    <p class="font-semibold text-gray-700 mb-3" style="font-size: 14px;">شكرا لثقتكم بنا</p>
+                    <?php if (!empty($shopName) || !empty($shopPhone) || !empty($shopAddress)): ?>
+                        <div class="mt-3 text-gray-600 space-y-1">
+                            <?php if (!empty($shopName)): ?>
+                                <p class="font-medium"><?php echo htmlspecialchars($shopName); ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($shopPhone)): ?>
+                                <p>هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($shopAddress)): ?>
+                                <p><?php echo htmlspecialchars($shopAddress); ?></p>
+                            <?php endif; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="mt-3 space-y-1">
+                            <p class="text-gray-600">تم تصميم وتطوير النظام من طرف حمزة سعدي 2025</p>
+                            <p class="text-gray-600">الموقع الإلكتروني: <span class="text-blue-600">https://eagleshadow.technology</span></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
 
         <!-- Action Buttons -->
-        <div class="bg-gray-50 p-6 flex gap-3 no-print border-t">
+        <div class="bg-gray-50 p-6 flex gap-3 no-print border-t shrink-0">
             <button id="print-invoice-btn" class="flex-1 bg-primary hover:bg-primary-hover text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                 <span class="material-icons-round">print</span>
                 طباعة
             </button>
             <button id="download-pdf-btn" class="flex-1 bg-accent hover:bg-lime-500 text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                 <span class="material-icons-round">picture_as_pdf</span>
-                PDF تحميل
+                تحميل PDF
             </button>
             <button id="download-txt-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                 <span class="material-icons-round">text_snippet</span>
-                TXT تحميل
+                تحميل TXT
             </button>
         </div>
     </div>
@@ -373,13 +422,22 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         const itemsTable = document.getElementById('invoice-items');
         itemsTable.innerHTML = '';
         
+        // عرض badge لعدد المنتجات إذا كانت أكثر من 10
+        const itemsCountBadge = document.getElementById('items-count-badge');
+        if (invoice.items.length > 10) {
+            itemsCountBadge.textContent = `إجمالي ${invoice.items.length} منتج في هذه الفاتورة`;
+            itemsCountBadge.classList.remove('hidden');
+        } else {
+            itemsCountBadge.classList.add('hidden');
+        }
+        
         let subtotal = 0;
         invoice.items.forEach((item, index) => {
             const itemTotal = item.price * item.quantity;
             subtotal += itemTotal;
             
             const row = document.createElement('tr');
-            row.className = 'border-b border-gray-200';
+            row.className = 'border-b border-gray-200 invoice-item-row';
             row.innerHTML = `
                 <td class="py-2">${index + 1}</td>
                 <td class="py-2">${item.product_name}</td>
@@ -417,20 +475,56 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
     downloadPdfBtn.addEventListener('click', async () => {
         const { jsPDF } = window.jspdf;
-        const element = document.getElementById('invoice-print-area');
         
         try {
+            showToast('جاري إنشاء ملف PDF...', true);
+            
+            // إخفاء scrollbar مؤقتاً
+            const scrollableDiv = document.querySelector('.invoice-items-scrollable');
+            const originalMaxHeight = scrollableDiv.style.maxHeight;
+            scrollableDiv.style.maxHeight = 'none';
+            scrollableDiv.style.overflow = 'visible';
+            
+            const element = document.getElementById('invoice-print-area');
+            
             const canvas = await html2canvas(element, {
                 scale: 2,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                logging: false,
+                useCORS: true
             });
+            
+            // استعادة الـ scrollbar
+            scrollableDiv.style.maxHeight = originalMaxHeight;
+            scrollableDiv.style.overflow = 'auto';
             
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pdfWidth;
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
             
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            // إذا كانت الصورة أطول من صفحة واحدة، قسمها على صفحات متعددة
+            if (imgHeight > pdfHeight) {
+                let heightLeft = imgHeight;
+                let position = 0;
+                let page = 0;
+                
+                while (heightLeft > 0) {
+                    if (page > 0) {
+                        pdf.addPage();
+                    }
+                    
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+                    position -= pdfHeight;
+                    page++;
+                }
+            } else {
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            }
+            
             pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
             
             showToast('تم تحميل الفاتورة بصيغة PDF', true);
@@ -439,7 +533,6 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             showToast('فشل في تحميل PDF', false);
         }
     });
-
 
     downloadTxtBtn.addEventListener('click', () => {
         if (!currentInvoiceData) return;
@@ -461,7 +554,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         }
         
         txtContent += `\n${'-'.repeat(50)}\n`;
-        txtContent += `المنتجات:\n`;
+        txtContent += `المنتجات (${currentInvoiceData.items.length} منتج):\n`;
         txtContent += `${'-'.repeat(50)}\n\n`;
         
         let subtotal = 0;
@@ -510,6 +603,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         
         showToast('تم تحميل الفاتورة بصيغة TXT', true);
     });
+    
     loadInvoices();
 });
 </script>

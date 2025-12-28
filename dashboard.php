@@ -49,7 +49,7 @@ require_once 'src/sidebar.php';
             <div
                 class="lg:col-span-2 bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-bold text-white">آخر العمليات</h3>
+                    <h3 class="text-lg font-bold text-white">آخر 10 عمليات بيع</h3>
                     <a href="invoices.php" class="text-sm text-primary hover:text-white transition-colors">عرض الكل</a>
                 </div>
 
