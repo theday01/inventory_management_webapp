@@ -2,7 +2,6 @@
 session_start();
 require_once 'db.php';
 
-// Handle login form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];
@@ -15,21 +14,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($result->num_rows == 1) {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
-            // Password is correct, start a new session
             $_SESSION['loggedin'] = true;
             $_SESSION['id'] = $user['id'];
             $_SESSION['username'] = $username;
             $_SESSION['role'] = $user['role'];
 
-            // Redirect to dashboard
             header("location: dashboard.php");
             exit;
         } else {
-            // Display an error message if password is not valid
-            $login_err = "كلمة المرور غير صحيحة.";
+            $login_err = "كلمة المرور غير صحيحة";
         }
     } else {
-        // Display an error message if username doesn't exist
         $login_err = "كلمة المرور أو اسم المستخدم غير صحيح";
     }
 
@@ -79,6 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
     </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
@@ -86,7 +82,57 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
 
-    <!-- Background Decoration -->
+<!-- نظام الرسائل الموحد -->
+<div id="toast-notification" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none">
+    <div id="toast-content" class="flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md">
+        <span id="toast-icon" class="material-icons-round text-2xl"></span>
+        <span id="toast-message" class="font-bold text-lg"></span>
+    </div>
+</div>
+
+<script>
+    function showToast(message, isSuccess = true) {
+        const toast = document.getElementById('toast-notification');
+        const toastContent = document.getElementById('toast-content');
+        const toastMessage = document.getElementById('toast-message');
+        const toastIcon = document.getElementById('toast-icon');
+
+        toastMessage.textContent = message;
+        
+        if (isSuccess) {
+            toastContent.className = 'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-green-500 text-white';
+            toastIcon.textContent = 'check_circle';
+        } else {
+            toastContent.className = 'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-red-500 text-white';
+            toastIcon.textContent = 'error';
+        }
+
+        toast.classList.remove('opacity-0', '-translate-y-10', 'pointer-events-none');
+        toast.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        setTimeout(() => {
+            toast.classList.remove('opacity-100', 'translate-y-0');
+            toast.classList.add('opacity-0', '-translate-y-10');
+            setTimeout(() => {
+                toast.classList.add('pointer-events-none');
+            }, 300);
+        }, 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.has('success')) {
+            const successMsg = urlParams.get('success');
+            showToast(successMsg, true);
+            
+            urlParams.delete('success');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+    });
+</script>
+
     <div
         class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none">
     </div>
@@ -105,7 +151,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <form action="login.php" method="POST" class="space-y-6">
             <?php 
             if(!empty($login_err)){
-                echo '<div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">' . $login_err . '</div>';
+                echo '<script>setTimeout(() => showToast("' . addslashes($login_err) . '", false), 100);</script>';
             }        
             ?>
             <div>
@@ -137,7 +183,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <button type="submit"
                 class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/25 text-sm font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:-translate-y-0.5">
-                ت سجيل الدخول
+                تسجيل الدخول
             </button>
         </form>
 

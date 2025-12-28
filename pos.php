@@ -175,8 +175,9 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
     const productsGrid = document.getElementById('products-grid');
     const cartItemsContainer = document.getElementById('cart-items');
     const cartSubtotal = document.getElementById('cart-subtotal');
@@ -205,10 +206,10 @@ document.addEventListener('DOMContentLoaded', function () {
     let allProducts = [];
     let selectedCustomer = null;
     
-    // Get tax settings from PHP
-    const taxEnabled = <?php echo $taxEnabled; ?> == 1;
-    const taxRate = <?php echo $taxRate; ?> / 100;
-    const currency = '<?php echo $currency; ?>';
+    const taxEnabled = document.getElementById('cart-tax') !== null;
+    const taxRateDisplay = document.getElementById('tax-rate-display');
+    const taxRate = taxRateDisplay ? parseFloat(taxRateDisplay.textContent) / 100 : 0;
+    const currency = cartSubtotal.textContent.split(' ')[1] || 'MAD';
 
     async function loadProducts() {
         try {
@@ -217,9 +218,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (result.success) {
                 allProducts = result.data;
                 displayProducts(allProducts);
+            } else {
+                showToast(result.message || 'فشل في تحميل المنتجات', false);
             }
         } catch (error) {
-            console.error('Error loading products:', error);
+            console.error('خطأ في تحميل المنتجات:', error);
+            showToast('حدث خطأ في تحميل المنتجات', false);
         }
     }
 
@@ -323,12 +327,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cart.length > 0 && confirm('هل أنت متأكد من إلغاء السلة؟')) {
             cart = [];
             updateCart();
+            showToast('تم إلغاء السلة', true);
         }
     });
 
     checkoutBtn.addEventListener('click', () => {
         if (cart.length === 0) {
-            alert('السلة فارغة!');
+            showToast('السلة فارغة!', false);
             return;
         }
         
@@ -342,14 +347,12 @@ document.addEventListener('DOMContentLoaded', function () {
             `هل تريد إتمام عملية الدفع؟`;
         
         if (confirm(confirmMessage)) {
-            // Here you would save the sale to database
-            alert('تم إتمام عملية البيع بنجاح!');
             cart = [];
             updateCart();
+            showToast('تم إتمام عملية البيع بنجاح!', true);
         }
     });
 
-    // Keyboard shortcut for checkout (Space key)
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space' && !e.target.matches('input, textarea')) {
             e.preventDefault();
@@ -372,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function () {
         codeReader.listVideoInputDevices()
             .then((videoInputDevices) => {
                 if (videoInputDevices.length === 0) {
-                    alert('No camera found');
+                    showToast('لم يتم العثور على كاميرا', false);
                     return;
                 }
                 const firstDeviceId = videoInputDevices[0].deviceId;
@@ -394,6 +397,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch((err) => {
                 console.error(err);
+                showToast('فشل في تشغيل الكاميرا', false);
             });
     }
 
@@ -422,9 +426,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const result = await response.json();
             if (result.success) {
                 displayCustomers(result.data);
+            } else {
+                showToast(result.message || 'فشل في تحميل العملاء', false);
             }
         } catch (error) {
-            console.error('Error loading customers:', error);
+            console.error('خطأ في تحميل العملاء:', error);
+            showToast('حدث خطأ في تحميل العملاء', false);
         }
     }
 
@@ -457,6 +464,7 @@ document.addEventListener('DOMContentLoaded', function () {
         customerDetailDisplay.textContent = customer.phone || customer.email || 'لا توجد تفاصيل';
         customerAvatar.textContent = customer.name.charAt(0).toUpperCase();
         customerModal.classList.add('hidden');
+        showToast('تم اختيار العميل: ' + customer.name, true);
     }
 
     addCustomerForm.addEventListener('submit', async (e) => {
@@ -469,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         if (!newCustomer.name) {
-            alert('الرجاء إدخال اسم العميل');
+            showToast('الرجاء إدخال اسم العميل', false);
             return;
         }
 
@@ -484,13 +492,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 newCustomer.id = result.id;
                 selectCustomer(newCustomer);
                 addCustomerForm.reset();
-                alert('تم إضافة العميل بنجاح!');
+                showToast(result.message || 'تم إضافة العميل بنجاح', true);
             } else {
-                alert('خطأ في إضافة العميل: ' + result.message);
+                showToast(result.message || 'فشل في إضافة العميل', false);
             }
         } catch (error) {
-            console.error('Error adding customer:', error);
-            alert('حدث خطأ أثناء إضافة العميل');
+            console.error('خطأ في إضافة العميل:', error);
+            showToast('حدث خطأ أثناء إضافة العميل', false);
         }
     });
 

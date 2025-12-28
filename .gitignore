@@ -1,1 +1,10 @@
+database/
+finall/
+node_modules/
+/node_modules/
+.node_modules/
+
 *.log
+*.txt
+*.sql
+*.pdf

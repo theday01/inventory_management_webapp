@@ -34,7 +34,7 @@ require_once 'src/sidebar.php';
     </div>
 
     <!-- Customers Grid -->
-    <div class="flex-1 overflow-y-auto p-6 z-10">
+    <div class="flex-1 overflow-y-auto p-6 z-10" style="max-height: calc(100vh - 13rem);">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div class="text-center py-4 text-gray-500 col-span-full">
                 لا توجد أي بيانات لعرضها الآن.
@@ -96,9 +96,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const result = await response.json();
             if (result.success) {
                 displayCustomers(result.data);
+            } else {
+                showToast(result.message || 'فشل في تحميل العملاء', false);
             }
         } catch (error) {
-            console.error('Error loading customers:', error);
+            console.error('خطأ في تحميل العملاء:', error);
+            showToast('حدث خطأ في تحميل العملاء', false);
         }
     }
 
@@ -148,11 +151,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 customerModal.classList.add('hidden');
                 customerForm.reset();
                 loadCustomers();
+                showToast(result.message || 'تم إضافة العميل بنجاح', true);
             } else {
-                alert('Error: ' + result.message);
+                showToast(result.message || 'فشل في إضافة العميل', false);
             }
         } catch (error) {
-            console.error('Error adding customer:', error);
+            console.error('خطأ في إضافة العميل:', error);
+            showToast('حدث خطأ في إضافة العميل', false);
         }
     });
 

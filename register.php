@@ -1,48 +1,40 @@
 <?php
 require_once 'db.php';
 
-// Check if there are any users in the database
 $sql = "SELECT id FROM users LIMIT 1";
 $result = $conn->query($sql);
 
 if ($result && $result->num_rows > 0) {
-    // Users already exist, redirect to login page
     header("Location: login.php");
     exit();
 }
 
-// Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];
     $password_confirm = $_POST['password_confirm'];
 
     if ($password !== $password_confirm) {
-        header("Location: register.php?error=" . urlencode("كلمات المرور غير متطابقة."));
+        header("Location: register.php?error=" . urlencode("كلمات المرور غير متطابقة"));
         exit();
     } else {
-        // Hash the password
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         $role = 'admin';
 
-        // Insert the new user into the database
         $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
         $stmt->bind_param("sss", $username, $hashed_password, $role);
 
         if ($stmt->execute()) {
-            // Redirect to login page after successful registration
-            header("Location: login.php?registered=true");
+            header("Location: login.php?success=" . urlencode("تم إنشاء الحساب بنجاح"));
             exit();
         } else {
-            // Handle insertion error
-            header("Location: register.php?error=" . urlencode("حدث خطأ أثناء إنشاء الحساب."));
+            header("Location: register.php?error=" . urlencode("حدث خطأ أثناء إنشاء الحساب"));
             exit();
         }
 
         $stmt->close();
     }
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
@@ -86,44 +78,65 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
     </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 
 <body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-<?php
-$error_message = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
-if (!empty($error_message)):
-?>
-    <div id="errorMessage" class="fixed top-5 right-5 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-[9999] flex items-center gap-3 transform opacity-0 -translate-y-10 transition-all duration-300 ease-out">
-        <span class="material-icons-round">error</span>
-        <span class="font-bold"><?php echo $error_message; ?></span>
+
+<!-- نظام الرسائل الموحد -->
+<div id="toast-notification" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none">
+    <div id="toast-content" class="flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md">
+        <span id="toast-icon" class="material-icons-round text-2xl"></span>
+        <span id="toast-message" class="font-bold text-lg"></span>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const message = document.getElementById('errorMessage');
-            if (message) {
-                setTimeout(() => {
-                    message.classList.remove('opacity-0');
-                    message.classList.remove('-translate-y-10');
-                }, 100);
+</div>
 
-                setTimeout(() => {
-                    message.classList.add('opacity-0');
-                    message.classList.add('-translate-y-10');
-                }, 4000); // Keep error message visible a bit longer
+<script>
+    function showToast(message, isSuccess = true) {
+        const toast = document.getElementById('toast-notification');
+        const toastContent = document.getElementById('toast-content');
+        const toastMessage = document.getElementById('toast-message');
+        const toastIcon = document.getElementById('toast-icon');
 
-                if (window.history.replaceState) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('error');
-                    window.history.replaceState({ path: url.href }, '', url.href);
-                }
-            }
-        });
-    </script>
-<?php endif; ?>
-    <!-- Background Decoration -->
+        toastMessage.textContent = message;
+        
+        if (isSuccess) {
+            toastContent.className = 'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-green-500 text-white';
+            toastIcon.textContent = 'check_circle';
+        } else {
+            toastContent.className = 'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-red-500 text-white';
+            toastIcon.textContent = 'error';
+        }
+
+        toast.classList.remove('opacity-0', '-translate-y-10', 'pointer-events-none');
+        toast.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        setTimeout(() => {
+            toast.classList.remove('opacity-100', 'translate-y-0');
+            toast.classList.add('opacity-0', '-translate-y-10');
+            setTimeout(() => {
+                toast.classList.add('pointer-events-none');
+            }, 300);
+        }, 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.has('error')) {
+            const errorMsg = urlParams.get('error');
+            showToast(errorMsg, false);
+            
+            urlParams.delete('error');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+    });
+</script>
+
     <div
         class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none">
     </div>
@@ -140,11 +153,6 @@ if (!empty($error_message)):
         </div>
 
         <form action="register.php" method="POST" class="space-y-6">
-            <?php if (!empty($error)): ?>
-                <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
-                    <?php echo $error; ?>
-                </div>
-            <?php endif; ?>
             <div>
                 <label for="username" class="block text-sm font-medium text-gray-300 mb-2">اسم المستخدم</label>
                 <input type="text" id="username" name="username"

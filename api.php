@@ -36,7 +36,7 @@ switch ($action) {
         addCustomer($conn);
         break;
     default:
-        echo json_encode(['success' => false, 'message' => 'Invalid action']);
+        echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
 }
 
@@ -85,11 +85,13 @@ function addProduct($conn) {
 
     if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
         $targetDir = "src/img/uploads/";
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
         $fileName = basename($_FILES["image"]["name"]);
         $targetFilePath = $targetDir . $fileName;
         $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
 
-        // Allow certain file formats
         $allowTypes = array('jpg','png','jpeg','gif');
         if (in_array($fileType, $allowTypes)) {
             if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFilePath)) {
@@ -118,10 +120,10 @@ function addProduct($conn) {
         }
 
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => 'Product added successfully', 'id' => $productId]);
+        echo json_encode(['success' => true, 'message' => 'تم إضافة المنتج بنجاح', 'id' => $productId]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'Failed to add product: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'فشل في إضافة المنتج: ' . $e->getMessage()]);
     }
 }
 
@@ -129,11 +131,10 @@ function getProductDetails($conn) {
     $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
     if ($product_id === 0) {
-        echo json_encode(['success' => false, 'message' => 'Invalid product ID']);
+        echo json_encode(['success' => false, 'message' => 'معرف المنتج غير صالح']);
         return;
     }
 
-    // Fetch basic product info
     $stmt = $conn->prepare("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ?");
     $stmt->bind_param("i", $product_id);
     $stmt->execute();
@@ -142,11 +143,10 @@ function getProductDetails($conn) {
     $stmt->close();
 
     if (!$product) {
-        echo json_encode(['success' => false, 'message' => 'Product not found']);
+        echo json_encode(['success' => false, 'message' => 'لم يتم العثور على المنتج']);
         return;
     }
 
-    // Fetch custom fields
     $stmt = $conn->prepare("SELECT cf.field_name, pfv.value 
                             FROM product_field_values pfv
                             JOIN category_fields cf ON pfv.field_id = cf.id
@@ -168,7 +168,7 @@ function getCategoryFields($conn) {
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 
     if ($category_id === 0) {
-        echo json_encode(['success' => false, 'message' => 'Invalid category ID']);
+        echo json_encode(['success' => false, 'message' => 'معرف الفئة غير صالح']);
         return;
     }
 
@@ -186,10 +186,13 @@ function getCategoryFields($conn) {
 }
 
 function getCategories($conn) {
-    $sql = "SELECT c.id, c.name, GROUP_CONCAT(cf.field_name SEPARATOR ',') as fields
+    $sql = "SELECT c.id, c.name, c.description, 
+            GROUP_CONCAT(cf.field_name SEPARATOR ',') as fields
             FROM categories c
             LEFT JOIN category_fields cf ON c.id = cf.category_id
-            GROUP BY c.id";
+            GROUP BY c.id
+            ORDER BY c.name";
+    
     $result = $conn->query($sql);
 
     $categories = [];
@@ -206,15 +209,17 @@ function addCategory($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => 'Category name is required']);
+        echo json_encode(['success' => false, 'message' => 'اسم الفئة مطلوب']);
         return;
     }
 
     $conn->begin_transaction();
 
     try {
-        $stmt = $conn->prepare("INSERT INTO categories (name) VALUES (?)");
-        $stmt->bind_param("s", $data['name']);
+        $description = isset($data['description']) ? $data['description'] : '';
+        
+        $stmt = $conn->prepare("INSERT INTO categories (name, description) VALUES (?, ?)");
+        $stmt->bind_param("ss", $data['name'], $description);
         $stmt->execute();
         $categoryId = $stmt->insert_id;
         $stmt->close();
@@ -222,7 +227,6 @@ function addCategory($conn) {
         if (!empty($data['fields'])) {
             $stmt = $conn->prepare("INSERT INTO category_fields (category_id, field_name, field_type) VALUES (?, ?, ?)");
             foreach ($data['fields'] as $field) {
-                // For now, all fields are text. This can be expanded later.
                 $fieldType = 'text';
                 $stmt->bind_param("iss", $categoryId, $field, $fieldType);
                 $stmt->execute();
@@ -231,10 +235,10 @@ function addCategory($conn) {
         }
 
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => 'Category added successfully', 'id' => $categoryId]);
+        echo json_encode(['success' => true, 'message' => 'تم إضافة الفئة بنجاح', 'id' => $categoryId]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'Failed to add category: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'فشل في إضافة الفئة: ' . $e->getMessage()]);
     }
 }
 
@@ -242,19 +246,20 @@ function updateCategory($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['id']) || empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => 'Category ID and name are required']);
+        echo json_encode(['success' => false, 'message' => 'معرف الفئة والاسم مطلوبان']);
         return;
     }
 
     $conn->begin_transaction();
 
     try {
-        $stmt = $conn->prepare("UPDATE categories SET name = ? WHERE id = ?");
-        $stmt->bind_param("si", $data['name'], $data['id']);
+        $description = isset($data['description']) ? $data['description'] : '';
+        
+        $stmt = $conn->prepare("UPDATE categories SET name = ?, description = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $data['name'], $description, $data['id']);
         $stmt->execute();
         $stmt->close();
 
-        // Delete existing fields and re-add them
         $stmt = $conn->prepare("DELETE FROM category_fields WHERE category_id = ?");
         $stmt->bind_param("i", $data['id']);
         $stmt->execute();
@@ -271,10 +276,10 @@ function updateCategory($conn) {
         }
 
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => 'Category updated successfully']);
+        echo json_encode(['success' => true, 'message' => 'تم تحديث الفئة بنجاح']);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'Failed to update category: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'فشل في تحديث الفئة: ' . $e->getMessage()]);
     }
 }
 
@@ -282,7 +287,7 @@ function deleteCategory($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['id'])) {
-        echo json_encode(['success' => false, 'message' => 'Category ID is required']);
+        echo json_encode(['success' => false, 'message' => 'معرف الفئة مطلوب']);
         return;
     }
 
@@ -290,9 +295,9 @@ function deleteCategory($conn) {
     $stmt->bind_param("i", $data['id']);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Category deleted successfully']);
+        echo json_encode(['success' => true, 'message' => 'تم حذف الفئة بنجاح']);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to delete category']);
+        echo json_encode(['success' => false, 'message' => 'فشل في حذف الفئة']);
     }
 
     $stmt->close();
@@ -320,7 +325,7 @@ function addCustomer($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => 'Customer name is required']);
+        echo json_encode(['success' => false, 'message' => 'اسم العميل مطلوب']);
         return;
     }
 
@@ -329,9 +334,9 @@ function addCustomer($conn) {
 
     if ($stmt->execute()) {
         $customerId = $stmt->insert_id;
-        echo json_encode(['success' => true, 'message' => 'Customer added successfully', 'id' => $customerId]);
+        echo json_encode(['success' => true, 'message' => 'تم إضافة العميل بنجاح', 'id' => $customerId]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to add customer']);
+        echo json_encode(['success' => false, 'message' => 'فشل في إضافة العميل']);
     }
 
     $stmt->close();

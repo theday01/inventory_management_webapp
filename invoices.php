@@ -4,7 +4,6 @@ $current_page = 'invoices.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
-// Fetch currency setting
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 ?>
@@ -21,7 +20,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         <h2 class="text-xl font-bold text-white">الفواتير والضريبة</h2>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-8 relative z-10">
+    <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
             <!-- Invoices Content -->

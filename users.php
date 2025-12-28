@@ -4,36 +4,32 @@ $current_page = 'users.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
-// Check if the user is an admin
 if ($_SESSION['role'] !== 'admin') {
     header("Location: dashboard.php");
     exit();
 }
 
-// Handle add user form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_user'])) {
     $username = $_POST['username'];
     $password = $_POST['password'];
     $role = $_POST['role'];
 
-    // Hash the password
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    // Insert the new user into the database
     $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
     $stmt->bind_param("sss", $username, $hashed_password, $role);
 
     if ($stmt->execute()) {
-        $success_message = "تم إضافة المستخدم بنجاح";
+        $stmt->close();
+        header("Location: users.php?success=" . urlencode("تم إضافة المستخدم بنجاح"));
+        exit();
     } else {
-        // Handle insertion error
-        echo "Error: " . $stmt->error;
+        $stmt->close();
+        header("Location: users.php?error=" . urlencode("فشل في إضافة المستخدم"));
+        exit();
     }
-
-    $stmt->close();
 }
 
-// Fetch all users
 $users = [];
 $sql = "SELECT id, username, role FROM users";
 $result = $conn->query($sql);
@@ -55,15 +51,9 @@ $conn->close();
     <header
         class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
         <h2 class="text-xl font-bold text-white">إدارة المستخدمين</h2>
-        <div class="flex items-center gap-4">
-            <button
-                class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
-                حفظ التغييرات
-            </button>
-        </div>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-8 relative z-10">
+    <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
             <!-- Settings Menu -->
@@ -94,11 +84,6 @@ $conn->close();
                         قائمة المستخدمين
                     </h3>
 
-                    <?php if (!empty($success_message)): ?>
-                        <div class="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
-                            <?php echo $success_message; ?>
-                        </div>
-                    <?php endif; ?>
                     <div class="overflow-x-auto">
                         <table class="w-full text-right">
                             <thead>

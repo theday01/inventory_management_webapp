@@ -17,7 +17,7 @@ require_once 'src/sidebar.php';
 
     <!-- Header -->
     <header
-        class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10">
+        class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
         <div class="flex items-center gap-4">
             <button class="md:hidden p-2 text-gray-400 hover:text-white"><span
                     class="material-icons-round">menu</span></button>
@@ -33,8 +33,8 @@ require_once 'src/sidebar.php';
         </div>
     </header>
 
-    <!-- Content Srcollable -->
-    <div class="flex-1 overflow-y-auto p-8 relative z-10">
+    <!-- Content Scrollable -->
+    <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
 
         <!-- Cards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

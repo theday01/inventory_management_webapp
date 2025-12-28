@@ -41,6 +41,32 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+        
+        /* تحسين شريط التمرير */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.7);
+        }
+        
+        /* تأكد من أن الصفحة لا تتجاوز ارتفاع الشاشة */
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
     </style>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,101 +75,90 @@
 </head>
 
 <body class="bg-dark text-white font-sans min-h-screen flex overflow-hidden">
-<?php
-$show_success = isset($_GET['saved']) && $_GET['saved'] == 'true';
-if ($show_success):
-?>
-    <div id="successMessage" class="fixed top-5 right-5 bg-lime-500 text-dark-surface px-6 py-3 rounded-xl shadow-lg z-[9999] flex items-center gap-3 transform opacity-0 -translate-y-10 transition-all duration-300 ease-out">
-        <span class="material-icons-round">check_circle</span>
-        <span class="font-bold">تم حفظ التغييرات بنجاح!</span>
+
+<!-- نظام الرسائل الموحد -->
+<div id="toast-notification" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none">
+    <div id="toast-content" class="flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md">
+        <span id="toast-icon" class="material-icons-round text-2xl"></span>
+        <span id="toast-message" class="font-bold text-lg"></span>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const message = document.getElementById('successMessage');
-            if (message) {
-                setTimeout(() => {
-                    message.classList.remove('opacity-0');
-                    message.classList.remove('-translate-y-10');
-                }, 100);
+</div>
 
-                setTimeout(() => {
-                    message.classList.add('opacity-0');
-                    message.classList.add('-translate-y-10');
-                }, 3000);
-
-                if (window.history.replaceState) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('saved');
-                    window.history.replaceState({ path: url.href }, '', url.href);
-                }
-            }
-        });
-    </script>
-<?php endif; ?>
 <script>
+    // دالة عرض الرسائل الموحدة
     function showToast(message, isSuccess = true) {
         const toast = document.getElementById('toast-notification');
-        if (!toast) return;
-
+        const toastContent = document.getElementById('toast-content');
         const toastMessage = document.getElementById('toast-message');
         const toastIcon = document.getElementById('toast-icon');
 
+        // تعيين الرسالة والأيقونة
         toastMessage.textContent = message;
+        
         if (isSuccess) {
-            toast.classList.remove('bg-red-500');
-            toast.classList.add('bg-green-500');
+            toastContent.className = 'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-green-500 text-white';
             toastIcon.textContent = 'check_circle';
         } else {
-            toast.classList.remove('bg-green-500');
-            toast.classList.add('bg-red-500');
+            toastContent.className = 'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-red-500 text-white';
             toastIcon.textContent = 'error';
         }
 
-        toast.classList.remove('hidden', 'translate-y-full', 'opacity-0');
-        toast.classList.add('translate-y-0', 'opacity-100');
+        // إظهار الرسالة
+        toast.classList.remove('opacity-0', '-translate-y-10', 'pointer-events-none');
+        toast.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
 
+        // إخفاء الرسالة بعد 3 ثواني
         setTimeout(() => {
-            toast.classList.remove('translate-y-0', 'opacity-100');
-            toast.classList.add('translate-y-full', 'opacity-0');
+            toast.classList.remove('opacity-100', 'translate-y-0');
+            toast.classList.add('opacity-0', '-translate-y-10');
             setTimeout(() => {
-                toast.classList.add('hidden');
+                toast.classList.add('pointer-events-none');
             }, 300);
         }, 3000);
     }
+
+    // معالجة الرسائل من URL parameters
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // رسائل النجاح
+        if (urlParams.has('success')) {
+            const successMsg = urlParams.get('success');
+            showToast(successMsg, true);
+            
+            // إزالة المعامل من URL
+            urlParams.delete('success');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+        
+        // رسائل الخطأ
+        if (urlParams.has('error')) {
+            const errorMsg = urlParams.get('error');
+            showToast(errorMsg, false);
+            
+            // إزالة المعامل من URL
+            urlParams.delete('error');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+
+        // دعم للرسائل القديمة (saved parameter)
+        if (urlParams.has('saved') && urlParams.get('saved') === 'true') {
+            showToast('تم حفظ التغييرات بنجاح', true);
+            
+            urlParams.delete('saved');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+
+        // دعم للرسائل القديمة (registered parameter)
+        if (urlParams.has('registered') && urlParams.get('registered') === 'true') {
+            showToast('تم إنشاء الحساب بنجاح', true);
+            
+            urlParams.delete('registered');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+    });
 </script>
-<!-- Toast Notification -->
-<div id="toast-notification" class="hidden fixed bottom-5 right-5 bg-green-500 text-white py-3 px-5 rounded-lg shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-y-full opacity-0 z-50">
-    <span id="toast-icon" class="material-icons-round">check_circle</span>
-    <p id="toast-message"></p>
-</div>
-<?php
-$error_message = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
-if (!empty($error_message)):
-?>
-    <div id="errorMessage" class="fixed top-5 right-5 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-[9999] flex items-center gap-3 transform opacity-0 -translate-y-10 transition-all duration-300 ease-out">
-        <span class="material-icons-round">error</span>
-        <span class="font-bold"><?php echo $error_message; ?></span>
-    </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const message = document.getElementById('errorMessage');
-            if (message) {
-                setTimeout(() => {
-                    message.classList.remove('opacity-0');
-                    message.classList.remove('-translate-y-10');
-                }, 100);
-
-                setTimeout(() => {
-                    message.classList.add('opacity-0');
-                    message.classList.add('-translate-y-10');
-                }, 4000); // Keep error message visible a bit longer
-
-                if (window.history.replaceState) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('error');
-                    window.history.replaceState({ path: url.href }, '', url.href);
-                }
-            }
-        });
-    </script>
-<?php endif; ?>

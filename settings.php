@@ -2,7 +2,6 @@
 require_once 'db.php';
 require_once 'session.php';
 
-// Handle POST request to save settings
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $settings_to_save = [
         'shopName' => $_POST['shopName'] ?? '',
@@ -25,8 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $stmt->close();
-    // Redirect to avoid form resubmission
-    header("Location: settings.php?saved=true");
+    header("Location: settings.php?success=" . urlencode("تم حفظ التغييرات بنجاح"));
     exit();
 }
 
@@ -35,7 +33,6 @@ $current_page = 'settings.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
-// Fetch all settings from the database
 $result = $conn->query("SELECT * FROM settings");
 $settings = [];
 if ($result) {
@@ -52,18 +49,12 @@ if ($result) {
         class="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none">
     </div>
 
-    <form method="POST" action="settings.php" class="flex-1 flex flex-col">
+    <form method="POST" action="settings.php" class="flex-1 flex flex-col overflow-hidden">
         <!-- Header -->
         <header
             class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
             <h2 class="text-xl font-bold text-white">الإعدادات العامة</h2>
             <div class="flex items-center gap-4">
-                <?php if (isset($_GET['saved']) && $_GET['saved'] === 'true'): ?>
-                    <div class="bg-green-500/20 text-green-400 px-4 py-2 rounded-xl flex items-center gap-2">
-                        <span class="material-icons-round text-sm">check_circle</span>
-                        <span>تم حفظ التغييرات بنجاح</span>
-                    </div>
-                <?php endif; ?>
                 <button type="submit"
                     class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
                     <span class="material-icons-round text-sm">save</span>
@@ -72,7 +63,7 @@ if ($result) {
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-8 relative z-10">
+        <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                 <!-- Settings Menu -->
