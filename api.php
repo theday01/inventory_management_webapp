@@ -35,6 +35,12 @@ switch ($action) {
     case 'addCustomer':
         addCustomer($conn);
         break;
+    case 'getCustomerDetails':
+        getCustomerDetails($conn);
+        break;
+    case 'updateCustomer':
+        updateCustomer($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -44,7 +50,7 @@ function getProducts($conn) {
     $search = isset($_GET['search']) ? $_GET['search'] : '';
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 
-    $sql = "SELECT p.id, p.name, p.price, p.quantity, p.image, c.name as category_name 
+    $sql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
             FROM products p 
             LEFT JOIN categories c ON p.category_id = c.id
             WHERE 1=1";
@@ -329,14 +335,67 @@ function addCustomer($conn) {
         return;
     }
 
-    $stmt = $conn->prepare("INSERT INTO customers (name, phone, email, address) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("ssss", $data['name'], $data['phone'], $data['email'], $data['address']);
+    $phone = isset($data['phone']) ? $data['phone'] : null;
+    $email = isset($data['email']) ? $data['email'] : null;
+    $address = isset($data['address']) ? $data['address'] : null;
+    $city = isset($data['city']) ? $data['city'] : null;
+
+    $stmt = $conn->prepare("INSERT INTO customers (name, phone, email, address, city) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", $data['name'], $phone, $email, $address, $city);
 
     if ($stmt->execute()) {
         $customerId = $stmt->insert_id;
         echo json_encode(['success' => true, 'message' => 'تم إضافة العميل بنجاح', 'id' => $customerId]);
     } else {
         echo json_encode(['success' => false, 'message' => 'فشل في إضافة العميل']);
+    }
+
+    $stmt->close();
+}
+
+function getCustomerDetails($conn) {
+    $customer_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+    if ($customer_id === 0) {
+        echo json_encode(['success' => false, 'message' => 'معرف العميل غير صالح']);
+        return;
+    }
+
+    $stmt = $conn->prepare("SELECT * FROM customers WHERE id = ?");
+    $stmt->bind_param("i", $customer_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $customer = $result->fetch_assoc();
+    $stmt->close();
+
+    if (!$customer) {
+        echo json_encode(['success' => false, 'message' => 'لم يتم العثور على العميل']);
+        return;
+    }
+
+    echo json_encode(['success' => true, 'data' => $customer]);
+}
+
+function updateCustomer($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    if (empty($data['id']) || empty($data['name'])) {
+        echo json_encode(['success' => false, 'message' => 'معرف العميل والاسم مطلوبان']);
+        return;
+    }
+
+    $phone = isset($data['phone']) ? $data['phone'] : null;
+    $email = isset($data['email']) ? $data['email'] : null;
+    $address = isset($data['address']) ? $data['address'] : null;
+    $city = isset($data['city']) ? $data['city'] : null;
+
+    $stmt = $conn->prepare("UPDATE customers SET name = ?, phone = ?, email = ?, address = ?, city = ? WHERE id = ?");
+    $stmt->bind_param("sssssi", $data['name'], $phone, $email, $address, $city, $data['id']);
+
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'تم تحديث العميل بنجاح']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'فشل في تحديث العميل']);
     }
 
     $stmt->close();

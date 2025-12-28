@@ -110,15 +110,15 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 </div>
             </div>
 
-            <div class="flex items-center gap-3" id="category-filters">
-                <button
-                    class="px-4 py-2 bg-primary text-white rounded-xl font-medium text-sm shadow-lg shadow-primary/20">الكل</button>
-                <button
-                    class="px-4 py-2 bg-white/5 text-gray-400 hover:text-white rounded-xl font-medium text-sm hover:bg-white/10 transition-all">إلكترونيات</button>
-                <button
-                    class="px-4 py-2 bg-white/5 text-gray-400 hover:text-white rounded-xl font-medium text-sm hover:bg-white/10 transition-all">ملابس</button>
-                <button
-                    class="px-4 py-2 bg-white/5 text-gray-400 hover:text-white rounded-xl font-medium text-sm hover:bg-white/10 transition-all">إكسسوارات</button>
+            <div class="flex items-center gap-3">
+                <label for="category-filter" class="text-sm text-gray-400">الفئة:</label>
+                <div class="relative min-w-[200px]">
+                    <select id="category-filter"
+                        class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+                        <option value="">جميع الفئات</option>
+                    </select>
+                    <span class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                </div>
             </div>
         </header>
 
@@ -148,12 +148,35 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <h3 class="text-lg font-bold text-white mb-4">أو أضف عميل جديد</h3>
             <form id="add-customer-form">
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="customer-name" placeholder="الاسم" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
-                    <input type="text" id="customer-phone" placeholder="الهاتف" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
-                    <input type="email" id="customer-email" placeholder="البريد الإلكتروني" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2">
-                    <input type="text" id="customer-address" placeholder="العنوان" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2">
+                    <input type="text" id="customer-name" placeholder="الاسم" 
+                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    <input type="text" id="customer-phone" placeholder="الهاتف" 
+                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    <input type="email" id="customer-email" placeholder="البريد الإلكتروني" 
+                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2">
+                    <input type="text" id="customer-address" placeholder="العنوان" 
+                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    <select id="customer-city" 
+                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                        <option value="">اختر المدينة</option>
+                        <option value="طنجة">طنجة</option>
+                        <option value="الدار البيضاء">الدار البيضاء</option>
+                        <option value="الرباط">الرباط</option>
+                        <option value="فاس">فاس</option>
+                        <option value="مراكش">مراكش</option>
+                        <option value="أغادير">أغادير</option>
+                        <option value="مكناس">مكناس</option>
+                        <option value="وجدة">وجدة</option>
+                        <option value="طنجة أصيلة">طنجة أصيلة</option>
+                        <option value="برشيد">برشيد</option>
+                        <option value="إنزكان آيت ملول">إنزكان آيت ملول</option>
+                        <option value="الهراويين">الهراويين</option>
+                    </select>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all mt-4">إضافة عميل</button>
+                <button type="submit" 
+                    class="w-full bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all mt-4">
+                    إضافة عميل
+                </button>
             </form>
         </div>
     </div>
@@ -190,6 +213,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     const videoElement = document.getElementById('barcode-video');
     const clearCartBtn = document.getElementById('clear-cart-btn');
     const checkoutBtn = document.getElementById('checkout-btn');
+    const categoryFilter = document.getElementById('category-filter');
     let codeReader;
 
     const customerModal = document.getElementById('customer-modal');
@@ -211,13 +235,31 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     const taxRate = taxRateDisplay ? parseFloat(taxRateDisplay.textContent) / 100 : 0;
     const currency = cartSubtotal.textContent.split(' ')[1] || 'MAD';
 
+    async function loadCategories() {
+        try {
+            const response = await fetch('api.php?action=getCategories');
+            const result = await response.json();
+            if (result.success) {
+                categoryFilter.innerHTML = '<option value="">جميع الفئات</option>';
+                result.data.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    categoryFilter.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('خطأ في تحميل الفئات:', error);
+        }
+    }
+
     async function loadProducts() {
         try {
             const response = await fetch(`api.php?action=getProducts`);
             const result = await response.json();
             if (result.success) {
                 allProducts = result.data;
-                displayProducts(allProducts);
+                applyFilters();
             } else {
                 showToast(result.message || 'فشل في تحميل المنتجات', false);
             }
@@ -227,14 +269,30 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         }
     }
 
-    searchInput.addEventListener('input', () => {
+    function applyFilters() {
         const searchTerm = searchInput.value.toLowerCase();
-        const filteredProducts = allProducts.filter(product =>
-            product.name.toLowerCase().includes(searchTerm) ||
-            (product.barcode && product.barcode.includes(searchTerm))
-        );
+        const categoryId = categoryFilter.value;
+        
+        let filteredProducts = allProducts;
+        
+        // Filter by category if selected
+        if (categoryId) {
+            filteredProducts = filteredProducts.filter(product => product.category_id == categoryId);
+        }
+        
+        // Filter by search term
+        if (searchTerm) {
+            filteredProducts = filteredProducts.filter(product =>
+                product.name.toLowerCase().includes(searchTerm) ||
+                (product.barcode && product.barcode.includes(searchTerm))
+            );
+        }
+        
         displayProducts(filteredProducts);
-    });
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    categoryFilter.addEventListener('change', applyFilters);
 
     function displayProducts(products) {
         productsGrid.innerHTML = '';
@@ -474,6 +532,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             phone: document.getElementById('customer-phone').value,
             email: document.getElementById('customer-email').value,
             address: document.getElementById('customer-address').value,
+            city: document.getElementById('customer-city').value,
         };
 
         if (!newCustomer.name) {
@@ -501,7 +560,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             showToast('حدث خطأ أثناء إضافة العميل', false);
         }
     });
-
+    loadCategories();
     loadProducts();
 });
 </script>

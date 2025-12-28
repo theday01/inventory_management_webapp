@@ -119,31 +119,32 @@ if ($result) {
                         </div>
                     </section>
 
-                    <!-- Tax Settings -->
-                    <section
-                        class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
-                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <span class="material-icons-round text-primary">receipt</span>
-                            إعدادات الضريبة
-                        </h3>
+                    <!-- Tax Settings & Preferences - Side by Side -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Tax Settings -->
+                        <section
+                            class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+                            <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                <span class="material-icons-round text-primary">receipt</span>
+                                إعدادات الضريبة
+                            </h3>
 
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">تفعيل الضريبة</h4>
-                                    <p class="text-xs text-gray-400">إضافة الضريبة على المبيعات</p>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                    <div>
+                                        <h4 class="font-bold text-white mb-1">تفعيل الضريبة</h4>
+                                        <p class="text-xs text-gray-400">إضافة الضريبة على المبيعات</p>
+                                    </div>
+                                    <div
+                                        class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1"
+                                            class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
+                                            <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> />
+                                        <label for="toggle-tax"
+                                            class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                    </div>
                                 </div>
-                                <div
-                                    class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1"
-                                        class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
-                                        <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> />
-                                    <label for="toggle-tax"
-                                        class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
-                                </div>
-                            </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-400 mb-2">نسبة الضريبة (%)</label>
                                     <input type="number" id="taxRate" name="taxRate" 
@@ -152,6 +153,7 @@ if ($result) {
                                         class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                                     <p class="text-xs text-gray-500 mt-1">مثال: 20 للـ 20%</p>
                                 </div>
+
                                 <div>
                                     <label class="block text-sm font-medium text-gray-400 mb-2">تسمية الضريبة</label>
                                     <input type="text" id="taxLabel" name="taxLabel" 
@@ -159,67 +161,62 @@ if ($result) {
                                         class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                                     <p class="text-xs text-gray-500 mt-1">مثال: TVA أو ضريبة القيمة المضافة</p>
                                 </div>
-                            </div>
 
-                            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                                <div class="flex items-start gap-3">
-                                    <span class="material-icons-round text-blue-400 mt-0.5">info</span>
-                                    <div>
-                                        <h5 class="font-bold text-blue-400 mb-1">ملاحظة</h5>
-                                        <p class="text-sm text-blue-300">سيتم تطبيق نسبة الضريبة المحددة على جميع المبيعات في نقطة البيع. يمكنك تعطيل الضريبة في أي وقت.</p>
+                                <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
+                                    <div class="flex items-start gap-2">
+                                        <span class="material-icons-round text-blue-400 text-sm mt-0.5">info</span>
+                                        <p class="text-xs text-blue-300">سيتم تطبيق نسبة الضريبة المحددة على جميع المبيعات في نقطة البيع.</p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
 
-                    <!-- Preferences -->
-                    <section
-                        class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
-                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <span class="material-icons-round text-primary">tune</span>
-                            تفضيلات النظام
-                        </h3>
+                        <!-- Preferences -->
+                        <section
+                            class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+                            <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                <span class="material-icons-round text-primary">tune</span>
+                                تفضيلات النظام
+                            </h3>
 
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">الوضع الليلي</h4>
-                                    <p class="text-xs text-gray-400">تفعيل الوضع المظلم بشكل دائم</p>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                    <div>
+                                        <h4 class="font-bold text-white mb-1">الوضع الليلي</h4>
+                                        <p class="text-xs text-gray-400">تفعيل الوضع المظلم بشكل دائم</p>
+                                    </div>
+                                    <div
+                                        class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" name="darkMode" id="toggle-dark" value="1"
+                                            class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
+                                            <?php echo (isset($settings['darkMode']) && $settings['darkMode'] == '1') ? 'checked' : ''; ?> />
+                                        <label for="toggle-dark"
+                                            class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                    </div>
                                 </div>
-                                <div
-                                    class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="darkMode" id="toggle-dark" value="1"
-                                        class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
-                                        <?php echo (isset($settings['darkMode']) && $settings['darkMode'] == '1') ? 'checked' : ''; ?> />
-                                    <label for="toggle-dark"
-                                        class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
-                                </div>
-                            </div>
 
-                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">الإشعارات الصوتية</h4>
-                                    <p class="text-xs text-gray-400">تشغيل صوت عند إتمام عملية بيع</p>
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                    <div>
+                                        <h4 class="font-bold text-white mb-1">الإشعارات الصوتية</h4>
+                                        <p class="text-xs text-gray-400">تشغيل صوت عند إتمام عملية بيع</p>
+                                    </div>
+                                    <div
+                                        class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" name="soundNotifications" id="toggle-sound" value="1"
+                                            class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
+                                            <?php echo (isset($settings['soundNotifications']) && $settings['soundNotifications'] == '1') ? 'checked' : ''; ?> />
+                                        <label for="toggle-sound"
+                                            class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                    </div>
                                 </div>
-                                <div
-                                    class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="soundNotifications" id="toggle-sound" value="1"
-                                        class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
-                                        <?php echo (isset($settings['soundNotifications']) && $settings['soundNotifications'] == '1') ? 'checked' : ''; ?> />
-                                    <label for="toggle-sound"
-                                        class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
-                                </div>
-                            </div>
 
-                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">العملة</h4>
-                                    <p class="text-xs text-gray-400">اختر العملة المستخدمة في النظام</p>
-                                </div>
-                                <div class="relative">
+                                <div class="p-4 bg-white/5 rounded-xl">
+                                    <div class="mb-3">
+                                        <h4 class="font-bold text-white mb-1">العملة</h4>
+                                        <p class="text-xs text-gray-400">اختر العملة المستخدمة في النظام</p>
+                                    </div>
                                     <select name="currency" id="currency"
-                                        class="w-48 bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                                         <option value="MAD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'MAD') ? 'selected' : ''; ?>>الدرهم المغربي</option>
                                         <option value="SAR" <?php echo (isset($settings['currency']) && $settings['currency'] == 'SAR') ? 'selected' : ''; ?>>ريال سعودي</option>
                                         <option value="QAR" <?php echo (isset($settings['currency']) && $settings['currency'] == 'QAR') ? 'selected' : ''; ?>>ريال قطري</option>
@@ -231,8 +228,8 @@ if ($result) {
                                     </select>
                                 </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
+                    </div>
                 </div>
             </div>
         </div>

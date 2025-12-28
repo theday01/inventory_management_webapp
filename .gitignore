@@ -9,3 +9,6 @@ node_modules/
 *.sql
 *.pdf
 *.json 
+
+
+add_test_data.php
