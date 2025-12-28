@@ -41,6 +41,15 @@ switch ($action) {
     case 'updateCustomer':
         updateCustomer($conn);
         break;
+    case 'createInvoice':
+        createInvoice($conn);
+        break;
+    case 'getInvoice':
+        getInvoice($conn);
+        break;
+    case 'getInvoices':
+        getInvoices($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -399,6 +408,111 @@ function updateCustomer($conn) {
     }
 
     $stmt->close();
+}
+
+function createInvoice($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    if (empty($data['items']) || !is_array($data['items'])) {
+        echo json_encode(['success' => false, 'message' => 'لا توجد منتجات في الفاتورة']);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        $customer_id = isset($data['customer_id']) ? (int)$data['customer_id'] : null;
+        $total = (float)$data['total'];
+
+        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total) VALUES (?, ?)");
+        $stmt->bind_param("id", $customer_id, $total);
+        $stmt->execute();
+        $invoiceId = $stmt->insert_id;
+        $stmt->close();
+
+        $stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
+        foreach ($data['items'] as $item) {
+            $product_id = (int)$item['id'];
+            $quantity = (int)$item['quantity'];
+            $price = (float)$item['price'];
+            
+            $stmt->bind_param("iiid", $invoiceId, $product_id, $quantity, $price);
+            $stmt->execute();
+
+            // Update product quantity
+            $updateStmt = $conn->prepare("UPDATE products SET quantity = quantity - ? WHERE id = ?");
+            $updateStmt->bind_param("ii", $quantity, $product_id);
+            $updateStmt->execute();
+            $updateStmt->close();
+        }
+        $stmt->close();
+
+        $conn->commit();
+        echo json_encode(['success' => true, 'message' => 'تم إنشاء الفاتورة بنجاح', 'invoice_id' => $invoiceId]);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()]);
+    }
+}
+
+function getInvoice($conn) {
+    $invoice_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+    if ($invoice_id === 0) {
+        echo json_encode(['success' => false, 'message' => 'معرف الفاتورة غير صالح']);
+        return;
+    }
+
+    $stmt = $conn->prepare("SELECT i.*, c.name as customer_name, c.phone as customer_phone, c.email as customer_email, c.address as customer_address 
+                            FROM invoices i 
+                            LEFT JOIN customers c ON i.customer_id = c.id 
+                            WHERE i.id = ?");
+    $stmt->bind_param("i", $invoice_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $invoice = $result->fetch_assoc();
+    $stmt->close();
+
+    if (!$invoice) {
+        echo json_encode(['success' => false, 'message' => 'لم يتم العثور على الفاتورة']);
+        return;
+    }
+
+    $stmt = $conn->prepare("SELECT ii.*, p.name as product_name 
+                            FROM invoice_items ii 
+                            JOIN products p ON ii.product_id = p.id 
+                            WHERE ii.invoice_id = ?");
+    $stmt->bind_param("i", $invoice_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $items = [];
+    while ($row = $result->fetch_assoc()) {
+        $items[] = $row;
+    }
+    $stmt->close();
+    
+    $invoice['items'] = $items;
+
+    echo json_encode(['success' => true, 'data' => $invoice]);
+}
+
+function getInvoices($conn) {
+    $sql = "SELECT i.id, i.total, i.created_at, c.name as customer_name 
+            FROM invoices i 
+            LEFT JOIN customers c ON i.customer_id = c.id 
+            ORDER BY i.created_at DESC 
+            LIMIT 50";
+    
+    $result = $conn->query($sql);
+    $invoices = [];
+    
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $invoices[] = $row;
+        }
+    }
+
+    echo json_encode(['success' => true, 'data' => $invoices]);
 }
 
 $conn->close();

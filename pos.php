@@ -4,11 +4,10 @@ $current_page = 'pos.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
-// Fetch currency setting
+// Fetch settings
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 
-// Fetch tax settings
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'taxEnabled'");
 $taxEnabled = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '1';
 
@@ -17,7 +16,37 @@ $taxRate = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'taxLabel'");
 $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'TVA';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopName'");
+$shopName = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'Smart Shop';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopPhone'");
+$shopPhone = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopAddress'");
+$shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 ?>
+
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #invoice-print-area, #invoice-print-area * {
+        visibility: visible;
+    }
+    #invoice-print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
+</style>
 
 <!-- Main Content -->
 <main class="flex-1 flex flex-row-reverse relative overflow-hidden">
@@ -37,12 +66,8 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             </div>
         </div>
 
-        <!-- Cart Items -->
-        <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3">
-            <!-- Cart items will be loaded here -->
-        </div>
+        <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
 
-        <!-- Totals & Checkout -->
         <div class="p-6 bg-dark-surface border-t border-white/5">
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm text-gray-400">
@@ -62,22 +87,17 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             </div>
 
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <button
-                    class="button-secondary bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                <button class="button-secondary bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                     <span class="material-icons-round text-sm">pause</span>
                     تعليق
                 </button>
-                <button
-                    id="clear-cart-btn"
-                    class="button-danger bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                <button id="clear-cart-btn" class="button-danger bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                     <span class="material-icons-round text-sm">delete_outline</span>
                     إلغاء
                 </button>
             </div>
 
-            <button
-                id="checkout-btn"
-                class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
+            <button id="checkout-btn" class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
                 <span class="material-icons-round">payments</span>
                 دفع (space)
             </button>
@@ -86,24 +106,16 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
     <!-- Products Section (Right) -->
     <div class="flex-1 flex flex-col h-full relative">
-        <!-- Background Blobs -->
-        <div
-            class="absolute top-[10%] right-[10%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-[80px] pointer-events-none">
-        </div>
+        <div class="absolute top-[10%] right-[10%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-[80px] pointer-events-none"></div>
 
-        <!-- Header -->
-        <header
-            class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-10 shrink-0">
+        <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-10 shrink-0">
             <div class="flex items-center gap-4 flex-1">
-                <a href="dashboard.php"
-                    class="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+                <a href="dashboard.php" class="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
                     <span class="material-icons-round">arrow_forward</span>
                 </a>
                 <div class="relative flex-1 max-w-md">
-                    <span
-                        class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
-                    <input type="text" id="product-search-input" placeholder="بحث عن منتج..."
-                        class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                    <span class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
+                    <input type="text" id="product-search-input" placeholder="بحث عن منتج..." class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                     <button id="scan-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white">
                         <span class="material-icons-round">qr_code_scanner</span>
                     </button>
@@ -113,8 +125,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <div class="flex items-center gap-3">
                 <label for="category-filter" class="text-sm text-gray-400">الفئة:</label>
                 <div class="relative min-w-[200px]">
-                    <select id="category-filter"
-                        class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+                    <select id="category-filter" class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
                         <option value="">جميع الفئات</option>
                     </select>
                     <span class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
@@ -122,14 +133,137 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             </div>
         </header>
 
-        <!-- Products Grid -->
         <div class="flex-1 overflow-y-auto p-6 z-10">
-            <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <!-- Products will be loaded here -->
-            </div>
+            <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
         </div>
     </div>
 </main>
+
+<!-- Invoice Modal -->
+<div id="invoice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto overflow-hidden">
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-r from-primary to-accent p-6 text-white no-print">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="material-icons-round text-3xl">receipt_long</span>
+                    <div>
+                        <h3 class="text-2xl font-bold">فاتورة ناجحة!</h3>
+                        <p class="text-sm opacity-90">تم إتمام عملية البيع بنجاح</p>
+                    </div>
+                </div>
+                <button id="close-invoice-modal" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Invoice Content -->
+        <div id="invoice-print-area" class="p-8 bg-white text-gray-900">
+            <!-- Shop Header -->
+            <div class="text-center border-b-2 border-gray-300 pb-6 mb-6">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($shopName); ?></h1>
+                <?php if ($shopPhone): ?>
+                    <p class="text-sm text-gray-600">هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
+                <?php endif; ?>
+                <?php if ($shopAddress): ?>
+                    <p class="text-sm text-gray-600"><?php echo htmlspecialchars($shopAddress); ?></p>
+                <?php endif; ?>
+            </div>
+
+            <!-- Invoice Info -->
+            <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
+                <div>
+                    <p class="text-gray-600 mb-1">رقم الفاتورة</p>
+                    <p class="font-bold text-lg" id="invoice-number">-</p>
+                </div>
+                <div class="text-left">
+                    <p class="text-gray-600 mb-1">التاريخ</p>
+                    <p class="font-bold" id="invoice-date">-</p>
+                </div>
+            </div>
+
+            <!-- Customer Info -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 class="font-bold text-gray-900 mb-2">معلومات العميل</h3>
+                <div id="customer-info" class="text-sm text-gray-700"></div>
+            </div>
+
+            <!-- Items Table -->
+            <table class="w-full mb-6 text-sm">
+                <thead>
+                    <tr class="border-b-2 border-gray-300">
+                        <th class="text-right py-3 font-bold">#</th>
+                        <th class="text-right py-3 font-bold">المنتج</th>
+                        <th class="text-center py-3 font-bold">الكمية</th>
+                        <th class="text-center py-3 font-bold">السعر</th>
+                        <th class="text-left py-3 font-bold">الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-items"></tbody>
+            </table>
+
+            <!-- Totals -->
+            <div class="border-t-2 border-gray-300 pt-4">
+                <div class="flex justify-end">
+                    <div class="w-64 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">المجموع الفرعي:</span>
+                            <span class="font-medium" id="invoice-subtotal">-</span>
+                        </div>
+                        <div class="flex justify-between" id="invoice-tax-row">
+                            <span class="text-gray-600"><span id="invoice-tax-label">TVA</span> (<span id="invoice-tax-rate">20</span>%):</span>
+                            <span class="font-medium" id="invoice-tax-amount">-</span>
+                        </div>
+                        <div class="flex justify-between text-lg font-bold border-t-2 border-gray-300 pt-2">
+                            <span>الإجمالي:</span>
+                            <span class="text-primary" id="invoice-total">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-8 pt-6 border-t border-gray-200 text-xs text-gray-500">
+                <p class="font-semibold text-gray-700 mb-2">شكرا لثقتكم بنا</p>
+                <?php if (!empty($shopName) || !empty($shopPhone) || !empty($shopAddress)): ?>
+                    <div class="mt-2 text-gray-600">
+                        <?php if (!empty($shopName)): ?>
+                            <p><?php echo htmlspecialchars($shopName); ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($shopPhone)): ?>
+                            <p>هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($shopAddress)): ?>
+                            <p><?php echo htmlspecialchars($shopAddress); ?></p>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-2">
+                        <p class="text-gray-600">تم تصميم وتطوير النظام من طرف حمزة سعدي 2025</p>
+                        <p class="text-gray-600 mt-1">الموقع الإلكتروني: <a href="https://eagleshadow.technology" class="text-primary hover:underline">https://eagleshadow.technology</a></p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="bg-gray-50 p-6 flex gap-3 no-print border-t">
+            <button id="print-invoice-btn" class="flex-1 bg-primary hover:bg-primary-hover text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                <span class="material-icons-round">print</span>
+                طباعة
+            </button>
+            <button id="download-pdf-btn" class="flex-1 bg-accent hover:bg-lime-500 text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                <span class="material-icons-round">picture_as_pdf</span>
+                PDF تحميل
+            </button>
+            <button id="download-txt-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                <span class="material-icons-round">text_snippet</span>
+                TXT تحميل
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- Customer Modal -->
 <div id="customer-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
@@ -148,33 +282,11 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <h3 class="text-lg font-bold text-white mb-4">أو أضف عميل جديد</h3>
             <form id="add-customer-form">
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="customer-name" placeholder="الاسم" 
-                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
-                    <input type="text" id="customer-phone" placeholder="الهاتف" 
-                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
-                    <input type="email" id="customer-email" placeholder="البريد الإلكتروني" 
-                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2">
-                    <input type="text" id="customer-address" placeholder="العنوان" 
-                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
-                    <select id="customer-city" 
-                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
-                        <option value="">اختر المدينة</option>
-                        <option value="طنجة">طنجة</option>
-                        <option value="الدار البيضاء">الدار البيضاء</option>
-                        <option value="الرباط">الرباط</option>
-                        <option value="فاس">فاس</option>
-                        <option value="مراكش">مراكش</option>
-                        <option value="أغادير">أغادير</option>
-                        <option value="مكناس">مكناس</option>
-                        <option value="وجدة">وجدة</option>
-                        <option value="طنجة أصيلة">طنجة أصيلة</option>
-                        <option value="برشيد">برشيد</option>
-                        <option value="إنزكان آيت ملول">إنزكان آيت ملول</option>
-                        <option value="الهراويين">الهراويين</option>
-                    </select>
+                    <input type="text" id="customer-name" placeholder="الاسم" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    <input type="text" id="customer-phone" placeholder="الهاتف" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    <input type="email" id="customer-email" placeholder="البريد الإلكتروني" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2">
                 </div>
-                <button type="submit" 
-                    class="w-full bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all mt-4">
+                <button type="submit" class="w-full bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all mt-4">
                     إضافة عميل
                 </button>
             </form>
@@ -198,24 +310,21 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     const productsGrid = document.getElementById('products-grid');
     const cartItemsContainer = document.getElementById('cart-items');
     const cartSubtotal = document.getElementById('cart-subtotal');
     const cartTax = document.getElementById('cart-tax');
     const cartTotal = document.getElementById('cart-total');
     const searchInput = document.getElementById('product-search-input');
-    const scanBarcodeBtn = document.getElementById('scan-barcode-btn');
-    const barcodeScannerModal = document.getElementById('barcode-scanner-modal');
-    const closeBarcodeScannerModalBtn = document.getElementById('close-barcode-scanner-modal');
-    const videoElement = document.getElementById('barcode-video');
-    const clearCartBtn = document.getElementById('clear-cart-btn');
     const checkoutBtn = document.getElementById('checkout-btn');
     const categoryFilter = document.getElementById('category-filter');
-    let codeReader;
-
+    const clearCartBtn = document.getElementById('clear-cart-btn');
+    
     const customerModal = document.getElementById('customer-modal');
     const closeCustomerModalBtn = document.getElementById('close-customer-modal');
     const customerSelection = document.getElementById('customer-selection');
@@ -226,14 +335,56 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     const customerDetailDisplay = document.getElementById('customer-detail-display');
     const customerAvatar = document.getElementById('customer-avatar');
 
+    const invoiceModal = document.getElementById('invoice-modal');
+    const closeInvoiceModal = document.getElementById('close-invoice-modal');
+    const printInvoiceBtn = document.getElementById('print-invoice-btn');
+    const downloadPdfBtn = document.getElementById('download-pdf-btn');
+    const downloadTxtBtn = document.getElementById('download-txt-btn');
+
     let cart = [];
     let allProducts = [];
     let selectedCustomer = null;
+    let currentInvoiceData = null;
     
-    const taxEnabled = document.getElementById('cart-tax') !== null;
-    const taxRateDisplay = document.getElementById('tax-rate-display');
-    const taxRate = taxRateDisplay ? parseFloat(taxRateDisplay.textContent) / 100 : 0;
-    const currency = cartSubtotal.textContent.split(' ')[1] || 'MAD';
+    const taxEnabled = <?php echo $taxEnabled; ?> == 1;
+    const taxRate = <?php echo $taxRate; ?> / 100;
+    const taxLabel = '<?php echo addslashes($taxLabel); ?>';
+    const currency = '<?php echo $currency; ?>';
+    const shopName = '<?php echo addslashes($shopName); ?>';
+
+    // دالة لتحويل الأرقام العربية إلى أرقام إنجليزية
+    function toEnglishNumbers(str) {
+        const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        
+        let result = str.toString();
+        for (let i = 0; i < 10; i++) {
+            result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
+        }
+        return result;
+    }
+
+    // دالة لتنسيق التاريخ (ميلادي وهجري)
+    function formatDualDate(date) {
+        // التاريخ الميلادي
+        const gregorianDate = date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        
+        // التاريخ الهجري
+        const hijriDate = date.toLocaleDateString('ar-SA-u-ca-islamic', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        // تحويل الأرقام إلى إنجليزية
+        const hijriDateEng = toEnglishNumbers(hijriDate);
+        
+        return `${gregorianDate} - ${hijriDateEng}`;
+    }
 
     async function loadCategories() {
         try {
@@ -255,17 +406,14 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
     async function loadProducts() {
         try {
-            const response = await fetch(`api.php?action=getProducts`);
+            const response = await fetch('api.php?action=getProducts');
             const result = await response.json();
             if (result.success) {
                 allProducts = result.data;
                 applyFilters();
-            } else {
-                showToast(result.message || 'فشل في تحميل المنتجات', false);
             }
         } catch (error) {
             console.error('خطأ في تحميل المنتجات:', error);
-            showToast('حدث خطأ في تحميل المنتجات', false);
         }
     }
 
@@ -275,12 +423,10 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         
         let filteredProducts = allProducts;
         
-        // Filter by category if selected
         if (categoryId) {
             filteredProducts = filteredProducts.filter(product => product.category_id == categoryId);
         }
         
-        // Filter by search term
         if (searchTerm) {
             filteredProducts = filteredProducts.filter(product =>
                 product.name.toLowerCase().includes(searchTerm) ||
@@ -303,7 +449,6 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         products.forEach(product => {
             const productCard = document.createElement('div');
             productCard.className = 'bg-dark-surface/50 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all cursor-pointer';
-            productCard.dataset.productId = product.id;
             productCard.innerHTML = `
                 <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" class="w-24 h-24 object-cover rounded-lg mb-4">
                 <div class="text-lg font-bold text-white">${product.name}</div>
@@ -389,7 +534,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         }
     });
 
-    checkoutBtn.addEventListener('click', () => {
+    checkoutBtn.addEventListener('click', async () => {
         if (cart.length === 0) {
             showToast('السلة فارغة!', false);
             return;
@@ -399,72 +544,185 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         const tax = taxEnabled ? subtotal * taxRate : 0;
         const total = subtotal + tax;
         
-        const confirmMessage = `المجموع الفرعي: ${subtotal.toFixed(2)} ${currency}\n` +
-            (taxEnabled ? `الضريبة: ${tax.toFixed(2)} ${currency}\n` : '') +
-            `الإجمالي: ${total.toFixed(2)} ${currency}\n\n` +
-            `هل تريد إتمام عملية الدفع؟`;
-        
-        if (confirm(confirmMessage)) {
-            cart = [];
-            updateCart();
-            showToast('تم إتمام عملية البيع بنجاح!', true);
-        }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && !e.target.matches('input, textarea')) {
-            e.preventDefault();
-            checkoutBtn.click();
-        }
-    });
-
-    scanBarcodeBtn.addEventListener('click', () => {
-        barcodeScannerModal.classList.remove('hidden');
-        startBarcodeScanner();
-    });
-
-    closeBarcodeScannerModalBtn.addEventListener('click', () => {
-        barcodeScannerModal.classList.add('hidden');
-        stopBarcodeScanner();
-    });
-
-    function startBarcodeScanner() {
-        codeReader = new ZXing.BrowserMultiFormatReader();
-        codeReader.listVideoInputDevices()
-            .then((videoInputDevices) => {
-                if (videoInputDevices.length === 0) {
-                    showToast('لم يتم العثور على كاميرا', false);
-                    return;
-                }
-                const firstDeviceId = videoInputDevices[0].deviceId;
-                codeReader.decodeFromVideoDevice(firstDeviceId, 'barcode-video', (result, err) => {
-                    if (result) {
-                        searchInput.value = result.text;
-                        stopBarcodeScanner();
-                        barcodeScannerModal.classList.add('hidden');
-                        
-                        const product = allProducts.find(p => p.barcode === result.text);
-                        if (product) {
-                            addProductToCart(product);
-                        }
-                    }
-                    if (err && !(err instanceof ZXing.NotFoundException)) {
-                        console.error(err);
-                    }
-                });
-            })
-            .catch((err) => {
-                console.error(err);
-                showToast('فشل في تشغيل الكاميرا', false);
+        try {
+            const response = await fetch('api.php?action=createInvoice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer_id: selectedCustomer ? selectedCustomer.id : null,
+                    total: total,
+                    items: cart
+                }),
             });
-    }
-
-    function stopBarcodeScanner() {
-        if (codeReader) {
-            codeReader.reset();
+            
+            const result = await response.json();
+            if (result.success) {
+                currentInvoiceData = {
+                    id: result.invoice_id,
+                    customer: selectedCustomer,
+                    items: cart,
+                    subtotal: subtotal,
+                    tax: tax,
+                    total: total,
+                    date: new Date()
+                };
+                
+                displayInvoice(currentInvoiceData);
+                cart = [];
+                selectedCustomer = null;
+                customerNameDisplay.textContent = 'عميل نقدي';
+                customerDetailDisplay.textContent = 'افتراضي';
+                customerAvatar.textContent = 'A';
+                updateCart();
+                invoiceModal.classList.remove('hidden');
+            } else {
+                showToast(result.message || 'فشل في إنشاء الفاتورة', false);
+            }
+        } catch (error) {
+            console.error('خطأ في إنشاء الفاتورة:', error);
+            showToast('حدث خطأ أثناء إنشاء الفاتورة', false);
         }
+    });
+
+    function displayInvoice(data) {
+        document.getElementById('invoice-number').textContent = `#${String(data.id).padStart(6, '0')}`;
+        document.getElementById('invoice-date').textContent = formatDualDate(data.date);
+        
+        const customerInfo = document.getElementById('customer-info');
+        if (data.customer) {
+            customerInfo.innerHTML = `
+                <p><strong>الاسم:</strong> ${data.customer.name}</p>
+                ${data.customer.phone ? `<p><strong>الهاتف:</strong> ${data.customer.phone}</p>` : ''}
+                ${data.customer.email ? `<p><strong>البريد:</strong> ${data.customer.email}</p>` : ''}
+            `;
+        } else {
+            customerInfo.innerHTML = '<p>عميل نقدي</p>';
+        }
+        
+        const itemsTable = document.getElementById('invoice-items');
+        itemsTable.innerHTML = '';
+        data.items.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-gray-200';
+            row.innerHTML = `
+                <td class="py-2">${index + 1}</td>
+                <td class="py-2">${item.name}</td>
+                <td class="py-2 text-center">${item.quantity}</td>
+                <td class="py-2 text-center">${item.price} ${currency}</td>
+                <td class="py-2 text-left font-medium">${(item.price * item.quantity).toFixed(2)} ${currency}</td>
+            `;
+            itemsTable.appendChild(row);
+        });
+        
+        document.getElementById('invoice-subtotal').textContent = `${data.subtotal.toFixed(2)} ${currency}`;
+        
+        if (taxEnabled) {
+            document.getElementById('invoice-tax-row').style.display = 'flex';
+            document.getElementById('invoice-tax-label').textContent = taxLabel;
+            document.getElementById('invoice-tax-rate').textContent = (taxRate * 100).toFixed(0);
+            document.getElementById('invoice-tax-amount').textContent = `${data.tax.toFixed(2)} ${currency}`;
+        } else {
+            document.getElementById('invoice-tax-row').style.display = 'none';
+        }
+        
+        document.getElementById('invoice-total').textContent = `${data.total.toFixed(2)} ${currency}`;
     }
 
+    closeInvoiceModal.addEventListener('click', () => {
+        invoiceModal.classList.add('hidden');
+    });
+
+    printInvoiceBtn.addEventListener('click', () => {
+        window.print();
+    });
+
+    downloadPdfBtn.addEventListener('click', async () => {
+        const { jsPDF } = window.jspdf;
+        const element = document.getElementById('invoice-print-area');
+        
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                backgroundColor: '#ffffff'
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
+            
+            showToast('تم تحميل الفاتورة بصيغة PDF', true);
+        } catch (error) {
+            console.error('خطأ في تحميل PDF:', error);
+            showToast('فشل في تحميل PDF', false);
+        }
+    });
+
+    downloadTxtBtn.addEventListener('click', () => {
+        if (!currentInvoiceData) return;
+        
+        let txtContent = `${shopName}\n`;
+        txtContent += `${'='.repeat(50)}\n\n`;
+        txtContent += `رقم الفاتورة: #${String(currentInvoiceData.id).padStart(6, '0')}\n`;
+        txtContent += `التاريخ: ${formatDualDate(currentInvoiceData.date)}\n\n`;
+        
+        if (currentInvoiceData.customer) {
+            txtContent += `العميل: ${currentInvoiceData.customer.name}\n`;
+            if (currentInvoiceData.customer.phone) {
+                txtContent += `الهاتف: ${currentInvoiceData.customer.phone}\n`;
+            }
+        } else {
+            txtContent += `العميل: عميل نقدي\n`;
+        }
+        
+        txtContent += `\n${'-'.repeat(50)}\n`;
+        txtContent += `المنتجات:\n`;
+        txtContent += `${'-'.repeat(50)}\n\n`;
+        
+        currentInvoiceData.items.forEach((item, index) => {
+            txtContent += `${index + 1}. ${item.name}\n`;
+            txtContent += `   الكمية: ${item.quantity} × ${item.price} ${currency} = ${(item.price * item.quantity).toFixed(2)} ${currency}\n\n`;
+        });
+        
+        txtContent += `${'-'.repeat(50)}\n`;
+        txtContent += `المجموع الفرعي: ${currentInvoiceData.subtotal.toFixed(2)} ${currency}\n`;
+        
+        if (taxEnabled) {
+            txtContent += `${taxLabel} (${(taxRate * 100).toFixed(0)}%): ${currentInvoiceData.tax.toFixed(2)} ${currency}\n`;
+        }
+        
+        txtContent += `الإجمالي: ${currentInvoiceData.total.toFixed(2)} ${currency}\n`;
+        txtContent += `${'='.repeat(50)}\n\n`;
+        
+        // الفوتر المحدث
+        txtContent += `شكرا لثقتكم بنا\n\n`;
+        
+        // التحقق من وجود بيانات المتجر
+        const shopPhone = '<?php echo addslashes($shopPhone); ?>';
+        const shopAddress = '<?php echo addslashes($shopAddress); ?>';
+        
+        if (shopName || shopPhone || shopAddress) {
+            if (shopName) txtContent += `${shopName}\n`;
+            if (shopPhone) txtContent += `هاتف: ${shopPhone}\n`;
+            if (shopAddress) txtContent += `${shopAddress}\n`;
+        } else {
+            txtContent += `تم تصميم وتطوير النظام من طرف حمزة سعدي 2025\n`;
+            txtContent += `الموقع الإلكتروني: https://eagleshadow.technology\n`;
+        }
+        
+        const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `invoice-${currentInvoiceData.id}.txt`;
+        link.click();
+        
+        showToast('تم تحميل الفاتورة بصيغة TXT', true);
+    });
+    
+    // Customer modal functionality
     customerSelection.addEventListener('click', () => {
         customerModal.classList.remove('hidden');
         loadCustomers();
@@ -484,12 +742,9 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             const result = await response.json();
             if (result.success) {
                 displayCustomers(result.data);
-            } else {
-                showToast(result.message || 'فشل في تحميل العملاء', false);
             }
         } catch (error) {
             console.error('خطأ في تحميل العملاء:', error);
-            showToast('حدث خطأ في تحميل العملاء', false);
         }
     }
 
@@ -531,8 +786,6 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             name: document.getElementById('customer-name').value,
             phone: document.getElementById('customer-phone').value,
             email: document.getElementById('customer-email').value,
-            address: document.getElementById('customer-address').value,
-            city: document.getElementById('customer-city').value,
         };
 
         if (!newCustomer.name) {
@@ -560,9 +813,18 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             showToast('حدث خطأ أثناء إضافة العميل', false);
         }
     });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.target.matches('input, textarea')) {
+            e.preventDefault();
+            checkoutBtn.click();
+        }
+    });
+
     loadCategories();
     loadProducts();
 });
+
 </script>
 
 <?php require_once 'src/footer.php'; ?>
