@@ -1,5 +1,5 @@
 <?php
-$page_title = 'نقطة البيع - Smart Shop';
+$page_title = 'نقطة البيع';
 $current_page = 'pos.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';

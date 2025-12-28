@@ -1,5 +1,5 @@
 <?php
-$page_title = 'الفواتير والضريبة - Smart Shop';
+$page_title = 'الفواتير والضريبة';
 $current_page = 'invoices.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';

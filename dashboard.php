@@ -1,5 +1,5 @@
 <?php
-$page_title = 'لوحة التحكم - Smart Shop';
+$page_title = 'لوحة التحكم';
 $current_page = 'dashboard.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';

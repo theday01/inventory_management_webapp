@@ -80,6 +80,42 @@ if ($show_success):
         });
     </script>
 <?php endif; ?>
+<script>
+    function showToast(message, isSuccess = true) {
+        const toast = document.getElementById('toast-notification');
+        if (!toast) return;
+
+        const toastMessage = document.getElementById('toast-message');
+        const toastIcon = document.getElementById('toast-icon');
+
+        toastMessage.textContent = message;
+        if (isSuccess) {
+            toast.classList.remove('bg-red-500');
+            toast.classList.add('bg-green-500');
+            toastIcon.textContent = 'check_circle';
+        } else {
+            toast.classList.remove('bg-green-500');
+            toast.classList.add('bg-red-500');
+            toastIcon.textContent = 'error';
+        }
+
+        toast.classList.remove('hidden', 'translate-y-full', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+
+        setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-full', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 300);
+        }, 3000);
+    }
+</script>
+<!-- Toast Notification -->
+<div id="toast-notification" class="hidden fixed bottom-5 right-5 bg-green-500 text-white py-3 px-5 rounded-lg shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-y-full opacity-0 z-50">
+    <span id="toast-icon" class="material-icons-round">check_circle</span>
+    <p id="toast-message"></p>
+</div>
 <?php
 $error_message = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
 if (!empty($error_message)):

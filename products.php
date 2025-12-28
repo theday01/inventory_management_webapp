@@ -1,5 +1,5 @@
 <?php
-$page_title = 'المنتجات - Smart Shop';
+$page_title = 'المنتجات';
 $current_page = 'products.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
@@ -417,6 +417,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     productModal.classList.add('hidden');
                     productForm.reset();
                     loadProducts(); // Refresh the product list
+                    showToast('Product added successfully.');
                 } else {
                     alert('Error: ' + result.message);
                 }
