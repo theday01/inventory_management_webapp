@@ -4,7 +4,6 @@ $current_page = 'pos.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
-// Fetch settings
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 
@@ -46,7 +45,6 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
         display: none !important;
     }
     
-    /* تحسين الطباعة للمنتجات الكثيرة */
     .invoice-items-container {
         page-break-inside: auto;
     }
@@ -56,7 +54,6 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
     }
 }
 
-/* تحسين عرض الفاتورة في Modal */
 .invoice-modal-content {
     max-height: 80vh;
     overflow-y: auto;
@@ -68,7 +65,6 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
     overflow-x: hidden;
 }
 
-/* تحسين شريط التمرير */
 .invoice-items-scrollable::-webkit-scrollbar {
     width: 6px;
 }
@@ -179,10 +175,9 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
     </div>
 </main>
 
-<!-- Invoice Modal - محسّن -->
+<!-- Invoice Modal -->
 <div id="invoice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto overflow-hidden flex flex-col" style="max-height: 90vh;">
-        <!-- Modal Header -->
         <div class="bg-gradient-to-r from-primary to-accent p-6 text-white no-print shrink-0">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -198,10 +193,8 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
             </div>
         </div>
 
-        <!-- Invoice Content - مع scroll -->
         <div class="flex-1 overflow-y-auto">
             <div id="invoice-print-area" class="p-8 bg-white text-gray-900">
-                <!-- Shop Header -->
                 <div class="text-center border-b-2 border-gray-300 pb-6 mb-6">
                     <h1 class="text-3xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($shopName); ?></h1>
                     <?php if ($shopPhone): ?>
@@ -212,25 +205,25 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                     <?php endif; ?>
                 </div>
 
-                <!-- Invoice Info -->
                 <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
                     <div>
                         <p class="text-gray-600 mb-1">رقم الفاتورة</p>
                         <p class="font-bold text-lg" id="invoice-number">-</p>
+                        <!-- باركود الفاتورة -->
+                        <svg id="invoice-barcode" class="mt-2"></svg>
                     </div>
                     <div class="text-left">
                         <p class="text-gray-600 mb-1">التاريخ</p>
                         <p class="font-bold" id="invoice-date">-</p>
+                        <p class="text-gray-600 text-xs mt-1">الوقت: <span class="font-medium text-gray-900" id="invoice-time">-</span></p>
                     </div>
                 </div>
 
-                <!-- Customer Info -->
                 <div class="bg-gray-50 rounded-lg p-4 mb-6">
                     <h3 class="font-bold text-gray-900 mb-2">معلومات العميل</h3>
                     <div id="customer-info" class="text-sm text-gray-700"></div>
                 </div>
 
-                <!-- Items Table - مع scrolling للمنتجات الكثيرة -->
                 <div class="mb-6">
                     <div class="invoice-items-scrollable">
                         <table class="w-full text-sm invoice-items-container">
@@ -246,12 +239,9 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                             <tbody id="invoice-items"></tbody>
                         </table>
                     </div>
-                    <div id="items-count-badge" class="text-xs text-gray-500 mt-2 text-center hidden">
-                        <!-- سيتم عرض عدد المنتجات هنا -->
-                    </div>
+                    <div id="items-count-badge" class="text-xs text-gray-500 mt-2 text-center hidden"></div>
                 </div>
 
-                <!-- Totals -->
                 <div class="border-t-2 border-gray-300 pt-4">
                     <div class="flex justify-end">
                         <div class="w-64 space-y-2 text-sm">
@@ -271,7 +261,6 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                     </div>
                 </div>
 
-                <!-- Footer -->
                 <div class="text-center mt-8 pt-6 border-t border-gray-200 text-xs text-gray-500">
                     <p class="font-semibold text-gray-700 mb-3" style="font-size: 14px;">شكرا لثقتكم بنا</p>
                     <?php if (!empty($shopName) || !empty($shopPhone) || !empty($shopAddress)): ?>
@@ -296,19 +285,22 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
             </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="bg-gray-50 p-6 flex gap-3 no-print border-t shrink-0">
-            <button id="print-invoice-btn" class="flex-1 bg-primary hover:bg-primary-hover text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                <span class="material-icons-round">print</span>
-                طباعة
+        <div class="bg-gray-50 p-6 grid grid-cols-2 gap-3 no-print border-t shrink-0">
+            <button id="print-invoice-btn" class="bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
+                <span class="material-icons-round text-lg">print</span>
+                طباعة عادية
             </button>
-            <button id="download-pdf-btn" class="flex-1 bg-accent hover:bg-lime-500 text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                <span class="material-icons-round">picture_as_pdf</span>
-                PDF تحميل
+            <button id="thermal-print-btn" class="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
+                <span class="material-icons-round text-lg">receipt_long</span>
+                طباعة حرارية
             </button>
-            <button id="download-txt-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                <span class="material-icons-round">text_snippet</span>
-                TXT تحميل
+            <button id="download-pdf-btn" class="bg-accent hover:bg-lime-500 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
+                <span class="material-icons-round text-lg">picture_as_pdf</span>
+                تحميل PDF
+            </button>
+            <button id="download-txt-btn" class="bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
+                <span class="material-icons-round text-lg">text_snippet</span>
+                تحميل TXT
             </button>
         </div>
     </div>
@@ -358,6 +350,7 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -387,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const invoiceModal = document.getElementById('invoice-modal');
     const closeInvoiceModal = document.getElementById('close-invoice-modal');
     const printInvoiceBtn = document.getElementById('print-invoice-btn');
+    const thermalPrintBtn = document.getElementById('thermal-print-btn');
     const downloadPdfBtn = document.getElementById('download-pdf-btn');
     const downloadTxtBtn = document.getElementById('download-txt-btn');
 
@@ -400,6 +394,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const taxLabel = '<?php echo addslashes($taxLabel); ?>';
     const currency = '<?php echo $currency; ?>';
     const shopName = '<?php echo addslashes($shopName); ?>';
+    const shopPhone = '<?php echo addslashes($shopPhone); ?>';
+    const shopAddress = '<?php echo addslashes($shopAddress); ?>';
 
     function toEnglishNumbers(str) {
         const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -630,8 +626,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function displayInvoice(data) {
         document.getElementById('invoice-number').textContent = `#${String(data.id).padStart(6, '0')}`;
+    
+        // توليد الباركود
+        try {
+            JsBarcode("#invoice-barcode", String(data.id).padStart(6, '0'), {
+                format: "CODE128",
+                width: 1,
+                height: 40,
+                displayValue: false,
+                margin: 0
+            });
+        } catch (e) {
+            console.error('Error generating barcode:', e);
+        }
+    
         document.getElementById('invoice-date').textContent = formatDualDate(data.date);
-        
+
+        // إضافة الوقت
+        const formattedTime = data.date.toLocaleTimeString('ar-SA', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        });
+        document.getElementById('invoice-time').textContent = toEnglishNumbers(formattedTime);
+
         const customerInfo = document.getElementById('customer-info');
         if (data.customer) {
             customerInfo.innerHTML = `
@@ -646,7 +664,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const itemsTable = document.getElementById('invoice-items');
         itemsTable.innerHTML = '';
         
-        // عرض badge لعدد المنتجات إذا كانت أكثر من 10
         const itemsCountBadge = document.getElementById('items-count-badge');
         if (data.items.length > 10) {
             itemsCountBadge.textContent = `إجمالي ${data.items.length} منتج في هذه الفاتورة`;
@@ -682,6 +699,267 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('invoice-total').textContent = `${data.total.toFixed(2)} ${currency}`;
     }
 
+    // دالة الطباعة الحرارية
+    function printThermal() {
+        if (!currentInvoiceData) return;
+
+        const invoiceDate = currentInvoiceData.date;
+        const formattedDate = formatDualDate(invoiceDate);
+        const formattedTime = toEnglishNumbers(invoiceDate.toLocaleTimeString('ar-SA', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        }));
+        let thermalContent = `
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=80mm">
+    <title>فاتورة حرارية #${String(currentInvoiceData.id).padStart(6, '0')}</title>
+    <style>
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 80mm;
+            padding: 10mm 5mm;
+            font-size: 11pt;
+            line-height: 1.4;
+            background: white;
+            color: #000;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 8mm;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 5mm;
+        }
+        .shop-name {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 2mm;
+        }
+        .shop-info {
+            font-size: 9pt;
+            color: #333;
+            margin: 1mm 0;
+        }
+        .invoice-info {
+            margin: 5mm 0;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 3mm;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2mm 0;
+            font-size: 10pt;
+        }
+        .info-label {
+            font-weight: bold;
+        }
+        .customer-section {
+            margin: 5mm 0;
+            padding: 3mm;
+            background: #f5f5f5;
+            border-radius: 2mm;
+            font-size: 10pt;
+        }
+        .items-table {
+            width: 100%;
+            margin: 5mm 0;
+            border-collapse: collapse;
+        }
+        .items-header {
+            border-top: 2px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 2mm 0;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        .item-row {
+            border-bottom: 1px dashed #ccc;
+            padding: 2mm 0;
+            font-size: 10pt;
+        }
+        .item-name {
+            font-weight: bold;
+            margin-bottom: 1mm;
+        }
+        .item-details {
+            display: flex;
+            justify-content: space-between;
+            color: #555;
+            font-size: 9pt;
+        }
+        .totals-section {
+            margin: 5mm 0;
+            border-top: 2px solid #000;
+            padding-top: 3mm;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2mm 0;
+            font-size: 11pt;
+        }
+        .total-row.grand-total {
+            font-size: 14pt;
+            font-weight: bold;
+            border-top: 2px solid #000;
+            padding-top: 3mm;
+            margin-top: 3mm;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 8mm;
+            border-top: 2px dashed #000;
+            padding-top: 5mm;
+            font-size: 10pt;
+        }
+        .thank-you {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 3mm;
+        }
+        .barcode {
+            margin: 5mm 0;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 24pt;
+            letter-spacing: 2mm;
+        }
+        @media print {
+            body {
+                width: 80mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="shop-name">${shopName}</div>
+        ${shopPhone ? `<div class="shop-info">📞 ${shopPhone}</div>` : ''}
+        ${shopAddress ? `<div class="shop-info">📍 ${shopAddress}</div>` : ''}
+    </div>
+
+    <div class="invoice-info">
+        <div class="info-row">
+            <span class="info-label">رقم الفاتورة:</span>
+            <span>#${String(currentInvoiceData.id).padStart(6, '0')}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">التاريخ:</span>
+            <span>${formattedDate}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">الوقت:</span>
+            <span>${formattedTime}</span>
+        </div>
+    </div>
+
+    ${currentInvoiceData.customer ? `
+    <div class="customer-section">
+        <div style="font-weight: bold; margin-bottom: 2mm;">معلومات العميل:</div>
+        <div>📝 ${currentInvoiceData.customer.name}</div>
+        ${currentInvoiceData.customer.phone ? `<div>📞 ${currentInvoiceData.customer.phone}</div>` : ''}
+    </div>
+    ` : '<div class="customer-section"><div>💵 عميل نقدي</div></div>'}
+
+    <div class="items-table">
+        <div class="items-header">
+            المنتجات (${currentInvoiceData.items.length})
+        </div>
+`;
+
+        currentInvoiceData.items.forEach((item, index) => {
+            const itemTotal = item.price * item.quantity;
+            thermalContent += `
+        <div class="item-row">
+            <div class="item-name">${index + 1}. ${item.name}</div>
+            <div class="item-details">
+                <span>${item.quantity} × ${parseFloat(item.price).toFixed(2)} ${currency}</span>
+                <span style="font-weight: bold;">${itemTotal.toFixed(2)} ${currency}</span>
+            </div>
+        </div>
+`;
+        });
+
+        thermalContent += `
+    </div>
+
+    <div class="totals-section">
+        <div class="total-row">
+            <span>المجموع الفرعي:</span>
+            <span>${currentInvoiceData.subtotal.toFixed(2)} ${currency}</span>
+        </div>
+`;
+
+        if (taxEnabled) {
+            thermalContent += `
+        <div class="total-row">
+            <span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span>
+            <span>${currentInvoiceData.tax.toFixed(2)} ${currency}</span>
+        </div>
+`;
+        }
+
+        thermalContent += `
+        <div class="total-row grand-total">
+            <span>الإجمالي:</span>
+            <span>${currentInvoiceData.total.toFixed(2)} ${currency}</span>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin: 5mm 0;">
+        <canvas id="thermal-barcode"></canvas>
+    </div>
+
+    <div class="footer">
+        <div class="thank-you">🌟 شكراً لثقتكم بنا 🌟</div>
+        ${shopName ? `<div>${shopName}</div>` : ''}
+        ${shopPhone ? `<div>هاتف: ${shopPhone}</div>` : ''}
+        ${!shopName && !shopPhone ? '<div>تم التطوير بواسطة حمزة سعدي 2025</div>' : ''}
+    </div>
+</body>
+</html>
+`;
+
+        const printWindow = window.open('', '_blank', 'width=302,height=500');
+        printWindow.document.write(thermalContent);
+        printWindow.document.close();
+        
+        // إضافة مكتبة JsBarcode للنافذة الجديدة
+        const script = printWindow.document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
+        script.onload = function() {
+            try {
+                JsBarcode(printWindow.document.getElementById('thermal-barcode'), String(currentInvoiceData.id).padStart(6, '0'), {
+                    format: "CODE128",
+                    width: 2,
+                    height: 50,
+                    displayValue: false
+                });
+            } catch (e) {
+                console.error('Barcode error:', e);
+            }
+            
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 500);
+        };
+        printWindow.document.head.appendChild(script);
+    }
+
     closeInvoiceModal.addEventListener('click', () => {
         invoiceModal.classList.add('hidden');
     });
@@ -690,13 +968,14 @@ document.addEventListener('DOMContentLoaded', function () {
         window.print();
     });
 
+    thermalPrintBtn.addEventListener('click', printThermal);
+
     downloadPdfBtn.addEventListener('click', async () => {
         const { jsPDF } = window.jspdf;
         
         try {
             showToast('جاري إنشاء ملف PDF...', true);
             
-            // إخفاء scrollbar مؤقتاً
             const scrollableDiv = document.querySelector('.invoice-items-scrollable');
             const originalMaxHeight = scrollableDiv.style.maxHeight;
             scrollableDiv.style.maxHeight = 'none';
@@ -711,7 +990,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 useCORS: true
             });
             
-            // استعادة الـ scrollbar
             scrollableDiv.style.maxHeight = originalMaxHeight;
             scrollableDiv.style.overflow = 'auto';
             
@@ -722,7 +1000,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const imgWidth = pdfWidth;
             const imgHeight = (canvas.height * pdfWidth) / canvas.width;
             
-            // إذا كانت الصورة أطول من صفحة واحدة، قسمها على صفحات متعددة
             if (imgHeight > pdfHeight) {
                 let heightLeft = imgHeight;
                 let position = 0;
@@ -786,11 +1063,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         txtContent += `الإجمالي: ${currentInvoiceData.total.toFixed(2)} ${currency}\n`;
         txtContent += `${'='.repeat(50)}\n\n`;
-        
         txtContent += `شكرا لثقتكم بنا\n\n`;
-        
-        const shopPhone = '<?php echo addslashes($shopPhone); ?>';
-        const shopAddress = '<?php echo addslashes($shopAddress); ?>';
         
         if (shopName || shopPhone || shopAddress) {
             if (shopName) txtContent += `${shopName}\n`;
