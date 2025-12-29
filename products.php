@@ -56,18 +56,6 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
             </div>
         </div>
-
-        <div class="flex items-center gap-2">
-            <button class="p-2.5 bg-white/5 rounded-xl text-white hover:bg-white/10 transition-colors tooltip"
-                title="عرض كجدول">
-                <span class="material-icons-round">table_chart</span>
-            </button>
-            <button
-                class="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors tooltip"
-                title="عرض كبطاقات">
-                <span class="material-icons-round">grid_view</span>
-            </button>
-        </div>
     </div>
 
     <!-- Products Table -->

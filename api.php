@@ -50,6 +50,12 @@ switch ($action) {
     case 'getInvoices':
         getInvoices($conn);
         break;
+    case 'getDeliverySettings':
+        getDeliverySettings($conn);
+        break;
+    case 'updateDeliverySettings':
+        updateDeliverySettings($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -447,6 +453,13 @@ function createInvoice($conn) {
         }
         $stmt->close();
 
+        // Generate and update barcode
+        $barcode = 'INV' . str_pad($invoiceId, 8, '0', STR_PAD_LEFT);
+        $updateStmt = $conn->prepare("UPDATE invoices SET barcode = ? WHERE id = ?");
+        $updateStmt->bind_param("si", $barcode, $invoiceId);
+        $updateStmt->execute();
+        $updateStmt->close();
+
         $conn->commit();
         echo json_encode(['success' => true, 'message' => 'تم إنشاء الفاتورة بنجاح', 'invoice_id' => $invoiceId]);
     } catch (Exception $e) {
@@ -497,13 +510,44 @@ function getInvoice($conn) {
 }
 
 function getInvoices($conn) {
-    $sql = "SELECT i.id, i.total, i.created_at, c.name as customer_name 
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    $searchDate = isset($_GET['searchDate']) ? $_GET['searchDate'] : '';
+
+    $sql = "SELECT DISTINCT i.id, i.total, i.created_at, c.name as customer_name 
             FROM invoices i 
-            LEFT JOIN customers c ON i.customer_id = c.id 
-            ORDER BY i.created_at DESC 
-            LIMIT 50";
-    
-    $result = $conn->query($sql);
+            LEFT JOIN customers c ON i.customer_id = c.id
+            LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
+            LEFT JOIN products p ON ii.product_id = p.id
+            WHERE 1=1";
+
+    $params = [];
+    $types = '';
+
+    if (!empty($search)) {
+        $sql .= " AND (i.id LIKE ? OR c.name LIKE ? OR i.barcode LIKE ?)";
+        $searchTerm = "%{$search}%";
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $types .= 'sss';
+    }
+
+    if (!empty($searchDate)) {
+        $sql .= " AND DATE(i.created_at) = ?";
+        $params[] = $searchDate;
+        $types .= 's';
+    }
+
+    $sql .= " ORDER BY i.created_at DESC LIMIT 100";
+
+    $stmt = $conn->prepare($sql);
+
+    if (!empty($types)) {
+        $stmt->bind_param($types, ...$params);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
     $invoices = [];
     
     if ($result->num_rows > 0) {
@@ -511,9 +555,60 @@ function getInvoices($conn) {
             $invoices[] = $row;
         }
     }
+    
+    $stmt->close();
 
     echo json_encode(['success' => true, 'data' => $invoices]);
 }
+function getDeliverySettings($conn) {
+    $sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('deliveryInsideCity', 'deliveryOutsideCity')";
+    $result = $conn->query($sql);
+    
+    $settings = [
+        'deliveryInsideCity' => '10',
+        'deliveryOutsideCity' => '30'
+    ];
+    
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $settings[$row['setting_name']] = $row['setting_value'];
+        }
+    }
+    
+    echo json_encode(['success' => true, 'data' => $settings]);
+}
 
+function updateDeliverySettings($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!isset($data['deliveryInsideCity']) || !isset($data['deliveryOutsideCity'])) {
+        echo json_encode(['success' => false, 'message' => 'القيم مطلوبة']);
+        return;
+    }
+    
+    $conn->begin_transaction();
+    
+    try {
+        $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        
+        $settings = [
+            'deliveryInsideCity' => $data['deliveryInsideCity'],
+            'deliveryOutsideCity' => $data['deliveryOutsideCity']
+        ];
+        
+        foreach ($settings as $name => $value) {
+            $stmt->bind_param("ss", $name, $value);
+            $stmt->execute();
+        }
+        
+        $stmt->close();
+        $conn->commit();
+        
+        echo json_encode(['success' => true, 'message' => 'تم تحديث إعدادات التوصيل بنجاح']);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'فشل في تحديث الإعدادات: ' . $e->getMessage()]);
+    }
+}
 $conn->close();
 ?>

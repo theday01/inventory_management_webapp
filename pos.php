@@ -24,6 +24,12 @@ $shopPhone = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['settin
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopAddress'");
 $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'deliveryInsideCity'");
+$deliveryInsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '10';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'deliveryOutsideCity'");
+$deliveryOutsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '30';
 ?>
 
 <style>
@@ -105,6 +111,33 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
         <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
 
         <div class="p-6 bg-dark-surface border-t border-white/5">
+            <!-- Delivery Options -->
+            <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-400">التوصيل</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="delivery-toggle" class="sr-only peer">
+                        <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                </div>
+                <div id="delivery-options" class="hidden grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-white/5">
+                    <label class="flex items-center justify-center p-2 rounded-lg border border-white/10 cursor-pointer bg-dark/30 hover:bg-dark/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                        <input type="radio" name="delivery-type" value="<?php echo $deliveryInsideCity; ?>" class="hidden" checked>
+                        <div class="text-xs text-center">
+                            <div class="font-bold text-white mb-1">داخل المدينة</div>
+                            <div class="text-gray-400 text-[10px]">+<?php echo $deliveryInsideCity; ?> <?php echo $currency; ?></div>
+                        </div>
+                    </label>
+                    <label class="flex items-center justify-center p-2 rounded-lg border border-white/10 cursor-pointer bg-dark/30 hover:bg-dark/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                        <input type="radio" name="delivery-type" value="<?php echo $deliveryOutsideCity; ?>" class="hidden">
+                        <div class="text-xs text-center">
+                            <div class="font-bold text-white mb-1">خارج المدينة</div>
+                            <div class="text-gray-400 text-[10px]">+<?php echo $deliveryOutsideCity; ?> <?php echo $currency; ?></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm text-gray-400">
                     <span>المجموع الفرعي</span>
@@ -116,6 +149,12 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                     <span id="cart-tax">0 <?php echo $currency; ?></span>
                 </div>
                 <?php endif; ?>
+                
+                <div id="cart-delivery-row" class="flex justify-between text-sm text-gray-400 hidden">
+                    <span>التوصيل</span>
+                    <span id="cart-delivery-amount">0 <?php echo $currency; ?></span>
+                </div>
+
                 <div class="flex justify-between text-lg font-bold text-white pt-2 border-t border-white/5">
                     <span>الإجمالي</span>
                     <span id="cart-total" class="text-primary">0 <?php echo $currency; ?></span>
@@ -123,20 +162,16 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
             </div>
 
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <button class="button-secondary bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                    <span class="material-icons-round text-sm">pause</span>
-                    تعليق
-                </button>
-                <button id="clear-cart-btn" class="button-danger bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                <button id="clear-cart-btn" class="button-danger bg-red-500/10 hover:bg-red-500/20 text-red-500 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                     <span class="material-icons-round text-sm">delete_outline</span>
                     إلغاء
                 </button>
-            </div>
 
-            <button id="checkout-btn" class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
-                <span class="material-icons-round">payments</span>
-                دفع (space)
-            </button>
+                <button id="checkout-btn" class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
+                    <span class="material-icons-round">payments</span>
+                    دفع (space)
+                </button>
+            </div>
         </div>
     </aside>
 
@@ -306,6 +341,30 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
     </div>
 </div>
 
+<!-- Quantity Modal -->
+<div id="quantity-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-sm border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">تعديل الكمية</h3>
+            <button id="close-quantity-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-400 mb-4" id="quantity-product-name"></p>
+            <input type="number" id="quantity-input" min="1" class="w-full bg-dark/50 border border-white/10 text-white text-center text-2xl font-bold py-4 rounded-xl focus:outline-none focus:border-primary/50" value="1">
+        </div>
+        <div class="p-6 border-t border-white/5 grid grid-cols-2 gap-3">
+            <button id="cancel-quantity-btn" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold transition-all">
+                إلغاء
+            </button>
+            <button id="confirm-quantity-btn" class="bg-primary hover:bg-primary-hover text-white py-3 rounded-xl font-bold transition-all">
+                تأكيد
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Customer Modal -->
 <div id="customer-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-lg border border-white/10 m-4">
@@ -366,6 +425,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const checkoutBtn = document.getElementById('checkout-btn');
     const categoryFilter = document.getElementById('category-filter');
     const clearCartBtn = document.getElementById('clear-cart-btn');
+
+    const quantityModal = document.getElementById('quantity-modal');
+    const closeQuantityModal = document.getElementById('close-quantity-modal');
+    const quantityInput = document.getElementById('quantity-input');
+    const quantityProductName = document.getElementById('quantity-product-name');
+    const confirmQuantityBtn = document.getElementById('confirm-quantity-btn');
+    const cancelQuantityBtn = document.getElementById('cancel-quantity-btn');
+    let editingProductId = null;
+
+    // Delivery Elements
+    const deliveryToggle = document.getElementById('delivery-toggle');
+    const deliveryOptionsDiv = document.getElementById('delivery-options');
+    const deliveryTypeInputs = document.querySelectorAll('input[name="delivery-type"]');
+    const cartDeliveryRow = document.getElementById('cart-delivery-row');
+    const cartDeliveryAmount = document.getElementById('cart-delivery-amount');
     
     const customerModal = document.getElementById('customer-modal');
     const closeCustomerModalBtn = document.getElementById('close-customer-modal');
@@ -388,6 +462,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let allProducts = [];
     let selectedCustomer = null;
     let currentInvoiceData = null;
+    let deliveryCost = 0;
     
     const taxEnabled = <?php echo $taxEnabled; ?> == 1;
     const taxRate = <?php echo $taxRate; ?> / 100;
@@ -524,8 +599,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                     <div class="flex items-center gap-2">
                         <button class="quantity-btn w-8 h-8 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors" data-id="${item.id}" data-action="decrease">-</button>
-                        <span class="text-white font-bold min-w-[30px] text-center">${item.quantity}</span>
+                        <span class="text-white font-bold min-w-[30px] text-center cursor-pointer hover:text-primary transition-colors" data-id="${item.id}" data-action="edit">${item.quantity}</span>
                         <button class="quantity-btn w-8 h-8 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors" data-id="${item.id}" data-action="increase">+</button>
+                        <button class="w-8 h-8 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors flex items-center justify-center ml-2" data-id="${item.id}" data-action="delete" title="حذف المنتج">
+                            <span class="material-icons-round text-sm">delete</span>
+                        </button>
                     </div>
                 `;
                 cartItemsContainer.appendChild(cartItem);
@@ -534,35 +612,109 @@ document.addEventListener('DOMContentLoaded', function () {
         updateTotals();
     }
 
+    function updateDeliveryState() {
+        if (deliveryToggle.checked) {
+            deliveryOptionsDiv.classList.remove('hidden');
+            cartDeliveryRow.classList.remove('hidden');
+            const selectedType = document.querySelector('input[name="delivery-type"]:checked');
+            deliveryCost = selectedType ? parseFloat(selectedType.value) : 0;
+        } else {
+            deliveryOptionsDiv.classList.add('hidden');
+            cartDeliveryRow.classList.add('hidden');
+            deliveryCost = 0;
+        }
+        updateTotals();
+    }
+
+    deliveryToggle.addEventListener('change', updateDeliveryState);
+    deliveryTypeInputs.forEach(input => {
+        input.addEventListener('change', updateDeliveryState);
+    });
+
     function updateTotals() {
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        const total = subtotal + tax;
+        const total = subtotal + tax + deliveryCost;
 
         cartSubtotal.textContent = `${subtotal.toFixed(2)} ${currency}`;
         if (cartTax) {
             cartTax.textContent = `${tax.toFixed(2)} ${currency}`;
         }
+        
+        cartDeliveryAmount.textContent = `${deliveryCost.toFixed(2)} ${currency}`;
         cartTotal.textContent = `${total.toFixed(2)} ${currency}`;
     }
 
     cartItemsContainer.addEventListener('click', function (e) {
-        if (e.target.classList.contains('quantity-btn')) {
-            const id = e.target.dataset.id;
-            const action = e.target.dataset.action;
-            const item = cart.find(product => product.id == id);
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+        
+        const id = target.dataset.id;
+        const action = target.dataset.action;
+        const item = cart.find(product => product.id == id);
 
-            if (item) {
-                if (action === 'increase') {
-                    item.quantity++;
-                } else if (action === 'decrease') {
-                    item.quantity--;
-                    if (item.quantity === 0) {
-                        cart = cart.filter(product => product.id != id);
-                    }
-                }
-                updateCart();
+        if (!item) return;
+
+        if (action === 'edit') {
+            editingProductId = id;
+            quantityProductName.textContent = item.name;
+            quantityInput.value = item.quantity;
+            quantityModal.classList.remove('hidden');
+            quantityInput.focus();
+            quantityInput.select();
+        } else if (action === 'increase') {
+            item.quantity++;
+            updateCart();
+        } else if (action === 'decrease') {
+            item.quantity--;
+            if (item.quantity === 0) {
+                cart = cart.filter(product => product.id != id);
             }
+            updateCart();
+        } else if (action === 'delete') {
+            if (confirm(`هل تريد حذف "${item.name}" من السلة؟`)) {
+                cart = cart.filter(product => product.id != id);
+                updateCart();
+                showToast('تم حذف المنتج من السلة', true);
+            }
+        }
+    });
+
+    closeQuantityModal.addEventListener('click', () => {
+        quantityModal.classList.add('hidden');
+        editingProductId = null;
+    });
+
+    cancelQuantityBtn.addEventListener('click', () => {
+        quantityModal.classList.add('hidden');
+        editingProductId = null;
+    });
+
+    confirmQuantityBtn.addEventListener('click', () => {
+        const newQuantity = parseInt(quantityInput.value);
+        if (newQuantity > 0 && editingProductId) {
+            const item = cart.find(product => product.id == editingProductId);
+            if (item) {
+                item.quantity = newQuantity;
+                updateCart();
+                showToast('تم تحديث الكمية بنجاح', true);
+            }
+        }
+        quantityModal.classList.add('hidden');
+        editingProductId = null;
+    });
+
+    quantityInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            confirmQuantityBtn.click();
+        }
+    });
+
+    // إغلاق عند الضغط خارج النافذة
+    quantityModal.addEventListener('click', (e) => {
+        if (e.target === quantityModal) {
+            quantityModal.classList.add('hidden');
+            editingProductId = null;
         }
     });
 
@@ -582,7 +734,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        const total = subtotal + tax;
+        const total = subtotal + tax + deliveryCost;
         
         try {
             const response = await fetch('api.php?action=createInvoice', {
@@ -591,6 +743,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify({
                     customer_id: selectedCustomer ? selectedCustomer.id : null,
                     total: total,
+                    delivery_cost: deliveryCost,
                     items: cart
                 }),
             });
@@ -603,6 +756,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     items: cart,
                     subtotal: subtotal,
                     tax: tax,
+                    delivery: deliveryCost,
                     total: total,
                     date: new Date()
                 };
@@ -610,6 +764,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 displayInvoice(currentInvoiceData);
                 cart = [];
                 selectedCustomer = null;
+                
+                // Reset Delivery
+                deliveryToggle.checked = false;
+                updateDeliveryState();
+                
                 customerNameDisplay.textContent = 'عميل نقدي';
                 customerDetailDisplay.textContent = 'افتراضي';
                 customerAvatar.textContent = 'A';
@@ -694,6 +853,22 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('invoice-tax-amount').textContent = `${data.tax.toFixed(2)} ${currency}`;
         } else {
             document.getElementById('invoice-tax-row').style.display = 'none';
+        }
+
+        const existingDeliveryRow = document.getElementById('invoice-delivery-row');
+        if (existingDeliveryRow) existingDeliveryRow.remove();
+        
+        if (data.delivery > 0) {
+            const deliveryRow = document.createElement('div');
+            deliveryRow.id = 'invoice-delivery-row';
+            deliveryRow.className = 'flex justify-between';
+            deliveryRow.innerHTML = `
+                <span class="text-gray-600">التوصيل:</span>
+                <span class="font-medium">${data.delivery.toFixed(2)} ${currency}</span>
+            `;
+            // Insert after tax row
+            const taxRow = document.getElementById('invoice-tax-row');
+            taxRow.parentNode.insertBefore(deliveryRow, taxRow.nextSibling);
         }
         
         document.getElementById('invoice-total').textContent = `${data.total.toFixed(2)} ${currency}`;
@@ -912,6 +1087,15 @@ document.addEventListener('DOMContentLoaded', function () {
 `;
         }
 
+        if (currentInvoiceData.delivery > 0) {
+            thermalContent += `
+        <div class="total-row">
+            <span>التوصيل:</span>
+            <span>${currentInvoiceData.delivery.toFixed(2)} ${currency}</span>
+        </div>
+`;
+        }
+
         thermalContent += `
         <div class="total-row grand-total">
             <span>الإجمالي:</span>
@@ -1059,6 +1243,10 @@ document.addEventListener('DOMContentLoaded', function () {
         
         if (taxEnabled) {
             txtContent += `${taxLabel} (${(taxRate * 100).toFixed(0)}%): ${currentInvoiceData.tax.toFixed(2)} ${currency}\n`;
+        }
+        
+        if (currentInvoiceData.delivery > 0) {
+            txtContent += `التوصيل: ${currentInvoiceData.delivery.toFixed(2)} ${currency}\n`;
         }
         
         txtContent += `الإجمالي: ${currentInvoiceData.total.toFixed(2)} ${currency}\n`;

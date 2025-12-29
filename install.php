@@ -428,5 +428,21 @@ echo "✅ <strong>اكتمل التثبيت بنجاح!</strong><br>";
 echo "يمكنك الآن الانتقال إلى صفحة المنتجات لرؤية الفئات المضافة.";
 echo "</div>";
 
+// Add delivery settings
+$delivery_inserts = [
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryInsideCity', '10') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryOutsideCity', '30') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+];
+
+foreach ($delivery_inserts as $q) {
+    if ($conn->query($q) === TRUE) {
+        // Success
+    } else {
+        echo "Error applying delivery setting: " . $conn->error . "<br>";
+    }
+}
+
+echo "<h3>Delivery settings added successfully</h3>";
+
 $conn->close();
 ?>

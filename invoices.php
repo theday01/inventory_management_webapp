@@ -103,6 +103,27 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                         الفواتير الأخيرة
                     </h3>
 
+                    <form id="invoice-search-form" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div class="md:col-span-2">
+                            <label for="search-term" class="text-sm font-medium text-gray-300 mb-1 block">بحث</label>
+                            <input type="text" id="search-term" name="search" class="w-full bg-dark-surface/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary" placeholder="رقم الفاتورة, اسم العميل, باركود...">
+                        </div>
+                        <div>
+                            <label for="search-date" class="text-sm font-medium text-gray-300 mb-1 block">التاريخ</label>
+                            <input type="date" id="search-date" name="searchDate" class="w-full bg-dark-surface/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary" style="color-scheme: dark;">
+                        </div>
+                        <div class="md:col-span-3 flex justify-end gap-2 mt-2">
+                            <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all">
+                                <span class="material-icons-round">search</span>
+                                <span>بحث</span>
+                            </button>
+                            <button type="button" id="clear-search-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all">
+                                <span class="material-icons-round">clear</span>
+                                <span>مسح</span>
+                            </button>
+                        </div>
+                    </form>
+
                     <div class="overflow-x-auto">
                         <table class="w-full text-right">
                             <thead>
@@ -244,7 +265,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             </div>
         </div>
 
-        <!-- Action Buttons - محدث مع 4 أزرار -->
+        <!-- Action Buttons -->
         <div class="bg-gray-50 p-6 grid grid-cols-2 gap-3 no-print border-t shrink-0">
             <button id="print-invoice-btn" class="bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
                 <span class="material-icons-round text-lg">print</span>
@@ -278,6 +299,10 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     const thermalPrintBtn = document.getElementById('thermal-print-btn');
     const downloadPdfBtn = document.getElementById('download-pdf-btn');
     const downloadTxtBtn = document.getElementById('download-txt-btn');
+    const invoiceSearchForm = document.getElementById('invoice-search-form');
+    const searchTermInput = document.getElementById('search-term');
+    const searchDateInput = document.getElementById('search-date');
+    const clearSearchBtn = document.getElementById('clear-search-btn');
     
     let currentInvoiceData = null;
     const currency = '<?php echo $currency; ?>';
@@ -317,9 +342,21 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         return `${gregorianDate} - ${hijriDateEng}`;
     }
 
-    async function loadInvoices() {
+    async function loadInvoices(searchTerm = '', searchDate = '') {
+        invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">جاري تحميل البيانات...</td></tr>';
+        
+        let apiUrl = 'api.php?action=getInvoices';
+        const params = new URLSearchParams();
+
+        if (searchTerm) params.append('search', searchTerm);
+        if (searchDate) params.append('searchDate', searchDate);
+
+        if (params.toString()) {
+            apiUrl += '&' + params.toString();
+        }
+        
         try {
-            const response = await fetch('api.php?action=getInvoices');
+            const response = await fetch(apiUrl);
             const result = await response.json();
             
             if (result.success) {
@@ -337,7 +374,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         invoicesTableBody.innerHTML = '';
         
         if (invoices.length === 0) {
-            invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">لا توجد فواتير حتى الآن</td></tr>';
+            invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">لم يتم العثور على فواتير تطابق البحث</td></tr>';
             return;
         }
 
@@ -399,29 +436,9 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
     function displayInvoiceDetails(invoice) {
         document.getElementById('invoice-number').textContent = `#${String(invoice.id).padStart(6, '0')}`;
-        // توليد الباركود
-        try {
-            JsBarcode("#invoice-barcode", String(invoice.id).padStart(6, '0'), {
-                format: "CODE128",
-                width: 1,
-                height: 40,
-                displayValue: false,
-                margin: 0
-            });
-        } catch (e) {
-            console.error('Error generating barcode:', e);
-        }
 
         const invoiceDate = new Date(invoice.created_at);
         document.getElementById('invoice-date').textContent = formatDualDate(invoiceDate);
-
-        // إضافة الوقت
-        const formattedTime = toEnglishNumbers(invoiceDate.toLocaleTimeString('ar-SA', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-        }));
-        document.getElementById('invoice-time').textContent = formattedTime;
 
         const customerInfo = document.getElementById('customer-info');
         if (invoice.customer_name) {
@@ -488,7 +505,6 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         window.print();
     });
 
-    // دالة الطباعة الحرارية - مضافة جديد
     function printThermal() {
         if (!currentInvoiceData) return;
 
@@ -619,13 +635,6 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             font-weight: bold;
             margin-bottom: 3mm;
         }
-        .barcode {
-            margin: 5mm 0;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            font-size: 24pt;
-            letter-spacing: 2mm;
-        }
         @media print {
             body {
                 width: 80mm;
@@ -712,10 +721,6 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         </div>
     </div>
 
-    <div style="text-align: center; margin: 5mm 0;">
-        <canvas id="thermal-barcode"></canvas>
-    </div>
-
     <div class="footer">
         <div class="thank-you">🌟 شكراً لثقتكم بنا 🌟</div>
         ${shopName ? `<div>${shopName}</div>` : ''}
@@ -730,27 +735,10 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         printWindow.document.write(thermalContent);
         printWindow.document.close();
         
-        // إضافة مكتبة JsBarcode للنافذة الجديدة
-        const script = printWindow.document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
-        script.onload = function() {
-            try {
-                JsBarcode(printWindow.document.getElementById('thermal-barcode'), String(currentInvoiceData.id).padStart(6, '0'), {
-                    format: "CODE128",
-                    width: 2,
-                    height: 50,
-                    displayValue: false
-                });
-            } catch (e) {
-                console.error('Barcode error:', e);
-            }
-            
-            setTimeout(() => {
-                printWindow.focus();
-                printWindow.print();
-            }, 500);
-        };
-        printWindow.document.head.appendChild(script);
+        setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+        }, 500);
     }
 
     thermalPrintBtn.addEventListener('click', printThermal);
@@ -875,6 +863,16 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         link.click();
         
         showToast('تم تحميل الفاتورة بصيغة TXT', true);
+    });
+
+    invoiceSearchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        loadInvoices(searchTermInput.value, searchDateInput.value);
+    });
+
+    clearSearchBtn.addEventListener('click', function() {
+        invoiceSearchForm.reset();
+        loadInvoices();
     });
     
     loadInvoices();

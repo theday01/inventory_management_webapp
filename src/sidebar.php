@@ -30,7 +30,7 @@ if ($shopNameResult && $shopNameResult->num_rows > 0) {
         <a href="products.php"
             class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all <?php echo ($current_page === 'products.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 hover:bg-white/5 hover:text-white'; ?>">
             <span class="material-icons-round">inventory_2</span>
-            <span class="font-medium">المنتجات</span>
+            <span class="font-medium">المنتجات (إدارة المخزون)</span>
         </a>
         <a href="customers.php"
             class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all <?php echo ($current_page === 'customers.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 hover:bg-white/5 hover:text-white'; ?>">
@@ -47,7 +47,7 @@ if ($shopNameResult && $shopNameResult->num_rows > 0) {
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all <?php echo ($current_page === 'settings.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 hover:bg-white/5 hover:text-white'; ?>">
                 <span class="material-icons-round">settings</span>
                 <span class="font-medium">الإعدادات</span>
-            </a>
+            </a>            
         </div>
     </nav>
 
