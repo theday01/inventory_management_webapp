@@ -431,7 +431,8 @@ echo "</div>";
 // Add delivery settings
 $delivery_inserts = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryInsideCity', '10') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryOutsideCity', '30') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryOutsideCity', '30') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('darkMode', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
 ];
 
 foreach ($delivery_inserts as $q) {

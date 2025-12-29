@@ -1,12 +1,19 @@
-<?php require_once 'session.php'; ?>
-<?php require_once 'db.php'; ?>
+<?php
+require_once 'session.php';
+require_once 'db.php';
+
+// Get dark mode setting
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'darkMode'");
+$darkMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '1';
+$isDark = ($darkMode == '1');
+?>
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="dark">
+<html lang="ar" dir="rtl" class="<?php echo $isDark ? 'dark' : ''; ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo isset($page_title) ? $page_title : 'Smart Shop'; ?></title>
+    <title><?php echo $page_title ?? 'Smart Shop'; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -18,6 +25,13 @@
                             DEFAULT: '#0E1116',
                             surface: '#1F2937',
                             glass: 'rgba(14, 17, 22, 0.7)',
+                            border: '#374151'
+                        },
+                        light: {
+                            DEFAULT: '#FFFFFF',
+                            surface: '#F9FAFB',
+                            glass: 'rgba(255, 255, 255, 0.7)',
+                            border: '#E5E7EB'
                         },
                         primary: {
                             DEFAULT: '#3B82F6',
@@ -41,31 +55,417 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+
+        .dark .glass-panel {
+            background-color: rgba(31, 41, 55, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        html:not(.dark) .glass-panel {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Toggle Switch Styling */
+        .toggle-checkbox {
+            position: absolute;
+            opacity: 0;
+        }
         
-        /* تحسين شريط التمرير */
-        ::-webkit-scrollbar {
+        .toggle-checkbox + .toggle-label {
+            display: block;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            user-select: none;
+        }
+        
+        /* Dark Mode Toggle */
+        .dark .toggle-label {
+            background-color: #374151;
+        }
+        
+        .dark .toggle-checkbox:checked + .toggle-label {
+            background-color: #3B82F6;
+        }
+        
+        .dark .toggle-checkbox + .toggle-label:before {
+            background-color: #1F2937;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dark .toggle-checkbox:checked + .toggle-label:before {
+            background-color: #FFFFFF;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Light Mode Toggle */
+        html:not(.dark) .toggle-label {
+            background-color: #D1D5DB !important;
+        }
+        
+        html:not(.dark) .toggle-checkbox:checked + .toggle-label {
+            background-color: #3B82F6 !important;
+        }
+        
+        html:not(.dark) .toggle-checkbox + .toggle-label:before {
+            background-color: #FFFFFF !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        html:not(.dark) .toggle-checkbox:checked + .toggle-label:before {
+            background-color: #FFFFFF !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        /* Toggle Animation */
+        .toggle-checkbox + .toggle-label:before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-checkbox:checked + .toggle-label:before {
+            left: 26px;
+        }
+
+        /* Light mode specific styles */
+        html:not(.dark) {
+            background-color: #F3F4F6;
+        }
+
+        html:not(.dark) body {
+            background-color: #F3F4F6;
+            color: #111827;
+        }
+
+        /* Override dark mode text colors in light mode */
+        html:not(.dark) .text-white {
+            color: #111827 !important;
+        }
+
+        html:not(.dark) .text-gray-300,
+        html:not(.dark) .text-gray-400,
+        html:not(.dark) .text-gray-500 {
+            color: #6B7280 !important;
+        }
+
+        html:not(.dark) .bg-dark,
+        html:not(.dark) .bg-dark-surface {
+            background-color: #FFFFFF !important;
+        }
+
+        html:not(.dark) .border-white\/5,
+        html:not(.dark) .border-white\/10 {
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Light mode input styles */
+        html:not(.dark) input,
+        html:not(.dark) textarea,
+        html:not(.dark) select {
+            background-color: #FFFFFF !important;
+            border-color: #D1D5DB !important;
+            color: #111827 !important;
+        }
+
+        html:not(.dark) input::placeholder,
+        html:not(.dark) textarea::placeholder {
+            color: #9CA3AF !important;
+        }
+
+        /* Light mode button styles */
+        html:not(.dark) .bg-dark\/50 {
+            background-color: #F9FAFB !important;
+        }
+
+        html:not(.dark) .bg-white\/5,
+        html:not(.dark) .bg-white\/10 {
+            background-color: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        html:not(.dark) .hover\:bg-white\/5:hover,
+        html:not(.dark) .hover\:bg-white\/10:hover {
+            background-color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Light mode table styles */
+        html:not(.dark) table tbody tr {
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        html:not(.dark) table thead tr {
+            background-color: #F9FAFB !important;
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Light mode sidebar */
+        html:not(.dark) aside {
+            background-color: #FFFFFF !important;
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Light mode header */
+        html:not(.dark) header {
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Light mode cards */
+        html:not(.dark) .bg-dark-surface\/50,
+        html:not(.dark) .bg-dark-surface\/60 {
+            background-color: #FFFFFF !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Light mode modals */
+        html:not(.dark) .bg-dark-surface {
+            background-color: #FFFFFF !important;
+        }
+
+        /* Blobs in light mode */
+        html:not(.dark) .bg-primary\/5,
+        html:not(.dark) .bg-primary\/20,
+        html:not(.dark) .bg-accent\/5,
+        html:not(.dark) .bg-accent\/10 {
+            opacity: 0.3;
+        }
+
+        /* Scrollbar Styling - Dark Mode */
+        .dark ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
-        
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(31, 41, 55, 0.5);
             border-radius: 10px;
         }
-        
-        ::-webkit-scrollbar-thumb {
+
+        .dark ::-webkit-scrollbar-thumb {
             background: rgba(59, 130, 246, 0.5);
             border-radius: 10px;
+            transition: background 0.3s ease;
         }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(59, 130, 246, 0.7);
+
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.8);
         }
-        
-        /* تأكد من أن الصفحة لا تتجاوز ارتفاع الشاشة */
-        html, body {
-            height: 100%;
-            overflow: hidden;
+
+        /* Scrollbar Styling - Light Mode */
+        html:not(.dark) ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        html:not(.dark) ::-webkit-scrollbar-track {
+            background: #F3F4F6;
+            border-radius: 10px;
+        }
+
+        html:not(.dark) ::-webkit-scrollbar-thumb {
+            background: #3B82F6;
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+            background: #2563EB;
+        }
+
+        /* Firefox Scrollbar - Dark Mode */
+        .dark * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(59, 130, 246, 0.5) rgba(31, 41, 55, 0.5);
+        }
+
+        /* Firefox Scrollbar - Light Mode */
+        html:not(.dark) * {
+            scrollbar-width: thin;
+            scrollbar-color: #3B82F6 #F3F4F6;
+        }
+
+        /* Light Mode Button Styles */
+        html:not(.dark) .bg-primary {
+            background-color: #FFFFFF !important;
+            color: #3B82F6 !important;
+            border: 2px solid #3B82F6 !important;
+        }
+
+        html:not(.dark) .bg-primary:hover,
+        html:not(.dark) .hover\:bg-primary-hover:hover {
+            background-color: #3B82F6 !important;
+            color: #FFFFFF !important;
+            border-color: #3B82F6 !important;
+        }
+
+        html:not(.dark) .bg-gray-700,
+        html:not(.dark) .bg-gray-600 {
+            background-color: #FFFFFF !important;
+            color: #6B7280 !important;
+            border: 2px solid #D1D5DB !important;
+        }
+
+        html:not(.dark) .bg-gray-700:hover,
+        html:not(.dark) .bg-gray-600:hover {
+            background-color: #F3F4F6 !important;
+            color: #374151 !important;
+            border-color: #9CA3AF !important;
+        }
+
+        html:not(.dark) .bg-accent {
+            background-color: #FFFFFF !important;
+            color: #84CC16 !important;
+            border: 2px solid #84CC16 !important;
+        }
+
+        html:not(.dark) .bg-accent:hover,
+        html:not(.dark) .hover\:bg-lime-500:hover {
+            background-color: #84CC16 !important;
+            color: #FFFFFF !important;
+            border-color: #84CC16 !important;
+        }
+
+        html:not(.dark) .bg-red-500,
+        html:not(.dark) .bg-red-500\/10 {
+            background-color: #FFFFFF !important;
+            color: #EF4444 !important;
+            border: 2px solid #EF4444 !important;
+        }
+
+        html:not(.dark) .bg-red-500:hover,
+        html:not(.dark) .hover\:bg-red-500\/20:hover {
+            background-color: #EF4444 !important;
+            color: #FFFFFF !important;
+            border-color: #EF4444 !important;
+        }
+
+        html:not(.dark) .bg-purple-600 {
+            background-color: #FFFFFF !important;
+            color: #9333EA !important;
+            border: 2px solid #9333EA !important;
+        }
+
+        html:not(.dark) .bg-purple-600:hover {
+            background-color: #9333EA !important;
+            color: #FFFFFF !important;
+            border-color: #9333EA !important;
+        }
+
+        html:not(.dark) .bg-primary\/10 {
+            background-color: #FFFFFF !important;
+            color: #3B82F6 !important;
+            border: 2px solid #E5E7EB !important;
+        }
+
+        html:not(.dark) .bg-primary\/10:hover {
+            background-color: #F3F4F6 !important;
+            color: #2563EB !important;
+            border-color: #3B82F6 !important;
+        }
+
+        /* Light mode shadow adjustments for buttons */
+        html:not(.dark) .shadow-lg {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        html:not(.dark) .shadow-primary\/20 {
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1) !important;
+        }
+
+        /* Ensure button text is always visible */
+        html:not(.dark) button span,
+        html:not(.dark) a span {
+            color: inherit !important;
+        }
+
+        html:not(.dark) .text-white {
+            color: inherit !important;
+        }
+
+        /* Light mode icon colors in buttons */
+        html:not(.dark) .bg-primary .material-icons-round {
+            color: #3B82F6 !important;
+        }
+
+        html:not(.dark) .bg-primary:hover .material-icons-round {
+            color: #FFFFFF !important;
+        }
+
+        html:not(.dark) .bg-gray-700 .material-icons-round,
+        html:not(.dark) .bg-gray-600 .material-icons-round {
+            color: #6B7280 !important;
+        }
+
+        html:not(.dark) .bg-gray-700:hover .material-icons-round,
+        html:not(.dark) .bg-gray-600:hover .material-icons-round {
+            color: #374151 !important;
+        }
+
+        html:not(.dark) .bg-accent .material-icons-round {
+            color: #84CC16 !important;
+        }
+
+        html:not(.dark) .bg-accent:hover .material-icons-round {
+            color: #FFFFFF !important;
+        }
+
+        html:not(.dark) .bg-red-500 .material-icons-round,
+        html:not(.dark) .bg-red-500\/10 .material-icons-round {
+            color: #EF4444 !important;
+        }
+
+        html:not(.dark) .bg-red-500:hover .material-icons-round {
+            color: #FFFFFF !important;
+        }
+
+        html:not(.dark) .bg-purple-600 .material-icons-round {
+            color: #9333EA !important;
+        }
+
+        html:not(.dark) .bg-purple-600:hover .material-icons-round {
+            color: #FFFFFF !important;
+        }
+
+        /* Light mode - specific button text colors */
+        html:not(.dark) button.bg-primary,
+        html:not(.dark) a.bg-primary {
+            font-weight: 700;
+        }
+
+        /* Light mode form buttons */
+        html:not(.dark) button[type="submit"],
+        html:not(.dark) button[type="button"] {
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        /* Light mode - ensure link buttons work correctly */
+        html:not(.dark) a.bg-primary,
+        html:not(.dark) a.bg-accent,
+        html:not(.dark) a.bg-gray-700 {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        /* Light mode - Search and action buttons */
+        html:not(.dark) #search-submit-btn,
+        html:not(.dark) #clear-search-btn,
+        html:not(.dark) button[type="submit"].bg-primary,
+        html:not(.dark) button[type="button"].bg-gray-600 {
+            border-width: 2px;
+            border-style: solid;
+        }
+
+        /* Light mode - Gradient backgrounds should be solid */
+        html:not(.dark) .bg-gradient-to-r {
+            /*background-image: none !important;*/
         }
     </style>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -74,91 +474,69 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 
-<body class="bg-dark text-white font-sans min-h-screen flex overflow-hidden">
+<body class="font-sans min-h-screen <?php echo $isDark ? 'bg-dark text-white' : 'bg-gray-100 text-gray-900'; ?>">
 
-<!-- نظام الرسائل الموحد -->
-<div id="toast-notification" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none">
-    <div id="toast-content" class="flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md">
-        <span id="toast-icon" class="material-icons-round text-2xl"></span>
-        <span id="toast-message" class="font-bold text-lg"></span>
+    <!-- نظام الرسائل الموحد -->
+    <div id="toast-notification"
+        class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none">
+        <div id="toast-content" class="flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md">
+            <span id="toast-icon" class="material-icons-round text-2xl"></span>
+            <span id="toast-message" class="font-bold text-lg"></span>
+        </div>
     </div>
-</div>
 
-<script>
-    // دالة عرض الرسائل الموحدة
-    function showToast(message, isSuccess = true) {
-        const toast = document.getElementById('toast-notification');
-        const toastContent = document.getElementById('toast-content');
-        const toastMessage = document.getElementById('toast-message');
-        const toastIcon = document.getElementById('toast-icon');
+    <script>
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('toast-notification');
+            const toastContent = document.getElementById('toast-content');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
 
-        // تعيين الرسالة والأيقونة
-        toastMessage.textContent = message;
-        
-        if (isSuccess) {
-            toastContent.className = 'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-green-500 text-white';
-            toastIcon.textContent = 'check_circle';
-        } else {
-            toastContent.className = 'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-red-500 text-white';
-            toastIcon.textContent = 'error';
-        }
+            toastMessage.textContent = message;
 
-        // إظهار الرسالة
-        toast.classList.remove('opacity-0', '-translate-y-10', 'pointer-events-none');
-        toast.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+            if (isSuccess) {
+                toastContent.className =
+                    'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-green-500 text-white';
+                toastIcon.textContent = 'check_circle';
+            } else {
+                toastContent.className =
+                    'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-red-500 text-white';
+                toastIcon.textContent = 'error';
+            }
 
-        // إخفاء الرسالة بعد 3 ثواني
-        setTimeout(() => {
-            toast.classList.remove('opacity-100', 'translate-y-0');
-            toast.classList.add('opacity-0', '-translate-y-10');
+            toast.classList.remove('opacity-0', '-translate-y-10', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
             setTimeout(() => {
-                toast.classList.add('pointer-events-none');
-            }, 300);
-        }, 3000);
-    }
-
-    // معالجة الرسائل من URL parameters
-    document.addEventListener('DOMContentLoaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        // رسائل النجاح
-        if (urlParams.has('success')) {
-            const successMsg = urlParams.get('success');
-            showToast(successMsg, true);
-            
-            // إزالة المعامل من URL
-            urlParams.delete('success');
-            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-            window.history.replaceState({}, '', newUrl);
-        }
-        
-        // رسائل الخطأ
-        if (urlParams.has('error')) {
-            const errorMsg = urlParams.get('error');
-            showToast(errorMsg, false);
-            
-            // إزالة المعامل من URL
-            urlParams.delete('error');
-            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-            window.history.replaceState({}, '', newUrl);
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-10');
+                setTimeout(() => {
+                    toast.classList.add('pointer-events-none');
+                }, 300);
+            }, 3000);
         }
 
-        // دعم للرسائل القديمة (saved parameter)
-        if (urlParams.has('saved') && urlParams.get('saved') === 'true') {
-            showToast('تم حفظ التغييرات بنجاح', true);
-            
-            urlParams.delete('saved');
-            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-            window.history.replaceState({}, '', newUrl);
-        }
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
 
-        // دعم للرسائل القديمة (registered parameter)
-        if (urlParams.has('registered') && urlParams.get('registered') === 'true') {
-            showToast('تم إنشاء الحساب بنجاح', true);
-            
-            urlParams.delete('registered');
-            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-            window.history.replaceState({}, '', newUrl);
-        }
-    });
-</script>
+            if (urlParams.has('success')) {
+                const successMsg = urlParams.get('success');
+                showToast(successMsg, true);
+
+                urlParams.delete('success');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
+            }
+
+            if (urlParams.has('error')) {
+                const errorMsg = urlParams.get('error');
+                showToast(errorMsg, false);
+
+                urlParams.delete('error');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
+            }
+        });
+    </script>
+
+    <div class="flex h-screen overflow-hidden"><?php // Main container - closed in footer ?>

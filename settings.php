@@ -160,9 +160,9 @@ if ($result) {
                                     </div>
                                     <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
                                         <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1"
-                                            class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
+                                            class="toggle-checkbox"
                                             <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> />
-                                        <label for="toggle-tax" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                        <label for="toggle-tax" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
                                     </div>
                                 </div>
                                 <div>
@@ -191,9 +191,10 @@ if ($result) {
                                     </div>
                                     <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
                                         <input type="checkbox" name="darkMode" id="toggle-dark" value="1"
-                                            class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
+                                            class="toggle-checkbox"
+                                            onchange="this.form.submit()"
                                             <?php echo (isset($settings['darkMode']) && $settings['darkMode'] == '1') ? 'checked' : ''; ?> />
-                                        <label for="toggle-dark" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                        <label for="toggle-dark" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
@@ -203,9 +204,9 @@ if ($result) {
                                     </div>
                                     <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
                                         <input type="checkbox" name="soundNotifications" id="toggle-sound" value="1"
-                                            class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer left-0 top-0 checked:left-6 checked:bg-primary transition-all duration-300"
+                                            class="toggle-checkbox"
                                             <?php echo (isset($settings['soundNotifications']) && $settings['soundNotifications'] == '1') ? 'checked' : ''; ?> />
-                                        <label for="toggle-sound" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                        <label for="toggle-sound" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
                                     </div>
                                 </div>
                                 <div class="p-4 bg-white/5 rounded-xl">
@@ -236,20 +237,16 @@ if ($result) {
 <script>
 // وظيفة إعادة تعيين أسعار التوصيل
 function resetDeliveryPrices() {
-    // التأكد من المستخدم قبل التغيير
     if(confirm('هل أنت متأكد من إعادة تعيين أسعار التوصيل إلى القيم الافتراضية (20/40)؟\nيجب عليك حفظ التغييرات بعد ذلك.')) {
-        // تحديد الحقول
         const insideCity = document.getElementById('deliveryInsideCity');
         const outsideCity = document.getElementById('deliveryOutsideCity');
         
-        // تعيين القيم الجديدة
         insideCity.value = '20';
         outsideCity.value = '40';
         
-        // تأثير بصري بسيط (وميض) ليلاحظ المستخدم التغيير
         [insideCity, outsideCity].forEach(el => {
             el.style.transition = 'all 0.3s';
-            el.style.borderColor = '#10b981'; // لون أخضر
+            el.style.borderColor = '#10b981';
             el.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
             
             setTimeout(() => {
