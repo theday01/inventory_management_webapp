@@ -467,6 +467,34 @@ $isDark = ($darkMode == '1');
         html:not(.dark) .bg-gradient-to-r {
             /*background-image: none !important;*/
         }
+
+        /* Light Mode - Product Table Row Colors for Low Stock */
+        html:not(.dark) .bg-red-900\/20 {
+            background-color: rgba(254, 202, 202, 0.8) !important;
+        }
+
+        html:not(.dark) .bg-red-900\/30,
+        html:not(.dark) .bg-red-900\/20:hover {
+            background-color: rgba(252, 165, 165, 0.9) !important;
+        }
+
+        html:not(.dark) .bg-orange-900\/20 {
+            background-color: rgba(254, 215, 170, 0.8) !important;
+        }
+
+        html:not(.dark) .bg-orange-900\/30,
+        html:not(.dark) .bg-orange-900\/20:hover {
+            background-color: rgba(253, 186, 116, 0.9) !important;
+        }
+
+        /* Light Mode - Low Stock Quantity Text Colors */
+        html:not(.dark) .text-red-400 {
+            color: #DC2626 !important;
+        }
+
+        html:not(.dark) .text-orange-400 {
+            color: #EA580C !important;
+        }
     </style>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -18,7 +18,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     <!-- Header -->
     <header
         class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
-        <h2 class="text-xl font-bold text-white">إدارة المنتجات</h2>
+        <h2 class="text-xl font-bold text-white">إدارة المخزون</h2>
 
         <div class="flex items-center gap-4">
             <button id="add-product-btn"
@@ -65,10 +65,6 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <table class="w-full">
                 <thead>
                     <tr class="bg-white/5 border-b border-white/5 text-right">
-                        <th class="p-4 text-sm font-medium text-gray-300 w-16">
-                            <input type="checkbox"
-                                class="rounded border-gray-600 bg-dark text-primary focus:ring-primary">
-                        </th>
                         <th class="p-4 text-sm font-medium text-gray-300">المنتج</th>
                         <th class="p-4 text-sm font-medium text-gray-300">الصورة</th>
                         <th class="p-4 text-sm font-medium text-gray-300">الفئة</th>
@@ -267,47 +263,38 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         }
     }
 
-    // كود خاص بصفحة products.php فقط (نظام الجدول)
     function displayProducts(products) {
         productsTableBody.innerHTML = '';
         if (products.length === 0) {
-            productsTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-500">لا توجد منتجات لعرضها.</td></tr>';
+            productsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">لا توجد منتجات لعرضها.</td></tr>';
             return;
         }
 
         products.forEach(product => {
             const productRow = document.createElement('tr');
             
-            // --- منطق الألوان للجدول ---
             const qty = parseInt(product.quantity);
             let rowClass = 'transition-colors border-b border-white/5';
             let quantityClass = 'text-gray-300';
 
             if (qty <= 20) {
-                // أحمر للخطر
                 rowClass += ' bg-red-900/20 hover:bg-red-900/30'; 
                 quantityClass = 'text-red-400 font-bold';
             } else if (qty <= 50) {
-                // برتقالي للتحذير
                 rowClass += ' bg-orange-900/20 hover:bg-orange-900/30';
                 quantityClass = 'text-orange-400 font-bold';
             } else {
-                // اللون العادي
                 rowClass += ' bg-transparent hover:bg-white/5';
             }
-            // ---------------------------
 
             productRow.className = rowClass;
 
             productRow.innerHTML = `
-                <td class="p-4 text-sm text-gray-300 w-16">
-                    <input type="checkbox" class="rounded border-gray-600 bg-dark text-primary focus:ring-primary">
-                </td>
                 <td class="p-4 text-sm text-gray-300 font-medium">${product.name}</td>
                 <td class="p-4 text-sm text-gray-300">
                     <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" class="w-10 h-10 rounded-md object-cover">
                 </td>
-                <td class="p-4 text-sm text-gray-300">${product.category_name || 'غير مصنف'}</td>
+                <td class="p-4 text-sm text-gray-300">${product.category_name || 'غير مصنّف'}</td>
                 <td class="p-4 text-sm text-gray-300">${parseFloat(product.price).toFixed(2)}</td>
                 <td class="p-4 text-sm ${quantityClass}">${qty}</td>
                 <td class="p-4 text-sm text-gray-300">
