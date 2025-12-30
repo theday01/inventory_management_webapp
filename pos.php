@@ -25,6 +25,14 @@ $shopPhone = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['settin
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopAddress'");
 $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopCity'");
+$shopCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
+$locationParts = [];
+if (!empty($shopCity)) $locationParts[] = $shopCity;
+if (!empty($shopAddress)) $locationParts[] = $shopAddress;
+$fullLocation = implode('، ', $locationParts);
+
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'deliveryInsideCity'");
 $deliveryInsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '10';
 
@@ -235,8 +243,9 @@ $deliveryOutsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc
                     <?php if ($shopPhone): ?>
                         <p class="text-sm text-gray-600">هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
                     <?php endif; ?>
-                    <?php if ($shopAddress): ?>
-                        <p class="text-sm text-gray-600"><?php echo htmlspecialchars($shopAddress); ?></p>
+                    
+                    <?php if (!empty($fullLocation)): ?>
+                        <p class="text-sm text-gray-600"><?php echo htmlspecialchars($fullLocation); ?></p>
                     <?php endif; ?>
                 </div>
 
@@ -306,8 +315,9 @@ $deliveryOutsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc
                             <?php if (!empty($shopPhone)): ?>
                                 <p>هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
                             <?php endif; ?>
-                            <?php if (!empty($shopAddress)): ?>
-                                <p><?php echo htmlspecialchars($shopAddress); ?></p>
+                            
+                            <?php if (!empty($fullLocation)): ?>
+                                <p><?php echo htmlspecialchars($fullLocation); ?></p>
                             <?php endif; ?>
                         </div>
                     <?php else: ?>
@@ -323,7 +333,7 @@ $deliveryOutsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc
         <div class="bg-gray-50 p-6 grid grid-cols-2 gap-3 no-print border-t shrink-0">
             <button id="print-invoice-btn" class="bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
                 <span class="material-icons-round text-lg">print</span>
-                طباعة عادية
+                طباعة مباشرة
             </button>
             <button id="thermal-print-btn" class="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
                 <span class="material-icons-round text-lg">receipt_long</span>
@@ -471,6 +481,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const shopName = '<?php echo addslashes($shopName); ?>';
     const shopPhone = '<?php echo addslashes($shopPhone); ?>';
     const shopAddress = '<?php echo addslashes($shopAddress); ?>';
+    const shopCity = '<?php echo addslashes($shopCity); ?>'; // [جديد]
 
     function toEnglishNumbers(str) {
         const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -885,256 +896,125 @@ document.addEventListener('DOMContentLoaded', function () {
             minute: '2-digit',
             hour12: false 
         }));
-        let thermalContent = `
-<!DOCTYPE html>
+
+        // --- تصحيح: معالجة النص قبل فتح القالب النصي ---
+        let locationText = '';
+        if(shopCity) locationText += shopCity;
+        if(shopCity && shopAddress) locationText += '، ';
+        if(shopAddress) locationText += shopAddress;
+        // ---------------------------------------------
+
+        let thermalContent = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=80mm">
     <title>فاتورة حرارية #${String(currentInvoiceData.id).padStart(6, '0')}</title>
     <style>
-        @page {
-            size: 80mm auto;
-            margin: 0;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        @page { size: 80mm auto; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            width: 80mm;
-            padding: 10mm 5mm;
-            font-size: 11pt;
-            line-height: 1.4;
-            background: white;
-            color: #000;
+            width: 80mm; padding: 5mm; font-size: 11pt;
+            line-height: 1.4; background: white; color: #000;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 8mm;
-            border-bottom: 2px dashed #000;
-            padding-bottom: 5mm;
-        }
-        .shop-name {
-            font-size: 18pt;
-            font-weight: bold;
-            margin-bottom: 2mm;
-        }
-        .shop-info {
-            font-size: 9pt;
-            color: #333;
-            margin: 1mm 0;
-        }
-        .invoice-info {
-            margin: 5mm 0;
-            border-bottom: 1px dashed #000;
-            padding-bottom: 3mm;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 2mm 0;
-            font-size: 10pt;
-        }
-        .info-label {
-            font-weight: bold;
-        }
-        .customer-section {
-            margin: 5mm 0;
-            padding: 3mm;
-            background: #f5f5f5;
-            border-radius: 2mm;
-            font-size: 10pt;
-        }
-        .items-table {
-            width: 100%;
-            margin: 5mm 0;
-            border-collapse: collapse;
-        }
-        .items-header {
-            border-top: 2px solid #000;
-            border-bottom: 1px solid #000;
-            padding: 2mm 0;
-            font-weight: bold;
-            font-size: 10pt;
-        }
-        .item-row {
-            border-bottom: 1px dashed #ccc;
-            padding: 2mm 0;
-            font-size: 10pt;
-        }
-        .item-name {
-            font-weight: bold;
-            margin-bottom: 1mm;
-        }
-        .item-details {
-            display: flex;
-            justify-content: space-between;
-            color: #555;
-            font-size: 9pt;
-        }
-        .totals-section {
-            margin: 5mm 0;
-            border-top: 2px solid #000;
-            padding-top: 3mm;
-        }
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 2mm 0;
-            font-size: 11pt;
-        }
-        .total-row.grand-total {
-            font-size: 14pt;
-            font-weight: bold;
-            border-top: 2px solid #000;
-            padding-top: 3mm;
-            margin-top: 3mm;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 8mm;
-            border-top: 2px dashed #000;
-            padding-top: 5mm;
-            font-size: 10pt;
-        }
-        .thank-you {
-            font-size: 12pt;
-            font-weight: bold;
-            margin-bottom: 3mm;
-        }
-        .barcode {
-            margin: 5mm 0;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            font-size: 24pt;
-            letter-spacing: 2mm;
-        }
-        @media print {
-            body {
-                width: 80mm;
-            }
-        }
+        .header { text-align: center; margin-bottom: 5mm; border-bottom: 2px dashed #000; padding-bottom: 3mm; }
+        .shop-name { font-size: 16pt; font-weight: bold; margin-bottom: 1mm; }
+        .shop-info { font-size: 9pt; color: #333; margin: 1mm 0; }
+        .invoice-info { margin: 3mm 0; border-bottom: 1px dashed #000; padding-bottom: 2mm; }
+        .info-row { display: flex; justify-content: space-between; font-size: 10pt; margin: 1mm 0; }
+        .customer-section { margin: 3mm 0; padding: 2mm; background: #f5f5f5; border-radius: 2mm; font-size: 10pt; }
+        .items-table { width: 100%; margin: 3mm 0; }
+        .items-header { border-top: 2px solid #000; border-bottom: 1px solid #000; padding: 1mm 0; font-weight: bold; font-size: 10pt; }
+        .item-row { border-bottom: 1px dashed #ccc; padding: 2mm 0; font-size: 10pt; }
+        .item-details { display: flex; justify-content: space-between; font-size: 9pt; }
+        .totals-section { margin: 3mm 0; border-top: 2px solid #000; padding-top: 2mm; }
+        .total-row { display: flex; justify-content: space-between; font-size: 11pt; margin: 1mm 0; }
+        .grand-total { font-size: 14pt; font-weight: bold; border-top: 2px solid #000; padding-top: 2mm; margin-top: 2mm; }
+        .footer { text-align: center; margin-top: 5mm; border-top: 2px dashed #000; padding-top: 3mm; font-size: 10pt; }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="shop-name">${shopName}</div>
         ${shopPhone ? `<div class="shop-info">📞 ${shopPhone}</div>` : ''}
-        ${shopAddress ? `<div class="shop-info">📍 ${shopAddress}</div>` : ''}
+        ${locationText ? `<div class="shop-info">📍 ${locationText}</div>` : ''}
     </div>
 
     <div class="invoice-info">
-        <div class="info-row">
-            <span class="info-label">رقم الفاتورة:</span>
-            <span>#${String(currentInvoiceData.id).padStart(6, '0')}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">التاريخ:</span>
-            <span>${formattedDate}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">الوقت:</span>
-            <span>${formattedTime}</span>
-        </div>
+        <div class="info-row"><span>رقم الفاتورة:</span><span>#${String(currentInvoiceData.id).padStart(6, '0')}</span></div>
+        <div class="info-row"><span>التاريخ:</span><span>${formattedDate}</span></div>
+        <div class="info-row"><span>الوقت:</span><span>${formattedTime}</span></div>
     </div>
 
     ${currentInvoiceData.customer ? `
     <div class="customer-section">
-        <div style="font-weight: bold; margin-bottom: 2mm;">معلومات العميل:</div>
-        <div>📝 ${currentInvoiceData.customer.name}</div>
+        <div style="font-weight: bold;">العميل: ${currentInvoiceData.customer.name}</div>
         ${currentInvoiceData.customer.phone ? `<div>📞 ${currentInvoiceData.customer.phone}</div>` : ''}
     </div>
     ` : '<div class="customer-section"><div>💵 عميل نقدي</div></div>'}
 
     <div class="items-table">
-        <div class="items-header">
-            المنتجات (${currentInvoiceData.items.length})
-        </div>
+        <div class="items-header">المنتجات (${currentInvoiceData.items.length})</div>
 `;
 
         currentInvoiceData.items.forEach((item, index) => {
             const itemTotal = item.price * item.quantity;
             thermalContent += `
         <div class="item-row">
-            <div class="item-name">${index + 1}. ${item.name}</div>
+            <div style="font-weight:bold">${index + 1}. ${item.name}</div>
             <div class="item-details">
-                <span>${item.quantity} × ${parseFloat(item.price).toFixed(2)} ${currency}</span>
+                <span>${item.quantity} × ${parseFloat(item.price).toFixed(2)}</span>
                 <span style="font-weight: bold;">${itemTotal.toFixed(2)} ${currency}</span>
             </div>
-        </div>
-`;
+        </div>`;
         });
 
-        thermalContent += `
-    </div>
-
+        thermalContent += `</div>
     <div class="totals-section">
-        <div class="total-row">
-            <span>المجموع الفرعي:</span>
-            <span>${currentInvoiceData.subtotal.toFixed(2)} ${currency}</span>
-        </div>
-`;
+        <div class="total-row"><span>المجموع:</span><span>${currentInvoiceData.subtotal.toFixed(2)} ${currency}</span></div>`;
 
         if (taxEnabled) {
-            thermalContent += `
-        <div class="total-row">
-            <span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span>
-            <span>${currentInvoiceData.tax.toFixed(2)} ${currency}</span>
-        </div>
-`;
+            thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${currentInvoiceData.tax.toFixed(2)} ${currency}</span></div>`;
         }
-
         if (currentInvoiceData.delivery > 0) {
-            thermalContent += `
-        <div class="total-row">
-            <span>التوصيل:</span>
-            <span>${currentInvoiceData.delivery.toFixed(2)} ${currency}</span>
-        </div>
-`;
+            thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${currentInvoiceData.delivery.toFixed(2)} ${currency}</span></div>`;
         }
 
         thermalContent += `
-        <div class="total-row grand-total">
-            <span>الإجمالي:</span>
-            <span>${currentInvoiceData.total.toFixed(2)} ${currency}</span>
-        </div>
+        <div class="total-row grand-total"><span>الإجمالي:</span><span>${currentInvoiceData.total.toFixed(2)} ${currency}</span></div>
     </div>
 
     <div style="text-align: center; margin: 5mm 0;">
-        <canvas id="thermal-barcode"></canvas>
+        <svg id="barcode-thermal"></svg>
     </div>
 
     <div class="footer">
-        <div class="thank-you">🌟 شكراً لثقتكم بنا 🌟</div>
+        <div style="font-weight: bold; margin-bottom: 2mm;">🌟 شكراً لثقتكم بنا 🌟</div>
         ${shopName ? `<div>${shopName}</div>` : ''}
-        ${shopPhone ? `<div>هاتف: ${shopPhone}</div>` : ''}
-        ${!shopName && !shopPhone ? '<div>تم التطوير بواسطة حمزة سعدي 2025</div>' : ''}
+        ${!shopName ? '<div>نظام Smart Shop</div>' : ''}
     </div>
 </body>
-</html>
-`;
+</html>`;
 
-        const printWindow = window.open('', '_blank', 'width=302,height=500');
+        const printWindow = window.open('', '_blank', 'width=302,height=600');
         printWindow.document.write(thermalContent);
         printWindow.document.close();
         
-        // إضافة مكتبة JsBarcode للنافذة الجديدة
+        // إصلاح الباركود في الطباعة الحرارية
         const script = printWindow.document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
         script.onload = function() {
             try {
-                JsBarcode(printWindow.document.getElementById('thermal-barcode'), String(currentInvoiceData.id).padStart(6, '0'), {
+                // نستخدم دالة JsBarcode داخل النافذة الجديدة
+                printWindow.JsBarcode("#barcode-thermal", String(currentInvoiceData.id).padStart(6, '0'), {
                     format: "CODE128",
                     width: 2,
-                    height: 50,
-                    displayValue: false
+                    height: 40,
+                    displayValue: false,
+                    margin: 0
                 });
-            } catch (e) {
-                console.error('Barcode error:', e);
-            }
+            } catch (e) { console.error(e); }
             
             setTimeout(() => {
                 printWindow.focus();
@@ -1253,10 +1133,15 @@ document.addEventListener('DOMContentLoaded', function () {
         txtContent += `${'='.repeat(50)}\n\n`;
         txtContent += `شكرا لثقتكم بنا\n\n`;
         
-        if (shopName || shopPhone || shopAddress) {
+        if (shopName || shopPhone || shopAddress || shopCity) {
             if (shopName) txtContent += `${shopName}\n`;
             if (shopPhone) txtContent += `هاتف: ${shopPhone}\n`;
-            if (shopAddress) txtContent += `${shopAddress}\n`;
+
+            // منطق دمج المدينة والعنوان
+            let loc = [];
+            if(shopCity) loc.push(shopCity);
+            if(shopAddress) loc.push(shopAddress);
+            if(loc.length > 0) txtContent += `${loc.join('، ')}\n`;
         } else {
             txtContent += `تم تصميم وتطوير النظام من طرف حمزة سعدي 2025\n`;
             txtContent += `الموقع الإلكتروني: https://eagleshadow.technology\n`;
