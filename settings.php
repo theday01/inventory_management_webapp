@@ -7,6 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $settings_to_save = [
         'shopName' => $_POST['shopName'] ?? '',
         'shopPhone' => $_POST['shopPhone'] ?? '',
+        'shopCity' => $_POST['shopCity'] ?? '', // [تمت الإضافة] حقل المدينة
         'shopAddress' => $_POST['shopAddress'] ?? '',
         'shopDescription' => $_POST['shopDescription'] ?? '',
         'darkMode' => isset($_POST['darkMode']) ? '1' : '0',
@@ -98,11 +99,19 @@ if ($result) {
                                 <input type="text" name="shopPhone" value="<?php echo htmlspecialchars($settings['shopPhone'] ?? ''); ?>"
                                     class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                             </div>
-                            <div class="md:col-span-2">
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">المدينة</label>
+                                <input type="text" name="shopCity" value="<?php echo htmlspecialchars($settings['shopCity'] ?? ''); ?>"
+                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                            </div>
+
+                            <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2">العنوان</label>
                                 <input type="text" name="shopAddress" value="<?php echo htmlspecialchars($settings['shopAddress'] ?? ''); ?>"
                                     class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                             </div>
+
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-400 mb-2">وصف مختصر</label>
                                 <textarea rows="3" name="shopDescription"
@@ -235,7 +244,6 @@ if ($result) {
 </main>
 
 <script>
-// وظيفة إعادة تعيين أسعار التوصيل
 function resetDeliveryPrices() {
     if(confirm('هل أنت متأكد من إعادة تعيين أسعار التوصيل إلى القيم الافتراضية (20/40)؟\nيجب عليك حفظ التغييرات بعد ذلك.')) {
         const insideCity = document.getElementById('deliveryInsideCity');
