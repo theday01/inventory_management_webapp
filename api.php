@@ -511,17 +511,19 @@ function getInvoice($conn) {
 
 function getInvoices($conn) {
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-    $searchDate = isset($_GET['searchDate']) ? $_GET['searchDate'] : '';
+    
+    // التعديل 1: إذا لم يتم تحديد تاريخ، نستخدم تاريخ اليوم كافتراضي
+    $searchDate = isset($_GET['searchDate']) && !empty($_GET['searchDate']) ? $_GET['searchDate'] : date('Y-m-d');
 
     $sql = "SELECT DISTINCT i.id, i.total, i.created_at, c.name as customer_name 
             FROM invoices i 
             LEFT JOIN customers c ON i.customer_id = c.id
             LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
             LEFT JOIN products p ON ii.product_id = p.id
-            WHERE 1=1";
+            WHERE DATE(i.created_at) = ?"; // التعديل 2: تصفية النتائج بناء على التاريخ دائماً
 
-    $params = [];
-    $types = '';
+    $params = [$searchDate];
+    $types = 's';
 
     if (!empty($search)) {
         $sql .= " AND (i.id LIKE ? OR c.name LIKE ? OR i.barcode LIKE ?)";
@@ -532,19 +534,13 @@ function getInvoices($conn) {
         $types .= 'sss';
     }
 
-    if (!empty($searchDate)) {
-        $sql .= " AND DATE(i.created_at) = ?";
-        $params[] = $searchDate;
-        $types .= 's';
-    }
-
-    $sql .= " ORDER BY i.created_at DESC LIMIT 100";
+    // التعديل 3: زيادة الحد الأقصى للصفوف إلى 150
+    $sql .= " ORDER BY i.created_at DESC LIMIT 150";
 
     $stmt = $conn->prepare($sql);
 
-    if (!empty($types)) {
-        $stmt->bind_param($types, ...$params);
-    }
+    // ربط المعاملات بشكل ديناميكي
+    $stmt->bind_param($types, ...$params);
 
     $stmt->execute();
     $result = $stmt->get_result();

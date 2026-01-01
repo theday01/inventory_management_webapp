@@ -483,6 +483,90 @@ document.addEventListener('DOMContentLoaded', function () {
     const shopAddress = '<?php echo addslashes($shopAddress); ?>';
     const shopCity = '<?php echo addslashes($shopCity); ?>'; // [جديد]
 
+// ==========================================
+    // كود تفعيل البحث بالباركود (كاميرا + يدوي)
+    // ==========================================
+
+    const barcodeScannerModal = document.getElementById('barcode-scanner-modal');
+    const closeBarcodeScannerModal = document.getElementById('close-barcode-scanner-modal');
+    const scanBarcodeBtn = document.getElementById('scan-barcode-btn');
+    let codeReader = null;
+
+    // صوت عند المسح الناجح
+    const beepSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'); // صوت قصير بسيط
+
+    // 1. تشغيل الكاميرا عند الضغط على زر المسح
+    scanBarcodeBtn.addEventListener('click', () => {
+        barcodeScannerModal.classList.remove('hidden');
+        startScanning();
+    });
+
+    // 2. إغلاق نافذة المسح
+    closeBarcodeScannerModal.addEventListener('click', stopScanning);
+
+    // دالة بدء المسح باستخدام ZXing
+    async function startScanning() {
+        try {
+            codeReader = new ZXing.BrowserMultiFormatReader();
+            const videoInputDevices = await codeReader.listVideoInputDevices();
+            
+            // محاولة اختيار الكاميرا الخلفية إن وجدت
+            const selectedDeviceId = videoInputDevices.find(device => device.label.toLowerCase().includes('back'))?.deviceId || videoInputDevices[0].deviceId;
+
+            codeReader.decodeFromVideoDevice(selectedDeviceId, 'barcode-video', (result, err) => {
+                if (result) {
+                    handleScannedCode(result.text);
+                    stopScanning();
+                }
+            });
+        } catch (err) {
+            console.error(err);
+            alert('لا يمكن الوصول للكاميرا. تأكد من السماح بالوصول للكاميرا في المتصفح.');
+            barcodeScannerModal.classList.add('hidden');
+        }
+    }
+
+    // دالة إيقاف المسح
+    function stopScanning() {
+        if (codeReader) {
+            codeReader.reset();
+        }
+        barcodeScannerModal.classList.add('hidden');
+    }
+
+    // 3. معالجة الكود الممسوح (سواء بالكاميرا أو القارئ اليدوي)
+    function handleScannedCode(code) {
+        // تشغيل صوت
+        beepSound.play().catch(e => {});
+
+        // وضع الكود في خانة البحث
+        searchInput.value = code;
+        
+        // البحث عن تطابق تام لإضافته للسلة فوراً
+        const exactMatch = allProducts.find(p => p.barcode === code);
+        
+        if (exactMatch) {
+            // إذا وجدنا المنتج، نضيفه للسلة مباشرة
+            addProductToCart(exactMatch);
+            searchInput.value = ''; // تفريغ البحث للاستعداد للمنتج التالي
+            applyFilters(); // إعادة تعيين الشبكة
+            showToast(`تم إضافة "${exactMatch.name}" للسلة`, true);
+        } else {
+            // إذا لم نجد تطابق تام، نقوم بفلترة المنتجات لعرض النتائج المشابهة
+            applyFilters();
+            showToast('لم يتم العثور على منتج بهذا الباركود', false);
+        }
+    }
+
+    // 4. تحسين البحث ليعمل مع قارئ الباركود اليدوي (USB Scanner)
+    // أجهزة الباركود عادة ما تضغط "Enter" بعد قراءة الكود
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && searchInput.value.trim() !== '') {
+            e.preventDefault(); // منع إعادة تحميل الصفحة
+            handleScannedCode(searchInput.value.trim());
+        }
+    });
+
     function toEnglishNumbers(str) {
         const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
         const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -586,11 +670,26 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function addProductToCart(product) {
+        // تحويل الكمية من قاعدة البيانات إلى رقم
+        const stockAvailable = parseInt(product.quantity);
+        
         const existingProduct = cart.find(item => item.id === product.id);
+        
+        // حساب الكمية الحالية في السلة
+        const currentCartQuantity = existingProduct ? existingProduct.quantity : 0;
+
+        // التحقق مما إذا كانت الإضافة ستتجاوز المخزون
+        if (currentCartQuantity + 1 > stockAvailable) {
+            showToast('نأسف، نفذت كمية هذا المنتج من المخزون!', false);
+            return; 
+        }
+
         if (existingProduct) {
             existingProduct.quantity++;
         } else {
-            cart.push({ ...product, quantity: 1 });
+            // نقوم بحفظ الكمية الأصلية (stockAvailable) في متغير 'stock'
+            // لأن المتغير 'quantity' سنستخدمه لعد عناصر السلة
+            cart.push({ ...product, quantity: 1, stock: stockAvailable });
         }
         updateCart();
     }
@@ -674,6 +773,11 @@ document.addEventListener('DOMContentLoaded', function () {
             quantityInput.focus();
             quantityInput.select();
         } else if (action === 'increase') {
+            // التحقق قبل الزيادة
+            if (item.quantity + 1 > item.stock) {
+                showToast(`الكمية المتوفرة في المخزون هي ${item.stock} فقط`, false);
+                return;
+            }
             item.quantity++;
             updateCart();
         } else if (action === 'decrease') {
@@ -706,6 +810,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (newQuantity > 0 && editingProductId) {
             const item = cart.find(product => product.id == editingProductId);
             if (item) {
+                // التحقق من المخزون
+                if (newQuantity > item.stock) {
+                    showToast(`لا يمكنك طلب أكثر من ${item.stock} قطع`, false);
+                    return; // إيقاف العملية
+                }
+                
                 item.quantity = newQuantity;
                 updateCart();
                 showToast('تم تحديث الكمية بنجاح', true);

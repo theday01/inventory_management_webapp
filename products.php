@@ -656,7 +656,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     showToast('لم يتم العثور على كاميرا', false);
                     return;
                 }
-                const firstDeviceId = videoInputDevices[0].deviceId;
+                const firstDeviceId = videoInputDevices[1].deviceId;
                 codeReader.decodeFromVideoDevice(firstDeviceId, 'barcode-video', (result, err) => {
                     if (result) {
                         searchInput.value = result.text;
