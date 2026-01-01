@@ -1,12 +1,22 @@
 <?php
 require_once 'db.php';
 
+// التحقق من وجود مستخدمين في النظام
 $sql = "SELECT id FROM users LIMIT 1";
 $result = $conn->query($sql);
 
+// إذا كان هناك مستخدم واحد على الأقل، يجب تسجيل الدخول أولاً للوصول لهذه الصفحة
 if ($result && $result->num_rows > 0) {
-    header("Location: login.php");
-    exit();
+    session_start();
+    if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+        header("Location: login.php?error=" . urlencode("يجب تسجيل الدخول أولاً"));
+        exit();
+    }
+    // التحقق من أن المستخدم admin
+    if ($_SESSION['role'] !== 'admin') {
+        header("Location: dashboard.php?error=" . urlencode("ليس لديك صلاحية الوصول"));
+        exit();
+    }
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {

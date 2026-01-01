@@ -1,4 +1,14 @@
 <?php
+// إضافة هذه الأسطر في بداية الملف قبل أي كود آخر
+session_start();
+
+// التحقق من تسجيل الدخول
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'يجب تسجيل الدخول أولاً']);
+    exit;
+}
+
 header('Content-Type: application/json');
 require_once 'db.php';
 

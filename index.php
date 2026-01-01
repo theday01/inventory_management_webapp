@@ -1,8 +1,16 @@
 <?php
-// This file can be used to handle initial setup or redirection.
-// For now, we'll just redirect to the login page.
+session_start();
+
+// إذا كان المستخدم مسجل دخول، يذهب للوحة التحكم
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
+    header("Location: dashboard.php");
+    exit();
+}
+
+// إذا لم يكن مسجل دخول، يذهب لصفحة تسجيل الدخول
 header("Location: login.php");
 exit();
+
 ?>
 <!DOCTYPE html>
 <html lang="ar">
