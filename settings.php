@@ -2,12 +2,15 @@
 require_once 'db.php';
 require_once 'session.php';
 
-// معالجة حفظ البيانات
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// التحقق من أن المستخدم admin فقط يمكنه التعديل
+$isAdmin = ($_SESSION['role'] ?? '') === 'admin';
+
+// معالجة حفظ البيانات - فقط للمدراء
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     $settings_to_save = [
         'shopName' => $_POST['shopName'] ?? '',
         'shopPhone' => $_POST['shopPhone'] ?? '',
-        'shopCity' => $_POST['shopCity'] ?? '', // [تمت الإضافة] حقل المدينة
+        'shopCity' => $_POST['shopCity'] ?? '',
         'shopAddress' => $_POST['shopAddress'] ?? '',
         'shopDescription' => $_POST['shopDescription'] ?? '',
         'darkMode' => isset($_POST['darkMode']) ? '1' : '0',
@@ -45,21 +48,50 @@ if ($result) {
         $settings[$row['setting_name']] = $row['setting_value'];
     }
 }
+
+// تحديد ما إذا كان يجب تعطيل الحقول
+$disabledAttr = $isAdmin ? '' : 'disabled';
+$readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 ?>
 
 <main class="flex-1 flex flex-col relative overflow-hidden">
     <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <form method="POST" action="settings.php" class="flex-1 flex flex-col overflow-hidden">
+    <form method="POST" action="settings.php" class="flex-1 flex flex-col overflow-hidden" <?php echo $isAdmin ? '' : 'onsubmit="return false;"'; ?>>
         <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
-            <h2 class="text-xl font-bold text-white">الإعدادات العامة</h2>
             <div class="flex items-center gap-4">
-                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
-                    <span class="material-icons-round text-sm">save</span>
-                    <span>حفظ التغييرات</span>
-                </button>
+                <h2 class="text-xl font-bold text-white">الإعدادات العامة</h2>
+                <?php if (!$isAdmin): ?>
+                    <span class="text-xs bg-yellow-500/20 text-yellow-500 px-3 py-1 rounded-full font-bold flex items-center gap-1">
+                        <span class="material-icons-round text-sm">visibility</span>
+                        وضع القراءة فقط
+                    </span>
+                <?php endif; ?>
+            </div>
+            <div class="flex items-center gap-4">
+                <?php if ($isAdmin): ?>
+                    <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                        <span class="material-icons-round text-sm">save</span>
+                        <span>حفظ التغييرات</span>
+                    </button>
+                <?php else: ?>
+                    <div class="bg-gray-500/20 text-gray-400 px-6 py-2 rounded-xl font-bold flex items-center gap-2 cursor-not-allowed">
+                        <span class="material-icons-round text-sm">lock</span>
+                        <span>غير مسموح بالتعديل</span>
+                    </div>
+                <?php endif; ?>
             </div>
         </header>
+
+        <?php if (!$isAdmin): ?>
+            <div class="mx-8 mt-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3 relative z-10">
+                <span class="material-icons-round text-yellow-500 text-xl">info</span>
+                <div class="flex-1">
+                    <h4 class="text-yellow-500 font-bold mb-1">معلومة هامة</h4>
+                    <p class="text-sm text-yellow-500/80">أنت تشاهد الإعدادات في وضع القراءة فقط. للقيام بأي تعديلات، يجب أن يكون لديك صلاحيات المدير.</p>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem); scroll-behavior: smooth;">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -92,30 +124,35 @@ if ($result) {
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2">اسم المتجر</label>
                                 <input type="text" name="shopName" value="<?php echo htmlspecialchars($settings['shopName'] ?? ''); ?>"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                    <?php echo $disabledAttr; ?>>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2">رقم الهاتف</label>
                                 <input type="text" name="shopPhone" value="<?php echo htmlspecialchars($settings['shopPhone'] ?? ''); ?>"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                    <?php echo $disabledAttr; ?>>
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2">المدينة</label>
                                 <input type="text" name="shopCity" value="<?php echo htmlspecialchars($settings['shopCity'] ?? ''); ?>"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                    <?php echo $disabledAttr; ?>>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2">العنوان</label>
                                 <input type="text" name="shopAddress" value="<?php echo htmlspecialchars($settings['shopAddress'] ?? ''); ?>"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                    <?php echo $disabledAttr; ?>>
                             </div>
 
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-400 mb-2">وصف مختصر</label>
                                 <textarea rows="3" name="shopDescription"
-                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all"><?php echo htmlspecialchars($settings['shopDescription'] ?? ''); ?></textarea>
+                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                    <?php echo $disabledAttr; ?>><?php echo htmlspecialchars($settings['shopDescription'] ?? ''); ?></textarea>
                             </div>
                         </div>
                     </section>
@@ -126,11 +163,13 @@ if ($result) {
                                 <span class="material-icons-round text-primary">local_shipping</span>
                                 إعدادات التوصيل
                             </h3>
-                            <button type="button" onclick="resetDeliveryPrices()" 
-                                class="group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-xs text-gray-400 hover:text-white">
-                                <span class="material-icons-round text-sm group-hover:rotate-180 transition-transform duration-500">restart_alt</span>
-                                <span>إعادة تعيين افتراضي</span>
-                            </button>
+                            <?php if ($isAdmin): ?>
+                                <button type="button" onclick="resetDeliveryPrices()" 
+                                    class="group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-xs text-gray-400 hover:text-white">
+                                    <span class="material-icons-round text-sm group-hover:rotate-180 transition-transform duration-500">restart_alt</span>
+                                    <span>إعادة تعيين افتراضي</span>
+                                </button>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -139,7 +178,8 @@ if ($result) {
                                 <div class="relative">
                                     <input type="number" id="deliveryInsideCity" name="deliveryInsideCity" step="0.01" min="0"
                                         value="<?php echo htmlspecialchars($settings['deliveryInsideCity'] ?? '0'); ?>"
-                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                        <?php echo $disabledAttr; ?>>
                                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold"><?php echo htmlspecialchars($settings['currency'] ?? 'MAD'); ?></span>
                                 </div>
                             </div>
@@ -148,7 +188,8 @@ if ($result) {
                                 <div class="relative">
                                     <input type="number" id="deliveryOutsideCity" name="deliveryOutsideCity" step="0.01" min="0"
                                         value="<?php echo htmlspecialchars($settings['deliveryOutsideCity'] ?? '0'); ?>"
-                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                        <?php echo $disabledAttr; ?>>
                                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold"><?php echo htmlspecialchars($settings['currency'] ?? 'MAD'); ?></span>
                                 </div>
                             </div>
@@ -162,7 +203,7 @@ if ($result) {
                                 إعدادات الضريبة
                             </h3>
                             <div class="space-y-4">
-                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl <?php echo $readonlyClass; ?>">
                                     <div>
                                         <h4 class="font-bold text-white mb-1">تفعيل الضريبة</h4>
                                         <p class="text-xs text-gray-400">إضافة الضريبة على المبيعات</p>
@@ -170,19 +211,22 @@ if ($result) {
                                     <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
                                         <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1"
                                             class="toggle-checkbox"
-                                            <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> />
-                                        <label for="toggle-tax" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
+                                            <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?>
+                                            <?php echo $disabledAttr; ?> />
+                                        <label for="toggle-tax" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
                                     </div>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-400 mb-2">نسبة الضريبة (%)</label>
                                     <input type="number" name="taxRate" value="<?php echo htmlspecialchars($settings['taxRate'] ?? '20'); ?>" step="0.01"
-                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                        <?php echo $disabledAttr; ?>>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-400 mb-2">تسمية الضريبة</label>
                                     <input type="text" name="taxLabel" value="<?php echo htmlspecialchars($settings['taxLabel'] ?? 'TVA'); ?>"
-                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                        <?php echo $disabledAttr; ?>>
                                 </div>
                             </div>
                         </section>
@@ -193,7 +237,7 @@ if ($result) {
                                 تفضيلات النظام
                             </h3>
                             <div class="space-y-4">
-                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl <?php echo $readonlyClass; ?>">
                                     <div>
                                         <h4 class="font-bold text-white mb-1">الوضع الليلي</h4>
                                         <p class="text-xs text-gray-400">تفعيل الوضع المظلم</p>
@@ -201,12 +245,13 @@ if ($result) {
                                     <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
                                         <input type="checkbox" name="darkMode" id="toggle-dark" value="1"
                                             class="toggle-checkbox"
-                                            onchange="this.form.submit()"
-                                            <?php echo (isset($settings['darkMode']) && $settings['darkMode'] == '1') ? 'checked' : ''; ?> />
-                                        <label for="toggle-dark" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
+                                            <?php echo $isAdmin ? 'onchange="this.form.submit()"' : ''; ?>
+                                            <?php echo (isset($settings['darkMode']) && $settings['darkMode'] == '1') ? 'checked' : ''; ?>
+                                            <?php echo $disabledAttr; ?> />
+                                        <label for="toggle-dark" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
                                     </div>
                                 </div>
-                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl <?php echo $readonlyClass; ?>">
                                     <div>
                                         <h4 class="font-bold text-white mb-1">الإشعارات الصوتية</h4>
                                         <p class="text-xs text-gray-400">تشغيل صوت عند البيع</p>
@@ -214,16 +259,18 @@ if ($result) {
                                     <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
                                         <input type="checkbox" name="soundNotifications" id="toggle-sound" value="1"
                                             class="toggle-checkbox"
-                                            <?php echo (isset($settings['soundNotifications']) && $settings['soundNotifications'] == '1') ? 'checked' : ''; ?> />
-                                        <label for="toggle-sound" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
+                                            <?php echo (isset($settings['soundNotifications']) && $settings['soundNotifications'] == '1') ? 'checked' : ''; ?>
+                                            <?php echo $disabledAttr; ?> />
+                                        <label for="toggle-sound" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
                                     </div>
                                 </div>
-                                <div class="p-4 bg-white/5 rounded-xl">
+                                <div class="p-4 bg-white/5 rounded-xl <?php echo $readonlyClass; ?>">
                                     <div class="mb-3">
                                         <h4 class="font-bold text-white mb-1">العملة</h4>
                                         <p class="text-xs text-gray-400">اختر العملة</p>
                                     </div>
-                                    <select name="currency" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                    <select name="currency" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                        <?php echo $disabledAttr; ?>>
                                         <option value="MAD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'MAD') ? 'selected' : ''; ?>>الدرهم المغربي</option>
                                         <option value="SAR" <?php echo (isset($settings['currency']) && $settings['currency'] == 'SAR') ? 'selected' : ''; ?>>ريال سعودي</option>
                                         <option value="QAR" <?php echo (isset($settings['currency']) && $settings['currency'] == 'QAR') ? 'selected' : ''; ?>>ريال قطري</option>
@@ -243,6 +290,7 @@ if ($result) {
     </form>
 </main>
 
+<?php if ($isAdmin): ?>
 <script>
 function resetDeliveryPrices() {
     if(confirm('هل أنت متأكد من إعادة تعيين أسعار التوصيل إلى القيم الافتراضية (20/40)؟\nيجب عليك حفظ التغييرات بعد ذلك.')) {
@@ -265,5 +313,6 @@ function resetDeliveryPrices() {
     }
 }
 </script>
+<?php endif; ?>
 
 <?php require_once 'src/footer.php'; ?>
