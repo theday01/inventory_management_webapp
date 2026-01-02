@@ -948,8 +948,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             
             const currency = '<?php echo $currency; ?>';
             const now = new Date();
-            const dateStr = now.toLocaleDateString('ar-SA');
-            const timeStr = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('fr-FR');
+            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
             
             let txtContent = `تقرير المخزون الشامل\n`;
             txtContent += `التاريخ: ${dateStr}\n`;
@@ -1014,9 +1014,6 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             if (low.length > 0) {
                 txtContent += `• أولوية متوسطة: مراقبة المنتجات المنخفضة (${low.length} منتج)\n`;
             }
-            txtContent += `\n${'='.repeat(60)}\n`;
-            txtContent += `تم إنشاء التقرير بواسطة Smart Shop\n`;
-            txtContent += `النظام: نظام إدارة المخزون الذكي\n`;
             
             const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
             const link = document.createElement('a');

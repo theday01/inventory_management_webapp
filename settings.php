@@ -20,7 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'taxRate' => $_POST['taxRate'] ?? '20',
         'taxLabel' => $_POST['taxLabel'] ?? 'TVA',
         'deliveryInsideCity' => $_POST['deliveryInsideCity'] ?? '0',
-        'deliveryOutsideCity' => $_POST['deliveryOutsideCity'] ?? '0'
+        'deliveryOutsideCity' => $_POST['deliveryOutsideCity'] ?? '0',
+        'stockAlertsEnabled' => isset($_POST['stockAlertsEnabled']) ? '1' : '0',
+        'stockAlertInterval' => $_POST['stockAlertInterval'] ?? '20'
     ];
 
     $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
@@ -35,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     exit();
 }
 
-$page_title = 'الإعدادات - Smart Shop';
+$page_title = 'الإعدادات';
 $current_page = 'settings.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
@@ -264,14 +266,51 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <label for="toggle-sound" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
                                     </div>
                                 </div>
-                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                    <div>
-                                        <h4 class="font-bold text-white mb-1">تنبيهات المخزون المنخفض</h4>
-                                        <p class="text-xs text-gray-400">إشعار كل 5 دقائق للمنتجات ≤ 10</p>
+                                
+                                <div class="flex flex-col gap-4 p-4 bg-white/5 rounded-xl transition-colors duration-300" id="stock-alerts-container">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <h4 class="font-bold text-white">تنبيهات المخزون المنخفض</h4>
+                                            <button type="button" onclick="openStockGuideModal()" class="flex items-center gap-1 cursor-pointer px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/50 transition-all duration-300 group">
+                                                <span class="text-xs font-bold text-primary">كيف تختار؟</span>
+                                                <span class="material-icons-round text-[16px] text-primary group-hover:scale-110 transition-transform">help_outline</span>
+                                            </button>
+                                        </div>
+
+                                        <!-- Enable/Disable Switch -->
+                                        <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                            <input type="checkbox" name="stockAlertsEnabled" id="toggle-stock-alerts" value="1"
+                                                class="toggle-checkbox"
+                                                <?php echo (isset($settings['stockAlertsEnabled']) && $settings['stockAlertsEnabled'] == '1') ? 'checked' : ''; ?>
+                                                <?php echo $disabledAttr; ?>
+                                                onchange="handleStockAlertToggle(this)" />
+                                            <label for="toggle-stock-alerts" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                        </div>
                                     </div>
-                                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                                        <input type="checkbox" name="lowStockAlerts" id="toggle-alerts" value="1" class="toggle-checkbox" checked />
-                                        <label for="toggle-alerts" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
+
+
+                                    <div class="p-4 bg-white/5 rounded-xl transition-all duration-300 <?php echo $readonlyClass; ?> <?php echo (!isset($settings['stockAlertsEnabled']) || $settings['stockAlertsEnabled'] == '0') ? 'opacity-50 pointer-events-none grayscale' : ''; ?>" id="stock-alerts-settings">
+
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">
+                                            <span class="material-icons-round text-xs align-middle">schedule</span>
+                                            مدة التنبيهات (بالدقائق)
+                                        </label>
+                                        <div class="relative">
+                                            <input type="number" 
+                                                name="stockAlertInterval" 
+                                                value="<?php echo htmlspecialchars($settings['stockAlertInterval'] ?? '20'); ?>"
+                                                min="1" 
+                                                max="1440" 
+                                                step="1"
+                                                class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                                placeholder="20"
+                                                <?php echo $disabledAttr; ?>>
+                                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">دقيقة</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-2">
+                                            <span class="material-icons-round text-xs align-middle">info</span>
+                                            سيتم التحقق من حالة المخزون وإرسال الإشعارات كل هذه المدة
+                                        </p>
                                     </div>
                                 </div>
 
@@ -366,6 +405,197 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             }
         }
     });
+</script>
+<script>
+    function handleStockAlertToggle(checkbox) {
+        const container = document.getElementById('stock-alerts-settings');
+        const mainContainer = document.getElementById('stock-alerts-container');
+        
+        if (!checkbox.checked) {
+            // User tries to disable
+            const warningMsg = `⚠️ تنبيه هام!\n\nتعطيل تنبيهات المخزون قد يجعلك تفقد السيطرة على منتجاتك وتنفد الكميات دون علمك، مما يؤثر سلباً على مبيعاتك ورضا عملائك.\n\nهل أنت متأكد 100% أنك تريد إيقاف هذه الخاصية الحيوية؟`;
+            
+            if (confirm(warningMsg)) {
+                // Confirmed disable
+                container.classList.add('opacity-50', 'pointer-events-none', 'grayscale');
+            } else {
+                // Cancelled
+                checkbox.checked = true;
+            }
+        } else {
+            // User enabled
+            container.classList.remove('opacity-50', 'pointer-events-none', 'grayscale');
+        }
+    }
+</script>
+
+<!-- Stock Guide Modal -->
+<div id="stockGuideModal" class="fixed inset-0 z-[100] hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="stockGuideBackdrop" onclick="closeStockGuideModal()"></div>
+    
+    <!-- Modal Content -->
+    <?php
+    // Theme colors based on Night Mode
+    $modalBg = $darkMode ? 'bg-[#1e1e2e]' : 'bg-white';
+    $modalBorder = $darkMode ? 'border-white/10' : 'border-gray-200';
+    $modalText = $darkMode ? 'text-white' : 'text-gray-900';
+    $modalSubText = $darkMode ? 'text-gray-400' : 'text-gray-500';
+    $modalSubBg = $darkMode ? 'bg-white/5' : 'bg-gray-50';
+    $modalSubBorder = $darkMode ? 'border-white/5' : 'border-gray-200';
+    $modalHoverBorder = $darkMode ? 'hover:border-primary/30' : 'hover:border-primary/50';
+    ?>
+    
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="<?php echo $modalBg; ?> border <?php echo $modalBorder; ?> rounded-2xl w-full max-w-2xl transform scale-95 opacity-0 transition-all duration-300 relative shadow-2xl overflow-hidden" id="stockGuideContent">
+            
+            <!-- Header -->
+            <div class="px-6 py-4 <?php echo $modalSubBg; ?> border-b <?php echo $modalSubBorder; ?> flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-primary/10 rounded-lg">
+                        <span class="material-icons-round text-primary">tips_and_updates</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold <?php echo $modalText; ?>">دليل اختيار مدة التنبيهات</h3>
+                        <p class="text-sm <?php echo $modalSubText; ?>">إرشادات لمساعدتك على اختيار الوقت المناسب</p>
+                    </div>
+                </div>
+                <button onclick="closeStockGuideModal()" class="<?php echo $modalSubText; ?> hover:text-primary transition-colors p-1 hover:bg-black/5 rounded-lg">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Examples Section -->
+                    <div>
+                        <h5 class="flex items-center gap-2 text-sm font-bold <?php echo $modalSubText; ?> uppercase tracking-wider mb-4 border-b <?php echo $modalSubBorder; ?> pb-2">
+                            <span>🔧</span> أمثلة على الاستخدام
+                        </h5>
+                        <div class="space-y-3">
+                            <div class="<?php echo $modalSubBg; ?> rounded-xl p-4 border <?php echo $modalSubBorder; ?> <?php echo $modalHoverBorder; ?> transition-all group">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="font-bold <?php echo $modalText; ?> group-hover:text-primary transition-colors">للمتاجر الصغيرة</div>
+                                    <span class="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded text-xs">30 دقيقة</span>
+                                </div>
+                                <p class="text-xs <?php echo $modalSubText; ?> leading-relaxed">مناسبة للمحلات ذات حركة البيع المحدودة والمخزون الصغير، لا تتطلب تحديثاً مستمر.</p>
+                            </div>
+
+                            <div class="<?php echo $modalSubBg; ?> rounded-xl p-4 border <?php echo $modalSubBorder; ?> <?php echo $modalHoverBorder; ?> transition-all group">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="font-bold <?php echo $modalText; ?> group-hover:text-primary transition-colors">للمتاجر المتوسطة</div>
+                                    <span class="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded text-xs">60 دقيقة</span>
+                                </div>
+                                <p class="text-xs <?php echo $modalSubText; ?> leading-relaxed">الخيار الأمثل للسوبر ماركت والمتاجر ذات الحجم المتوسط، يوازن بين التحديث والأداء.</p>
+                            </div>
+
+                            <div class="<?php echo $modalSubBg; ?> rounded-xl p-4 border <?php echo $modalSubBorder; ?> <?php echo $modalHoverBorder; ?> transition-all group">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="font-bold <?php echo $modalText; ?> group-hover:text-primary transition-colors">للمتاجر الكبيرة</div>
+                                    <span class="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded text-xs">120 دقيقة</span>
+                                </div>
+                                <p class="text-xs <?php echo $modalSubText; ?> leading-relaxed">للمتاجر الكبيرة جداً (هايبر ماركت) حيث كثرة الاشعارات قد تكون مزعجة.</p>
+                            </div>
+
+                            <div class="<?php echo $modalSubBg; ?> rounded-xl p-4 border <?php echo $modalSubBorder; ?> <?php echo $modalHoverBorder; ?> transition-all group">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="font-bold <?php echo $modalText; ?> group-hover:text-primary transition-colors">للمخازن والمستودعات</div>
+                                    <span class="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded text-xs">4 ساعات</span>
+                                </div>
+                                <p class="text-xs <?php echo $modalSubText; ?> leading-relaxed">المخازن لا تحتاج لتحديث لحظي، يكفي التفتقد عدة مرات في اليوم.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tips Section -->
+                    <div>
+                        <h5 class="flex items-center gap-2 text-sm font-bold <?php echo $modalSubText; ?> uppercase tracking-wider mb-4 border-b <?php echo $modalSubBorder; ?> pb-2">
+                            <span>💡</span> نصائح واحتراف
+                        </h5>
+<div class="space-y-3">
+                            <div class="flex items-start gap-4 p-3 rounded-xl <?php echo $modalSubBg; ?> border <?php echo $modalSubBorder; ?> transition-all hover:translate-x-1">
+                                <div class="p-2 rounded-lg bg-green-500/10 shrink-0">
+                                    <span class="material-icons-round text-green-500">verified</span>
+                                </div>
+                                <div>
+                                    <h6 class="font-bold text-sm <?php echo $modalText; ?> mb-1">نصيحتنا الذهبية</h6>
+                                    <p class="text-xs <?php echo $modalSubText; ?> leading-relaxed">ابدأ بالقيمة الافتراضية <strong>(20 دقيقة)</strong> ثم قم بزيادتها إذا وجدت الإشعارات كثيرة جداً.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-4 p-3 rounded-xl <?php echo $modalSubBg; ?> border <?php echo $modalSubBorder; ?> transition-all hover:translate-x-1">
+                                <div class="p-2 rounded-lg bg-red-500/10 shrink-0">
+                                    <span class="material-icons-round text-red-500">speed</span>
+                                </div>
+                                <div>
+                                    <h6 class="font-bold text-sm <?php echo $modalText; ?> mb-1">الأداء والموارد</h6>
+                                    <p class="text-xs <?php echo $modalSubText; ?> leading-relaxed">تجنب المدد القصيرة جداً (أقل من 5 دقائق) لأنها تستهلك موارد النظام وتسبب ضغطاً بصرياً.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-4 p-3 rounded-xl <?php echo $modalSubBg; ?> border <?php echo $modalSubBorder; ?> transition-all hover:translate-x-1">
+                                <div class="p-2 rounded-lg bg-orange-500/10 shrink-0">
+                                    <span class="material-icons-round text-orange-500">trending_up</span>
+                                </div>
+                                <div>
+                                    <h6 class="font-bold text-sm <?php echo $modalText; ?> mb-1">المواسم والذروة</h6>
+                                    <p class="text-xs <?php echo $modalSubText; ?> leading-relaxed">في أوقات ضغط العمل، قم بتقليل المدة لمتابعة نفاذ الكميات بشكل أدق وأسرع.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-4 p-3 rounded-xl <?php echo $modalSubBg; ?> border <?php echo $modalSubBorder; ?> transition-all hover:translate-x-1">
+                                <div class="p-2 rounded-lg bg-blue-500/10 shrink-0">
+                                    <span class="material-icons-round text-blue-500">desktop_windows</span>
+                                </div>
+                                <div>
+                                    <h6 class="font-bold text-sm <?php echo $modalText; ?> mb-1">إشعارات سطح المكتب</h6>
+                                    <p class="text-xs <?php echo $modalSubText; ?> leading-relaxed">فعّل إشعارات Windows لتبقى على اطلاع دائم حتى لو كانت نافذة المتصفح مصغرة.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 <?php echo $modalSubBg; ?> border-t <?php echo $modalSubBorder; ?> flex justify-end">
+                <button onclick="closeStockGuideModal()" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5">
+                    فهمت، شكراً
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openStockGuideModal() {
+        const modal = document.getElementById('stockGuideModal');
+        const backdrop = document.getElementById('stockGuideBackdrop');
+        const content = document.getElementById('stockGuideContent');
+        
+        modal.classList.remove('hidden');
+        // Trigger reflow
+        void modal.offsetWidth;
+        
+        backdrop.classList.remove('opacity-0');
+        content.classList.remove('opacity-0', 'scale-95');
+        content.classList.add('opacity-100', 'scale-100');
+    }
+
+    function closeStockGuideModal() {
+        const modal = document.getElementById('stockGuideModal');
+        const backdrop = document.getElementById('stockGuideBackdrop');
+        const content = document.getElementById('stockGuideContent');
+        
+        backdrop.classList.add('opacity-0');
+        content.classList.remove('opacity-100', 'scale-100');
+        content.classList.add('opacity-0', 'scale-95');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
 </script>
 <?php endif; ?>
 

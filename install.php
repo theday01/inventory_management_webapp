@@ -428,12 +428,13 @@ echo "✅ <strong>اكتمل التثبيت بنجاح!</strong><br>";
 echo "يمكنك الآن الانتقال إلى صفحة المنتجات لرؤية الفئات المضافة.";
 echo "</div>";
 
-// Add delivery settings
 $delivery_inserts = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryInsideCity', '10') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryOutsideCity', '30') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('darkMode', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('shopCity', '') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('darkMode', '1') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('shopCity', '') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('stockAlertInterval', '20') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('stockAlertsEnabled', '1') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
 ];
 
 foreach ($delivery_inserts as $q) {

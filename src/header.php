@@ -6,6 +6,10 @@ require_once 'db.php';
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'darkMode'");
 $darkMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '1';
 $isDark = ($darkMode == '1');
+
+// Get stock alert interval setting
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'stockAlertInterval'");
+$stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '20';
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="<?php echo $isDark ? 'dark' : ''; ?>">

@@ -2,6 +2,7 @@
 // يجب معالجة جميع POST requests قبل إرسال أي output
 require_once 'session.php'; // هذا يبدأ الـ session ويتحقق من تسجيل الدخول
 require_once 'db.php';
+$current_page = 'users.php';
 
 // التحقق من الصلاحيات
 if ($_SESSION['role'] !== 'admin') {
