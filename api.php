@@ -77,29 +77,41 @@ switch ($action) {
 function getProducts($conn) {
     $search = isset($_GET['search']) ? $_GET['search'] : '';
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
+    $stock_status = isset($_GET['stock_status']) ? $_GET['stock_status'] : '';
 
     $sql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
             FROM products p 
             LEFT JOIN categories c ON p.category_id = c.id
             WHERE 1=1";
 
+    $params = [];
+    $types = '';
+
     if (!empty($search)) {
         $sql .= " AND (p.name LIKE ? OR p.barcode LIKE ?)";
+        $searchTerm = "%{$search}%";
+        $params[] = &$searchTerm;
+        $params[] = &$searchTerm;
+        $types .= 'ss';
     }
     if ($category_id > 0) {
         $sql .= " AND p.category_id = ?";
+        $params[] = &$category_id;
+        $types .= 'i';
+    }
+
+    if ($stock_status === 'out_of_stock') {
+        $sql .= " AND p.quantity = 0";
+    } elseif ($stock_status === 'low_stock') {
+        $sql .= " AND p.quantity > 5 AND p.quantity <= 10";
+    } elseif ($stock_status === 'critical_stock') {
+        $sql .= " AND p.quantity > 0 AND p.quantity <= 5";
     }
 
     $stmt = $conn->prepare($sql);
 
-    if (!empty($search) && $category_id > 0) {
-        $searchTerm = "%{$search}%";
-        $stmt->bind_param("ssi", $searchTerm, $searchTerm, $category_id);
-    } elseif (!empty($search)) {
-        $searchTerm = "%{$search}%";
-        $stmt->bind_param("ss", $searchTerm, $searchTerm);
-    } elseif ($category_id > 0) {
-        $stmt->bind_param("i", $category_id);
+    if (!empty($types)) {
+        $stmt->bind_param($types, ...$params);
     }
 
     $stmt->execute();

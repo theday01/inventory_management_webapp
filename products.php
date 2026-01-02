@@ -35,9 +35,10 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     </header>
 
     <!-- Filters & Actions -->
+    <!-- Filters & Actions -->
     <div class="p-6 pb-0 flex flex-col md:flex-row gap-4 items-center justify-between relative z-10 shrink-0">
-        <div class="flex items-center gap-4 w-full md:w-auto flex-1 max-w-2xl">
-            <div class="relative flex-1">
+        <div class="flex items-center gap-4 w-full flex-1 max-w-4xl">
+            <div class="relative w-full md:w-96">
                 <span
                     class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
                 <input type="text" id="product-search-input" placeholder="بحث عن اسم المنتج، الباركود..."
@@ -55,9 +56,19 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 <span
                     class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
             </div>
+            <div class="relative min-w-[200px]">
+                <select id="stock-status-filter"
+                    class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+                    <option value="">كل المخزون</option>
+                    <option value="out_of_stock">منتهي</option>
+                    <option value="low_stock">منخفض</option>
+                    <option value="critical_stock">حرج</option>
+                </select>
+                <span
+                    class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+            </div>
         </div>
     </div>
-
     <!-- Products Table -->
     <div class="flex-1 overflow-auto p-6 relative z-10">
         <div
@@ -277,18 +288,21 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     const productsTableBody = document.getElementById('products-table-body');
     const searchInput = document.getElementById('product-search-input');
     const categoryFilter = document.getElementById('product-category-filter');
+    const stockStatusFilter = document.getElementById('stock-status-filter');
 
     loadProducts();
     loadCategoriesIntoFilter();
     searchInput.addEventListener('input', loadProducts);
     categoryFilter.addEventListener('change', loadProducts);
+    stockStatusFilter.addEventListener('change', loadProducts);
 
     async function loadProducts() {
         const searchQuery = searchInput.value;
         const categoryId = categoryFilter.value;
+        const stockStatus = stockStatusFilter.value;
 
         try {
-            const response = await fetch(`api.php?action=getProducts&search=${searchQuery}&category_id=${categoryId}`);
+            const response = await fetch(`api.php?action=getProducts&search=${searchQuery}&category_id=${categoryId}&stock_status=${stockStatus}`);
             const result = await response.json();
             if (result.success) {
                 displayProducts(result.data);
