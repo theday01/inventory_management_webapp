@@ -81,6 +81,42 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         </div>
     </div>
 
+    <!-- Loading Screen -->
+    <div id="stock-check-loading" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+        <div class="bg-dark-surface rounded-2xl p-8 flex flex-col items-center gap-4 border border-white/10">
+            <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-white font-bold text-lg">جاري فحص المخزون...</p>
+        </div>
+    </div>
+
+    <!-- Stock Check Modal -->
+    <div id="stock-check-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-3xl border border-white/10 max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center shrink-0">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span class="material-icons-round text-yellow-500">inventory</span>
+                    تقرير المخزون المنخفض
+                </h3>
+                <button id="close-stock-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            
+            <div id="stock-modal-content" class="flex-1 overflow-y-auto p-6">
+                <!-- سيتم ملؤه ديناميكياً -->
+            </div>
+            
+            <div class="p-6 border-t border-white/5 flex justify-end gap-3 shrink-0">
+                <button id="export-stock-report" class="bg-primary/10 hover:bg-primary/20 text-primary px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2">
+                    <span class="material-icons-round text-sm">download</span>
+                    تصدير التقرير
+                </button>
+                <button id="close-stock-modal-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2 rounded-xl font-bold transition-all">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
 </main>
 
 <!-- Add/Edit Product Modal -->
@@ -688,39 +724,203 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     `;
     checkStockBtn.className = 'bg-yellow-600 hover:bg-yellow-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5';
     checkStockBtn.onclick = async function() {
+        const loadingScreen = document.getElementById('stock-check-loading');
+        const stockModal = document.getElementById('stock-check-modal');
+        const modalContent = document.getElementById('stock-modal-content');
+        
         try {
+            // إظهار شاشة التحميل
+            loadingScreen.classList.remove('hidden');
+            
             const response = await fetch('api.php?action=getLowStockProducts');
             const result = await response.json();
+            
+            // إخفاء شاشة التحميل
+            loadingScreen.classList.add('hidden');
             
             if (result.success) {
                 if (result.data.length === 0) {
                     showToast('✅ جميع المنتجات بكميات جيدة', true);
                 } else {
+                    // تصنيف المنتجات
                     const critical = result.data.filter(p => p.quantity <= 5);
                     const low = result.data.filter(p => p.quantity > 5 && p.quantity <= 10);
                     
-                    let details = `📊 تقرير المخزون:\n`;
+                    // بناء محتوى الـ Modal
+                    let content = `
+                        <div class="space-y-6">
+                            <!-- إحصائيات سريعة -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
+                                    <div class="text-3xl font-bold text-red-500">${critical.length}</div>
+                                    <div class="text-sm text-red-400 mt-1">حرج (≤5)</div>
+                                </div>
+                                <div class="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 text-center">
+                                    <div class="text-3xl font-bold text-orange-500">${low.length}</div>
+                                    <div class="text-sm text-orange-400 mt-1">منخفض (6-10)</div>
+                                </div>
+                                <div class="bg-primary/10 border border-primary/30 rounded-xl p-4 text-center">
+                                    <div class="text-3xl font-bold text-primary">${result.data.length}</div>
+                                    <div class="text-sm text-gray-400 mt-1">إجمالي المنتجات</div>
+                                </div>
+                            </div>
+                    `;
+                    
+                    // المنتجات الحرجة
                     if (critical.length > 0) {
-                        details += `🔴 حرج (≤5): ${critical.length} منتج\n`;
+                        content += `
+                            <div>
+                                <h4 class="text-lg font-bold text-red-500 mb-3 flex items-center gap-2">
+                                    <span class="material-icons-round">error</span>
+                                    منتجات حرجة (كمية ≤5)
+                                </h4>
+                                <div class="space-y-2">
+                        `;
+                        
+                        critical.forEach(product => {
+                            content += `
+                                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-red-900/30 transition-colors">
+                                    <div>
+                                        <div class="font-bold text-white">${product.name}</div>
+                                        <div class="text-sm text-gray-400">الكمية المتبقية</div>
+                                    </div>
+                                    <div class="text-2xl font-bold text-red-500">${product.quantity}</div>
+                                </div>
+                            `;
+                        });
+                        
+                        content += `
+                                </div>
+                            </div>
+                        `;
                     }
+                    
+                    // المنتجات المنخفضة
                     if (low.length > 0) {
-                        details += `🟡 منخفض (6-10): ${low.length} منتج`;
+                        content += `
+                            <div>
+                                <h4 class="text-lg font-bold text-orange-500 mb-3 flex items-center gap-2">
+                                    <span class="material-icons-round">warning</span>
+                                    منتجات منخفضة (كمية 6-10)
+                                </h4>
+                                <div class="space-y-2">
+                        `;
+                        
+                        low.forEach(product => {
+                            content += `
+                                <div class="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-orange-900/30 transition-colors">
+                                    <div>
+                                        <div class="font-bold text-white">${product.name}</div>
+                                        <div class="text-sm text-gray-400">الكمية المتبقية</div>
+                                    </div>
+                                    <div class="text-2xl font-bold text-orange-500">${product.quantity}</div>
+                                </div>
+                            `;
+                        });
+                        
+                        content += `
+                                </div>
+                            </div>
+                        `;
                     }
                     
-                    showToast(details, false);
+                    content += `</div>`;
                     
-                    // عرض التفاصيل في console
-                    console.table(result.data);
+                    modalContent.innerHTML = content;
+                    stockModal.classList.remove('hidden');
+                    
+                    // حفظ البيانات للتصدير
+                    window.stockReportData = result.data;
                 }
             }
         } catch (error) {
+            loadingScreen.classList.add('hidden');
             console.error('خطأ:', error);
             showToast('حدث خطأ في فحص المخزون', false);
         }
     };
-
     // إضافة الزر بجانب زر "إدارة الفئات"
     document.getElementById('manage-categories-btn').insertAdjacentElement('afterend', checkStockBtn);
 });
+    // Modal Controls
+    const closeStockModalBtn = document.getElementById('close-stock-modal-btn');
+    const closeStockModal = document.getElementById('close-stock-modal');
+    const stockModal = document.getElementById('stock-check-modal');
+    const exportStockReport = document.getElementById('export-stock-report');
+
+    if (closeStockModalBtn) {
+        closeStockModalBtn.addEventListener('click', () => {
+            stockModal.classList.add('hidden');
+        });
+    }
+
+    if (closeStockModal) {
+        closeStockModal.addEventListener('click', () => {
+            stockModal.classList.add('hidden');
+        });
+    }
+
+    if (exportStockReport) {
+        exportStockReport.addEventListener('click', () => {
+            if (!window.stockReportData || window.stockReportData.length === 0) {
+                showToast('لا توجد بيانات للتصدير', false);
+                return;
+            }
+            
+            const currency = '<?php echo $currency; ?>';
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ar-SA');
+            
+            let txtContent = `تقرير المخزون المنخفض\n`;
+            txtContent += `التاريخ: ${dateStr}\n`;
+            txtContent += `${'='.repeat(50)}\n\n`;
+            
+            const critical = window.stockReportData.filter(p => p.quantity <= 5);
+            const low = window.stockReportData.filter(p => p.quantity > 5 && p.quantity <= 10);
+            
+            txtContent += `📊 ملخص:\n`;
+            txtContent += `   - منتجات حرجة (≤5): ${critical.length}\n`;
+            txtContent += `   - منتجات منخفضة (6-10): ${low.length}\n`;
+            txtContent += `   - الإجمالي: ${window.stockReportData.length}\n\n`;
+            
+            if (critical.length > 0) {
+                txtContent += `${'='.repeat(50)}\n`;
+                txtContent += `🔴 منتجات حرجة (كمية ≤5):\n`;
+                txtContent += `${'-'.repeat(50)}\n`;
+                critical.forEach((p, i) => {
+                    txtContent += `${i + 1}. ${p.name}\n`;
+                    txtContent += `   الكمية: ${p.quantity}\n\n`;
+                });
+            }
+            
+            if (low.length > 0) {
+                txtContent += `${'='.repeat(50)}\n`;
+                txtContent += `🟡 منتجات منخفضة (كمية 6-10):\n`;
+                txtContent += `${'-'.repeat(50)}\n`;
+                low.forEach((p, i) => {
+                    txtContent += `${i + 1}. ${p.name}\n`;
+                    txtContent += `   الكمية: ${p.quantity}\n\n`;
+                });
+            }
+            
+            txtContent += `${'='.repeat(50)}\n`;
+            txtContent += `تم إنشاء التقرير بواسطة Smart Shop\n`;
+            
+            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `stock-report-${now.getTime()}.txt`;
+            link.click();
+            
+            showToast('تم تصدير التقرير بنجاح', true);
+        });
+    }
+
+    // إغلاق عند النقر خارج Modal
+    stockModal?.addEventListener('click', (e) => {
+        if (e.target === stockModal) {
+            stockModal.classList.add('hidden');
+        }
+    });
 </script>
 <?php require_once 'src/footer.php'; ?>
