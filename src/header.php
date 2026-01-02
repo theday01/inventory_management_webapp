@@ -463,11 +463,6 @@ $isDark = ($darkMode == '1');
             border-style: solid;
         }
 
-        /* Light mode - Gradient backgrounds should be solid */
-        html:not(.dark) .bg-gradient-to-r {
-            /*background-image: none !important;*/
-        }
-
         /* Light Mode - Product Table Row Colors for Low Stock */
         html:not(.dark) .bg-red-900\/20 {
             background-color: rgba(254, 202, 202, 0.8) !important;
@@ -624,11 +619,56 @@ $isDark = ($darkMode == '1');
             }
         });
     </script>
+    
     <script>
-        // نظام التذكير بالمنتجات منخفضة المخزون والمنتهية
+        // نظام التذكير بالمنتجات منخفضة المخزون مع إشعارات Windows
         (function() {
             let isCheckingStock = false;
-            const NOTIFICATION_INTERVAL = 5 * 60 * 1000; // 5 دقائق بالميلي ثانية
+            const NOTIFICATION_INTERVAL = 5 * 60 * 1000; // 5 دقائق
+            let notificationPermission = 'default';
+            
+            // طلب إذن الإشعارات
+            async function requestNotificationPermission() {
+                if ('Notification' in window) {
+                    try {
+                        notificationPermission = await Notification.requestPermission();
+                        console.log('✅ حالة إذن الإشعارات:', notificationPermission);
+                    } catch (error) {
+                        console.error('❌ خطأ في طلب إذن الإشعارات:', error);
+                    }
+                }
+            }
+            
+            // إرسال إشعار Windows
+            function sendWindowsNotification(title, body, icon = '⚠️') {
+                if ('Notification' in window && notificationPermission === 'granted') {
+                    try {
+                        const notification = new Notification(title, {
+                            body: body,
+                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">' + icon + '</text></svg>',
+                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">🏪</text></svg>',
+                            tag: 'low-stock-alert',
+                            requireInteraction: true,
+                            vibrate: [200, 100, 200],
+                            dir: 'rtl',
+                            lang: 'ar'
+                        });
+                        
+                        notification.onclick = function() {
+                            window.focus();
+                            notification.close();
+                            if (!window.location.pathname.includes('products.php')) {
+                                window.location.href = 'products.php';
+                            }
+                        };
+                        
+                        return notification;
+                    } catch (error) {
+                        console.error('❌ خطأ في إرسال الإشعار:', error);
+                    }
+                }
+                return null;
+            }
             
             async function checkLowStock() {
                 if (isCheckingStock) return;
@@ -642,14 +682,13 @@ $isDark = ($darkMode == '1');
                         const lastNotification = localStorage.getItem('lastLowStockNotification');
                         const now = Date.now();
                         
-                        // التحقق من مرور 5 دقائق على آخر تنبيه
                         if (!lastNotification || (now - parseInt(lastNotification)) > 300000) {
                             showLowStockAlert(result);
                             localStorage.setItem('lastLowStockNotification', now.toString());
                         }
                     }
                 } catch (error) {
-                    console.error('خطأ في التحقق من المخزون:', error);
+                    console.error('❌ خطأ في التحقق من المخزون:', error);
                 } finally {
                     isCheckingStock = false;
                 }
@@ -662,49 +701,67 @@ $isDark = ($darkMode == '1');
                 const totalCount = data.count || 0;
                 
                 let message = '';
+                let notificationTitle = 'تنبيه المخزون';
+                let notificationBody = '';
+                let notificationIcon = '📦';
                 let isUrgent = false;
                 
-                // أولوية للمنتجات المنتهية
                 if (outOfStockCount > 0) {
                     message = `🚫 تحذير عاجل: ${outOfStockCount} منتج نفذت كميته!`;
+                    notificationTitle = '🚫 تحذير عاجل - مخزون منتهي!';
+                    notificationBody = `${outOfStockCount} منتج نفذت كميته تماماً.\nيجب طلب مخزون فوراً!`;
+                    notificationIcon = '🚫';
                     isUrgent = true;
+                    
+                    if (data.outOfStock && data.outOfStock.length > 0) {
+                        const products = data.outOfStock.slice(0, 3).map(p => p.name).join('، ');
+                        notificationBody += `\n\n📦 منتجات منتهية:\n${products}`;
+                        if (data.outOfStock.length > 3) {
+                            notificationBody += ` و${data.outOfStock.length - 3} منتج آخر`;
+                        }
+                    }
                 } 
-                // ثم المنتجات الحرجة
                 else if (criticalCount > 0) {
                     message = `⚠️ تحذير: ${criticalCount} منتج على وشك النفاذ!`;
+                    notificationTitle = '⚠️ تحذير - مخزون حرج!';
+                    notificationBody = `${criticalCount} منتج بكمية حرجة (1-5 قطع).\nيجب إعادة التخزين قريباً.`;
+                    notificationIcon = '⚠️';
                     isUrgent = true;
+                    
+                    if (data.critical && data.critical.length > 0) {
+                        const products = data.critical.slice(0, 3).map(p => `${p.name} (${p.quantity})`).join('، ');
+                        notificationBody += `\n\n⚠️ منتجات حرجة:\n${products}`;
+                        if (data.critical.length > 3) {
+                            notificationBody += ` و${data.critical.length - 3} منتج آخر`;
+                        }
+                    }
                 } 
-                // ثم المنتجات المنخفضة
                 else if (lowCount > 0) {
                     message = `📦 تنبيه: ${lowCount} منتج بكمية منخفضة`;
+                    notificationTitle = '📦 تنبيه - مخزون منخفض';
+                    notificationBody = `${lowCount} منتج بكمية منخفضة (6-10 قطع).\nراقب هذه المنتجات.`;
+                    notificationIcon = '📦';
                 }
                 
                 if (message) {
-                    // عرض التنبيه
                     showToast(message, !isUrgent);
+                    sendWindowsNotification(notificationTitle, notificationBody, notificationIcon);
                     
-                    // تشغيل صوت تنبيه إذا كانت الإعدادات مفعلة
                     const soundEnabled = <?php 
                         $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'soundNotifications'");
                         echo ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
                     ?>;
                     
                     if (soundEnabled == 1) {
-                        // صوت مختلف للمنتجات المنتهية
                         playNotificationSound(isUrgent);
                     }
                     
-                    // عرض تفاصيل في console
                     console.log('📊 حالة المخزون:', {
                         منتهية: outOfStockCount,
                         حرجة: criticalCount,
                         منخفضة: lowCount,
                         الإجمالي: totalCount
                     });
-                    
-                    if (outOfStockCount > 0) {
-                        console.log('⛔ منتجات منتهية:', data.outOfStock);
-                    }
                 }
             }
             
@@ -716,9 +773,7 @@ $isDark = ($darkMode == '1');
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
                 
-                // صوت مختلف للتنبيهات العاجلة
                 if (isUrgent) {
-                    // صوت تحذير متكرر للمنتجات المنتهية/الحرجة
                     oscillator.frequency.value = 1000;
                     oscillator.type = 'square';
                     
@@ -731,7 +786,6 @@ $isDark = ($darkMode == '1');
                     oscillator.start(audioContext.currentTime);
                     oscillator.stop(audioContext.currentTime + 0.6);
                 } else {
-                    // صوت عادي للتنبيهات العادية
                     oscillator.frequency.value = 800;
                     oscillator.type = 'sine';
                     
@@ -743,19 +797,30 @@ $isDark = ($darkMode == '1');
                 }
             }
             
-            // التحقق الفوري عند تحميل الصفحة
+            // التحقق عند تحميل الصفحة
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', checkLowStock);
+                document.addEventListener('DOMContentLoaded', async () => {
+                    await requestNotificationPermission();
+                    checkLowStock();
+                });
             } else {
-                checkLowStock();
+                requestNotificationPermission().then(() => checkLowStock());
             }
             
-            // الفحص الأول بعد 10 ثواني من تحميل الصفحة
             setTimeout(checkLowStock, 10000);
-            
-            // الفحص الدوري كل 5 دقائق
             setInterval(checkLowStock, NOTIFICATION_INTERVAL);
+            
+            // دالة عامة لتفعيل الإشعارات
+            window.enableStockNotifications = async function() {
+                await requestNotificationPermission();
+                if (notificationPermission === 'granted') {
+                    showToast('✅ تم تفعيل إشعارات Windows بنجاح', true);
+                    checkLowStock();
+                } else if (notificationPermission === 'denied') {
+                    showToast('❌ تم رفض إذن الإشعارات. يرجى تفعيلها من إعدادات المتصفح', false);
+                }
+            };
         })();
     </script>
 
-    <div class="flex h-screen overflow-hidden"><?php // Main container - closed in footer ?>
+    <div class="flex h-screen overflow-hidden">

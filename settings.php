@@ -274,6 +274,22 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <label for="toggle-alerts" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
                                     </div>
                                 </div>
+
+                                <!-- إشعارات Windows -->
+                                <div class="p-4 bg-white/5 rounded-xl">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div>
+                                            <h4 class="font-bold text-white mb-1">إشعارات Windows للمخزون</h4>
+                                            <p class="text-xs text-gray-400">تلقي إشعارات نظام Windows للمخزون المنخفض</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="enable-windows-notifications" onclick="enableStockNotifications()" 
+                                        class="w-full bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-2">
+                                        <span class="material-icons-round text-sm">notifications_active</span>
+                                        <span>تفعيل إشعارات Windows</span>
+                                    </button>
+                                    <p class="text-xs text-gray-500 mt-2 text-center">انقر للسماح بإرسال الإشعارات من المتصفح</p>
+                                </div>
                                 <div class="p-4 bg-white/5 rounded-xl <?php echo $readonlyClass; ?>">
                                     <div class="mb-3">
                                         <h4 class="font-bold text-white mb-1">العملة</h4>
@@ -302,26 +318,54 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
 <?php if ($isAdmin): ?>
 <script>
-function resetDeliveryPrices() {
-    if(confirm('هل أنت متأكد من إعادة تعيين أسعار التوصيل إلى القيم الافتراضية (20/40)؟\nيجب عليك حفظ التغييرات بعد ذلك.')) {
-        const insideCity = document.getElementById('deliveryInsideCity');
-        const outsideCity = document.getElementById('deliveryOutsideCity');
-        
-        insideCity.value = '20';
-        outsideCity.value = '40';
-        
-        [insideCity, outsideCity].forEach(el => {
-            el.style.transition = 'all 0.3s';
-            el.style.borderColor = '#10b981';
-            el.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+    function resetDeliveryPrices() {
+        if(confirm('هل أنت متأكد من إعادة تعيين أسعار التوصيل إلى القيم الافتراضية (20/40)؟\nيجب عليك حفظ التغييرات بعد ذلك.')) {
+            const insideCity = document.getElementById('deliveryInsideCity');
+            const outsideCity = document.getElementById('deliveryOutsideCity');
             
-            setTimeout(() => {
-                el.style.borderColor = '';
-                el.style.backgroundColor = '';
-            }, 500);
-        });
+            insideCity.value = '20';
+            outsideCity.value = '40';
+            
+            [insideCity, outsideCity].forEach(el => {
+                el.style.transition = 'all 0.3s';
+                el.style.borderColor = '#10b981';
+                el.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                
+                setTimeout(() => {
+                    el.style.borderColor = '';
+                    el.style.backgroundColor = '';
+                }, 500);
+            });
+        }
     }
-}
+</script>
+<script>
+    // تحديث حالة زر إشعارات Windows
+    document.addEventListener('DOMContentLoaded', function() {
+        const notifButton = document.getElementById('enable-windows-notifications');
+        if (notifButton && 'Notification' in window) {
+            if (Notification.permission === 'granted') {
+                notifButton.innerHTML = `
+                    <span class="material-icons-round text-sm">check_circle</span>
+                    <span>إشعارات Windows مفعلة</span>
+                `;
+                notifButton.classList.remove('bg-primary/10', 'hover:bg-primary/20', 'text-primary');
+                notifButton.classList.add('bg-green-500/10', 'hover:bg-green-500/20', 'text-green-500');
+                notifButton.disabled = true;
+                notifButton.style.cursor = 'default';
+            } else if (Notification.permission === 'denied') {
+                notifButton.innerHTML = `
+                    <span class="material-icons-round text-sm">block</span>
+                    <span>الإشعارات محظورة</span>
+                `;
+                notifButton.classList.remove('bg-primary/10', 'hover:bg-primary/20', 'text-primary');
+                notifButton.classList.add('bg-red-500/10', 'hover:bg-red-500/20', 'text-red-500');
+                notifButton.onclick = function() {
+                    alert('تم حظر الإشعارات. يرجى تفعيلها من إعدادات المتصفح:\n\n1. انقر على أيقونة القفل في شريط العناوين\n2. ابحث عن "الإشعارات"\n3. غير الإعداد إلى "السماح"');
+                };
+            }
+        }
+    });
 </script>
 <?php endif; ?>
 
