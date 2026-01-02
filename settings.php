@@ -88,7 +88,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 <span class="material-icons-round text-yellow-500 text-xl">info</span>
                 <div class="flex-1">
                     <h4 class="text-yellow-500 font-bold mb-1">معلومة هامة</h4>
-                    <p class="text-sm text-yellow-500/80">أنت تشاهد الإعدادات في وضع القراءة فقط. للقيام بأي تعديلات، يجب أن يكون لديك صلاحيات المدير.</p>
+                    <p class="text-sm text-yellow-500/80">أنت تشاهد الإعدادات في وضع القراءة فقط. للقيام بأي تعديلات، تواصل مع مدير الموقع</p>
                 </div>
             </div>
         <?php endif; ?>
