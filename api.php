@@ -48,6 +48,9 @@ switch ($action) {
     case 'getCustomerDetails':
         getCustomerDetails($conn);
         break;
+    case 'getLowStockProducts':
+        getLowStockProducts($conn);
+        break;
     case 'updateCustomer':
         updateCustomer($conn);
         break;
@@ -615,6 +618,24 @@ function updateDeliverySettings($conn) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => 'فشل في تحديث الإعدادات: ' . $e->getMessage()]);
     }
+}
+
+function getLowStockProducts($conn) {
+    $sql = "SELECT id, name, quantity, category_id 
+            FROM products 
+            WHERE quantity <= 10 AND quantity > 0
+            ORDER BY quantity ASC";
+    
+    $result = $conn->query($sql);
+    $products = [];
+    
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $products[] = $row;
+        }
+    }
+    
+    echo json_encode(['success' => true, 'data' => $products, 'count' => count($products)]);
 }
 $conn->close();
 ?>

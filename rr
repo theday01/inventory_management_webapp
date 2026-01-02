@@ -1,0 +1,11 @@
+
+
+            // بعد عرض التنبيه، أضف زر للانتقال للمنتجات
+            if (message.includes('تنبيه') && message.includes('منخفضة')) {
+                const toastContent = document.getElementById('toast-content');
+                const linkBtn = document.createElement('a');
+                linkBtn.href = 'products.php';
+                linkBtn.className = 'mr-2 text-xs underline hover:text-white';
+                linkBtn.textContent = 'عرض المنتجات';
+                toastContent.appendChild(linkBtn);
+            }

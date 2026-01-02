@@ -567,4 +567,96 @@ $isDark = ($darkMode == '1');
         });
     </script>
 
+    <script>
+    // نظام التذكير بالمنتجات منخفضة المخزون
+    (function() {
+        let isCheckingStock = false;
+        const NOTIFICATION_INTERVAL = 5 * 60 * 1000; // 5 دقائق بالميلي ثانية
+        
+        async function checkLowStock() {
+            if (isCheckingStock) return;
+            isCheckingStock = true;
+            
+            try {
+                const response = await fetch('api.php?action=getLowStockProducts');
+                const result = await response.json();
+                
+                if (result.success && result.data.length > 0) {
+                    const lastNotification = localStorage.getItem('lastLowStockNotification');
+                    const now = Date.now();
+                    
+                    // التحقق من مرور 5 دقائق على آخر تنبيه
+                    if (!lastNotification || (now - parseInt(lastNotification)) > 300000) {
+                        showLowStockAlert(result.data);
+                        localStorage.setItem('lastLowStockNotification', now.toString());
+                    }
+                }
+            } catch (error) {
+                console.error('خطأ في التحقق من المخزون:', error);
+            } finally {
+                isCheckingStock = false;
+            }
+        }
+        
+        function showLowStockAlert(products) {
+            const count = products.length;
+            const criticalProducts = products.filter(p => p.quantity <= 5);
+            
+            let message = '';
+            if (criticalProducts.length > 0) {
+                message = `⚠️ تحذير: ${criticalProducts.length} منتج على وشك النفاذ!`;
+            } else {
+                message = `📦 تنبيه: ${count} منتج بكمية منخفضة`;
+            }
+            
+            // عرض التنبيه
+            showToast(message, false);
+            
+            // تشغيل صوت تنبيه إذا كانت الإعدادات مفعلة
+            const soundEnabled = <?php 
+                $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'soundNotifications'");
+                echo ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
+            ?>;
+            
+            if (soundEnabled == 1) {
+                playNotificationSound();
+            }
+            
+            // عرض قائمة المنتجات في console للمطورين
+            console.log('منتجات منخفضة المخزون:', products);
+        }
+        
+        function playNotificationSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+        
+        // التحقق الفوري عند تحميل الصفحة
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', checkLowStock);
+        } else {
+            checkLowStock();
+        }
+        
+        // الفحص الأول بعد 10 ثواني من تحميل الصفحة
+        setTimeout(checkLowStock, 10000);
+        
+        // الفحص الدوري كل 5 دقائق
+        setInterval(checkLowStock, NOTIFICATION_INTERVAL);
+    })();
+    </script>
+
     <div class="flex h-screen overflow-hidden"><?php // Main container - closed in footer ?>

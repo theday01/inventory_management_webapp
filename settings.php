@@ -264,6 +264,16 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <label for="toggle-sound" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
                                     </div>
                                 </div>
+                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                    <div>
+                                        <h4 class="font-bold text-white mb-1">تنبيهات المخزون المنخفض</h4>
+                                        <p class="text-xs text-gray-400">إشعار كل 5 دقائق للمنتجات ≤ 10</p>
+                                    </div>
+                                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" name="lowStockAlerts" id="toggle-alerts" value="1" class="toggle-checkbox" checked />
+                                        <label for="toggle-alerts" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
+                                    </div>
+                                </div>
                                 <div class="p-4 bg-white/5 rounded-xl <?php echo $readonlyClass; ?>">
                                     <div class="mb-3">
                                         <h4 class="font-bold text-white mb-1">العملة</h4>

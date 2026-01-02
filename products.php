@@ -680,6 +680,47 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             codeReader.reset();
         }
     }
+    // إضافة زر يدوي للتحقق من المخزون المنخفض
+    const checkStockBtn = document.createElement('button');
+    checkStockBtn.innerHTML = `
+        <span class="material-icons-round text-sm">inventory</span>
+        <span>فحص المخزون</span>
+    `;
+    checkStockBtn.className = 'bg-yellow-600 hover:bg-yellow-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5';
+    checkStockBtn.onclick = async function() {
+        try {
+            const response = await fetch('api.php?action=getLowStockProducts');
+            const result = await response.json();
+            
+            if (result.success) {
+                if (result.data.length === 0) {
+                    showToast('✅ جميع المنتجات بكميات جيدة', true);
+                } else {
+                    const critical = result.data.filter(p => p.quantity <= 5);
+                    const low = result.data.filter(p => p.quantity > 5 && p.quantity <= 10);
+                    
+                    let details = `📊 تقرير المخزون:\n`;
+                    if (critical.length > 0) {
+                        details += `🔴 حرج (≤5): ${critical.length} منتج\n`;
+                    }
+                    if (low.length > 0) {
+                        details += `🟡 منخفض (6-10): ${low.length} منتج`;
+                    }
+                    
+                    showToast(details, false);
+                    
+                    // عرض التفاصيل في console
+                    console.table(result.data);
+                }
+            }
+        } catch (error) {
+            console.error('خطأ:', error);
+            showToast('حدث خطأ في فحص المخزون', false);
+        }
+    };
+
+    // إضافة الزر بجانب زر "إدارة الفئات"
+    document.getElementById('manage-categories-btn').insertAdjacentElement('afterend', checkStockBtn);
 });
 </script>
 <?php require_once 'src/footer.php'; ?>
