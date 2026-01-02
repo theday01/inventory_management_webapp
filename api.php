@@ -621,10 +621,11 @@ function updateDeliverySettings($conn) {
 }
 
 function getLowStockProducts($conn) {
+    // جلب المنتجات المنتهية والمنخفضة معاً
     $sql = "SELECT id, name, quantity, category_id 
             FROM products 
-            WHERE quantity <= 10 AND quantity > 0
-            ORDER BY quantity ASC";
+            WHERE quantity <= 10
+            ORDER BY quantity ASC, name ASC";
     
     $result = $conn->query($sql);
     $products = [];
@@ -635,7 +636,22 @@ function getLowStockProducts($conn) {
         }
     }
     
-    echo json_encode(['success' => true, 'data' => $products, 'count' => count($products)]);
+    // تصنيف المنتجات
+    $outOfStock = array_filter($products, function($p) { return $p['quantity'] == 0; });
+    $critical = array_filter($products, function($p) { return $p['quantity'] > 0 && $p['quantity'] <= 5; });
+    $low = array_filter($products, function($p) { return $p['quantity'] > 5 && $p['quantity'] <= 10; });
+    
+    echo json_encode([
+        'success' => true, 
+        'data' => $products,
+        'outOfStock' => array_values($outOfStock),
+        'critical' => array_values($critical),
+        'low' => array_values($low),
+        'count' => count($products),
+        'outOfStockCount' => count($outOfStock),
+        'criticalCount' => count($critical),
+        'lowCount' => count($low)
+    ]);
 }
 $conn->close();
 ?>

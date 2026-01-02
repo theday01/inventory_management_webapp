@@ -495,6 +495,64 @@ $isDark = ($darkMode == '1');
         html:not(.dark) .text-orange-400 {
             color: #EA580C !important;
         }
+        
+        /* Light Mode - Product Table Row Colors for Out of Stock */
+        html:not(.dark) .bg-gray-900\/40 {
+            background-color: rgba(229, 231, 235, 0.8) !important;
+        }
+
+        html:not(.dark) .bg-gray-900\/50,
+        html:not(.dark) .bg-gray-900\/40:hover {
+            background-color: rgba(209, 213, 219, 0.9) !important;
+        }
+
+        /* Light Mode - Out of Stock Text Color */
+        html:not(.dark) .text-gray-500 {
+            color: #6B7280 !important;
+        }
+
+        /* Light Mode - Status Badges */
+        html:not(.dark) .bg-gray-500\/20 {
+            background-color: rgba(107, 114, 128, 0.2) !important;
+        }
+
+        html:not(.dark) .text-gray-400 {
+            color: #9CA3AF !important;
+        }
+
+        html:not(.dark) .bg-red-500\/20 {
+            background-color: rgba(239, 68, 68, 0.2) !important;
+        }
+
+        html:not(.dark) .bg-orange-500\/20 {
+            background-color: rgba(249, 115, 22, 0.2) !important;
+        }
+
+        html:not(.dark) .bg-yellow-500\/20 {
+            background-color: rgba(234, 179, 8, 0.2) !important;
+        }
+
+        html:not(.dark) .bg-yellow-900\/10 {
+            background-color: rgba(250, 204, 21, 0.15) !important;
+        }
+
+        html:not(.dark) .bg-yellow-900\/20,
+        html:not(.dark) .bg-yellow-900\/10:hover {
+            background-color: rgba(250, 204, 21, 0.25) !important;
+        }
+
+        /* Light Mode - Stock Modal Backgrounds */
+        html:not(.dark) .bg-gray-500\/10 {
+            background-color: rgba(156, 163, 175, 0.15) !important;
+        }
+
+        html:not(.dark) .border-gray-500\/30 {
+            border-color: rgba(107, 114, 128, 0.3) !important;
+        }
+
+        html:not(.dark) .border-gray-500\/40 {
+            border-color: rgba(107, 114, 128, 0.4) !important;
+        }
     </style>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -566,97 +624,138 @@ $isDark = ($darkMode == '1');
             }
         });
     </script>
-
     <script>
-    // نظام التذكير بالمنتجات منخفضة المخزون
-    (function() {
-        let isCheckingStock = false;
-        const NOTIFICATION_INTERVAL = 5 * 60 * 1000; // 5 دقائق بالميلي ثانية
-        
-        async function checkLowStock() {
-            if (isCheckingStock) return;
-            isCheckingStock = true;
+        // نظام التذكير بالمنتجات منخفضة المخزون والمنتهية
+        (function() {
+            let isCheckingStock = false;
+            const NOTIFICATION_INTERVAL = 5 * 60 * 1000; // 5 دقائق بالميلي ثانية
             
-            try {
-                const response = await fetch('api.php?action=getLowStockProducts');
-                const result = await response.json();
+            async function checkLowStock() {
+                if (isCheckingStock) return;
+                isCheckingStock = true;
                 
-                if (result.success && result.data.length > 0) {
-                    const lastNotification = localStorage.getItem('lastLowStockNotification');
-                    const now = Date.now();
+                try {
+                    const response = await fetch('api.php?action=getLowStockProducts');
+                    const result = await response.json();
                     
-                    // التحقق من مرور 5 دقائق على آخر تنبيه
-                    if (!lastNotification || (now - parseInt(lastNotification)) > 300000) {
-                        showLowStockAlert(result.data);
-                        localStorage.setItem('lastLowStockNotification', now.toString());
+                    if (result.success && result.data.length > 0) {
+                        const lastNotification = localStorage.getItem('lastLowStockNotification');
+                        const now = Date.now();
+                        
+                        // التحقق من مرور 5 دقائق على آخر تنبيه
+                        if (!lastNotification || (now - parseInt(lastNotification)) > 300000) {
+                            showLowStockAlert(result);
+                            localStorage.setItem('lastLowStockNotification', now.toString());
+                        }
+                    }
+                } catch (error) {
+                    console.error('خطأ في التحقق من المخزون:', error);
+                } finally {
+                    isCheckingStock = false;
+                }
+            }
+            
+            function showLowStockAlert(data) {
+                const outOfStockCount = data.outOfStockCount || 0;
+                const criticalCount = data.criticalCount || 0;
+                const lowCount = data.lowCount || 0;
+                const totalCount = data.count || 0;
+                
+                let message = '';
+                let isUrgent = false;
+                
+                // أولوية للمنتجات المنتهية
+                if (outOfStockCount > 0) {
+                    message = `🚫 تحذير عاجل: ${outOfStockCount} منتج نفذت كميته!`;
+                    isUrgent = true;
+                } 
+                // ثم المنتجات الحرجة
+                else if (criticalCount > 0) {
+                    message = `⚠️ تحذير: ${criticalCount} منتج على وشك النفاذ!`;
+                    isUrgent = true;
+                } 
+                // ثم المنتجات المنخفضة
+                else if (lowCount > 0) {
+                    message = `📦 تنبيه: ${lowCount} منتج بكمية منخفضة`;
+                }
+                
+                if (message) {
+                    // عرض التنبيه
+                    showToast(message, !isUrgent);
+                    
+                    // تشغيل صوت تنبيه إذا كانت الإعدادات مفعلة
+                    const soundEnabled = <?php 
+                        $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'soundNotifications'");
+                        echo ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
+                    ?>;
+                    
+                    if (soundEnabled == 1) {
+                        // صوت مختلف للمنتجات المنتهية
+                        playNotificationSound(isUrgent);
+                    }
+                    
+                    // عرض تفاصيل في console
+                    console.log('📊 حالة المخزون:', {
+                        منتهية: outOfStockCount,
+                        حرجة: criticalCount,
+                        منخفضة: lowCount,
+                        الإجمالي: totalCount
+                    });
+                    
+                    if (outOfStockCount > 0) {
+                        console.log('⛔ منتجات منتهية:', data.outOfStock);
                     }
                 }
-            } catch (error) {
-                console.error('خطأ في التحقق من المخزون:', error);
-            } finally {
-                isCheckingStock = false;
             }
-        }
-        
-        function showLowStockAlert(products) {
-            const count = products.length;
-            const criticalProducts = products.filter(p => p.quantity <= 5);
             
-            let message = '';
-            if (criticalProducts.length > 0) {
-                message = `⚠️ تحذير: ${criticalProducts.length} منتج على وشك النفاذ!`;
+            function playNotificationSound(isUrgent) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // صوت مختلف للتنبيهات العاجلة
+                if (isUrgent) {
+                    // صوت تحذير متكرر للمنتجات المنتهية/الحرجة
+                    oscillator.frequency.value = 1000;
+                    oscillator.type = 'square';
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime + 0.3);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.6);
+                } else {
+                    // صوت عادي للتنبيهات العادية
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                }
+            }
+            
+            // التحقق الفوري عند تحميل الصفحة
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', checkLowStock);
             } else {
-                message = `📦 تنبيه: ${count} منتج بكمية منخفضة`;
+                checkLowStock();
             }
             
-            // عرض التنبيه
-            showToast(message, false);
+            // الفحص الأول بعد 10 ثواني من تحميل الصفحة
+            setTimeout(checkLowStock, 10000);
             
-            // تشغيل صوت تنبيه إذا كانت الإعدادات مفعلة
-            const soundEnabled = <?php 
-                $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'soundNotifications'");
-                echo ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
-            ?>;
-            
-            if (soundEnabled == 1) {
-                playNotificationSound();
-            }
-            
-            // عرض قائمة المنتجات في console للمطورين
-            console.log('منتجات منخفضة المخزون:', products);
-        }
-        
-        function playNotificationSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.5);
-        }
-        
-        // التحقق الفوري عند تحميل الصفحة
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', checkLowStock);
-        } else {
-            checkLowStock();
-        }
-        
-        // الفحص الأول بعد 10 ثواني من تحميل الصفحة
-        setTimeout(checkLowStock, 10000);
-        
-        // الفحص الدوري كل 5 دقائق
-        setInterval(checkLowStock, NOTIFICATION_INTERVAL);
-    })();
+            // الفحص الدوري كل 5 دقائق
+            setInterval(checkLowStock, NOTIFICATION_INTERVAL);
+        })();
     </script>
 
     <div class="flex h-screen overflow-hidden"><?php // Main container - closed in footer ?>

@@ -312,14 +312,30 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             const qty = parseInt(product.quantity);
             let rowClass = 'transition-colors border-b border-white/5';
             let quantityClass = 'text-gray-300';
+            let quantityBadge = '';
 
-            if (qty <= 20) {
+            // تصنيف المنتجات حسب الكمية
+            if (qty === 0) {
+                // منتج منتهي
+                rowClass += ' bg-gray-900/40 hover:bg-gray-900/50'; 
+                quantityClass = 'text-gray-500 font-bold';
+                quantityBadge = '<span class="inline-flex items-center gap-1 text-xs bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">block</span>منتهي</span>';
+            } else if (qty <= 5) {
+                // منتج حرج
                 rowClass += ' bg-red-900/20 hover:bg-red-900/30'; 
                 quantityClass = 'text-red-400 font-bold';
-            } else if (qty <= 50) {
+                quantityBadge = '<span class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">error</span>حرج</span>';
+            } else if (qty <= 10) {
+                // منتج منخفض
                 rowClass += ' bg-orange-900/20 hover:bg-orange-900/30';
                 quantityClass = 'text-orange-400 font-bold';
+                quantityBadge = '<span class="inline-flex items-center gap-1 text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">warning</span>منخفض</span>';
+            } else if (qty <= 20) {
+                // منتج يحتاج متابعة
+                rowClass += ' bg-yellow-900/10 hover:bg-yellow-900/20';
+                quantityClass = 'text-yellow-400';
             } else {
+                // منتج بكمية جيدة
                 rowClass += ' bg-transparent hover:bg-white/5';
             }
 
@@ -332,7 +348,12 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 </td>
                 <td class="p-4 text-sm text-gray-300">${product.category_name || 'غير مصنّف'}</td>
                 <td class="p-4 text-sm text-gray-300">${parseFloat(product.price).toFixed(2)}</td>
-                <td class="p-4 text-sm ${quantityClass}">${qty}</td>
+                <td class="p-4 text-sm ${quantityClass}">
+                    <div class="flex items-center">
+                        ${qty}
+                        ${quantityBadge}
+                    </div>
+                </td>
                 <td class="p-4 text-sm text-gray-300">
                     <button class="view-details-btn p-1.5 text-gray-400 hover:text-primary transition-colors" data-id="${product.id}">
                         <span class="material-icons-round text-lg">visibility</span>
@@ -716,6 +737,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             codeReader.reset();
         }
     }
+    // في products.php - استبدال كود زر "فحص المخزون"
+
     // إضافة زر يدوي للتحقق من المخزون المنخفض
     const checkStockBtn = document.createElement('button');
     checkStockBtn.innerHTML = `
@@ -739,32 +762,70 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             loadingScreen.classList.add('hidden');
             
             if (result.success) {
-                if (result.data.length === 0) {
+                const totalIssues = result.outOfStockCount + result.criticalCount + result.lowCount;
+                
+                if (totalIssues === 0) {
                     showToast('✅ جميع المنتجات بكميات جيدة', true);
                 } else {
-                    // تصنيف المنتجات
-                    const critical = result.data.filter(p => p.quantity <= 5);
-                    const low = result.data.filter(p => p.quantity > 5 && p.quantity <= 10);
+                    const outOfStock = result.outOfStock || [];
+                    const critical = result.critical || [];
+                    const low = result.low || [];
                     
                     // بناء محتوى الـ Modal
                     let content = `
                         <div class="space-y-6">
                             <!-- إحصائيات سريعة -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="bg-gray-500/10 border border-gray-500/30 rounded-xl p-4 text-center">
+                                    <div class="text-3xl font-bold text-gray-400">${outOfStock.length}</div>
+                                    <div class="text-sm text-gray-400 mt-1">منتهي (0)</div>
+                                </div>
                                 <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
                                     <div class="text-3xl font-bold text-red-500">${critical.length}</div>
-                                    <div class="text-sm text-red-400 mt-1">حرج (≤5)</div>
+                                    <div class="text-sm text-red-400 mt-1">حرج (1-5)</div>
                                 </div>
                                 <div class="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 text-center">
                                     <div class="text-3xl font-bold text-orange-500">${low.length}</div>
                                     <div class="text-sm text-orange-400 mt-1">منخفض (6-10)</div>
                                 </div>
                                 <div class="bg-primary/10 border border-primary/30 rounded-xl p-4 text-center">
-                                    <div class="text-3xl font-bold text-primary">${result.data.length}</div>
-                                    <div class="text-sm text-gray-400 mt-1">إجمالي المنتجات</div>
+                                    <div class="text-3xl font-bold text-primary">${totalIssues}</div>
+                                    <div class="text-sm text-gray-400 mt-1">الإجمالي</div>
                                 </div>
                             </div>
                     `;
+                    
+                    // المنتجات المنتهية
+                    if (outOfStock.length > 0) {
+                        content += `
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-400 mb-3 flex items-center gap-2">
+                                    <span class="material-icons-round">block</span>
+                                    منتجات منتهية تماماً (كمية = 0)
+                                </h4>
+                                <div class="space-y-2">
+                        `;
+                        
+                        outOfStock.forEach(product => {
+                            content += `
+                                <div class="bg-gray-900/30 border border-gray-500/40 rounded-lg p-4 flex justify-between items-center hover:bg-gray-900/40 transition-colors">
+                                    <div>
+                                        <div class="font-bold text-white flex items-center gap-2">
+                                            ${product.name}
+                                            <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded">نفذت الكمية</span>
+                                        </div>
+                                        <div class="text-sm text-gray-500 mt-1">يجب طلب مخزون جديد فوراً</div>
+                                    </div>
+                                    <div class="text-2xl font-bold text-gray-500">0</div>
+                                </div>
+                            `;
+                        });
+                        
+                        content += `
+                                </div>
+                            </div>
+                        `;
+                    }
                     
                     // المنتجات الحرجة
                     if (critical.length > 0) {
@@ -772,7 +833,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                             <div>
                                 <h4 class="text-lg font-bold text-red-500 mb-3 flex items-center gap-2">
                                     <span class="material-icons-round">error</span>
-                                    منتجات حرجة (كمية ≤5)
+                                    منتجات حرجة (كمية 1-5)
                                 </h4>
                                 <div class="space-y-2">
                         `;
@@ -830,7 +891,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     stockModal.classList.remove('hidden');
                     
                     // حفظ البيانات للتصدير
-                    window.stockReportData = result.data;
+                    window.stockReportData = result;
                 }
             }
         } catch (error) {
@@ -839,8 +900,10 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             showToast('حدث خطأ في فحص المخزون', false);
         }
     };
+
     // إضافة الزر بجانب زر "إدارة الفئات"
     document.getElementById('manage-categories-btn').insertAdjacentElement('afterend', checkStockBtn);
+
 });
     // Modal Controls
     const closeStockModalBtn = document.getElementById('close-stock-modal-btn');
@@ -860,9 +923,11 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         });
     }
 
+    // في products.php - استبدال كود زر "تصدير التقرير"
+
     if (exportStockReport) {
         exportStockReport.addEventListener('click', () => {
-            if (!window.stockReportData || window.stockReportData.length === 0) {
+            if (!window.stockReportData) {
                 showToast('لا توجد بيانات للتصدير', false);
                 return;
             }
@@ -870,41 +935,74 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             const currency = '<?php echo $currency; ?>';
             const now = new Date();
             const dateStr = now.toLocaleDateString('ar-SA');
+            const timeStr = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
             
-            let txtContent = `تقرير المخزون المنخفض\n`;
+            let txtContent = `تقرير المخزون الشامل\n`;
             txtContent += `التاريخ: ${dateStr}\n`;
-            txtContent += `${'='.repeat(50)}\n\n`;
+            txtContent += `الوقت: ${timeStr}\n`;
+            txtContent += `${'='.repeat(60)}\n\n`;
             
-            const critical = window.stockReportData.filter(p => p.quantity <= 5);
-            const low = window.stockReportData.filter(p => p.quantity > 5 && p.quantity <= 10);
+            const outOfStock = window.stockReportData.outOfStock || [];
+            const critical = window.stockReportData.critical || [];
+            const low = window.stockReportData.low || [];
+            const totalIssues = outOfStock.length + critical.length + low.length;
             
-            txtContent += `📊 ملخص:\n`;
-            txtContent += `   - منتجات حرجة (≤5): ${critical.length}\n`;
+            txtContent += `📊 ملخص الحالة:\n`;
+            txtContent += `   - منتجات منتهية (0): ${outOfStock.length}\n`;
+            txtContent += `   - منتجات حرجة (1-5): ${critical.length}\n`;
             txtContent += `   - منتجات منخفضة (6-10): ${low.length}\n`;
-            txtContent += `   - الإجمالي: ${window.stockReportData.length}\n\n`;
+            txtContent += `   - إجمالي المشاكل: ${totalIssues}\n\n`;
             
+            // المنتجات المنتهية
+            if (outOfStock.length > 0) {
+                txtContent += `${'='.repeat(60)}\n`;
+                txtContent += `⛔ منتجات منتهية تماماً (كمية = 0):\n`;
+                txtContent += `${'-'.repeat(60)}\n`;
+                txtContent += `⚠️ هذه المنتجات نفذت بالكامل وتحتاج طلب مخزون فوري!\n\n`;
+                outOfStock.forEach((p, i) => {
+                    txtContent += `${i + 1}. ${p.name}\n`;
+                    txtContent += `   الكمية: 0 (نفذت)\n`;
+                    txtContent += `   الحالة: يجب الطلب فوراً\n\n`;
+                });
+            }
+            
+            // المنتجات الحرجة
             if (critical.length > 0) {
-                txtContent += `${'='.repeat(50)}\n`;
-                txtContent += `🔴 منتجات حرجة (كمية ≤5):\n`;
-                txtContent += `${'-'.repeat(50)}\n`;
+                txtContent += `${'='.repeat(60)}\n`;
+                txtContent += `🔴 منتجات حرجة (كمية 1-5):\n`;
+                txtContent += `${'-'.repeat(60)}\n`;
                 critical.forEach((p, i) => {
                     txtContent += `${i + 1}. ${p.name}\n`;
                     txtContent += `   الكمية: ${p.quantity}\n\n`;
                 });
             }
             
+            // المنتجات المنخفضة
             if (low.length > 0) {
-                txtContent += `${'='.repeat(50)}\n`;
+                txtContent += `${'='.repeat(60)}\n`;
                 txtContent += `🟡 منتجات منخفضة (كمية 6-10):\n`;
-                txtContent += `${'-'.repeat(50)}\n`;
+                txtContent += `${'-'.repeat(60)}\n`;
                 low.forEach((p, i) => {
                     txtContent += `${i + 1}. ${p.name}\n`;
                     txtContent += `   الكمية: ${p.quantity}\n\n`;
                 });
             }
             
-            txtContent += `${'='.repeat(50)}\n`;
+            txtContent += `${'='.repeat(60)}\n`;
+            txtContent += `📋 توصيات:\n`;
+            txtContent += `${'-'.repeat(60)}\n`;
+            if (outOfStock.length > 0) {
+                txtContent += `• أولوية قصوى: طلب المنتجات المنتهية (${outOfStock.length} منتج)\n`;
+            }
+            if (critical.length > 0) {
+                txtContent += `• أولوية عالية: إعادة تخزين المنتجات الحرجة (${critical.length} منتج)\n`;
+            }
+            if (low.length > 0) {
+                txtContent += `• أولوية متوسطة: مراقبة المنتجات المنخفضة (${low.length} منتج)\n`;
+            }
+            txtContent += `\n${'='.repeat(60)}\n`;
             txtContent += `تم إنشاء التقرير بواسطة Smart Shop\n`;
+            txtContent += `النظام: نظام إدارة المخزون الذكي\n`;
             
             const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
             const link = document.createElement('a');
@@ -915,7 +1013,6 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             showToast('تم تصدير التقرير بنجاح', true);
         });
     }
-
     // إغلاق عند النقر خارج Modal
     stockModal?.addEventListener('click', (e) => {
         if (e.target === stockModal) {
