@@ -96,6 +96,106 @@ $deliveryOutsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc
 .invoice-items-scrollable::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+/* تنسيقات المنتجات المنتهية في Dark Mode */
+.dark .bg-red-900\/20 {
+    background-color: rgba(127, 29, 29, 0.2) !important;
+}
+
+.dark .border-red-500\/30 {
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* تنسيقات المنتجات المنتهية في Light Mode */
+html:not(.dark) .bg-red-900\/20 {
+    background-color: rgba(254, 202, 202, 0.6) !important;
+}
+
+html:not(.dark) .border-red-500\/30 {
+    border-color: rgba(239, 68, 68, 0.5) !important;
+}
+
+html:not(.dark) .text-red-400 {
+    color: #DC2626 !important;
+}
+
+html:not(.dark) .text-gray-500 {
+    color: #6B7280 !important;
+}
+
+html:not(.dark) .text-gray-600 {
+    color: #4B5563 !important;
+}
+/* تنسيقات قسم التوصيل في Light Mode */
+html:not(.dark) .bg-white\/5 {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+html:not(.dark) .border-white\/5 {
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+html:not(.dark) .border-white\/10 {
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+html:not(.dark) .bg-dark\/30 {
+    background-color: rgba(243, 244, 246, 0.8) !important;
+}
+
+html:not(.dark) .bg-dark\/50 {
+    background-color: rgba(229, 231, 235, 0.9) !important;
+}
+
+html:not(.dark) .hover\:bg-dark\/50:hover {
+    background-color: rgba(229, 231, 235, 0.9) !important;
+}
+
+/* نصوص قسم التوصيل في Light Mode */
+html:not(.dark) #delivery-options .text-white {
+    color: #111827 !important;
+}
+
+html:not(.dark) #delivery-options .font-bold {
+    color: #1F2937 !important;
+}
+
+html:not(.dark) #delivery-options .text-gray-400 {
+    color: #6B7280 !important;
+}
+
+/* زر التبديل (Toggle) في Light Mode */
+html:not(.dark) .bg-gray-600 {
+    background-color: #D1D5DB !important;
+}
+
+html:not(.dark) .peer-checked\:bg-primary:checked {
+    background-color: #3B82F6 !important;
+}
+
+/* الخيارات المحددة في Light Mode */
+html:not(.dark) .has-\[\:checked\]\:border-primary:has(:checked) {
+    border-color: #3B82F6 !important;
+    background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+html:not(.dark) .has-\[\:checked\]\:bg-primary\/10:has(:checked) {
+    background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+/* تحسين الـ border في الخيارات */
+html:not(.dark) #delivery-options label {
+    border: 2px solid #E5E7EB !important;
+}
+
+html:not(.dark) #delivery-options label:hover {
+    border-color: #3B82F6 !important;
+    background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+html:not(.dark) #delivery-options label:has(:checked) {
+    border-color: #3B82F6 !important;
+    background-color: rgba(59, 130, 246, 0.12) !important;
+}
 </style>
 
 <!-- Main Content -->
@@ -661,14 +761,50 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         products.forEach(product => {
+            const quantity = parseInt(product.quantity);
+            const isOutOfStock = quantity === 0;
+            
             const productCard = document.createElement('div');
-            productCard.className = 'bg-dark-surface/50 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all cursor-pointer';
+            
+            // تحديد الـ classes حسب حالة المخزون
+            let cardClasses = 'rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all relative overflow-hidden';
+            
+            if (isOutOfStock) {
+                // منتج منتهي - أحمر باهت مع تعطيل التفاعل
+                cardClasses += ' bg-red-900/20 border-2 border-red-500/30 opacity-75 cursor-not-allowed';
+            } else {
+                // منتج عادي
+                cardClasses += ' bg-dark-surface/50 border border-white/5 hover:border-primary/50 cursor-pointer hover:scale-105';
+            }
+            
+            productCard.className = cardClasses;
+            
             productCard.innerHTML = `
-                <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" class="w-24 h-24 object-cover rounded-lg mb-4">
-                <div class="text-lg font-bold text-white">${product.name}</div>
-                <div class="text-sm text-gray-400">${product.price} ${currency}</div>
+                ${isOutOfStock ? `
+                    <div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
+                        <span class="material-icons-round text-xs">block</span>
+                        <span>نفذ</span>
+                    </div>
+                ` : ''}
+                <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" 
+                     class="w-24 h-24 object-cover rounded-lg mb-4 ${isOutOfStock ? 'grayscale opacity-60' : ''}">
+                <div class="text-lg font-bold ${isOutOfStock ? 'text-gray-500 line-through' : 'text-white'}">${product.name}</div>
+                <div class="text-sm ${isOutOfStock ? 'text-gray-600' : 'text-gray-400'}">${product.price} ${currency}</div>
+                ${isOutOfStock ? `
+                    <div class="mt-2 text-xs text-red-400 font-bold">غير متوفر حالياً</div>
+                ` : ''}
             `;
-            productCard.addEventListener('click', () => addProductToCart(product));
+            
+            // إضافة event listener فقط للمنتجات المتوفرة
+            if (!isOutOfStock) {
+                productCard.addEventListener('click', () => addProductToCart(product));
+            } else {
+                // إظهار رسالة تنبيه عند محاولة النقر على منتج منتهي
+                productCard.addEventListener('click', () => {
+                    showToast(`⚠️ المنتج "${product.name}" غير متوفر حالياً`, false);
+                });
+            }
+            
             productsGrid.appendChild(productCard);
         });
     }

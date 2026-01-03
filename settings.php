@@ -319,7 +319,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     <div class="flex items-center justify-between mb-3">
                                         <div>
                                             <h4 class="font-bold text-white mb-1">إشعارات Windows للمخزون</h4>
-                                            <p class="text-xs text-gray-400">تلقي إشعارات نظام Windows للمخزون المنخفض</p>
+                                            <p class="text-xs text-gray-400">تلقي إشعارات نظام Windows للمخزون المنخفض أو المنتهي</p>
                                         </div>
                                     </div>
                                     <button type="button" id="enable-windows-notifications" onclick="enableStockNotifications()" 

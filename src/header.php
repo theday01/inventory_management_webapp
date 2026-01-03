@@ -2,6 +2,10 @@
 require_once 'session.php';
 require_once 'db.php';
 
+// Get shop name setting
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopName'");
+$shopName = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'Smart Shop';
+
 // Get dark mode setting
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'darkMode'");
 $darkMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '1';
@@ -11,6 +15,7 @@ $isDark = ($darkMode == '1');
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'stockAlertInterval'");
 $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '20';
 ?>
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="<?php echo $isDark ? 'dark' : ''; ?>">
 

@@ -1,3 +1,10 @@
+<?php
+// جلب اسم المتجر من قاعدة البيانات (إذا لم يكن محملاً بالفعل من header.php)
+if (!isset($shopName)) {
+    $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopName'");
+    $shopName = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'Smart Shop';
+}
+?>
 <!-- Sidebar -->
 <aside class="w-72 bg-dark-surface border-l border-white/5 dark:bg-dark-surface dark:border-white/5 bg-white border-gray-200 flex flex-col shrink-0 z-30 transition-colors duration-200">
     <!-- Logo -->
@@ -7,7 +14,7 @@
                 <span class="material-icons-round text-white text-xl">storefront</span>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-white dark:text-white text-gray-900">Smart Shop</h1>
+                <h1 class="text-lg font-bold text-white dark:text-white text-gray-900"><?php echo htmlspecialchars($shopName); ?></h1>
                 <p class="text-xs text-gray-400 dark:text-gray-400 text-gray-600">نظام إدارة المتاجر</p>
             </div>
         </div>
