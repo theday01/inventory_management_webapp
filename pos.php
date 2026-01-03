@@ -976,7 +976,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadProducts() {
         try {
             showLoading('جاري تحميل المنتجات...');
-            const response = await fetch('api.php?action=getProducts');
+            const response = await fetch('api.php?action=getProducts&limit=9999');
             const result = await response.json();
             if (result.success) {
                 allProducts = result.data;
