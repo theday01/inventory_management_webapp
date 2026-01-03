@@ -4,14 +4,6 @@ $current_page = 'invoices.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
-$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopCity'");
-$shopCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
-
-$locationParts = [];
-if (!empty($shopCity)) $locationParts[] = $shopCity;
-if (!empty($shopAddress)) $locationParts[] = $shopAddress;
-$fullLocation = implode('، ', $locationParts);
-
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 
@@ -23,6 +15,14 @@ $shopPhone = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['settin
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopAddress'");
 $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopCity'");
+$shopCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
+$locationParts = [];
+if (!empty($shopCity)) $locationParts[] = $shopCity;
+if (!empty($shopAddress)) $locationParts[] = $shopAddress;
+$fullLocation = implode('، ', $locationParts);
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'taxEnabled'");
 $taxEnabled = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '1';
@@ -114,7 +114,12 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     <form id="invoice-search-form" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                         <div class="md:col-span-2">
                             <label for="search-term" class="text-sm font-medium text-gray-300 mb-1 block">بحث</label>
-                            <input type="text" id="search-term" name="search" class="w-full bg-dark-surface/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary" placeholder="رقم الفاتورة, اسم العميل, باركود...">
+                            <div class="relative">
+                                <input type="text" id="search-term" name="search" class="w-full bg-dark-surface/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary" placeholder="رقم الفاتورة, اسم العميل, باركود...">
+                                <button type="button" id="scan-invoice-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white transition-colors" title="مسح باركود">
+                                    <span class="material-icons-round">qr_code_scanner</span>
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <label for="search-date" class="text-sm font-medium text-gray-300 mb-1 block">التاريخ</label>
@@ -153,6 +158,21 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                         </table>
                     </div>
                 </section>
+            </div>
+        </div>
+    </div>
+    <!-- Barcode Scanner Modal for Invoices -->
+    <div id="invoice-barcode-scanner-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white">مسح باركود الفاتورة</h3>
+                <button id="close-invoice-barcode-scanner-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            <div class="p-6">
+                <video id="invoice-barcode-video" class="w-full h-auto rounded-lg"></video>
+                <p class="text-xs text-gray-400 mt-3 text-center">وجّه الكاميرا نحو باركود الفاتورة</p>
             </div>
         </div>
     </div>
@@ -196,10 +216,13 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     <div>
                         <p class="text-gray-600 mb-1">رقم الفاتورة</p>
                         <p class="font-bold text-lg" id="invoice-number">-</p>
+                        <!-- باركود الفاتورة -->
+                        <svg id="invoice-barcode" class="mt-2"></svg>
                     </div>
                     <div class="text-left">
                         <p class="text-gray-600 mb-1">التاريخ</p>
                         <p class="font-bold" id="invoice-date">-</p>
+                        <p class="text-gray-600 text-xs mt-1">الوقت: <span class="font-medium text-gray-900" id="invoice-time">-</span></p>
                     </div>
                 </div>
 
@@ -295,6 +318,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -333,7 +357,9 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         return result;
     }
 
-    function formatDualDate(date) {
+    function formatDualDate(dateString) {
+        const date = new Date(dateString);
+        
         const gregorianDate = date.toLocaleDateString('en-US', {
             year: 'numeric',
             month: '2-digit',
@@ -435,10 +461,12 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             
             if (result.success) {
                 currentInvoiceData = result.data;
+                // تحويل created_at إلى Date object
+                currentInvoiceData.created_at = new Date(currentInvoiceData.created_at);
                 displayInvoiceDetails(currentInvoiceData);
                 invoiceModal.classList.remove('hidden');
             } else {
-                showToast('فشل في تحميل الفاتورة', false);
+                showToast(result.message || 'فشل في تحميل الفاتورة', false);
             }
         } catch (error) {
             console.error('خطأ في تحميل الفاتورة:', error);
@@ -449,8 +477,29 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     function displayInvoiceDetails(invoice) {
         document.getElementById('invoice-number').textContent = `#${String(invoice.id).padStart(6, '0')}`;
 
+        // توليد الباركود
+        try {
+            JsBarcode("#invoice-barcode", String(invoice.id).padStart(6, '0'), {
+                format: "CODE128",
+                width: 1,
+                height: 40,
+                displayValue: false,
+                margin: 0
+            });
+        } catch (e) {
+            console.error('Error generating barcode:', e);
+        }
+
+        document.getElementById('invoice-date').textContent = formatDualDate(invoice.created_at);
+
+        // إضافة الوقت
         const invoiceDate = new Date(invoice.created_at);
-        document.getElementById('invoice-date').textContent = formatDualDate(invoiceDate);
+        const formattedTime = invoiceDate.toLocaleTimeString('ar-SA', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        });
+        document.getElementById('invoice-time').textContent = toEnglishNumbers(formattedTime);
 
         const customerInfo = document.getElementById('customer-info');
         if (invoice.customer_name) {
@@ -515,7 +564,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         if (invoice.delivery_cost > 0) {
             const taxRow = document.getElementById('invoice-tax-row');
             const totalsContainer = taxRow.parentNode;
-            const totalRow = totalsContainer.querySelector('.grand-total') || totalsContainer.lastElementChild;
+            const totalRow = totalsContainer.querySelector('.text-lg.font-bold.border-t-2') || totalsContainer.lastElementChild;
             
             // إضافة سطر التوصيل
             const deliveryRow = document.createElement('div');
@@ -618,7 +667,11 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         <div style="font-weight: bold;">العميل: ${currentInvoiceData.customer_name}</div>
         ${currentInvoiceData.customer_phone ? `<div>📞 ${currentInvoiceData.customer_phone}</div>` : ''}
     </div>
-    ` : '<div class="customer-section"><div>💵 عميل نقدي</div></div>'}
+    ` : `
+    <div class="customer-section">
+        <div>💵 عميل نقدي</div>
+    </div>
+    `}
 
     <div class="items-table">
         <div class="items-header">المنتجات (${currentInvoiceData.items.length})</div>
@@ -638,29 +691,36 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
         const subtotal = currentInvoiceData.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        const total = subtotal + tax;
+        const deliveryCost = parseFloat(currentInvoiceData.delivery_cost || currentInvoiceData.delivery || 0);
+        const total = subtotal + tax + deliveryCost;
 
         thermalContent += `</div>
             <div class="totals-section">
                 <div class="total-row"><span>المجموع:</span><span>${subtotal.toFixed(2)} ${currency}</span></div>`;
 
         if (taxEnabled) {
-            thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${currentInvoiceData.tax.toFixed(2)} ${currency}</span></div>`;
+            thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${tax.toFixed(2)} ${currency}</span></div>`;
         }
 
-        if (currentInvoiceData.delivery > 0) {
-            thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${currentInvoiceData.delivery.toFixed(2)} ${currency}</span></div>`;
+        if (deliveryCost > 0) {
+            thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${deliveryCost.toFixed(2)} ${currency}</span></div>`;
             if (currentInvoiceData.delivery_city) {
                 thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${currentInvoiceData.delivery_city}</span></div>`;
             }
         }
+
         thermalContent += `
-            <div class="total-row grand-total"><span>الإجمالي:</span><span>${currentInvoiceData.total.toFixed(2)} ${currency}</span></div>
+            <div class="total-row grand-total"><span>الإجمالي:</span><span>${total.toFixed(2)} ${currency}</span></div>
         </div>
+
+    <div style="text-align: center; margin: 5mm 0;">
+        <svg id="barcode-thermal"></svg>
+    </div>
 
     <div class="footer">
         <div style="font-weight: bold; margin-bottom: 2mm;">🌟 شكراً لثقتكم بنا 🌟</div>
         ${shopName ? `<div>${shopName}</div>` : ''}
+        ${!shopName ? '<div>نظام Smart Shop</div>' : ''}
     </div>
 </body>
 </html>`;
@@ -669,10 +729,27 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         printWindow.document.write(thermalContent);
         printWindow.document.close();
         
-        setTimeout(() => {
-            printWindow.focus();
-            printWindow.print();
-        }, 500);
+        // إصلاح الباركود في الطباعة الحرارية
+        const script = printWindow.document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
+        script.onload = function() {
+            try {
+                // نستخدم دالة JsBarcode داخل النافذة الجديدة
+                printWindow.JsBarcode("#barcode-thermal", String(currentInvoiceData.id).padStart(6, '0'), {
+                    format: "CODE128",
+                    width: 2,
+                    height: 40,
+                    displayValue: false,
+                    margin: 0
+                });
+            } catch (e) { console.error(e); }
+            
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 500);
+        };
+        printWindow.document.head.appendChild(script);
     }
 
     thermalPrintBtn.addEventListener('click', printThermal);
@@ -815,6 +892,104 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     
     loadInvoices();
 });
+// ==========================================
+// نظام مسح الباركود للفواتير
+// ==========================================
+
+const scanInvoiceBarcodeBtn = document.getElementById('scan-invoice-barcode-btn');
+const invoiceBarcodeScannerModal = document.getElementById('invoice-barcode-scanner-modal');
+const closeInvoiceBarcodeScannerModal = document.getElementById('close-invoice-barcode-scanner-modal');
+const searchTermInput = document.getElementById('search-term');
+let invoiceCodeReader = null;
+
+// صوت عند المسح الناجح
+const beepSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
+
+// 1. تشغيل الكاميرا عند الضغط على زر المسح
+if (scanInvoiceBarcodeBtn) {
+    scanInvoiceBarcodeBtn.addEventListener('click', () => {
+        invoiceBarcodeScannerModal.classList.remove('hidden');
+        startInvoiceBarcodeScanning();
+    });
+}
+
+// 2. إغلاق نافذة المسح
+if (closeInvoiceBarcodeScannerModal) {
+    closeInvoiceBarcodeScannerModal.addEventListener('click', stopInvoiceBarcodeScanning);
+}
+
+// دالة بدء المسح باستخدام ZXing
+async function startInvoiceBarcodeScanning() {
+    try {
+        invoiceCodeReader = new ZXing.BrowserMultiFormatReader();
+        const videoInputDevices = await invoiceCodeReader.listVideoInputDevices();
+        
+        if (videoInputDevices.length === 0) {
+            showToast('لم يتم العثور على كاميرا', false);
+            stopInvoiceBarcodeScanning();
+            return;
+        }
+        
+        // محاولة اختيار الكاميرا الخلفية إن وجدت
+        const selectedDeviceId = videoInputDevices.find(device => 
+            device.label.toLowerCase().includes('back')
+        )?.deviceId || videoInputDevices[0].deviceId;
+
+        invoiceCodeReader.decodeFromVideoDevice(selectedDeviceId, 'invoice-barcode-video', (result, err) => {
+            if (result) {
+                handleInvoiceScannedCode(result.text);
+                stopInvoiceBarcodeScanning();
+            }
+        });
+    } catch (err) {
+        console.error('خطأ في تشغيل الكاميرا:', err);
+        showToast('لا يمكن الوصول للكاميرا. تأكد من السماح بالوصول للكاميرا في المتصفح.', false);
+        invoiceBarcodeScannerModal.classList.add('hidden');
+    }
+}
+
+// دالة إيقاف المسح
+function stopInvoiceBarcodeScanning() {
+    if (invoiceCodeReader) {
+        invoiceCodeReader.reset();
+        invoiceCodeReader = null;
+    }
+    invoiceBarcodeScannerModal.classList.add('hidden');
+}
+
+// 3. معالجة الكود الممسوح
+function handleInvoiceScannedCode(code) {
+    // تشغيل صوت
+    beepSound.play().catch(e => {});
+    
+    // وضع الكود في خانة البحث
+    searchTermInput.value = code;
+    
+    // تنفيذ البحث تلقائياً
+    const searchForm = document.getElementById('invoice-search-form');
+    if (searchForm) {
+        searchForm.dispatchEvent(new Event('submit'));
+    }
+    
+    showToast(`تم مسح الباركود: ${code}`, true);
+}
+
+// 4. دعم قارئ الباركود اليدوي (USB Scanner)
+searchTermInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && searchTermInput.value.trim() !== '') {
+        e.preventDefault();
+        handleInvoiceScannedCode(searchTermInput.value.trim());
+    }
+});
+
+// إغلاق Modal عند النقر خارجها
+invoiceBarcodeScannerModal?.addEventListener('click', (e) => {
+    if (e.target === invoiceBarcodeScannerModal) {
+        stopInvoiceBarcodeScanning();
+    }
+});
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
 
 <?php require_once 'src/footer.php'; ?>
