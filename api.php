@@ -100,6 +100,16 @@ function getProducts($conn) {
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
     $stock_status = isset($_GET['stock_status']) ? $_GET['stock_status'] : '';
 
+    // جلب إعدادات تنبيهات الكمية
+    $settings_sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('low_quantity_alert', 'critical_quantity_alert')";
+    $settings_result = $conn->query($settings_sql);
+    $quantity_settings = [];
+    while ($row = $settings_result->fetch_assoc()) {
+        $quantity_settings[$row['setting_name']] = (int)$row['setting_value'];
+    }
+    $low_alert = $quantity_settings['low_quantity_alert'] ?? 10;
+    $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
+
     $sql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
             FROM products p 
             LEFT JOIN categories c ON p.category_id = c.id
@@ -124,9 +134,14 @@ function getProducts($conn) {
     if ($stock_status === 'out_of_stock') {
         $sql .= " AND p.quantity = 0";
     } elseif ($stock_status === 'low_stock') {
-        $sql .= " AND p.quantity > 5 AND p.quantity <= 10";
+        $sql .= " AND p.quantity > ? AND p.quantity <= ?";
+        $params[] = &$critical_alert;
+        $params[] = &$low_alert;
+        $types .= 'ii';
     } elseif ($stock_status === 'critical_stock') {
-        $sql .= " AND p.quantity > 0 AND p.quantity <= 5";
+        $sql .= " AND p.quantity > 0 AND p.quantity <= ?";
+        $params[] = &$critical_alert;
+        $types .= 'i';
     }
 
     $stmt = $conn->prepare($sql);
@@ -678,12 +693,25 @@ function updateDeliverySettings($conn) {
 }
 
 function getLowStockProducts($conn) {
+    // جلب إعدادات تنبيهات الكمية
+    $settings_sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('low_quantity_alert', 'critical_quantity_alert')";
+    $settings_result = $conn->query($settings_sql);
+    $quantity_settings = [];
+    while ($row = $settings_result->fetch_assoc()) {
+        $quantity_settings[$row['setting_name']] = (int)$row['setting_value'];
+    }
+    $low_alert = $quantity_settings['low_quantity_alert'] ?? 10;
+    $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
+
     $sql = "SELECT id, name, quantity, category_id 
             FROM products 
-            WHERE quantity <= 10
+            WHERE quantity <= ?
             ORDER BY quantity ASC, name ASC";
     
-    $result = $conn->query($sql);
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $low_alert);
+    $stmt->execute();
+    $result = $stmt->get_result();
     $products = [];
     
     if ($result && $result->num_rows > 0) {
@@ -691,13 +719,14 @@ function getLowStockProducts($conn) {
             $products[] = $row;
         }
     }
+    $stmt->close();
     
     $outOfStock = array_filter($products, function($p) { return $p['quantity'] == 0; });
-    $critical = array_filter($products, function($p) { return $p['quantity'] > 0 && $p['quantity'] <= 5; });
-    $low = array_filter($products, function($p) { return $p['quantity'] > 5 && $p['quantity'] <= 10; });
+    $critical = array_filter($products, function($p) use ($critical_alert) { return $p['quantity'] > 0 && $p['quantity'] <= $critical_alert; });
+    $low = array_filter($products, function($p) use ($critical_alert, $low_alert) { return $p['quantity'] > $critical_alert && $p['quantity'] <= $low_alert; });
     
     echo json_encode([
-        'success' => true, 
+        'success' => true,
         'data' => $products,
         'outOfStock' => array_values($outOfStock),
         'critical' => array_values($critical),

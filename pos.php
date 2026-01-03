@@ -45,6 +45,11 @@ $deliveryOutsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'deliveryHomeCity'");
 $deliveryHomeCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'low_quantity_alert'");
+$lowAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc()['setting_value'] : 10;
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'critical_quantity_alert'");
+$criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc()['setting_value'] : 5;
 ?>
 
 <style>
@@ -818,6 +823,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const deliveryOutsideCost = <?php echo $deliveryOutsideCity; ?>;
     const homeCity = '<?php echo addslashes($deliveryHomeCity); ?>';
 
+    const lowAlert = <?php echo $lowAlert; ?>;       // الكمية المنخفضة (أصفر)
+    const criticalAlert = <?php echo $criticalAlert; ?>; // الكمية الحرجة (أحمر)
+
     let cart = [];
     let allProducts = [];
     let selectedCustomer = null;
@@ -1017,74 +1025,91 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const productCard = document.createElement('div');
             
-            // تحديد الـ classes حسب حالة المخزون
-            let cardClasses = 'rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all relative overflow-hidden';
-            
+            // تهيئة المتغيرات للكلاسات والأيقونات
+            let cardClasses = 'rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all relative overflow-hidden group';
+            let quantityClass = '';
+            let quantityIcon = '';
+            let statusBadge = '';
+
+            // منطق تحديد الألوان بناءً على الإعدادات الجديدة
             if (isOutOfStock) {
-                // منتج منتهي - أحمر باهت مع تعطيل التفاعل
-                cardClasses += ' bg-red-900/20 border-2 border-red-500/30 opacity-75 cursor-not-allowed';
+                // منتج منتهي (رمادي/أحمر باهت)
+                cardClasses += ' bg-dark-surface/30 border-2 border-gray-700 opacity-80 cursor-not-allowed grayscale hover:grayscale-0 transition-all';
+                quantityClass = 'text-gray-500 font-bold';
+                quantityIcon = 'block';
+                statusBadge = `
+                    <div class="absolute top-2 right-2 bg-gray-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
+                        <span class="material-icons-round text-[12px]">block</span>
+                        <span>نفذ</span>
+                    </div>`;
+            } else if (quantity <= criticalAlert) {
+                // كمية حرجة (أحمر)
+                cardClasses += ' bg-red-900/10 border border-red-500/50 hover:bg-red-900/20 hover:border-red-500 cursor-pointer hover:scale-105 shadow-lg shadow-red-900/10';
+                quantityClass = 'text-red-500 font-bold animate-pulse'; // وميض خفيف للفت الانتباه
+                quantityIcon = 'error';
+                statusBadge = `
+                    <div class="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
+                        <span class="material-icons-round text-[12px]">priority_high</span>
+                        <span>حرج</span>
+                    </div>`;
+            } else if (quantity <= lowAlert) {
+                // كمية منخفضة (أصفر)
+                cardClasses += ' bg-yellow-500/5 border border-yellow-500/30 hover:bg-yellow-500/10 hover:border-yellow-500/60 cursor-pointer hover:scale-105';
+                quantityClass = 'text-yellow-500 font-bold';
+                quantityIcon = 'warning';
+                statusBadge = `
+                    <div class="absolute top-2 right-2 bg-yellow-600/20 text-yellow-500 border border-yellow-500/30 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
+                        <span class="material-icons-round text-[12px]">low_priority</span>
+                        <span>منخفض</span>
+                    </div>`;
             } else {
-                // منتج عادي
-                cardClasses += ' bg-dark-surface/50 border border-white/5 hover:border-primary/50 cursor-pointer hover:scale-105';
+                // كمية جيدة (أخضر/عادي)
+                cardClasses += ' bg-dark-surface/50 border border-white/5 hover:border-primary/50 cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-primary/5';
+                quantityClass = 'text-green-500 font-medium';
+                quantityIcon = 'check_circle';
             }
             
             productCard.className = cardClasses;
             
-            // تحديد لون الكمية حسب الحالة
-            let quantityClass = 'text-green-500'; // الافتراضي: كمية جيدة
-            let quantityIcon = 'check_circle';
-            
-            if (quantity === 0) {
-                quantityClass = 'text-gray-500';
-                quantityIcon = 'block';
-            } else if (quantity <= 5) {
-                quantityClass = 'text-red-500';
-                quantityIcon = 'error';
-            } else if (quantity <= 10) {
-                quantityClass = 'text-orange-500';
-                quantityIcon = 'warning';
-            } else if (quantity <= 20) {
-                quantityClass = 'text-yellow-500';
-                quantityIcon = 'info';
-            }
-            
             productCard.innerHTML = `
-                ${isOutOfStock ? `
-                    <div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
-                        <span class="material-icons-round text-xs">block</span>
-                        <span>نفذ</span>
-                    </div>
-                ` : ''}
-                <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" 
-                    class="w-24 h-24 object-cover rounded-lg mb-4 ${isOutOfStock ? 'grayscale opacity-60' : ''}">
-                <div class="text-lg font-bold ${isOutOfStock ? 'text-gray-500 line-through' : 'text-white'}">${product.name}</div>
-                <div class="text-sm ${isOutOfStock ? 'text-gray-600' : 'text-gray-400'}">${product.price} ${currency}</div>
-                <div class="flex items-center justify-center gap-1 mt-2 ${quantityClass}">
-                    <span class="material-icons-round text-xs">${quantityIcon}</span>
-                    <span class="text-xs font-bold">الكمية: ${quantity}</span>
+                ${statusBadge}
+                <div class="relative w-24 h-24 mb-4">
+                    <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" 
+                        class="w-full h-full object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all duration-300">
                 </div>
-                ${isOutOfStock ? `
-                    <div class="mt-1 text-xs text-red-400 font-bold">غير متوفر حالياً</div>
-                ` : ''}
+                
+                <div class="text-lg font-bold truncate w-full px-2 ${isOutOfStock ? 'text-gray-500 line-through decoration-2' : 'text-white'}">
+                    ${product.name}
+                </div>
+                
+                <div class="text-sm font-bold mt-1 ${isOutOfStock ? 'text-gray-600' : 'text-primary-300'}">
+                    ${parseFloat(product.price).toFixed(2)} ${currency}
+                </div>
+                
+                <div class="flex items-center justify-center gap-1.5 mt-3 py-1 px-3 rounded-lg bg-dark/30 ${quantityClass}">
+                    <span class="material-icons-round text-sm">${quantityIcon}</span>
+                    <span class="text-xs">المخزون: ${quantity}</span>
+                </div>
             `;
             
             if (!isOutOfStock) {
                 productCard.addEventListener('click', () => addProductToCart(product));
             } else {
                 productCard.addEventListener('click', () => {
-                    showToast(`⚠️ المنتج "${product.name}" غير متوفر حالياً (الكمية: 0)`, false);
+                    showToast(`⚠️ المنتج "${product.name}" غير متوفر حالياً`, false);
                     if (soundNotificationsEnabled) {
-                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        const oscillator = audioContext.createOscillator();
-                        const gainNode = audioContext.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(audioContext.destination);
-                        oscillator.frequency.value = 400;
-                        oscillator.type = 'sine';
-                        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                        oscillator.start(audioContext.currentTime);
-                        oscillator.stop(audioContext.currentTime + 0.3);
+                        // صوت خطأ خفيف
+                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.value = 150;
+                        osc.type = 'sawtooth';
+                        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.2);
                     }
                 });
             }
@@ -1092,7 +1117,7 @@ document.addEventListener('DOMContentLoaded', function () {
             productsGrid.appendChild(productCard);
         });
     }
-
+    
     function addProductToCart(product) {
         const stockAvailable = parseInt(product.quantity);
         if (stockAvailable === 0) {

@@ -19,6 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'taxEnabled' => isset($_POST['taxEnabled']) ? '1' : '0',
         'taxRate' => $_POST['taxRate'] ?? '20',
         'taxLabel' => $_POST['taxLabel'] ?? 'TVA',
+        'low_quantity_alert' => $_POST['low_quantity_alert'] ?? '30',
+        'critical_quantity_alert' => $_POST['critical_quantity_alert'] ?? '10',
         'deliveryHomeCity' => $_POST['deliveryHomeCity'] ?? '',
         'deliveryInsideCity' => $_POST['deliveryInsideCity'] ?? '0',
         'deliveryOutsideCity' => $_POST['deliveryOutsideCity'] ?? '0',
@@ -265,6 +267,67 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     <input type="text" name="taxLabel" value="<?php echo htmlspecialchars($settings['taxLabel'] ?? 'TVA'); ?>"
                                         class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
                                         <?php echo $disabledAttr; ?>>
+                                </div>
+                                <div class="space-y-6">
+                                    <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2 border-b border-white/5 pb-4">
+                                        <span class="material-icons-round text-primary">inventory</span>
+                                        تنبيهات الكمية
+                                    </h3>
+                                    
+                                    <div class="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-colors">
+                                        <label class="block text-sm font-bold text-yellow-500 mb-2 flex items-center gap-2">
+                                            <span class="material-icons-round text-sm">warning</span>
+                                            تنبيه الكمية المنخفضة (اللون الأصفر)
+                                        </label>
+                                        <div class="relative">
+                                            <input type="number" name="low_quantity_alert" value="<?php echo htmlspecialchars($settings['low_quantity_alert'] ?? '30'); ?>" step="1"
+                                                class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-yellow-500/50 transition-all <?php echo $readonlyClass; ?>"
+                                                <?php echo $disabledAttr; ?>>
+                                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">قطعة</span>
+                                        </div>
+                                        
+                                        <div class="mt-3 flex gap-3 text-xs text-gray-400 bg-dark/30 p-3 rounded-lg">
+                                            <span class="material-icons-round text-yellow-500 text-base shrink-0">lightbulb</span>
+                                            <div class="space-y-1">
+                                                <p class="font-bold text-gray-300">كيف تستخدمه؟</p>
+                                                <p>ضع هنا الكمية التي تكفيك للبيع لمدة (أسبوع مثلاً). هذا الرقم يمثل "نقطة إعادة الطلب".</p>
+                                                <p class="text-yellow-500/80 mt-1">💡 الفائدة: يمنحك وقتاً كافياً لطلب بضاعة جديدة من المورد قبل أن ينفد المخزون تماماً.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-red-500/30 transition-colors">
+                                        <label class="block text-sm font-bold text-red-500 mb-2 flex items-center gap-2">
+                                            <span class="material-icons-round text-sm">report</span>
+                                            تنبيه الكمية الحرجة (اللون الأحمر)
+                                        </label>
+                                        <div class="relative">
+                                            <input type="number" name="critical_quantity_alert" value="<?php echo htmlspecialchars($settings['critical_quantity_alert'] ?? '10'); ?>" step="1"
+                                                class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-red-500/50 transition-all <?php echo $readonlyClass; ?>"
+                                                <?php echo $disabledAttr; ?>>
+                                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">قطعة</span>
+                                        </div>
+
+                                        <div class="mt-3 flex gap-3 text-xs text-gray-400 bg-dark/30 p-3 rounded-lg">
+                                            <span class="material-icons-round text-red-500 text-base shrink-0">priority_high</span>
+                                            <div class="space-y-1">
+                                                <p class="font-bold text-gray-300">كيف تستخدمه؟</p>
+                                                <p>ضع هنا أقل كمية مقبولة (مثلاً 10 قطع). هذا هو خط الخطر الأخير.</p>
+                                                <p class="text-red-400/80 mt-1">🚨 الفائدة: تنبيه فوري بضرورة إعادة فحص المخزون أو البحث عن بديل فوري، لأن نفاذه سيتسبب بخسارة مبيعات مؤكدة.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="opacity-60">
+                                        <label class="block text-sm font-medium text-gray-500 mb-2">الكمية المستنفذة</label>
+                                        <div class="relative">
+                                            <input type="number" value="0"
+                                                class="w-full bg-dark/70 border border-white/10 text-gray-500 text-right px-4 py-3 rounded-xl focus:outline-none cursor-not-allowed"
+                                                disabled>
+                                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 text-xs font-bold">قطعة</span>
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-2 mr-1">يظهر المنتج باللون الرمادي الداكن عندما يصبح رصيده 0.</p>
+                                    </div>
                                 </div>
                             </div>
                         </section>

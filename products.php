@@ -7,6 +7,16 @@ require_once 'src/sidebar.php';
 // Fetch currency setting
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
+
+// جلب إعدادات تنبيهات الكمية
+$settings_sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('low_quantity_alert', 'critical_quantity_alert')";
+$settings_result = $conn->query($settings_sql);
+$quantity_settings = [];
+while ($row = $settings_result->fetch_assoc()) {
+    $quantity_settings[$row['setting_name']] = (int)$row['setting_value'];
+}
+$low_alert = $quantity_settings['low_quantity_alert'] ?? 10;
+$critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 ?>
 
 <!-- Main Content -->
@@ -306,7 +316,9 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             const response = await fetch(`api.php?action=getProducts&search=${searchQuery}&category_id=${categoryId}&stock_status=${stockStatus}`);
             const result = await response.json();
             if (result.success) {
-                displayProducts(result.data);
+                const lowAlert = <?php echo $low_alert; ?>;
+                const criticalAlert = <?php echo $critical_alert; ?>;
+                displayProducts(result.data, lowAlert, criticalAlert);
             }
         } catch (error) {
             console.error('خطأ في تحميل المنتجات:', error);
@@ -316,7 +328,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         }
     }
 
-    function displayProducts(products) {
+    function displayProducts(products, lowAlert, criticalAlert) {
         productsTableBody.innerHTML = '';
         if (products.length === 0) {
             productsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">لا توجد منتجات لعرضها.</td></tr>';
@@ -337,20 +349,16 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 rowClass += ' bg-gray-900/40 hover:bg-gray-900/50'; 
                 quantityClass = 'text-gray-500 font-bold';
                 quantityBadge = '<span class="inline-flex items-center gap-1 text-xs bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">block</span>منتهي</span>';
-            } else if (qty <= 5) {
+            } else if (qty <= criticalAlert) {
                 // منتج حرج
                 rowClass += ' bg-red-900/20 hover:bg-red-900/30'; 
                 quantityClass = 'text-red-400 font-bold';
-                quantityBadge = '<span class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">error</span>حرج</span>';
-            } else if (qty <= 10) {
+                quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">error</span>حرج (${qty}/${criticalAlert})</span>`;
+            } else if (qty <= lowAlert) {
                 // منتج منخفض
                 rowClass += ' bg-orange-900/20 hover:bg-orange-900/30';
                 quantityClass = 'text-orange-400 font-bold';
-                quantityBadge = '<span class="inline-flex items-center gap-1 text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">warning</span>منخفض</span>';
-            } else if (qty <= 20) {
-                // منتج يحتاج متابعة
-                rowClass += ' bg-yellow-900/10 hover:bg-yellow-900/20';
-                quantityClass = 'text-yellow-400';
+                quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">warning</span>منخفض (${qty}/${lowAlert})</span>`;
             } else {
                 // منتج بكمية جيدة
                 rowClass += ' bg-transparent hover:bg-white/5';

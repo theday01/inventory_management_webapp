@@ -434,15 +434,21 @@ $delivery_inserts = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryOutsideCity', '30') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('darkMode', '1') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('shopCity', '') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    
+    // إعدادات التنبيهات ونظام المخزون
     "INSERT INTO settings (setting_name, setting_value) VALUES ('stockAlertInterval', '20') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('stockAlertsEnabled', '1') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('stockAlertsEnabled', '1') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    
+    // القيم الافتراضية لحدود التنبيه (الجديدة)
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('low_quantity_alert', '30') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('critical_quantity_alert', '10') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
 ];
 
 foreach ($delivery_inserts as $q) {
     if ($conn->query($q) === TRUE) {
         // Success
     } else {
-        echo "Error applying delivery setting: " . $conn->error . "<br>";
+        echo "Error applying settings: " . $conn->error . "<br>";
     }
 }
 
