@@ -302,6 +302,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         const stockStatus = stockStatusFilter.value;
 
         try {
+            showLoading('جاري تحميل المنتجات...');
             const response = await fetch(`api.php?action=getProducts&search=${searchQuery}&category_id=${categoryId}&stock_status=${stockStatus}`);
             const result = await response.json();
             if (result.success) {
@@ -310,6 +311,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         } catch (error) {
             console.error('خطأ في تحميل المنتجات:', error);
             showToast('حدث خطأ في تحميل المنتجات', false);
+        } finally {
+            hideLoading();
         }
     }
 
@@ -497,6 +500,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         formData.append('fields', JSON.stringify(customFields));
 
         try {
+            showLoading('جاري حفظ المنتج...');
             const response = await fetch('api.php?action=addProduct', {
                 method: 'POST',
                 body: formData,
@@ -514,6 +518,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         } catch (error) {
             console.error('خطأ في إضافة المنتج:', error);
             showToast('حدث خطأ في إضافة المنتج', false);
+        } finally {
+            hideLoading();
         }
     });
 
@@ -630,6 +636,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         const url = id ? 'api.php?action=updateCategory' : 'api.php?action=addCategory';
 
         try {
+            showLoading('جاري حفظ الفئة...');
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -648,6 +655,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         } catch (error) {
             console.error('خطأ في حفظ الفئة:', error);
             showToast('حدث خطأ في حفظ الفئة', false);
+        } finally {
+            hideLoading();
         }
     });
 
@@ -682,6 +691,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
     async function deleteCategory(id) {
         try {
+            showLoading('جاري حذف الفئة...');
             const response = await fetch('api.php?action=deleteCategory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -699,6 +709,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         } catch (error) {
             console.error('خطأ في حذف الفئة:', error);
             showToast('حدث خطأ في حذف الفئة', false);
+        } finally {
+            hideLoading();
         }
     }
 

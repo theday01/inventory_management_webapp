@@ -616,6 +616,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function loadProducts() {
         try {
+            showLoading('جاري تحميل المنتجات...');
             const response = await fetch('api.php?action=getProducts');
             const result = await response.json();
             if (result.success) {
@@ -624,6 +625,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } catch (error) {
             console.error('خطأ في تحميل المنتجات:', error);
+            showToast('حدث خطأ في تحميل المنتجات', false);
+        } finally {
+            hideLoading();
         }
     }
 
@@ -847,20 +851,33 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    checkoutBtn.addEventListener('click', async () => {
+    async function processCheckout() {
         if (cart.length === 0) {
             showToast('السلة فارغة!', false);
             return;
         }
-        
-        const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-        const tax = taxEnabled ? subtotal * taxRate : 0;
-        const total = subtotal + tax + deliveryCost;
-        
+
+        if (!confirm('هل أنت متأكد من إتمام عملية البيع؟')) {
+            return;
+        }
+
+        const deliveryType = document.querySelector('input[name="delivery-type"]:checked');
+        const deliveryCostValue = (deliveryToggle.checked && deliveryType) ? parseFloat(deliveryType.value) : 0;
+
+        const orderData = {
+            items: cart.map(item => ({
+                id: item.id,
+                quantity: item.quantity,
+                price: item.price
+            })),
+            customer_id: selectedCustomer ? selectedCustomer.id : null,
+            delivery_cost: deliveryCostValue
+        };
+
         try {
-            const response = await fetch('api.php?action=createInvoice', {
+            showLoading('جاري معالجة عملية البيع...');
+            const response = await fetch('api.php?action=checkout', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     customer_id: selectedCustomer ? selectedCustomer.id : null,
                     total: total,
@@ -902,7 +919,9 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('خطأ في إنشاء الفاتورة:', error);
             showToast('حدث خطأ أثناء إنشاء الفاتورة', false);
         }
-    });
+    }
+    
+    checkoutBtn.addEventListener('click', processCheckout);
 
     function displayInvoice(data) {
         document.getElementById('invoice-number').textContent = `#${String(data.id).padStart(6, '0')}`;

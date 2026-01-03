@@ -214,6 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function loadCustomers(search = '') {
         try {
+            showLoading('جاري تحميل العملاء...');
             const response = await fetch(`api.php?action=getCustomers&search=${encodeURIComponent(search)}`);
             const result = await response.json();
             if (result.success) {
@@ -224,6 +225,8 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('خطأ في تحميل العملاء:', error);
             showToast('حدث خطأ في تحميل العملاء', false);
+        } finally {
+            hideLoading();
         }
     }
 
@@ -322,6 +325,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = Object.fromEntries(formData.entries());
 
         try {
+            showLoading('جاري إضافة العميل...');
             const response = await fetch('api.php?action=addCustomer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -339,6 +343,8 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('خطأ في إضافة العميل:', error);
             showToast('حدث خطأ في إضافة العميل', false);
+        } finally {
+            hideLoading();
         }
     });
 
@@ -348,6 +354,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = Object.fromEntries(formData.entries());
 
         try {
+            showLoading('جاري تحديث بيانات العميل...');
             const response = await fetch('api.php?action=updateCustomer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -365,6 +372,8 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('خطأ في تحديث العميل:', error);
             showToast('حدث خطأ في تحديث العميل', false);
+        } finally {
+            hideLoading();
         }
     });
 

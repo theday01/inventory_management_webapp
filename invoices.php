@@ -354,6 +354,7 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     async function loadInvoices(searchTerm = '', searchDate = '') {
         invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">جاري تحميل البيانات...</td></tr>';
         
+        showLoading('جاري تحميل الفواتير...');
         let apiUrl = 'api.php?action=getInvoices';
         const params = new URLSearchParams();
 
@@ -376,6 +377,8 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         } catch (error) {
             console.error('خطأ في تحميل الفواتير:', error);
             invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">حدث خطأ في التحميل</td></tr>';
+        } finally {
+            hideLoading();
         }
     }
 

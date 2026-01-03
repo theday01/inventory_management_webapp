@@ -552,6 +552,49 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
         html:not(.dark) .border-gray-500\/40 {
             border-color: rgba(107, 114, 128, 0.4) !important;
         }
+
+        /* Global Loading Screen */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #loading-screen.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #3B82F6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
     </style>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -568,6 +611,12 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
             <span id="toast-icon" class="material-icons-round text-2xl"></span>
             <span id="toast-message" class="font-bold text-lg"></span>
         </div>
+    </div>
+
+    <!-- Global Loading Screen -->
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p class="loading-text" id="loading-message">جاري المعالجة...</p>
     </div>
 
     <script>
@@ -601,6 +650,23 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
             }, 3000);
         }
 
+        // Global Loading Functions
+        window.showLoading = function(message = 'جاري المعالجة...') {
+            const loadingScreen = document.getElementById('loading-screen');
+            const loadingMessage = document.getElementById('loading-message');
+            if (loadingScreen && loadingMessage) {
+                loadingMessage.textContent = message;
+                loadingScreen.classList.add('active');
+            }
+        };
+
+        window.hideLoading = function() {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.classList.remove('active');
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', function () {
             const urlParams = new URLSearchParams(window.location.search);
 
@@ -628,7 +694,9 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
         // نظام التذكير بالمنتجات منخفضة المخزون مع إشعارات Windows
         (function() {
             let isCheckingStock = false;
-            const NOTIFICATION_INTERVAL = 5 * 60 * 1000; // 5 دقائق
+            // استخدام القيمة من الإعدادات (بالدقائق) وتحويلها إلى ميلي ثانية
+            const stockAlertMinutes = <?php echo isset($stockAlertInterval) ? $stockAlertInterval : 20; ?>;
+            const NOTIFICATION_INTERVAL = stockAlertMinutes * 60 * 1000;
             let notificationPermission = 'default';
             
             // طلب إذن الإشعارات
@@ -686,7 +754,7 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
                         const lastNotification = localStorage.getItem('lastLowStockNotification');
                         const now = Date.now();
                         
-                        if (!lastNotification || (now - parseInt(lastNotification)) > 300000) {
+                        if (!lastNotification || (now - parseInt(lastNotification)) > NOTIFICATION_INTERVAL) {
                             showLowStockAlert(result);
                             localStorage.setItem('lastLowStockNotification', now.toString());
                         }
