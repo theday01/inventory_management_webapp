@@ -160,6 +160,115 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             </div>
         </div>
     </div>
+    <!-- Delete Success Modal -->
+    <div id="delete-success-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-2xl border border-white/10 max-h-[90vh] flex flex-col animate-scale-in">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center shrink-0 bg-gradient-to-r from-green-500/10 to-green-600/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <span class="material-icons-round text-green-500 text-2xl">check_circle</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">تم الحذف بنجاح</h3>
+                        <p class="text-sm text-gray-400" id="delete-summary">تم حذف المنتجات المحددة</p>
+                    </div>
+                </div>
+                <button id="close-delete-modal" class="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <!-- إحصائيات الحذف -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400 mb-1">إجمالي المحذوفة</p>
+                                <p class="text-3xl font-bold text-green-500" id="total-deleted">0</p>
+                            </div>
+                            <span class="material-icons-round text-green-500 text-4xl opacity-20">inventory_2</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400 mb-1">مرتبطة بفواتير</p>
+                                <p class="text-3xl font-bold text-orange-500" id="linked-deleted">0</p>
+                            </div>
+                            <span class="material-icons-round text-orange-500 text-4xl opacity-20">receipt_long</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- قائمة المنتجات المحذوفة -->
+                <div id="deleted-products-list" class="space-y-3">
+                    <!-- سيتم ملؤها ديناميكياً -->
+                </div>
+
+                <!-- ملاحظة مهمة -->
+                <div id="linked-note" class="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 hidden">
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-round text-blue-500 text-xl mt-0.5">info</span>
+                        <div class="flex-1">
+                            <h4 class="text-blue-500 font-bold mb-1">ملاحظة مهمة</h4>
+                            <p class="text-sm text-gray-300 leading-relaxed" id="linked-note-text"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-white/5 flex justify-end shrink-0">
+                <button id="close-delete-modal-btn" class="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-0.5 shadow-lg shadow-primary/20">
+                    فهمت، شكراً
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    @keyframes scale-in {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .animate-scale-in {
+        animation: scale-in 0.3s ease-out;
+    }
+
+    /* Light mode adjustments */
+    html:not(.dark) #delete-success-modal .bg-dark-surface {
+        background-color: #FFFFFF !important;
+    }
+
+    html:not(.dark) #delete-success-modal .text-white {
+        color: #111827 !important;
+    }
+
+    html:not(.dark) #delete-success-modal .text-gray-400 {
+        color: #6B7280 !important;
+    }
+
+    html:not(.dark) #delete-success-modal .text-gray-300 {
+        color: #4B5563 !important;
+    }
+
+    html:not(.dark) #delete-success-modal .border-white\/5,
+    html:not(.dark) #delete-success-modal .border-white\/10 {
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+
+    html:not(.dark) #delete-success-modal .bg-white\/5 {
+        background-color: rgba(0, 0, 0, 0.05) !important;
+    }
+    </style>
 </main>
 
 <!-- Bulk Edit Modal -->
@@ -738,7 +847,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         
         const confirmed = await showConfirmModal(
             'حذف جماعي',
-            `هل أنت متأكد من حذف ${selectedIds.length} منتجات؟\n\nملاحظة: المنتجات المرتبطة بفواتير لن يتم حذفها.`
+            `هل أنت متأكد من حذف ${selectedIds.length} منتج؟\n\n⚠️ تنبيه: إذا كانت هذه المنتجات مرتبطة بفواتير، سيتم حذفها من قائمة المنتجات ولكن الفواتير القديمة ستحتفظ بمعلوماتها.`
         );
         
         if (confirmed) {
@@ -764,6 +873,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 const result = await response.json();
                 
                 if (result.success) {
+                    // إعادة تحميل البيانات
                     document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = false);
                     selectAllCheckbox.checked = false;
                     updateBulkActionsBar();
@@ -771,31 +881,108 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     await loadProducts();
                     await loadStats();
                     
-                    showToast(result.message, true);
+                    // عرض Modal التفاصيل
+                    showDeleteSuccessModal(result);
                     
-                    // إظهار المنتجات المتجاهلة إن وجدت
-                    if (result.linked_products && result.linked_products.length > 0) {
-                        setTimeout(() => {
-                            const linkedNames = result.linked_products.slice(0, 5).join('، ');
-                            const more = result.linked_products.length > 5 ? ` و${result.linked_products.length - 5} أخرى` : '';
-                            showToast(`⚠️ منتجات مرتبطة بفواتير: ${linkedNames}${more}`, false);
-                        }, 2000);
-                    }
                 } else {
                     showToast(result.message || 'فشل في حذف المنتجات', false);
-                    
-                    // إظهار اقتراح إذا كانت جميع المنتجات مرتبطة
-                    if (result.suggestion) {
-                        setTimeout(() => {
-                            showToast(`💡 ${result.suggestion}`, false);
-                        }, 2000);
-                    }
                 }
             } catch (error) {
                 console.error('خطأ في الحذف الجماعي:', error);
-                showToast('حدث خطأ في الحذف الجماعي: ' + error.message, false);
+                showToast('حدث خطأ: ' + error.message, false);
             } finally {
                 hideLoading();
+            }
+        }
+    });
+
+    // دالة عرض Modal النجاح
+    function showDeleteSuccessModal(result) {
+        const modal = document.getElementById('delete-success-modal');
+        const deleteSummary = document.getElementById('delete-summary');
+        const totalDeleted = document.getElementById('total-deleted');
+        const linkedDeleted = document.getElementById('linked-deleted');
+        const deletedProductsList = document.getElementById('deleted-products-list');
+        const linkedNote = document.getElementById('linked-note');
+        const linkedNoteText = document.getElementById('linked-note-text');
+        
+        // تحديث الإحصائيات
+        deleteSummary.textContent = `تم حذف ${result.deleted_count} منتج من قاعدة البيانات`;
+        totalDeleted.textContent = result.deleted_count;
+        
+        const linkedCount = result.linked_info ? result.linked_info.count : 0;
+        linkedDeleted.textContent = linkedCount;
+        
+        // مسح القائمة السابقة
+        deletedProductsList.innerHTML = '';
+        
+        // بناء قائمة المنتجات
+        if (result.linked_info && result.linked_info.products) {
+            // عرض المنتجات المرتبطة بفواتير
+            result.linked_info.products.forEach((productInfo, index) => {
+                const productCard = document.createElement('div');
+                productCard.className = 'bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 flex items-center gap-4 hover:bg-orange-500/20 transition-colors';
+                
+                productCard.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center shrink-0">
+                        <span class="material-icons-round text-orange-500">warning</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-white mb-1">${productInfo.split(' (')[0]}</p>
+                        <p class="text-xs text-gray-400 flex items-center gap-1">
+                            <span class="material-icons-round text-xs">receipt_long</span>
+                            <span>مرتبط بـ ${productInfo.match(/\((\d+)/)?.[1] || '0'} فاتورة</span>
+                        </p>
+                    </div>
+                    <span class="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded font-bold">محذوف</span>
+                `;
+                
+                deletedProductsList.appendChild(productCard);
+            });
+            
+            // عرض الملاحظة
+            linkedNote.classList.remove('hidden');
+            linkedNoteText.textContent = result.linked_info.note;
+        } else {
+            // لا توجد منتجات مرتبطة
+            const noLinkedCard = document.createElement('div');
+            noLinkedCard.className = 'bg-green-500/10 border border-green-500/30 rounded-xl p-6 text-center';
+            noLinkedCard.innerHTML = `
+                <span class="material-icons-round text-green-500 text-5xl mb-3">check_circle</span>
+                <p class="text-white font-bold mb-1">تم الحذف بنجاح</p>
+                <p class="text-sm text-gray-400">جميع المنتجات المحددة لم تكن مرتبطة بأي فواتير</p>
+            `;
+            deletedProductsList.appendChild(noLinkedCard);
+            
+            linkedNote.classList.add('hidden');
+        }
+        
+        // عرض Modal
+        modal.classList.remove('hidden');
+    }
+
+    // معالجات إغلاق Modal
+    document.getElementById('close-delete-modal').addEventListener('click', () => {
+        document.getElementById('delete-success-modal').classList.add('hidden');
+    });
+
+    document.getElementById('close-delete-modal-btn').addEventListener('click', () => {
+        document.getElementById('delete-success-modal').classList.add('hidden');
+    });
+
+    // إغلاق عند الضغط خارج Modal
+    document.getElementById('delete-success-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'delete-success-modal') {
+            document.getElementById('delete-success-modal').classList.add('hidden');
+        }
+    });
+
+    // إغلاق بزر Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('delete-success-modal');
+            if (!modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
             }
         }
     });

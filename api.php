@@ -208,86 +208,75 @@ function bulkDeleteProducts($conn) {
             return;
         }
 
-        // التحقق من المنتجات المرتبطة بفواتير
         $in_clause = implode(',', array_fill(0, count($product_ids), '?'));
         $types = str_repeat('i', count($product_ids));
         
-        $check_sql = "SELECT DISTINCT p.id, p.name 
-                      FROM products p 
-                      INNER JOIN invoice_items ii ON p.id = ii.product_id 
-                      WHERE p.id IN ($in_clause)";
-        $check_stmt = $conn->prepare($check_sql);
-        $check_stmt->bind_param($types, ...$product_ids);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
+        // الحصول على معلومات المنتجات قبل الحذف
+        $info_sql = "SELECT p.id, p.name, 
+                     COUNT(ii.id) as invoice_count
+                     FROM products p
+                     LEFT JOIN invoice_items ii ON p.id = ii.product_id
+                     WHERE p.id IN ($in_clause)
+                     GROUP BY p.id";
+        $info_stmt = $conn->prepare($info_sql);
+        $info_stmt->bind_param($types, ...$product_ids);
+        $info_stmt->execute();
+        $result = $info_stmt->get_result();
         
+        $products_info = [];
         $linked_products = [];
         while ($row = $result->fetch_assoc()) {
-            $linked_products[] = $row;
-        }
-        $check_stmt->close();
-
-        // إذا كانت هناك منتجات مرتبطة بفواتير
-        if (!empty($linked_products)) {
-            $linked_names = array_map(function($p) { return $p['name']; }, $linked_products);
-            $linked_ids = array_map(function($p) { return $p['id']; }, $linked_products);
-            
-            // استبعاد المنتجات المرتبطة من قائمة الحذف
-            $product_ids = array_diff($product_ids, $linked_ids);
-            
-            $message = 'تحذير: ' . count($linked_products) . ' منتج مرتبط بفواتير ولا يمكن حذفه';
-            
-            // إذا كانت جميع المنتجات مرتبطة
-            if (empty($product_ids)) {
-                echo json_encode([
-                    'success' => false, 
-                    'message' => $message,
-                    'linked_products' => $linked_names,
-                    'suggestion' => 'يمكنك تعيين الكمية إلى صفر بدلاً من الحذف'
-                ]);
-                return;
+            $products_info[] = $row;
+            if ($row['invoice_count'] > 0) {
+                $linked_products[] = [
+                    'name' => $row['name'],
+                    'invoice_count' => $row['invoice_count']
+                ];
             }
         }
+        $info_stmt->close();
 
-        // حذف المنتجات غير المرتبطة
-        if (!empty($product_ids)) {
-            $in_clause = implode(',', array_fill(0, count($product_ids), '?'));
-            $types = str_repeat('i', count($product_ids));
+        // حذف جميع المنتجات المحددة
+        $delete_sql = "DELETE FROM products WHERE id IN ($in_clause)";
+        $delete_stmt = $conn->prepare($delete_sql);
+        $delete_stmt->bind_param($types, ...$product_ids);
 
-            $sql = "DELETE FROM products WHERE id IN ($in_clause)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param($types, ...$product_ids);
-
-            if ($stmt->execute()) {
-                $deleted_count = $stmt->affected_rows;
-                $stmt->close();
+        if ($delete_stmt->execute()) {
+            $deleted_count = $delete_stmt->affected_rows;
+            $delete_stmt->close();
+            
+            $response = [
+                'success' => true,
+                'message' => "تم حذف {$deleted_count} منتج بنجاح",
+                'deleted_count' => $deleted_count
+            ];
+            
+            // معلومات المنتجات المرتبطة بفواتير
+            if (!empty($linked_products)) {
+                $linked_count = count($linked_products);
+                $linked_names = array_map(function($p) { 
+                    return $p['name'] . " ({$p['invoice_count']} فاتورة)"; 
+                }, $linked_products);
                 
-                $response_message = "تم حذف {$deleted_count} منتج بنجاح";
-                if (!empty($linked_products)) {
-                    $response_message .= " (تم تجاهل " . count($linked_products) . " منتج مرتبط بفواتير)";
-                }
-                
-                echo json_encode([
-                    'success' => true, 
-                    'message' => $response_message,
-                    'deleted_count' => $deleted_count,
-                    'skipped_count' => count($linked_products),
-                    'linked_products' => !empty($linked_products) ? array_map(function($p) { return $p['name']; }, $linked_products) : []
-                ]);
-            } else {
-                throw new Exception('فشل في تنفيذ الاستعلام');
+                $response['linked_info'] = [
+                    'count' => $linked_count,
+                    'products' => $linked_names,
+                    'note' => "تنبيه: {$linked_count} من المنتجات المحذوفة كانت مرتبطة بفواتير سابقة. الفواتير القديمة ستحتفظ بأسماء وأسعار هذه المنتجات."
+                ];
             }
+            
+            echo json_encode($response);
+        } else {
+            throw new Exception('فشل في تنفيذ استعلام الحذف: ' . $conn->error);
         }
         
     } catch (Exception $e) {
         echo json_encode([
             'success' => false, 
-            'message' => 'حدث خطأ في حذف المنتجات',
-            'error' => $e->getMessage()
+            'message' => 'حدث خطأ في حذف المنتجات: ' . $e->getMessage()
         ]);
     }
 }
-
 function getProducts($conn) {
     $search = isset($_GET['search']) ? $_GET['search'] : '';
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
