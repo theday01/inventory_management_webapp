@@ -276,6 +276,23 @@ html:not(.dark) #delivery-options label:has(:checked) {
     border-color: #3B82F6 !important;
     background-color: rgba(59, 130, 246, 0.12) !important;
 }
+
+/* ألوان الكمية في Light Mode */
+html:not(.dark) .text-green-500 {
+    color: #10B981 !important;
+}
+
+html:not(.dark) .text-yellow-500 {
+    color: #F59E0B !important;
+}
+
+html:not(.dark) .text-orange-500 {
+    color: #F97316 !important;
+}
+
+html:not(.dark) .text-red-500 {
+    color: #EF4444 !important;
+}
 </style>
 
 <!-- Main Content -->
@@ -1013,6 +1030,24 @@ document.addEventListener('DOMContentLoaded', function () {
             
             productCard.className = cardClasses;
             
+            // تحديد لون الكمية حسب الحالة
+            let quantityClass = 'text-green-500'; // الافتراضي: كمية جيدة
+            let quantityIcon = 'check_circle';
+            
+            if (quantity === 0) {
+                quantityClass = 'text-gray-500';
+                quantityIcon = 'block';
+            } else if (quantity <= 5) {
+                quantityClass = 'text-red-500';
+                quantityIcon = 'error';
+            } else if (quantity <= 10) {
+                quantityClass = 'text-orange-500';
+                quantityIcon = 'warning';
+            } else if (quantity <= 20) {
+                quantityClass = 'text-yellow-500';
+                quantityIcon = 'info';
+            }
+            
             productCard.innerHTML = `
                 ${isOutOfStock ? `
                     <div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
@@ -1021,11 +1056,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 ` : ''}
                 <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" 
-                     class="w-24 h-24 object-cover rounded-lg mb-4 ${isOutOfStock ? 'grayscale opacity-60' : ''}">
+                    class="w-24 h-24 object-cover rounded-lg mb-4 ${isOutOfStock ? 'grayscale opacity-60' : ''}">
                 <div class="text-lg font-bold ${isOutOfStock ? 'text-gray-500 line-through' : 'text-white'}">${product.name}</div>
                 <div class="text-sm ${isOutOfStock ? 'text-gray-600' : 'text-gray-400'}">${product.price} ${currency}</div>
+                <div class="flex items-center justify-center gap-1 mt-2 ${quantityClass}">
+                    <span class="material-icons-round text-xs">${quantityIcon}</span>
+                    <span class="text-xs font-bold">الكمية: ${quantity}</span>
+                </div>
                 ${isOutOfStock ? `
-                    <div class="mt-2 text-xs text-red-400 font-bold">غير متوفر حالياً</div>
+                    <div class="mt-1 text-xs text-red-400 font-bold">غير متوفر حالياً</div>
                 ` : ''}
             `;
             
