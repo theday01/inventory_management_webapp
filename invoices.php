@@ -505,7 +505,41 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         } else {
             document.getElementById('invoice-tax-row').style.display = 'none';
         }
-        
+
+        const existingDeliveryRow = document.getElementById('invoice-delivery-row');
+        if (existingDeliveryRow) existingDeliveryRow.remove();
+        const existingDeliveryCityRow = document.getElementById('invoice-delivery-city-row');
+        if (existingDeliveryCityRow) existingDeliveryCityRow.remove();
+
+        // إضافة صفوف التوصيل إذا كان موجوداً
+        if (invoice.delivery_cost > 0) {
+            const taxRow = document.getElementById('invoice-tax-row');
+            const totalsContainer = taxRow.parentNode;
+            const totalRow = totalsContainer.querySelector('.grand-total') || totalsContainer.lastElementChild;
+            
+            // إضافة سطر التوصيل
+            const deliveryRow = document.createElement('div');
+            deliveryRow.id = 'invoice-delivery-row';
+            deliveryRow.className = 'flex justify-between';
+            deliveryRow.innerHTML = `
+                <span class="text-gray-600">التوصيل:</span>
+                <span class="font-medium">${parseFloat(invoice.delivery_cost).toFixed(2)} ${currency}</span>
+            `;
+            totalsContainer.insertBefore(deliveryRow, totalRow);
+            
+            // إضافة مدينة التوصيل أسفل ثمن التوصيل
+            if (invoice.delivery_city) {
+                const deliveryCityRow = document.createElement('div');
+                deliveryCityRow.id = 'invoice-delivery-city-row';
+                deliveryCityRow.className = 'flex justify-between text-sm';
+                deliveryCityRow.innerHTML = `
+                    <span class="text-gray-500">مدينة التوصيل:</span>
+                    <span class="text-gray-600">${invoice.delivery_city}</span>
+                `;
+                totalsContainer.insertBefore(deliveryCityRow, totalRow);
+            }
+        }
+
         document.getElementById('invoice-total').textContent = `${total.toFixed(2)} ${currency}`;
     }
 
@@ -607,16 +641,22 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         const total = subtotal + tax;
 
         thermalContent += `</div>
-    <div class="totals-section">
-        <div class="total-row"><span>المجموع:</span><span>${subtotal.toFixed(2)} ${currency}</span></div>`;
+            <div class="totals-section">
+                <div class="total-row"><span>المجموع:</span><span>${subtotal.toFixed(2)} ${currency}</span></div>`;
 
         if (taxEnabled) {
-            thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${tax.toFixed(2)} ${currency}</span></div>`;
+            thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${currentInvoiceData.tax.toFixed(2)} ${currency}</span></div>`;
         }
 
+        if (currentInvoiceData.delivery > 0) {
+            thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${currentInvoiceData.delivery.toFixed(2)} ${currency}</span></div>`;
+            if (currentInvoiceData.delivery_city) {
+                thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${currentInvoiceData.delivery_city}</span></div>`;
+            }
+        }
         thermalContent += `
-        <div class="total-row grand-total"><span>الإجمالي:</span><span>${total.toFixed(2)} ${currency}</span></div>
-    </div>
+            <div class="total-row grand-total"><span>الإجمالي:</span><span>${currentInvoiceData.total.toFixed(2)} ${currency}</span></div>
+        </div>
 
     <div class="footer">
         <div style="font-weight: bold; margin-bottom: 2mm;">🌟 شكراً لثقتكم بنا 🌟</div>

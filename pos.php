@@ -1282,13 +1282,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p><strong>الاسم:</strong> ${data.customer.name}</p>
                 ${data.customer.phone ? `<p><strong>الهاتف:</strong> ${data.customer.phone}</p>` : ''}
                 ${data.customer.email ? `<p><strong>البريد:</strong> ${data.customer.email}</p>` : ''}
-                ${data.deliveryCity ? `<p><strong>التوصيل:</strong> ${data.deliveryCity}</p>` : ''}
             `;
         } else {
-            customerInfo.innerHTML = `
-                <p>عميل نقدي</p>
-                ${data.deliveryCity ? `<p><strong>التوصيل:</strong> ${data.deliveryCity}</p>` : ''}
-            `;
+            customerInfo.innerHTML = '<p>عميل نقدي</p>';
         }
         
         const itemsTable = document.getElementById('invoice-items');
@@ -1328,8 +1324,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const existingDeliveryRow = document.getElementById('invoice-delivery-row');
         if (existingDeliveryRow) existingDeliveryRow.remove();
-        
+        const existingDeliveryCityRow = document.getElementById('invoice-delivery-city-row');
+        if (existingDeliveryCityRow) existingDeliveryCityRow.remove();
+
         if (data.delivery > 0) {
+            const taxRow = document.getElementById('invoice-tax-row');
+            const totalsContainer = taxRow.parentNode;
+            const totalRow = totalsContainer.querySelector('.text-lg.font-bold.border-t-2') || totalsContainer.lastElementChild;
+            
+            // إضافة سطر التوصيل
             const deliveryRow = document.createElement('div');
             deliveryRow.id = 'invoice-delivery-row';
             deliveryRow.className = 'flex justify-between';
@@ -1337,11 +1340,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 <span class="text-gray-600">التوصيل:</span>
                 <span class="font-medium">${data.delivery.toFixed(2)} ${currency}</span>
             `;
-            // Insert after tax row
-            const taxRow = document.getElementById('invoice-tax-row');
-            taxRow.parentNode.insertBefore(deliveryRow, taxRow.nextSibling);
+            totalsContainer.insertBefore(deliveryRow, totalRow);
+            
+            // إضافة مدينة التوصيل أسفل ثمن التوصيل
+            if (data.deliveryCity) {
+                const deliveryCityRow = document.createElement('div');
+                deliveryCityRow.id = 'invoice-delivery-city-row';
+                deliveryCityRow.className = 'flex justify-between text-sm';
+                deliveryCityRow.innerHTML = `
+                    <span class="text-gray-500">مدينة التوصيل:</span>
+                    <span class="text-gray-600">${data.deliveryCity}</span>
+                `;
+                totalsContainer.insertBefore(deliveryCityRow, totalRow);
+            }
         }
-        
+
         document.getElementById('invoice-total').textContent = `${data.total.toFixed(2)} ${currency}`;
     }
 
@@ -1411,12 +1424,10 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="customer-section">
         <div style="font-weight: bold;">العميل: ${currentInvoiceData.customer.name}</div>
         ${currentInvoiceData.customer.phone ? `<div>${currentInvoiceData.customer.phone}</div>` : ''}
-        ${currentInvoiceData.deliveryCity ? `<div>${currentInvoiceData.deliveryCity}</div>` : ''}
     </div>
     ` : `
     <div class="customer-section">
         <div>💵 عميل نقدي</div>
-        ${currentInvoiceData.deliveryCity ? `<div>${currentInvoiceData.deliveryCity}</div>` : ''}
     </div>
     `}
 
@@ -1437,19 +1448,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         thermalContent += `</div>
-    <div class="totals-section">
-        <div class="total-row"><span>المجموع:</span><span>${currentInvoiceData.subtotal.toFixed(2)} ${currency}</span></div>`;
+            <div class="totals-section">
+                <div class="total-row"><span>المجموع:</span><span>${currentInvoiceData.subtotal.toFixed(2)} ${currency}</span></div>`;
 
         if (taxEnabled) {
             thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${currentInvoiceData.tax.toFixed(2)} ${currency}</span></div>`;
         }
         if (currentInvoiceData.delivery > 0) {
             thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${currentInvoiceData.delivery.toFixed(2)} ${currency}</span></div>`;
+            if (currentInvoiceData.deliveryCity) {
+                thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${currentInvoiceData.deliveryCity}</span></div>`;
+            }
         }
 
         thermalContent += `
-        <div class="total-row grand-total"><span>الإجمالي:</span><span>${currentInvoiceData.total.toFixed(2)} ${currency}</span></div>
-    </div>
+            <div class="total-row grand-total"><span>الإجمالي:</span><span>${currentInvoiceData.total.toFixed(2)} ${currency}</span></div>
+        </div>
 
     <div style="text-align: center; margin: 5mm 0;">
         <svg id="barcode-thermal"></svg>
@@ -1586,15 +1600,18 @@ document.addEventListener('DOMContentLoaded', function () {
         
         txtContent += `${'-'.repeat(50)}\n`;
         txtContent += `المجموع الفرعي: ${currentInvoiceData.subtotal.toFixed(2)} ${currency}\n`;
-        
+
         if (taxEnabled) {
             txtContent += `${taxLabel} (${(taxRate * 100).toFixed(0)}%): ${currentInvoiceData.tax.toFixed(2)} ${currency}\n`;
         }
-        
+
         if (currentInvoiceData.delivery > 0) {
             txtContent += `التوصيل: ${currentInvoiceData.delivery.toFixed(2)} ${currency}\n`;
+            if (currentInvoiceData.deliveryCity) {
+                txtContent += `مدينة التوصيل: ${currentInvoiceData.deliveryCity}\n`;
+            }
         }
-        
+
         txtContent += `الإجمالي: ${currentInvoiceData.total.toFixed(2)} ${currency}\n`;
         txtContent += `${'='.repeat(50)}\n\n`;
         txtContent += `شكرا لثقتكم بنا\n\n`;
