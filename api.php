@@ -2,6 +2,17 @@
 // إضافة هذه الأسطر في بداية الملف قبل أي كود آخر
 session_start();
 
+// منع أي output قبل JSON
+ob_start();
+
+// إخفاء رسائل الأخطاء من الظهور في JSON
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// التأكد من عدم وجود BOM في بداية الملف
+if (ob_get_length()) ob_clean();
+
 // التحقق من تسجيل الدخول
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header('Content-Type: application/json');
@@ -90,17 +101,203 @@ switch ($action) {
     case 'checkout':
         checkout($conn);
         break;
+    case 'bulkUpdateProducts':
+        bulkUpdateProducts($conn);
+        break;
+    case 'bulkDeleteProducts':
+        bulkDeleteProducts($conn);
+        break;
+    case 'getInventoryStats':
+        getInventoryStats($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
+}
+
+function getInventoryStats($conn) {
+    $stats = [];
+
+    $result = $conn->query("SELECT COUNT(*) as total_products, SUM(price * quantity) as total_stock_value FROM products");
+    $row = $result->fetch_assoc();
+    $stats['total_products'] = $row['total_products'] ?? 0;
+    $stats['total_stock_value'] = $row['total_stock_value'] ?? 0;
+
+    $result = $conn->query("SELECT COUNT(*) as out_of_stock FROM products WHERE quantity = 0");
+    $stats['out_of_stock'] = $result->fetch_assoc()['out_of_stock'] ?? 0;
+
+    $settings_sql = "SELECT setting_value FROM settings WHERE setting_name = 'low_quantity_alert'";
+    $settings_result = $conn->query($settings_sql);
+    $low_alert = ($settings_result && $settings_result->num_rows > 0) ? (int)$settings_result->fetch_assoc()['setting_value'] : 10;
+
+    $stmt = $conn->prepare("SELECT COUNT(*) as low_stock FROM products WHERE quantity > 0 AND quantity <= ?");
+    $stmt->bind_param("i", $low_alert);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stats['low_stock'] = $result->fetch_assoc()['low_stock'] ?? 0;
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'data' => $stats]);
+}
+
+function bulkUpdateProducts($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $product_ids = $data['product_ids'] ?? [];
+
+    if (empty($product_ids)) {
+        echo json_encode(['success' => false, 'message' => 'لم يتم تحديد منتجات']);
+        return;
+    }
+
+    $updates = [];
+    $params = [];
+    $types = '';
+
+    if (!empty($data['category_id'])) {
+        $updates[] = 'category_id = ?';
+        $params[] = $data['category_id'];
+        $types .= 'i';
+    }
+    if ($data['price'] !== '' && !is_null($data['price'])) {
+        $updates[] = 'price = ?';
+        $params[] = $data['price'];
+        $types .= 'd';
+    }
+    if ($data['quantity'] !== '' && !is_null($data['quantity'])) {
+        $updates[] = 'quantity = ?';
+        $params[] = $data['quantity'];
+        $types .= 'i';
+    }
+
+    if (empty($updates)) {
+        echo json_encode(['success' => false, 'message' => 'لا توجد تغييرات لتطبيقها']);
+        return;
+    }
+
+    $in_clause = implode(',', array_fill(0, count($product_ids), '?'));
+    $types .= str_repeat('i', count($product_ids));
+    $params = array_merge($params, $product_ids);
+
+    $sql = "UPDATE products SET " . implode(', ', $updates) . " WHERE id IN ($in_clause)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param($types, ...$params);
+
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'تم تحديث المنتجات بنجاح']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'فشل في تحديث المنتجات']);
+    }
+    $stmt->close();
+}
+
+function bulkDeleteProducts($conn) {
+    try {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $product_ids = $data['product_ids'] ?? [];
+
+        if (empty($product_ids)) {
+            echo json_encode(['success' => false, 'message' => 'لم يتم تحديد منتجات']);
+            return;
+        }
+
+        $product_ids = array_map('intval', $product_ids);
+        $product_ids = array_filter($product_ids, function($id) { return $id > 0; });
+
+        if (empty($product_ids)) {
+            echo json_encode(['success' => false, 'message' => 'معرفات المنتجات غير صالحة']);
+            return;
+        }
+
+        // التحقق من المنتجات المرتبطة بفواتير
+        $in_clause = implode(',', array_fill(0, count($product_ids), '?'));
+        $types = str_repeat('i', count($product_ids));
+        
+        $check_sql = "SELECT DISTINCT p.id, p.name 
+                      FROM products p 
+                      INNER JOIN invoice_items ii ON p.id = ii.product_id 
+                      WHERE p.id IN ($in_clause)";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param($types, ...$product_ids);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        
+        $linked_products = [];
+        while ($row = $result->fetch_assoc()) {
+            $linked_products[] = $row;
+        }
+        $check_stmt->close();
+
+        // إذا كانت هناك منتجات مرتبطة بفواتير
+        if (!empty($linked_products)) {
+            $linked_names = array_map(function($p) { return $p['name']; }, $linked_products);
+            $linked_ids = array_map(function($p) { return $p['id']; }, $linked_products);
+            
+            // استبعاد المنتجات المرتبطة من قائمة الحذف
+            $product_ids = array_diff($product_ids, $linked_ids);
+            
+            $message = 'تحذير: ' . count($linked_products) . ' منتج مرتبط بفواتير ولا يمكن حذفه';
+            
+            // إذا كانت جميع المنتجات مرتبطة
+            if (empty($product_ids)) {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => $message,
+                    'linked_products' => $linked_names,
+                    'suggestion' => 'يمكنك تعيين الكمية إلى صفر بدلاً من الحذف'
+                ]);
+                return;
+            }
+        }
+
+        // حذف المنتجات غير المرتبطة
+        if (!empty($product_ids)) {
+            $in_clause = implode(',', array_fill(0, count($product_ids), '?'));
+            $types = str_repeat('i', count($product_ids));
+
+            $sql = "DELETE FROM products WHERE id IN ($in_clause)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param($types, ...$product_ids);
+
+            if ($stmt->execute()) {
+                $deleted_count = $stmt->affected_rows;
+                $stmt->close();
+                
+                $response_message = "تم حذف {$deleted_count} منتج بنجاح";
+                if (!empty($linked_products)) {
+                    $response_message .= " (تم تجاهل " . count($linked_products) . " منتج مرتبط بفواتير)";
+                }
+                
+                echo json_encode([
+                    'success' => true, 
+                    'message' => $response_message,
+                    'deleted_count' => $deleted_count,
+                    'skipped_count' => count($linked_products),
+                    'linked_products' => !empty($linked_products) ? array_map(function($p) { return $p['name']; }, $linked_products) : []
+                ]);
+            } else {
+                throw new Exception('فشل في تنفيذ الاستعلام');
+            }
+        }
+        
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false, 
+            'message' => 'حدث خطأ في حذف المنتجات',
+            'error' => $e->getMessage()
+        ]);
+    }
 }
 
 function getProducts($conn) {
     $search = isset($_GET['search']) ? $_GET['search'] : '';
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
     $stock_status = isset($_GET['stock_status']) ? $_GET['stock_status'] : '';
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+    $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'name';
+    $sortOrder = isset($_GET['sortOrder']) ? $_GET['sortOrder'] : 'asc';
+    $ids = isset($_GET['ids']) ? explode(',', $_GET['ids']) : [];
 
-    // جلب إعدادات تنبيهات الكمية
     $settings_sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('low_quantity_alert', 'critical_quantity_alert')";
     $settings_result = $conn->query($settings_sql);
     $quantity_settings = [];
@@ -110,46 +307,67 @@ function getProducts($conn) {
     $low_alert = $quantity_settings['low_quantity_alert'] ?? 10;
     $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
-    $sql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
-            FROM products p 
-            LEFT JOIN categories c ON p.category_id = c.id
-            WHERE 1=1";
-
+    $baseSql = "FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1";
     $params = [];
     $types = '';
 
+    if (!empty($ids)) {
+        $in_clause = implode(',', array_fill(0, count($ids), '?'));
+        $baseSql .= " AND p.id IN ($in_clause)";
+        $params = array_merge($params, $ids);
+        $types .= str_repeat('i', count($ids));
+    }
+
     if (!empty($search)) {
-        $sql .= " AND (p.name LIKE ? OR p.barcode LIKE ?)";
+        $baseSql .= " AND (p.name LIKE ? OR p.barcode LIKE ?)";
         $searchTerm = "%{$search}%";
-        $params[] = &$searchTerm;
-        $params[] = &$searchTerm;
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
         $types .= 'ss';
     }
     if ($category_id > 0) {
-        $sql .= " AND p.category_id = ?";
-        $params[] = &$category_id;
+        $baseSql .= " AND p.category_id = ?";
+        $params[] = $category_id;
         $types .= 'i';
     }
-
     if ($stock_status === 'out_of_stock') {
-        $sql .= " AND p.quantity = 0";
+        $baseSql .= " AND p.quantity = 0";
     } elseif ($stock_status === 'low_stock') {
-        $sql .= " AND p.quantity > ? AND p.quantity <= ?";
-        $params[] = &$critical_alert;
-        $params[] = &$low_alert;
+        $baseSql .= " AND p.quantity > ? AND p.quantity <= ?";
+        $params[] = $critical_alert;
+        $params[] = $low_alert;
         $types .= 'ii';
     } elseif ($stock_status === 'critical_stock') {
-        $sql .= " AND p.quantity > 0 AND p.quantity <= ?";
-        $params[] = &$critical_alert;
+        $baseSql .= " AND p.quantity > 0 AND p.quantity <= ?";
+        $params[] = $critical_alert;
         $types .= 'i';
     }
 
-    $stmt = $conn->prepare($sql);
-
+    $countSql = "SELECT COUNT(p.id) as total " . $baseSql;
+    $stmt = $conn->prepare($countSql);
     if (!empty($types)) {
         $stmt->bind_param($types, ...$params);
     }
+    $stmt->execute();
+    $total_products = $stmt->get_result()->fetch_assoc()['total'];
+    $stmt->close();
 
+    $allowedSortColumns = ['name', 'price', 'quantity'];
+    if (!in_array($sortBy, $allowedSortColumns)) {
+        $sortBy = 'name';
+    }
+    $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
+    $offset = ($page - 1) * $limit;
+    $dataSql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name "
+             . $baseSql 
+             . " ORDER BY p.{$sortBy} {$sortOrder} LIMIT ? OFFSET ?";
+    
+    $dataTypes = $types . 'ii';
+    $dataParams = array_merge($params, [$limit, $offset]);
+
+    $stmt = $conn->prepare($dataSql);
+    $stmt->bind_param($dataTypes, ...$dataParams);
     $stmt->execute();
     $result = $stmt->get_result();
     $products = [];
@@ -158,7 +376,7 @@ function getProducts($conn) {
     }
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $products]);
+    echo json_encode(['success' => true, 'data' => $products, 'total_products' => $total_products]);
 }
 
 function addProduct($conn) {
@@ -954,6 +1172,8 @@ function getTopCustomers($conn) {
         echo json_encode(['success' => false, 'message' => 'خطأ في جلب أفضل العملاء: ' . $e->getMessage()]);
     }
 }
+
+if (ob_get_length()) ob_end_flush();
 
 $conn->close();
 ?>

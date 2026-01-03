@@ -41,15 +41,33 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 <span class="material-icons-round text-sm">category</span>
                 <span>إدارة الفئات</span>
             </button>
+            <button id="export-csv-btn"
+                class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                <span class="material-icons-round text-sm">download</span>
+                <span>تصدير CSV</span>
+            </button>
         </div>
     </header>
 
+    <!-- Stats -->
+    <div id="stats-bar" class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10 shrink-0">
+        <!-- Stats will be loaded here -->
+    </div>
+
     <!-- Filters & Actions -->
-    <!-- Filters & Actions -->
-    <div class="p-6 pb-0 flex flex-col md:flex-row gap-4 items-center justify-between relative z-10 shrink-0">
-        <div class="flex items-center gap-4 w-full flex-1 max-w-4xl">
-            <div class="relative w-full md:w-96">
-                <span
+    <div class="p-6 pt-0 flex flex-col gap-4 relative z-10 shrink-0">
+        <div id="bulk-actions-bar" class="hidden bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-center justify-between transition-all">
+            <span id="selected-count" class="text-white font-bold"></span>
+            <div class="flex items-center gap-2">
+                <button id="print-labels-btn" class="text-white hover:bg-white/10 p-2 rounded-lg transition-colors" title="طباعة ملصقات الباركود"><span class="material-icons-round">print</span></button>
+                <button id="bulk-edit-btn" class="text-white hover:bg-white/10 p-2 rounded-lg transition-colors" title="تعديل جماعي"><span class="material-icons-round">edit</span></button>
+                <button id="bulk-delete-btn" class="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors" title="حذف جماعي"><span class="material-icons-round">delete</span></button>
+            </div>
+        </div>
+        <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="flex items-center gap-4 w-full flex-1 max-w-4xl">
+                <div class="relative w-full md:w-96">
+                    <span
                     class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
                 <input type="text" id="product-search-input" placeholder="بحث عن اسم المنتج، الباركود..."
                     class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
@@ -85,20 +103,24 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
             <table class="w-full">
                 <thead>
-                    <tr class="bg-white/5 border-b border-white/5 text-right">
-                        <th class="p-4 text-sm font-medium text-gray-300">المنتج</th>
+                    <tr class="bg-white/5 text-right">
+                        <th class="p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
+                        <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="name">المنتج <span class="sort-icon opacity-30">▲</span></th>
                         <th class="p-4 text-sm font-medium text-gray-300">الصورة</th>
                         <th class="p-4 text-sm font-medium text-gray-300">الفئة</th>
-                        <th class="p-4 text-sm font-medium text-gray-300">السعر</th>
-                        <th class="p-4 text-sm font-medium text-gray-300">الكمية</th>
+                        <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="price">السعر <span class="sort-icon opacity-30">▲</span></th>
+                        <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="quantity">الكمية <span class="sort-icon opacity-30">▲</span></th>
                         <th class="p-4 text-sm font-medium text-gray-300">تفاصيل</th>
-                        <th class="p-4 text-sm font-medium text-gray-300 w-20"></th>
+                        <th class="p-4 text-sm font-medium text-gray-300">الإجراءات</th>
                     </tr>
                 </thead>
                 <tbody id="products-table-body" class="divide-y divide-white/5">
                     <!-- Products will be loaded here -->
                 </tbody>
             </table>
+            <!-- Pagination and info -->
+            <div id="pagination-container" class="p-4 bg-dark-surface/60 border-t border-white/5 flex items-center justify-between text-sm text-gray-400">
+            </div>
         </div>
     </div>
 
@@ -139,6 +161,43 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         </div>
     </div>
 </main>
+
+<!-- Bulk Edit Modal -->
+<div id="bulk-edit-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-lg border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">تعديل جماعي للمنتجات</h3>
+            <button id="close-bulk-edit-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <form id="bulk-edit-form">
+            <div class="p-6">
+                <p class="text-gray-300 mb-4">اترك الحقول فارغة لعدم تغييرها.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="bulk-edit-category" class="block text-sm font-medium text-gray-300 mb-2">الفئة</label>
+                        <select id="bulk-edit-category" name="category_id" class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+                            <option value="">-- عدم التغيير --</option>
+                            <!-- Categories will be loaded here -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="bulk-edit-price" class="block text-sm font-medium text-gray-300 mb-2">السعر</label>
+                        <input type="number" id="bulk-edit-price" name="price" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="اترك فارغاً لعدم التغيير">
+                    </div>
+                    <div>
+                        <label for="bulk-edit-quantity" class="block text-sm font-medium text-gray-300 mb-2">الكمية</label>
+                        <input type="number" id="bulk-edit-quantity" name="quantity" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="اترك فارغاً لعدم التغيير">
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-white/5 flex justify-end gap-4">
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold">تطبيق التغييرات</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <!-- Add/Edit Product Modal -->
 <div id="product-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
@@ -299,12 +358,20 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     const searchInput = document.getElementById('product-search-input');
     const categoryFilter = document.getElementById('product-category-filter');
     const stockStatusFilter = document.getElementById('stock-status-filter');
+    const paginationContainer = document.getElementById('pagination-container');
+    const selectAllCheckbox = document.getElementById('select-all-products');
+
+    let currentPage = 1;
+    let sortBy = 'name';
+    let sortOrder = 'asc';
+    const productsPerPage = 10;
 
     loadProducts();
     loadCategoriesIntoFilter();
-    searchInput.addEventListener('input', loadProducts);
-    categoryFilter.addEventListener('change', loadProducts);
-    stockStatusFilter.addEventListener('change', loadProducts);
+    loadStats();
+    searchInput.addEventListener('input', () => { currentPage = 1; loadProducts(); });
+    categoryFilter.addEventListener('change', () => { currentPage = 1; loadProducts(); });
+    stockStatusFilter.addEventListener('change', () => { currentPage = 1; loadProducts(); });
 
     async function loadProducts() {
         const searchQuery = searchInput.value;
@@ -313,12 +380,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
         try {
             showLoading('جاري تحميل المنتجات...');
-            const response = await fetch(`api.php?action=getProducts&search=${searchQuery}&category_id=${categoryId}&stock_status=${stockStatus}`);
+            const response = await fetch(`api.php?action=getProducts&search=${searchQuery}&category_id=${categoryId}&stock_status=${stockStatus}&page=${currentPage}&limit=${productsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
             const result = await response.json();
             if (result.success) {
                 const lowAlert = <?php echo $low_alert; ?>;
                 const criticalAlert = <?php echo $critical_alert; ?>;
                 displayProducts(result.data, lowAlert, criticalAlert);
+                renderPagination(result.total_products);
             }
         } catch (error) {
             console.error('خطأ في تحميل المنتجات:', error);
@@ -328,10 +396,53 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         }
     }
 
+    async function loadStats() {
+        try {
+            const response = await fetch('api.php?action=getInventoryStats');
+            const result = await response.json();
+            if (result.success) {
+                const stats = result.data;
+                const statsBar = document.getElementById('stats-bar');
+                statsBar.innerHTML = `
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
+                        <div class="bg-primary/10 p-3 rounded-xl"><span class="material-icons-round text-primary text-2xl">inventory_2</span></div>
+                        <div>
+                            <p class="text-gray-400 text-sm">إجمالي المنتجات</p>
+                            <p class="text-white text-xl font-bold">${stats.total_products}</p>
+                        </div>
+                    </div>
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
+                        <div class="bg-green-500/10 p-3 rounded-xl"><span class="material-icons-round text-green-500 text-2xl">attach_money</span></div>
+                        <div>
+                            <p class="text-gray-400 text-sm">قيمة المخزون</p>
+                            <p class="text-white text-xl font-bold">${parseFloat(stats.total_stock_value).toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
+                        <div class="bg-red-500/10 p-3 rounded-xl"><span class="material-icons-round text-red-500 text-2xl">highlight_off</span></div>
+                        <div>
+                            <p class="text-gray-400 text-sm">نفذ من المخزون</p>
+                            <p class="text-white text-xl font-bold">${stats.out_of_stock}</p>
+                        </div>
+                    </div>
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
+                        <div class="bg-yellow-500/10 p-3 rounded-xl"><span class="material-icons-round text-yellow-500 text-2xl">warning</span></div>
+                        <div>
+                            <p class="text-gray-400 text-sm">مخزون منخفض</p>
+                            <p class="text-white text-xl font-bold">${stats.low_stock}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('خطأ في تحميل الإحصائيات:', error);
+        }
+    }
+
     function displayProducts(products, lowAlert, criticalAlert) {
         productsTableBody.innerHTML = '';
         if (products.length === 0) {
-            productsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">لا توجد منتجات لعرضها.</td></tr>';
+            productsTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-500">لا توجد منتجات لعرضها.</td></tr>';
             return;
         }
 
@@ -343,30 +454,26 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             let quantityClass = 'text-gray-300';
             let quantityBadge = '';
 
-            // تصنيف المنتجات حسب الكمية
             if (qty === 0) {
-                // منتج منتهي
                 rowClass += ' bg-gray-900/40 hover:bg-gray-900/50'; 
                 quantityClass = 'text-gray-500 font-bold';
                 quantityBadge = '<span class="inline-flex items-center gap-1 text-xs bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">block</span>منتهي</span>';
             } else if (qty <= criticalAlert) {
-                // منتج حرج
                 rowClass += ' bg-red-900/20 hover:bg-red-900/30'; 
                 quantityClass = 'text-red-400 font-bold';
                 quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">error</span>حرج (${qty}/${criticalAlert})</span>`;
             } else if (qty <= lowAlert) {
-                // منتج منخفض
                 rowClass += ' bg-orange-900/20 hover:bg-orange-900/30';
                 quantityClass = 'text-orange-400 font-bold';
                 quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">warning</span>منخفض (${qty}/${lowAlert})</span>`;
             } else {
-                // منتج بكمية جيدة
                 rowClass += ' bg-transparent hover:bg-white/5';
             }
 
             productRow.className = rowClass;
 
             productRow.innerHTML = `
+                <td class="p-4"><input type="checkbox" class="product-checkbox bg-dark/50 border-white/20 rounded" data-id="${product.id}"></td>
                 <td class="p-4 text-sm text-gray-300 font-medium">${product.name}</td>
                 <td class="p-4 text-sm text-gray-300">
                     <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" class="w-10 h-10 rounded-md object-cover">
@@ -384,11 +491,314 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                         <span class="material-icons-round text-lg">visibility</span>
                     </button>
                 </td>
-                <td class="p-4 text-sm text-gray-300 w-20"></td>
+                <td class="p-4 text-sm text-gray-300">
+                    <button class="edit-product-btn p-1.5 text-gray-400 hover:text-yellow-500 transition-colors" data-id="${product.id}"><span class="material-icons-round text-lg">edit</span></button>
+                    <button class="delete-product-btn p-1.5 text-gray-400 hover:text-red-500 transition-colors" data-id="${product.id}"><span class="material-icons-round text-lg">delete</span></button>
+                </td>
             `;
             productsTableBody.appendChild(productRow);
         });
     }
+
+    function renderPagination(totalProducts) {
+        const totalPages = Math.ceil(totalProducts / productsPerPage);
+        paginationContainer.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        let paginationHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-sm">صفحة ${currentPage} من ${totalPages}</span>
+            </div>
+            <div class="flex items-center gap-1">`;
+        
+        // Previous Button
+        paginationHTML += `<button class="pagination-btn ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-icons-round">chevron_right</span></button>`;
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                paginationHTML += `<button class="pagination-btn bg-primary text-white" data-page="${i}">${i}</button>`;
+            } else {
+                paginationHTML += `<button class="pagination-btn" data-page="${i}">${i}</button>`;
+            }
+        }
+        
+        // Next Button
+        paginationHTML += `<button class="pagination-btn ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}><span class="material-icons-round">chevron_left</span></button>`;
+
+        paginationHTML += `</div>`;
+        paginationContainer.innerHTML = paginationHTML;
+    }
+
+    paginationContainer.addEventListener('click', e => {
+        if (e.target.closest('.pagination-btn')) {
+            const btn = e.target.closest('.pagination-btn');
+            currentPage = parseInt(btn.dataset.page);
+            loadProducts();
+        }
+    });
+
+    const exportCsvBtn = document.getElementById('export-csv-btn');
+    exportCsvBtn.addEventListener('click', async () => {
+        try {
+            showLoading('جاري تصدير البيانات...');
+            const response = await fetch('api.php?action=getProducts&limit=9999');
+            const result = await response.json();
+            if (result.success) {
+                const products = result.data;
+                let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+                csvContent += "ID,Name,Category,Price,Quantity,Barcode\n";
+                products.forEach(p => {
+                    csvContent += `${p.id},"${p.name}","${p.category_name || ''}",${p.price},${p.quantity},"${p.barcode || ''}"\n`;
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "products.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('تم تصدير المنتجات بنجاح', true);
+            } else {
+                showToast('فشل في تصدير المنتجات', false);
+            }
+        } catch (error) {
+            console.error('خطأ في تصدير CSV:', error);
+            showToast('حدث خطأ في تصدير CSV', false);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    const printLabelsBtn = document.getElementById('print-labels-btn');
+    printLabelsBtn.addEventListener('click', async () => {
+        const selectedIds = getSelectedProductIds();
+        if (selectedIds.length === 0) {
+            showToast('الرجاء تحديد منتجات لطباعة ملصقاتها', false);
+            return;
+        }
+
+        try {
+            showLoading('جاري تحضير الملصقات...');
+            const response = await fetch(`api.php?action=getProducts&ids=${selectedIds.join(',')}`);
+            const result = await response.json();
+            if (result.success) {
+                const products = result.data;
+                const printWindow = window.open('', '', 'height=600,width=800');
+                printWindow.document.write('<html><head><title>طباعة الملصقات</title>');
+                printWindow.document.write('<style>body { font-family: sans-serif; text-align: center; } .label { display: inline-block; border: 1px solid #000; padding: 10px; margin: 5px; } svg { height: 50px; } </style>');
+                printWindow.document.write('</head><body>');
+                products.forEach(p => {
+                    if (p.barcode) {
+                        printWindow.document.write(`<div class="label"><div>${p.name}</div><svg id="barcode-${p.id}"></svg></div>`);
+                    }
+                });
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+
+                products.forEach(p => {
+                    if (p.barcode) {
+                        JsBarcode(printWindow.document.getElementById(`barcode-${p.id}`), p.barcode, {
+                            format: "CODE128",
+                            displayValue: true,
+                            fontSize: 14,
+                            margin: 10,
+                            height: 40
+                        });
+                    }
+                });
+
+                printWindow.print();
+            } else {
+                showToast('فشل في تحضير الملصقات', false);
+            }
+        } catch (error) {
+            console.error('خطأ في طباعة الملصقات:', error);
+            showToast('حدث خطأ في طباعة الملصقات', false);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    document.querySelectorAll('.sortable-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const sortField = header.dataset.sort;
+            if (sortBy === sortField) {
+                sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortBy = sortField;
+                sortOrder = 'asc';
+            }
+            document.querySelectorAll('.sort-icon').forEach(icon => icon.classList.add('opacity-30'));
+            const currentIcon = header.querySelector('.sort-icon');
+            currentIcon.classList.remove('opacity-30');
+            currentIcon.textContent = sortOrder === 'asc' ? '▲' : '▼';
+            loadProducts();
+        });
+    });
+
+    selectAllCheckbox.addEventListener('change', () => {
+        document.querySelectorAll('.product-checkbox').forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        updateBulkActionsBar();
+    });
+
+    productsTableBody.addEventListener('change', e => {
+        if (e.target.classList.contains('product-checkbox')) {
+            updateBulkActionsBar();
+        }
+    });
+
+    function getSelectedProductIds() {
+        return Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.id);
+    }
+
+    function updateBulkActionsBar() {
+        const selectedIds = getSelectedProductIds();
+        const bulkActionsBar = document.getElementById('bulk-actions-bar');
+        const selectedCount = document.getElementById('selected-count');
+
+        if (selectedIds.length > 0) {
+            bulkActionsBar.classList.remove('hidden');
+            selectedCount.textContent = `${selectedIds.length} منتجات محددة`;
+        } else {
+            bulkActionsBar.classList.add('hidden');
+        }
+    }
+
+    const bulkEditBtn = document.getElementById('bulk-edit-btn');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const bulkEditModal = document.getElementById('bulk-edit-modal');
+    const closeBulkEditModalBtn = document.getElementById('close-bulk-edit-modal');
+    const bulkEditForm = document.getElementById('bulk-edit-form');
+    const bulkEditCategorySelect = document.getElementById('bulk-edit-category');
+
+    bulkEditBtn.addEventListener('click', async () => {
+        const categories = await loadCategories();
+        bulkEditCategorySelect.innerHTML = '<option value="">-- عدم التغيير --</option>';
+        if (categories) {
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                bulkEditCategorySelect.appendChild(option);
+            });
+        }
+        bulkEditModal.classList.remove('hidden');
+    });
+
+    closeBulkEditModalBtn.addEventListener('click', () => {
+        bulkEditModal.classList.add('hidden');
+    });
+
+    bulkEditForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const selectedIds = getSelectedProductIds();
+        const formData = new FormData(bulkEditForm);
+        const data = {
+            product_ids: selectedIds,
+            category_id: formData.get('category_id'),
+            price: formData.get('price'),
+            quantity: formData.get('quantity')
+        };
+
+        try {
+            showLoading('جاري تحديث المنتجات...');
+            const response = await fetch('api.php?action=bulkUpdateProducts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.success) {
+                bulkEditModal.classList.add('hidden');
+                bulkEditForm.reset();
+                loadProducts();
+                showToast(result.message || 'تم تحديث المنتجات بنجاح', true);
+            } else {
+                showToast(result.message || 'فشل في تحديث المنتجات', false);
+            }
+        } catch (error) {
+            console.error('خطأ في التحديث الجماعي:', error);
+            showToast('حدث خطأ في التحديث الجماعي', false);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    bulkDeleteBtn.addEventListener('click', async () => {
+        const selectedIds = getSelectedProductIds();
+        
+        if (selectedIds.length === 0) {
+            showToast('الرجاء تحديد منتجات للحذف', false);
+            return;
+        }
+        
+        const confirmed = await showConfirmModal(
+            'حذف جماعي',
+            `هل أنت متأكد من حذف ${selectedIds.length} منتجات؟\n\nملاحظة: المنتجات المرتبطة بفواتير لن يتم حذفها.`
+        );
+        
+        if (confirmed) {
+            try {
+                showLoading('جاري حذف المنتجات...');
+                
+                const response = await fetch('api.php?action=bulkDeleteProducts', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ product_ids: selectedIds })
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Response is not JSON:', text);
+                    throw new Error('الاستجابة ليست بصيغة JSON صحيحة');
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = false);
+                    selectAllCheckbox.checked = false;
+                    updateBulkActionsBar();
+                    
+                    await loadProducts();
+                    await loadStats();
+                    
+                    showToast(result.message, true);
+                    
+                    // إظهار المنتجات المتجاهلة إن وجدت
+                    if (result.linked_products && result.linked_products.length > 0) {
+                        setTimeout(() => {
+                            const linkedNames = result.linked_products.slice(0, 5).join('، ');
+                            const more = result.linked_products.length > 5 ? ` و${result.linked_products.length - 5} أخرى` : '';
+                            showToast(`⚠️ منتجات مرتبطة بفواتير: ${linkedNames}${more}`, false);
+                        }, 2000);
+                    }
+                } else {
+                    showToast(result.message || 'فشل في حذف المنتجات', false);
+                    
+                    // إظهار اقتراح إذا كانت جميع المنتجات مرتبطة
+                    if (result.suggestion) {
+                        setTimeout(() => {
+                            showToast(`💡 ${result.suggestion}`, false);
+                        }, 2000);
+                    }
+                }
+            } catch (error) {
+                console.error('خطأ في الحذف الجماعي:', error);
+                showToast('حدث خطأ في الحذف الجماعي: ' + error.message, false);
+            } finally {
+                hideLoading();
+            }
+        }
+    });
 
     const productDetailsModal = document.getElementById('product-details-modal');
     const closeProductDetailsModalBtn = document.getElementById('close-product-details-modal');
@@ -668,7 +1078,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         }
     });
 
-    categoryList.addEventListener('click', function (e) {
+    categoryList.addEventListener('click', async function (e) {
         if (e.target.closest('.edit-category-btn')) {
             const btn = e.target.closest('.edit-category-btn');
             categoryIdInput.value = btn.dataset.id;
@@ -679,10 +1089,17 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        
         if (e.target.closest('.delete-category-btn')) {
             const btn = e.target.closest('.delete-category-btn');
             const id = btn.dataset.id;
-            if (confirm('هل أنت متأكد من حذف هذه الفئة؟ سيتم حذف جميع الحقول المخصصة المرتبطة بها.')) {
+            
+            const confirmed = await showConfirmModal(
+                'حذف الفئة',
+                'هل أنت متأكد من حذف هذه الفئة؟ سيتم حذف جميع الحقول المخصصة المرتبطة بها.'
+            );
+            
+            if (confirmed) {
                 deleteCategory(id);
             }
         }

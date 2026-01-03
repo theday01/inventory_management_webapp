@@ -605,6 +605,7 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 
 <body class="font-sans min-h-screen <?php echo $isDark ? 'bg-dark text-white' : 'bg-gray-100 text-gray-900'; ?>">
@@ -898,6 +899,102 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
                 }
             };
         })();
-    </script>
+        // دالة عرض Modal التأكيد المخصص
+        window.showConfirmModal = function(title, message, onConfirm, onCancel = null) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('global-confirm-modal');
+                const titleEl = document.getElementById('global-confirm-title');
+                const textEl = document.getElementById('global-confirm-text');
+                const confirmBtn = document.getElementById('global-confirm-btn');
+                const cancelBtn = document.getElementById('global-cancel-btn');
+                
+                if (!modal) {
+                    console.error('Modal not found');
+                    resolve(false);
+                    return;
+                }
+                
+                titleEl.textContent = title;
+                textEl.textContent = message;
+                
+                modal.classList.remove('hidden');
+                
+                const handleConfirm = () => {
+                    modal.classList.add('hidden');
+                    cleanup();
+                    if (onConfirm) onConfirm();
+                    resolve(true);
+                };
+                
+                const handleCancel = () => {
+                    modal.classList.add('hidden');
+                    cleanup();
+                    if (onCancel) onCancel();
+                    resolve(false);
+                };
+                
+                const cleanup = () => {
+                    confirmBtn.removeEventListener('click', handleConfirm);
+                    cancelBtn.removeEventListener('click', handleCancel);
+                };
+                
+                confirmBtn.addEventListener('click', handleConfirm);
+                cancelBtn.addEventListener('click', handleCancel);
+                
+                // إغلاق عند النقر خارج Modal
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        handleCancel();
+                    }
+                });
+            });
+        };
+
+</script>
 
     <div class="flex h-screen overflow-hidden">
+
+
+<!-- Global Confirm Modal - أضف هذا في نهاية header.php قبل </body> -->
+<div id="global-confirm-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-md border border-white/10 animate-scale-in">
+        <div class="p-6 border-b border-white/5">
+            <h3 id="global-confirm-title" class="text-xl font-bold text-white flex items-center gap-2">
+                <span class="material-icons-round text-yellow-500">warning</span>
+                تأكيد العملية
+            </h3>
+        </div>
+        
+        <div class="p-6">
+            <p id="global-confirm-text" class="text-gray-300 text-lg"></p>
+        </div>
+        
+        <div class="p-6 border-t border-white/5 flex justify-end gap-3">
+            <button id="global-cancel-btn" 
+                    class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-0.5">
+                إلغاء
+            </button>
+            <button id="global-confirm-btn" 
+                    class="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5">
+                تأكيد
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+}
+</style>
