@@ -490,12 +490,37 @@ function checkout($conn) {
             $quantity = (int)$item['quantity'];
             $price = (float)$item['price'];
             
+            // التحقق من الكمية المتوفرة قبل البيع
+            $checkStmt = $conn->prepare("SELECT quantity FROM products WHERE id = ?");
+            $checkStmt->bind_param("i", $product_id);
+            $checkStmt->execute();
+            $result = $checkStmt->get_result();
+            
+            if ($result->num_rows === 0) {
+                throw new Exception("المنتج غير موجود");
+            }
+            
+            $currentStock = $result->fetch_assoc()['quantity'];
+            $checkStmt->close();
+            
+            // منع البيع إذا كانت الكمية غير كافية
+            if ($currentStock < $quantity) {
+                throw new Exception("الكمية المتوفرة غير كافية للمنتج (متوفر: " . $currentStock . ")");
+            }
+            
             $stmt->bind_param("iiid", $invoiceId, $product_id, $quantity, $price);
             $stmt->execute();
 
-            $updateStmt = $conn->prepare("UPDATE products SET quantity = quantity - ? WHERE id = ?");
-            $updateStmt->bind_param("ii", $quantity, $product_id);
+            // تحديث المخزون بطريقة آمنة - منع الكميات السالبة
+            $updateStmt = $conn->prepare("UPDATE products SET quantity = GREATEST(0, quantity - ?) WHERE id = ? AND quantity >= ?");
+            $updateStmt->bind_param("iii", $quantity, $product_id, $quantity);
             $updateStmt->execute();
+            
+            // التحقق من نجاح التحديث
+            if ($updateStmt->affected_rows === 0) {
+                throw new Exception("فشل في تحديث المخزون - الكمية غير كافية");
+            }
+            
             $updateStmt->close();
         }
         $stmt->close();

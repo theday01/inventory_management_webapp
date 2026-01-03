@@ -1068,13 +1068,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 ` : ''}
             `;
             
-            // إضافة event listener فقط للمنتجات المتوفرة
             if (!isOutOfStock) {
                 productCard.addEventListener('click', () => addProductToCart(product));
             } else {
-                // إظهار رسالة تنبيه عند محاولة النقر على منتج منتهي
                 productCard.addEventListener('click', () => {
-                    showToast(`⚠️ المنتج "${product.name}" غير متوفر حالياً`, false);
+                    showToast(`⚠️ المنتج "${product.name}" غير متوفر حالياً (الكمية: 0)`, false);
+                    if (soundNotificationsEnabled) {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        oscillator.frequency.value = 400;
+                        oscillator.type = 'sine';
+                        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.3);
+                    }
                 });
             }
             
@@ -1083,25 +1094,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function addProductToCart(product) {
-        // تحويل الكمية من قاعدة البيانات إلى رقم
         const stockAvailable = parseInt(product.quantity);
+        if (stockAvailable === 0) {
+            showToast('⚠️ عذراً، هذا المنتج نفذت كميته تماماً!', false);
+            return;
+        }
         
         const existingProduct = cart.find(item => item.id === product.id);
         
-        // حساب الكمية الحالية في السلة
         const currentCartQuantity = existingProduct ? existingProduct.quantity : 0;
 
-        // التحقق مما إذا كانت الإضافة ستتجاوز المخزون
         if (currentCartQuantity + 1 > stockAvailable) {
-            showToast('نأسف، نفذت كمية هذا المنتج من المخزون!', false);
+            showToast(`نأسف، نفذت كمية هذا المنتج من المخزون! (متوفر: ${stockAvailable})`, false);
             return; 
         }
 
         if (existingProduct) {
             existingProduct.quantity++;
         } else {
-            // نقوم بحفظ الكمية الأصلية (stockAvailable) في متغير 'stock'
-            // لأن المتغير 'quantity' سنستخدمه لعد عناصر السلة
             cart.push({ ...product, quantity: 1, stock: stockAvailable });
         }
         updateCart();
@@ -1447,6 +1457,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 displayInvoice(currentInvoiceData);
                 playSuccessSound();
+                
+                // تفريغ السلة وإعادة تعيين البيانات
                 cart = [];
                 selectedCustomer = null;
                 
@@ -1459,10 +1471,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 customerDetailDisplay.textContent = 'افتراضي';
                 customerAvatar.textContent = 'A';
                 updateCart();
+                
+                // تحديث المنتجات فوراً بعد البيع الناجح
+                loadProducts();
+                
                 invoiceModal.classList.remove('hidden');
             } else {
                 showToast(result.message || 'فشل في إنشاء الفاتورة', false);
             }
+
         } catch (error) {
             console.error('خطأ في إنشاء الفاتورة:', error);
             showToast('حدث خطأ أثناء إنشاء الفاتورة', false);
@@ -1727,13 +1744,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
     closeInvoiceModal.addEventListener('click', () => {
         invoiceModal.classList.add('hidden');
+        // تحديث المنتجات فوراً بعد إغلاق الفاتورة
+        loadProducts();
+        showToast('تم تحديث قائمة المنتجات', true);
     });
 
     printInvoiceBtn.addEventListener('click', () => {
         window.print();
+        // تحديث المنتجات بعد الطباعة
+        setTimeout(() => {
+            invoiceModal.classList.add('hidden');
+            loadProducts();
+        }, 1000);
     });
 
-    thermalPrintBtn.addEventListener('click', printThermal);
+    thermalPrintBtn.addEventListener('click', () => {
+        printThermal();
+        // تحديث المنتجات بعد الطباعة الحرارية
+        setTimeout(() => {
+            invoiceModal.classList.add('hidden');
+            loadProducts();
+        }, 1000);
+    });
 
     downloadPdfBtn.addEventListener('click', async () => {
         const { jsPDF } = window.jspdf;
@@ -1787,12 +1819,18 @@ document.addEventListener('DOMContentLoaded', function () {
             pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
             
             showToast('تم تحميل الفاتورة بصيغة PDF', true);
+            
+            // إغلاق Modal وتحديث المنتجات بعد التحميل
+            setTimeout(() => {
+                invoiceModal.classList.add('hidden');
+                loadProducts();
+            }, 1000);
         } catch (error) {
             console.error('خطأ في تحميل PDF:', error);
             showToast('فشل في تحميل PDF', false);
         }
     });
-
+    
     downloadTxtBtn.addEventListener('click', () => {
         if (!currentInvoiceData) return;
         
