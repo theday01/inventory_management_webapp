@@ -27,6 +27,9 @@ $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopCity'");
 $shopCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+// Get sound notifications setting
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'soundNotifications'");
+$soundEnabled = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
 
 $locationParts = [];
 if (!empty($shopCity)) $locationParts[] = $shopCity;
@@ -68,6 +71,56 @@ $deliveryHomeCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()[
     html:not(.dark) label:has(input[name="delivery-type"]) .text-gray-400 {
         color: #6B7280 !important;
     }
+
+    /* Custom Confirmation Modal Styling */
+    #custom-confirm-modal .bg-dark-surface {
+        background: rgba(31, 41, 55, 0.95);
+    }
+
+    html:not(.dark) #custom-confirm-modal .bg-dark-surface {
+        background: rgba(255, 255, 255, 0.98);
+        border-color: #E5E7EB !important;
+    }
+
+    html:not(.dark) #custom-confirm-modal .text-white {
+        color: #111827 !important;
+    }
+
+    html:not(.dark) #custom-confirm-modal .bg-blue-500\/20 {
+        background-color: rgba(59, 130, 246, 0.1) !important;
+    }
+
+    html:not(.dark) #custom-confirm-modal .text-blue-400 {
+        color: #3B82F6 !important;
+    }
+
+    html:not(.dark) #custom-confirm-modal #confirm-cancel-btn {
+        background-color: #F3F4F6;
+        color: #374151;
+    }
+
+    html:not(.dark) #custom-confirm-modal #confirm-cancel-btn:hover {
+        background-color: #E5E7EB;
+    }
+
+    #custom-confirm-modal:not(.hidden) {
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    #custom-confirm-modal:not(.hidden) > div {
+        animation: scaleIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
 @media print {
     body * {
         visibility: hidden;
@@ -570,12 +623,137 @@ html:not(.dark) #delivery-options label:has(:checked) {
     </div>
 </div>
 
+<!-- Custom Confirmation Modal -->
+<div id="custom-confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-md border border-white/10 m-4 transform transition-all">
+        <div class="p-6 text-center">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <span class="material-icons-round text-blue-400 text-4xl">help_outline</span>
+            </div>
+            <p id="confirm-message" class="text-white text-lg mb-6"></p>
+            <div class="flex gap-3 justify-center">
+                <button id="confirm-cancel-btn" class="px-6 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all duration-200 min-w-[100px]">
+                    إلغاء
+                </button>
+                <button id="confirm-ok-btn" class="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-all duration-200 min-w-[100px]">
+                    موافق
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
+    const soundNotificationsEnabled = <?php echo ($soundEnabled == '1') ? 'true' : 'false'; ?>;
+    
+    // Custom Confirmation Modal Function
+    function showConfirm(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('custom-confirm-modal');
+            const messageEl = document.getElementById('confirm-message');
+            const okBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+            
+            messageEl.textContent = message;
+            modal.classList.remove('hidden');
+            
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+            
+            const handleOk = () => {
+                cleanup();
+                resolve(true);
+            };
+            
+            const handleCancel = () => {
+                cleanup();
+                resolve(false);
+            };
+            
+            const handleKeydown = (e) => {
+                if (e.key === 'Enter') {
+                    handleOk();
+                } else if (e.key === 'Escape') {
+                    handleCancel();
+                }
+            };
+            
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+                okBtn.removeEventListener('click', handleOk);
+                cancelBtn.removeEventListener('click', handleCancel);
+                document.removeEventListener('keydown', handleKeydown);
+            };
+            
+            okBtn.addEventListener('click', handleOk);
+            cancelBtn.addEventListener('click', handleCancel);
+            document.addEventListener('keydown', handleKeydown);
+            
+            // Focus OK button for accessibility
+            setTimeout(() => okBtn.focus(), 100);
+        });
+    }
+    
+    // دالة تشغيل صوت النجاح الجميل
+    function playSuccessSound() {
+        if (!soundNotificationsEnabled) return;
+        
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const masterGain = audioContext.createGain();
+            masterGain.connect(audioContext.destination);
+            masterGain.gain.setValueAtTime(0.3, audioContext.currentTime);
+            
+            // النغمة الأولى - دو (C)
+            const osc1 = audioContext.createOscillator();
+            const gain1 = audioContext.createGain();
+            osc1.connect(gain1);
+            gain1.connect(masterGain);
+            osc1.frequency.value = 523.25; // C5
+            osc1.type = 'sine';
+            gain1.gain.setValueAtTime(0.4, audioContext.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            osc1.start(audioContext.currentTime);
+            osc1.stop(audioContext.currentTime + 0.3);
+            
+            // النغمة الثانية - مي (E)
+            const osc2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            osc2.connect(gain2);
+            gain2.connect(masterGain);
+            osc2.frequency.value = 659.25; // E5
+            osc2.type = 'sine';
+            gain2.gain.setValueAtTime(0, audioContext.currentTime + 0.15);
+            gain2.gain.setValueAtTime(0.4, audioContext.currentTime + 0.16);
+            gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.46);
+            osc2.start(audioContext.currentTime + 0.15);
+            osc2.stop(audioContext.currentTime + 0.46);
+            
+            // النغمة الثالثة - صول (G)
+            const osc3 = audioContext.createOscillator();
+            const gain3 = audioContext.createGain();
+            osc3.connect(gain3);
+            gain3.connect(masterGain);
+            osc3.frequency.value = 783.99; // G5
+            osc3.type = 'sine';
+            gain3.gain.setValueAtTime(0, audioContext.currentTime + 0.3);
+            gain3.gain.setValueAtTime(0.5, audioContext.currentTime + 0.31);
+            gain3.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+            osc3.start(audioContext.currentTime + 0.3);
+            osc3.stop(audioContext.currentTime + 0.8);
+            
+            console.log('✅ تم تشغيل صوت النجاح');
+        } catch (error) {
+            console.error('خطأ في تشغيل الصوت:', error);
+        }
+    }
+
 document.addEventListener('DOMContentLoaded', function () {
     const productsGrid = document.getElementById('products-grid');
     const cartItemsContainer = document.getElementById('cart-items');
@@ -637,8 +815,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const shopPhone = '<?php echo addslashes($shopPhone); ?>';
     const shopAddress = '<?php echo addslashes($shopAddress); ?>';
     const shopCity = '<?php echo addslashes($shopCity); ?>'; // [جديد]
+    const soundNotificationsEnabled = <?php echo $soundEnabled; ?> == 1;
 
-// ==========================================
+    // ==========================================
     // كود تفعيل البحث بالباركود (كاميرا + يدوي)
     // ==========================================
 
@@ -1095,11 +1274,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             updateCart();
         } else if (action === 'delete') {
-            if (confirm(`هل تريد حذف "${item.name}" من السلة؟`)) {
-                cart = cart.filter(product => product.id != id);
-                updateCart();
-                showToast('تم حذف المنتج من السلة', true);
-            }
+            showConfirm(`هل تريد حذف "${item.name}" من السلة؟`).then(confirmed => {
+                if (confirmed) {
+                    cart = cart.filter(product => product.id != id);
+                    updateCart();
+                    showToast('تم حذف المنتج من السلة', true);
+                }
+            });
         }
     });
 
@@ -1147,8 +1328,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    clearCartBtn.addEventListener('click', () => {
-        if (cart.length > 0 && confirm('هل أنت متأكد من إلغاء السلة؟')) {
+    clearCartBtn.addEventListener('click', async () => {
+        if (cart.length > 0 && await showConfirm('هل أنت متأكد من إلغاء السلة؟')) {
             cart = [];
             updateCart();
             showToast('تم إلغاء السلة', true);
@@ -1188,7 +1369,7 @@ document.addEventListener('DOMContentLoaded', function () {
             deliveryCity = cityInput.value.trim();
             deliveryCostValue = deliveryCost;
         }
-        if (!confirm('هل أنت متأكد من إتمام عملية البيع؟')) {
+        if (!await showConfirm('هل أنت متأكد من إتمام عملية البيع؟')) {
             return;
         }
 
@@ -1226,6 +1407,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
                 
                 displayInvoice(currentInvoiceData);
+                playSuccessSound();
                 cart = [];
                 selectedCustomer = null;
                 
