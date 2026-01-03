@@ -112,6 +112,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <span class="material-icons-round">group</span>
                                 <span class="font-bold">المستخدمين</span>
                             </a>
+                            <a href=""
+                                class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
+                                <span class="material-icons-round">sysvers</span>
+                                <span class="font-bold">إصدار النظام</span>
+                            </a>
                         </nav>
                     </div>
                 </div>

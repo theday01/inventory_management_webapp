@@ -52,6 +52,8 @@ if (!isset($shopName)) {
                 <span class="material-icons-round text-xl">receipt_long</span>
                 <span class="font-bold">الفواتير</span>
             </a>
+            
+            <div class="my-2 mx-4 border-t border-white/10 dark:border-white/10 border-gray-200"></div>
 
             <a href="settings.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'settings.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
