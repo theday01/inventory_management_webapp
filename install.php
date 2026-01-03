@@ -429,6 +429,7 @@ echo "يمكنك الآن الانتقال إلى صفحة المنتجات لر
 echo "</div>";
 
 $delivery_inserts = [
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryHomeCity', '') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryInsideCity', '10') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryOutsideCity', '30') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('darkMode', '1') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",

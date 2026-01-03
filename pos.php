@@ -38,9 +38,36 @@ $deliveryInsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'deliveryOutsideCity'");
 $deliveryOutsideCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '30';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'deliveryHomeCity'");
+$deliveryHomeCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
 ?>
 
 <style>
+    /* Radio button custom styling */
+    input[type="radio"]:checked + div {
+        color: #3B82F6;
+    }
+
+    /* Light mode delivery type cards */
+    html:not(.dark) label:has(input[name="delivery-type"]) {
+        background-color: #F9FAFB !important;
+        border-color: #E5E7EB !important;
+    }
+
+    html:not(.dark) label:has(input[name="delivery-type"]:checked) {
+        background-color: rgba(59, 130, 246, 0.1) !important;
+        border-color: #3B82F6 !important;
+    }
+
+    html:not(.dark) label:has(input[name="delivery-type"]) .text-white {
+        color: #111827 !important;
+    }
+
+    html:not(.dark) label:has(input[name="delivery-type"]) .text-gray-400 {
+        color: #6B7280 !important;
+    }
 @media print {
     body * {
         visibility: hidden;
@@ -229,20 +256,43 @@ html:not(.dark) #delivery-options label:has(:checked) {
                 </div>
                 <div id="delivery-options" class="hidden mt-3 space-y-3">
                     <div>
-                        <label class="block text-xs text-gray-400 mb-1.5">اختر المدينة</label>
-                        <select id="delivery-city-select" 
-                                class="w-full bg-dark/50 border border-white/10 text-white text-right px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
-                            <option value="">-- اختر المدينة --</option>
-                            <option value="inside|<?php echo $deliveryInsideCity; ?>">داخل المدينة (<?php echo $deliveryInsideCity; ?> <?php echo $currency; ?>)</option>
-                            <option value="outside|<?php echo $deliveryOutsideCity; ?>">خارج المدينة (<?php echo $deliveryOutsideCity; ?> <?php echo $currency; ?>)</option>
-                        </select>
+                        <label class="block text-xs text-gray-400 mb-2 flex items-center gap-1">
+                            <span class="material-icons-round text-xs">route</span>
+                            نوع التوصيل
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
+                                <input type="radio" name="delivery-type" value="inside" class="sr-only peer">
+                                <div class="text-center">
+                                    <span class="material-icons-round text-primary text-lg block mb-1">home</span>
+                                    <span class="text-xs font-bold text-white block">داخل المدينة</span>
+                                    <span class="text-xs text-gray-400 block"><?php echo $deliveryInsideCity; ?> <?php echo $currency; ?></span>
+                                </div>
+                            </label>
+                            <label class="relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
+                                <input type="radio" name="delivery-type" value="outside" class="sr-only peer">
+                                <div class="text-center">
+                                    <span class="material-icons-round text-orange-500 text-lg block mb-1">location_on</span>
+                                    <span class="text-xs font-bold text-white block">خارج المدينة</span>
+                                    <span class="text-xs text-gray-400 block"><?php echo $deliveryOutsideCity; ?> <?php echo $currency; ?></span>
+                                </div>
+                            </label>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1.5">اسم المدينة (اختياري)</label>
-                        <input type="text" id="delivery-city-name" 
-                            placeholder="مثال: الرباط، الدار البيضاء..."
+                    
+                    <!-- حقل اسم المدينة -->
+                    <div id="city-name-container">
+                        <label class="block text-xs text-gray-400 mb-1.5 flex items-center gap-1">
+                            <span class="material-icons-round text-xs">location_city</span>
+                            اسم المدينة
+                        </label>
+                        <input type="text" id="delivery-city-input" readonly
+                            placeholder="اختر نوع التوصيل أولاً..."
                             class="w-full bg-dark/50 border border-white/10 text-white text-right px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
-                        <p class="text-xs text-gray-500 mt-1">سيتم حفظه مع الفاتورة للمرجع</p>
+                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1" id="delivery-cost-info">
+                            <span class="material-icons-round text-xs">info</span>
+                            <span>اختر نوع التوصيل</span>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -548,10 +598,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // Delivery Elements
     const deliveryToggle = document.getElementById('delivery-toggle');
     const deliveryOptionsDiv = document.getElementById('delivery-options');
-    const deliveryTypeInputs = document.querySelectorAll('input[name="delivery-type"]');
+    const deliveryCityInput = document.getElementById('delivery-city-input');
+    const deliveryCostInfo = document.getElementById('delivery-cost-info');
     const cartDeliveryRow = document.getElementById('cart-delivery-row');
-    const cartDeliveryAmount = document.getElementById('cart-delivery-amount');
-    
+    const cartDeliveryAmount = document.getElementById('cart-delivery-amount');    
     const customerModal = document.getElementById('customer-modal');
     const closeCustomerModalBtn = document.getElementById('close-customer-modal');
     const customerSelection = document.getElementById('customer-selection');
@@ -568,6 +618,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const thermalPrintBtn = document.getElementById('thermal-print-btn');
     const downloadPdfBtn = document.getElementById('download-pdf-btn');
     const downloadTxtBtn = document.getElementById('download-txt-btn');
+
+    const deliveryInsideCost = <?php echo $deliveryInsideCity; ?>;
+    const deliveryOutsideCost = <?php echo $deliveryOutsideCity; ?>;
+    const homeCity = '<?php echo addslashes($deliveryHomeCity); ?>';
 
     let cart = [];
     let allProducts = [];
@@ -867,51 +921,133 @@ document.addEventListener('DOMContentLoaded', function () {
         if (deliveryToggle.checked) {
             deliveryOptionsDiv.classList.remove('hidden');
             cartDeliveryRow.classList.remove('hidden');
-            
-            // قراءة التكلفة من القائمة المنسدلة
-            const citySelect = document.getElementById('delivery-city-select');
-            if (citySelect && citySelect.value) {
-                const parts = citySelect.value.split('|');
-                deliveryCost = parts[1] ? parseFloat(parts[1]) : 0;
-            } else {
-                deliveryCost = 0;
-            }
         } else {
             deliveryOptionsDiv.classList.add('hidden');
             cartDeliveryRow.classList.add('hidden');
             deliveryCost = 0;
+            // إعادة تعيين الحقول
+            const deliveryTypeRadios = document.querySelectorAll('input[name="delivery-type"]');
+            deliveryTypeRadios.forEach(radio => radio.checked = false);
+            deliveryCityInput.value = '';
+            deliveryCityInput.readOnly = true;
+            deliveryCostInfo.innerHTML = `
+                <span class="material-icons-round text-xs">info</span>
+                <span>اختر نوع التوصيل</span>
+            `;
+            deliveryCostInfo.className = 'text-xs text-gray-500 mt-1 flex items-center gap-1';
         }
+        updateTotals();
+    }
+
+    function handleDeliveryTypeChange() {
+        const selectedType = document.querySelector('input[name="delivery-type"]:checked');
+        
+        if (!selectedType) {
+            deliveryCityInput.value = '';
+            deliveryCityInput.readOnly = true;
+            deliveryCityInput.placeholder = 'اختر نوع التوصيل أولاً...';
+            deliveryCost = 0;
+            deliveryCostInfo.innerHTML = `
+                <span class="material-icons-round text-xs">info</span>
+                <span>اختر نوع التوصيل</span>
+            `;
+            deliveryCostInfo.className = 'text-xs text-gray-500 mt-1 flex items-center gap-1';
+            updateTotals();
+            return;
+        }
+        
+        const type = selectedType.value;
+        
+        if (type === 'inside') {
+            // داخل المدينة
+            if (!homeCity) {
+                showToast('⚠️ لم يتم تحديد مدينة المحل في الإعدادات', false);
+                deliveryCityInput.value = '';
+                deliveryCityInput.readOnly = true;
+                deliveryCost = 0;
+            } else {
+                deliveryCityInput.value = homeCity;
+                deliveryCityInput.readOnly = true;
+                deliveryCost = deliveryInsideCost;
+                deliveryCostInfo.innerHTML = `
+                    <span class="material-icons-round text-xs">check_circle</span>
+                    <span>داخل المدينة: ${deliveryInsideCost} ${currency}</span>
+                `;
+                deliveryCostInfo.className = 'text-xs text-green-500 mt-1 flex items-center gap-1';
+            }
+        } else if (type === 'outside') {
+            // خارج المدينة
+            deliveryCityInput.value = '';
+            deliveryCityInput.readOnly = false;
+            deliveryCityInput.placeholder = 'أدخل اسم المدينة...';
+            deliveryCityInput.focus();
+            deliveryCost = deliveryOutsideCost;
+            deliveryCostInfo.innerHTML = `
+                <span class="material-icons-round text-xs">location_on</span>
+                <span>خارج المدينة: ${deliveryOutsideCost} ${currency}</span>
+            `;
+            deliveryCostInfo.className = 'text-xs text-orange-500 mt-1 flex items-center gap-1';
+        }
+        
+        updateTotals();
+    }
+
+    function calculateDeliveryCost() {
+        const cityName = deliveryCityInput.value.trim();
+        
+        if (!cityName) {
+            deliveryCost = 0;
+            deliveryCostInfo.innerHTML = `
+                <span class="material-icons-round text-xs">info</span>
+                <span>سيتم حساب التكلفة تلقائياً</span>
+            `;
+            deliveryCostInfo.className = 'text-xs text-gray-500 mt-1 flex items-center gap-1';
+        } else {
+            // التحقق من وجود مدينة المحل
+            if (!homeCity) {
+                deliveryCost = deliveryOutsideCost;
+                deliveryCostInfo.innerHTML = `
+                    <span class="material-icons-round text-xs">warning</span>
+                    <span>لم يتم تحديد مدينة المحل، سيتم احتساب خارج المدينة: ${deliveryOutsideCost} ${currency}</span>
+                `;
+                deliveryCostInfo.className = 'text-xs text-yellow-500 mt-1 flex items-center gap-1';
+            } else {
+                // تنظيف وتوحيد اسم المدينة للمقارنة
+                const normalizedInput = cityName.toLowerCase().trim();
+                const normalizedHome = homeCity.toLowerCase().trim();
+                
+                if (normalizedInput === normalizedHome) {
+                    // داخل المدينة
+                    deliveryCost = deliveryInsideCost;
+                    deliveryCostInfo.innerHTML = `
+                        <span class="material-icons-round text-xs">check_circle</span>
+                        <span>داخل المدينة: ${deliveryInsideCost} ${currency}</span>
+                    `;
+                    deliveryCostInfo.className = 'text-xs text-green-500 mt-1 flex items-center gap-1';
+                } else {
+                    // خارج المدينة
+                    deliveryCost = deliveryOutsideCost;
+                    deliveryCostInfo.innerHTML = `
+                        <span class="material-icons-round text-xs">location_on</span>
+                        <span>خارج المدينة: ${deliveryOutsideCost} ${currency}</span>
+                    `;
+                    deliveryCostInfo.className = 'text-xs text-orange-500 mt-1 flex items-center gap-1';
+                }
+            }
+        }
+        
         updateTotals();
     }
 
     deliveryToggle.addEventListener('change', updateDeliveryState);
 
-    // إضافة مستمع للتغيير في القائمة المنسدلة
-    const citySelect = document.getElementById('delivery-city-select');
-    if (citySelect) {
-        citySelect.addEventListener('change', function() {
-            if (deliveryToggle.checked) {
-                const parts = this.value.split('|');
-                deliveryCost = parts[1] ? parseFloat(parts[1]) : 0;
-                updateTotals();
-            }
-        });
-    }
-
-    deliveryToggle.addEventListener('change', updateDeliveryState);
-
-    // إضافة مستمع للتغيير في حقل التكلفة
-    document.addEventListener('DOMContentLoaded', function() {
-        const costInput = document.getElementById('delivery-cost-input');
-        if (costInput) {
-            costInput.addEventListener('input', function() {
-                if (deliveryToggle.checked) {
-                    deliveryCost = parseFloat(this.value) || 0;
-                    updateTotals();
-                }
-            });
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'delivery-type') {
+            handleDeliveryTypeChange();
         }
     });
+
+    deliveryCityInput.addEventListener('input', calculateDeliveryCost);
 
     function updateTotals() {
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -1025,33 +1161,33 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // التحقق من اختيار المدينة عند تفعيل التوصيل
-        const citySelect = document.getElementById('delivery-city-select');
-        const cityNameInput = document.getElementById('delivery-city-name');
-        
         let deliveryCity = null;
         let deliveryCostValue = 0;
-        let deliveryType = null;
         
         if (deliveryToggle.checked) {
-            if (!citySelect || !citySelect.value) {
+            // التحقق من اختيار نوع التوصيل
+            const selectedType = document.querySelector('input[name="delivery-type"]:checked');
+            if (!selectedType) {
                 showToast('⚠️ الرجاء اختيار نوع التوصيل (داخل/خارج المدينة)', false);
-                citySelect.focus();
                 return;
             }
             
-            const parts = citySelect.value.split('|');
-            deliveryType = parts[0]; // inside أو outside
-            deliveryCostValue = parseFloat(parts[1]) || 0;
+            const cityInput = document.getElementById('delivery-city-input');
             
-            // استخدام اسم المدينة المدخل أو النوع الافتراضي
-            if (cityNameInput && cityNameInput.value.trim()) {
-                deliveryCity = cityNameInput.value.trim();
-            } else {
-                deliveryCity = deliveryType === 'inside' ? 'داخل المدينة' : 'خارج المدينة';
+            // التحقق من إدخال اسم المدينة
+            if (!cityInput || !cityInput.value.trim()) {
+                if (selectedType.value === 'inside') {
+                    showToast('⚠️ لم يتم تحديد مدينة المحل في الإعدادات', false);
+                } else {
+                    showToast('⚠️ الرجاء إدخال اسم المدينة للتوصيل', false);
+                    cityInput.focus();
+                }
+                return;
             }
+            
+            deliveryCity = cityInput.value.trim();
+            deliveryCostValue = deliveryCost;
         }
-
         if (!confirm('هل أنت متأكد من إتمام عملية البيع؟')) {
             return;
         }
@@ -1095,8 +1231,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 // Reset Delivery
                 deliveryToggle.checked = false;
-                if (citySelect) citySelect.value = '';
-                if (cityNameInput) cityNameInput.value = '';
+                if (deliveryCityInput) deliveryCityInput.value = '';
                 updateDeliveryState();
                 
                 customerNameDisplay.textContent = 'عميل نقدي';

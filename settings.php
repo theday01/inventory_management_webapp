@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'taxEnabled' => isset($_POST['taxEnabled']) ? '1' : '0',
         'taxRate' => $_POST['taxRate'] ?? '20',
         'taxLabel' => $_POST['taxLabel'] ?? 'TVA',
+        'deliveryHomeCity' => $_POST['deliveryHomeCity'] ?? '',
         'deliveryInsideCity' => $_POST['deliveryInsideCity'] ?? '0',
         'deliveryOutsideCity' => $_POST['deliveryOutsideCity'] ?? '0',
         'stockAlertsEnabled' => isset($_POST['stockAlertsEnabled']) ? '1' : '0',
@@ -174,25 +175,43 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <?php endif; ?>
                         </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">التوصيل داخل المدينة</label>
-                                <div class="relative">
-                                    <input type="number" id="deliveryInsideCity" name="deliveryInsideCity" step="0.01" min="0"
-                                        value="<?php echo htmlspecialchars($settings['deliveryInsideCity'] ?? '0'); ?>"
-                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
-                                        <?php echo $disabledAttr; ?>>
-                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold"><?php echo htmlspecialchars($settings['currency'] ?? 'MAD'); ?></span>
-                                </div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2 flex items-center gap-2">
+                                    <span class="material-icons-round text-sm">location_city</span>
+                                    مدينة المحل التجاري
+                                </label>
+                                <input type="text" name="deliveryHomeCity" 
+                                    value="<?php echo htmlspecialchars($settings['deliveryHomeCity'] ?? ''); ?>"
+                                    placeholder="مثال: الرباط، الدار البيضاء، طنجة..."
+                                    class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                    <?php echo $disabledAttr; ?>>
+                                <p class="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                                    <span class="material-icons-round text-xs">info</span>
+                                    سيتم اعتماد هذه المدينة لحساب تكلفة التوصيل "داخل المدينة" تلقائياً
+                                </p>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">التوصيل خارج المدينة</label>
-                                <div class="relative">
-                                    <input type="number" id="deliveryOutsideCity" name="deliveryOutsideCity" step="0.01" min="0"
-                                        value="<?php echo htmlspecialchars($settings['deliveryOutsideCity'] ?? '0'); ?>"
-                                        class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
-                                        <?php echo $disabledAttr; ?>>
-                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold"><?php echo htmlspecialchars($settings['currency'] ?? 'MAD'); ?></span>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">التوصيل داخل المدينة</label>
+                                    <div class="relative">
+                                        <input type="number" id="deliveryInsideCity" name="deliveryInsideCity" step="0.01" min="0"
+                                            value="<?php echo htmlspecialchars($settings['deliveryInsideCity'] ?? '0'); ?>"
+                                            class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                            <?php echo $disabledAttr; ?>>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold"><?php echo htmlspecialchars($settings['currency'] ?? 'MAD'); ?></span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">التوصيل خارج المدينة</label>
+                                    <div class="relative">
+                                        <input type="number" id="deliveryOutsideCity" name="deliveryOutsideCity" step="0.01" min="0"
+                                            value="<?php echo htmlspecialchars($settings['deliveryOutsideCity'] ?? '0'); ?>"
+                                            class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                            <?php echo $disabledAttr; ?>>
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold"><?php echo htmlspecialchars($settings['currency'] ?? 'MAD'); ?></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
