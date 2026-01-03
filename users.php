@@ -1,10 +1,9 @@
 <?php
-// يجب معالجة جميع POST requests قبل إرسال أي output
-require_once 'session.php'; // هذا يبدأ الـ session ويتحقق من تسجيل الدخول
+require_once 'session.php';
 require_once 'db.php';
 $current_page = 'users.php';
+$current_page = 'settings.php';
 
-// التحقق من الصلاحيات
 if ($_SESSION['role'] !== 'admin') {
     header("Location: dashboard.php");
     exit();
@@ -119,117 +118,119 @@ $admin_count = $admin_count_query->fetch_assoc()['admin_count'];
 
 // الآن يمكن استدعاء header و sidebar بعد معالجة جميع POST requests
 $page_title = 'المستخدمين';
-$current_page = 'users.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 ?>
 
-<!-- Main Content -->
-<main class="flex-1 flex flex-col relative overflow-hidden">
-    <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+<main class="flex-1 flex flex-col relative overflow-hidden bg-dark">
+    <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <!-- Header -->
-    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
-        <h2 class="text-xl font-bold text-white">إدارة المستخدمين</h2>
+    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-20 shrink-0">
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-icons-round text-primary">settings_suggest</span>
+            إدارة المستخدمين والصلاحيات
+        </h2>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="flex-1 flex overflow-hidden relative z-10">
 
-            <!-- Settings Menu -->
-            <div class="lg:col-span-1">
-                <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
-                    <nav class="flex flex-col">
-                        <a href="settings.php"
-                            class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                            <span class="material-icons-round">store</span>
-                            <span class="font-bold">إعدادات المتجر</span>
-                        </a>
-                        <a href="users.php"
-                            class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary">
-                            <span class="material-icons-round">group</span>
-                            <span class="font-bold">المستخدمين</span>
-                        </a>
-                    </nav>
+        <aside class="w-64 bg-dark-surface/30 backdrop-blur-md border-l border-white/5 flex flex-col overflow-y-auto shrink-0">
+            <div class="p-4 space-y-2">
+                <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    الإعدادات العامة
                 </div>
+
+                <a href="settings.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all group">
+                    <span class="material-icons-round text-[20px] group-hover:text-primary transition-colors">store</span>
+                    <span class="font-medium text-sm">إعدادات المتجر</span>
+                </a>
+
+                <a href="users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary border border-primary/20 transition-all shadow-lg shadow-primary/5">
+                    <span class="material-icons-round text-[20px]">people</span>
+                    <span class="font-bold text-sm">المستخدمين</span>
+                </a>
+
+                <div class="my-2 border-t border-white/5"></div>
+
+                <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    النظام
+                </div>
+
+                <a href="version.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all group">
+                    <span class="material-icons-round text-[20px] group-hover:text-primary transition-colors">info</span>
+                    <span class="font-medium text-sm">إصدار النظام</span>
+                </a>
+                 
+                <a href="license.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all group">
+                    <span class="material-icons-round text-[20px] group-hover:text-yellow-500 transition-colors">verified_user</span>
+                    <span class="font-medium text-sm">الترخيص</span>
+                </a>
             </div>
+        </aside>
 
-            <!-- Users Content -->
-            <div class="lg:col-span-2 space-y-6">
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div class="max-w-4xl mx-auto space-y-6">
+                
                 <section class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
-                    <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        <span class="material-icons-round text-primary">group</span>
-                        قائمة المستخدمين (<?php echo count($users); ?>)
-                    </h3>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <span class="material-icons-round text-primary">group</span>
+                            قائمة المستخدمين (<?php echo count($users); ?>)
+                        </h3>
+                        <button id="addUserBtn" class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
+                            <span class="material-icons-round text-sm">add</span>
+                            إضافة جديد
+                        </button>
+                    </div>
 
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded-xl border border-white/5">
                         <table class="w-full text-right">
-                            <thead>
-                                <tr class="border-b border-white/10">
+                            <thead class="bg-white/5">
+                                <tr>
                                     <th class="p-4 text-sm font-bold text-gray-400">الاسم</th>
                                     <th class="p-4 text-sm font-bold text-gray-400">الدور</th>
                                     <th class="p-4 text-sm font-bold text-gray-400 text-center">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-white/5">
-                                <?php if (empty($users)): ?>
-                                    <tr>
-                                        <td colspan="3" class="text-center py-4 text-gray-500">
-                                            لا توجد أي بيانات لعرضها الآن.
+                                <?php foreach ($users as $user): ?>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-4 text-sm text-white font-medium">
+                                            <?php echo htmlspecialchars($user['username']); ?>
+                                            <?php if ($user['id'] == $_SESSION['id']): ?>
+                                                <span class="text-xs text-primary mr-2 bg-primary/10 px-2 py-0.5 rounded">(أنت)</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="p-4 text-sm">
+                                            <span class="px-3 py-1 rounded-full text-xs font-bold <?php echo $user['role'] == 'admin' ? 'bg-primary/20 text-primary' : 'bg-gray-500/20 text-gray-400'; ?>">
+                                                <?php echo htmlspecialchars($user['role']); ?>
+                                            </span>
+                                        </td>
+                                        <td class="p-4 text-sm text-center">
+                                            <div class="flex items-center justify-center gap-2">
+                                                <button onclick="openEditModal(<?php echo $user['id']; ?>, '<?php echo $user['username']; ?>', '<?php echo $user['role']; ?>', <?php echo $admin_count; ?>)" 
+                                                    class="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="تعديل">
+                                                    <span class="material-icons-round text-lg">edit</span>
+                                                </button>
+                                                <?php if ($user['id'] != $_SESSION['id']): ?>
+                                                    <button onclick="confirmDelete(<?php echo $user['id']; ?>, '<?php echo $user['username']; ?>')" 
+                                                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="حذف">
+                                                        <span class="material-icons-round text-lg">delete</span>
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
                                     </tr>
-                                <?php else: ?>
-                                    <?php foreach ($users as $user): ?>
-                                        <tr class="hover:bg-white/5 transition-colors">
-                                            <td class="p-4 text-sm text-white font-medium">
-                                                <?php echo htmlspecialchars($user['username']); ?>
-                                                <?php if ($user['id'] == $_SESSION['id']): ?>
-                                                    <span class="text-xs text-primary mr-2">(أنت)</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="p-4 text-sm">
-                                                <span class="px-3 py-1 rounded-full text-xs font-bold <?php echo $user['role'] == 'admin' ? 'bg-primary/20 text-primary' : 'bg-gray-500/20 text-gray-400'; ?>">
-                                                    <?php echo htmlspecialchars($user['role']); ?>
-                                                </span>
-                                            </td>
-                                            <td class="p-4 text-sm text-center">
-                                                <div class="flex items-center justify-center gap-2">
-                                                    <button 
-                                                        onclick="openEditModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($user['role'], ENT_QUOTES); ?>', <?php echo $admin_count; ?>)"
-                                                        class="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-                                                        title="تعديل">
-                                                        <span class="material-icons-round text-lg">edit</span>
-                                                    </button>
-                                                    
-                                                    <?php if ($user['id'] != $_SESSION['id']): ?>
-                                                        <button 
-                                                            onclick="confirmDelete(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username'], ENT_QUOTES); ?>')"
-                                                            class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
-                                                            title="حذف">
-                                                            <span class="material-icons-round text-lg">delete</span>
-                                                        </button>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
-                    
-                    <div class="mt-6">
-                        <button id="addUserBtn" class="w-full bg-primary/10 hover:bg-primary/20 text-primary px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
-                            <span class="material-icons-round">add_circle</span>
-                            إضافة مستخدم جديد
-                        </button>
-                    </div>
                 </section>
+
             </div>
         </div>
     </div>
 </main>
-
 <!-- Add User Modal -->
 <div id="addUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">

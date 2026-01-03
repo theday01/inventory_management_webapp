@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     exit();
 }
 
-$page_title = 'الإعدادات';
+$page_title = 'إعدادات النظام';
 $current_page = 'settings.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
@@ -63,7 +63,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     <form method="POST" action="settings.php" class="flex-1 flex flex-col overflow-hidden" <?php echo $isAdmin ? '' : 'onsubmit="return false;"'; ?>>
         <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
             <div class="flex items-center gap-4">
-                <h2 class="text-xl font-bold text-white">الإعدادات العامة</h2>
+                <h2 class="text-xl font-bold text-white">إعدادات النظام</h2>
                 <?php if (!$isAdmin): ?>
                     <span class="text-xs bg-yellow-500/20 text-yellow-500 px-3 py-1 rounded-full font-bold flex items-center gap-1">
                         <span class="material-icons-round text-sm">visibility</span>
@@ -99,27 +99,39 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem); scroll-behavior: smooth;">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                <div class="lg:col-span-1">
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden sticky top-0">
-                        <nav class="flex flex-col">
-                            <a href="#store-settings" onclick="document.getElementById('store-settings').scrollIntoView({behavior: 'smooth'}); return false;"
-                                class="px-6 py-4 flex items-center gap-3 bg-primary/10 text-primary border-r-2 border-primary hover:bg-primary/20 transition-colors">
-                                <span class="material-icons-round">store</span>
-                                <span class="font-bold">إعدادات المتجر</span>
-                            </a>
-                            <a href="users.php"
-                                class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                                <span class="material-icons-round">group</span>
-                                <span class="font-bold">المستخدمين</span>
-                            </a>
-                            <a href=""
-                                class="px-6 py-4 flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r-2 border-transparent">
-                                <span class="material-icons-round">sysvers</span>
-                                <span class="font-bold">إصدار النظام</span>
-                            </a>
-                        </nav>
+                <aside class="w-64 bg-dark-surface/30 backdrop-blur-md border-l border-white/5 flex flex-col overflow-y-auto shrink-0">
+                    <div class="p-4 space-y-2">
+                        <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            الإعدادات العامة
+                        </div>
+
+                        <a href="settings.php" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary border border-primary/20 transition-all shadow-lg shadow-primary/5">
+                            <span class="material-icons-round text-[20px]">store</span>
+                            <span class="font-bold text-sm">إعدادات المتجر</span>
+                        </a>
+
+                        <a href="users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all group">
+                            <span class="material-icons-round text-[20px] group-hover:text-primary transition-colors">people</span>
+                            <span class="font-medium text-sm">المستخدمين</span>
+                        </a>
+
+                        <div class="my-2 border-t border-white/5"></div>
+
+                        <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            النظام
+                        </div>
+
+                        <a href="version.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all group">
+                            <span class="material-icons-round text-[20px] group-hover:text-primary transition-colors">info</span>
+                            <span class="font-medium text-sm">إصدار النظام</span>
+                        </a>
+                        
+                        <a href="license.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all group">
+                            <span class="material-icons-round text-[20px] group-hover:text-yellow-500 transition-colors">verified_user</span>
+                            <span class="font-medium text-sm">الترخيص</span>
+                        </a>
                     </div>
-                </div>
+                </aside>
 
                 <div class="lg:col-span-2 space-y-6">
                     
@@ -280,7 +292,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl <?php echo $readonlyClass; ?>">
                                     <div>
                                         <h4 class="font-bold text-white mb-1">الإشعارات الصوتية</h4>
-                                        <p class="text-xs text-gray-400">تشغيل صوت عند البيع</p>
+                                        <p class="text-xs text-gray-400">تشغيل صوت عند عملية بيع ناجحة</p>
                                     </div>
                                     <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
                                         <input type="checkbox" name="soundNotifications" id="toggle-sound" value="1"
