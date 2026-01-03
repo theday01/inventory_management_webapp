@@ -69,6 +69,27 @@ switch ($action) {
     case 'updateDeliverySettings':
         updateDeliverySettings($conn);
         break;
+    case 'getDashboardStats':
+        getDashboardStats($conn);
+        break;
+    case 'getSalesChart':
+        getSalesChart($conn);
+        break;
+    case 'getTopProducts':
+        getTopProducts($conn);
+        break;
+    case 'getCategorySales':
+        getCategorySales($conn);
+        break;
+    case 'getRecentInvoices':
+        getRecentInvoices($conn);
+        break;
+    case 'getTopCustomers':
+        getTopCustomers($conn);
+        break;
+    case 'checkout':
+        checkout($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -441,11 +462,11 @@ function updateCustomer($conn) {
     $stmt->close();
 }
 
-function createInvoice($conn) {
+function checkout($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['items']) || !is_array($data['items'])) {
-        echo json_encode(['success' => false, 'message' => 'لا توجد منتجات في الفاتورة']);
+        echo json_encode(['success' => false, 'message' => 'لا توجد منتجات في السلة']);
         return;
     }
 
@@ -453,6 +474,7 @@ function createInvoice($conn) {
 
     try {
         $customer_id = isset($data['customer_id']) ? (int)$data['customer_id'] : null;
+        $delivery_cost = isset($data['delivery_cost']) ? (float)$data['delivery_cost'] : 0;
         $total = (float)$data['total'];
 
         $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total) VALUES (?, ?)");
@@ -470,7 +492,6 @@ function createInvoice($conn) {
             $stmt->bind_param("iiid", $invoiceId, $product_id, $quantity, $price);
             $stmt->execute();
 
-            // Update product quantity
             $updateStmt = $conn->prepare("UPDATE products SET quantity = quantity - ? WHERE id = ?");
             $updateStmt->bind_param("ii", $quantity, $product_id);
             $updateStmt->execute();
@@ -478,7 +499,6 @@ function createInvoice($conn) {
         }
         $stmt->close();
 
-        // Generate and update barcode
         $barcode = 'INV' . str_pad($invoiceId, 8, '0', STR_PAD_LEFT);
         $updateStmt = $conn->prepare("UPDATE invoices SET barcode = ? WHERE id = ?");
         $updateStmt->bind_param("si", $barcode, $invoiceId);
@@ -491,6 +511,10 @@ function createInvoice($conn) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()]);
     }
+}
+
+function createInvoice($conn) {
+    checkout($conn);
 }
 
 function getInvoice($conn) {
@@ -536,8 +560,6 @@ function getInvoice($conn) {
 
 function getInvoices($conn) {
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-    
-    // التعديل 1: إذا لم يتم تحديد تاريخ، نستخدم تاريخ اليوم كافتراضي
     $searchDate = isset($_GET['searchDate']) && !empty($_GET['searchDate']) ? $_GET['searchDate'] : date('Y-m-d');
 
     $sql = "SELECT DISTINCT i.id, i.total, i.created_at, c.name as customer_name 
@@ -545,7 +567,7 @@ function getInvoices($conn) {
             LEFT JOIN customers c ON i.customer_id = c.id
             LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
             LEFT JOIN products p ON ii.product_id = p.id
-            WHERE DATE(i.created_at) = ?"; // التعديل 2: تصفية النتائج بناء على التاريخ دائماً
+            WHERE DATE(i.created_at) = ?";
 
     $params = [$searchDate];
     $types = 's';
@@ -559,14 +581,10 @@ function getInvoices($conn) {
         $types .= 'sss';
     }
 
-    // التعديل 3: زيادة الحد الأقصى للصفوف إلى 150
     $sql .= " ORDER BY i.created_at DESC LIMIT 150";
 
     $stmt = $conn->prepare($sql);
-
-    // ربط المعاملات بشكل ديناميكي
     $stmt->bind_param($types, ...$params);
-
     $stmt->execute();
     $result = $stmt->get_result();
     $invoices = [];
@@ -581,6 +599,7 @@ function getInvoices($conn) {
 
     echo json_encode(['success' => true, 'data' => $invoices]);
 }
+
 function getDeliverySettings($conn) {
     $sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('deliveryInsideCity', 'deliveryOutsideCity')";
     $result = $conn->query($sql);
@@ -633,7 +652,6 @@ function updateDeliverySettings($conn) {
 }
 
 function getLowStockProducts($conn) {
-    // جلب المنتجات المنتهية والمنخفضة معاً
     $sql = "SELECT id, name, quantity, category_id 
             FROM products 
             WHERE quantity <= 10
@@ -642,13 +660,12 @@ function getLowStockProducts($conn) {
     $result = $conn->query($sql);
     $products = [];
     
-    if ($result->num_rows > 0) {
+    if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $products[] = $row;
         }
     }
     
-    // تصنيف المنتجات
     $outOfStock = array_filter($products, function($p) { return $p['quantity'] == 0; });
     $critical = array_filter($products, function($p) { return $p['quantity'] > 0 && $p['quantity'] <= 5; });
     $low = array_filter($products, function($p) { return $p['quantity'] > 5 && $p['quantity'] <= 10; });
@@ -665,5 +682,223 @@ function getLowStockProducts($conn) {
         'lowCount' => count($low)
     ]);
 }
+
+function getDashboardStats($conn) {
+    try {
+        $stats = [];
+        
+        $today = date('Y-m-d');
+        $yesterday = date('Y-m-d', strtotime('-1 day'));
+        
+        $result = $conn->query("SELECT COALESCE(SUM(total), 0) as revenue FROM invoices WHERE DATE(created_at) = '$today'");
+        $stats['todayRevenue'] = $result ? $result->fetch_assoc()['revenue'] : 0;
+        
+        $result = $conn->query("SELECT COALESCE(SUM(total), 0) as revenue FROM invoices WHERE DATE(created_at) = '$yesterday'");
+        $stats['yesterdayRevenue'] = $result ? $result->fetch_assoc()['revenue'] : 0;
+        
+        $result = $conn->query("SELECT COUNT(*) as count FROM invoices WHERE DATE(created_at) = '$today'");
+        $stats['todayOrders'] = $result ? $result->fetch_assoc()['count'] : 0;
+        
+        $result = $conn->query("SELECT COUNT(*) as count FROM invoices WHERE DATE(created_at) = '$yesterday'");
+        $stats['yesterdayOrders'] = $result ? $result->fetch_assoc()['count'] : 0;
+        
+        $stats['avgOrderValue'] = $stats['todayOrders'] > 0 ? $stats['todayRevenue'] / $stats['todayOrders'] : 0;
+        
+        $thisMonth = date('Y-m');
+        $lastMonth = date('Y-m', strtotime('-1 month'));
+        
+        $result = $conn->query("SELECT COALESCE(SUM(total), 0) as revenue FROM invoices WHERE DATE_FORMAT(created_at, '%Y-%m') = '$thisMonth'");
+        $stats['thisMonthRevenue'] = $result ? $result->fetch_assoc()['revenue'] : 0;
+        
+        $result = $conn->query("SELECT COALESCE(SUM(total), 0) as revenue FROM invoices WHERE DATE_FORMAT(created_at, '%Y-%m') = '$lastMonth'");
+        $stats['lastMonthRevenue'] = $result ? $result->fetch_assoc()['revenue'] : 0;
+        
+        $result = $conn->query("SELECT COUNT(*) as count FROM products");
+        $stats['totalProducts'] = $result ? $result->fetch_assoc()['count'] : 0;
+        
+        $result = $conn->query("SELECT COUNT(*) as count FROM products WHERE quantity <= 10 AND quantity > 0");
+        $stats['lowStock'] = $result ? $result->fetch_assoc()['count'] : 0;
+        
+        $result = $conn->query("SELECT COUNT(*) as count FROM products WHERE quantity = 0");
+        $stats['outOfStock'] = $result ? $result->fetch_assoc()['count'] : 0;
+        
+        $result = $conn->query("SELECT COUNT(*) as count FROM customers");
+        $stats['totalCustomers'] = $result ? $result->fetch_assoc()['count'] : 0;
+        
+        $result = $conn->query("SELECT COUNT(*) as count FROM customers WHERE DATE_FORMAT(created_at, '%Y-%m') = '$thisMonth'");
+        $stats['newCustomersThisMonth'] = $result ? $result->fetch_assoc()['count'] : 0;
+        
+        echo json_encode(['success' => true, 'data' => $stats]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب الإحصائيات: ' . $e->getMessage()]);
+    }
+}
+
+function getSalesChart($conn) {
+    try {
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 7;
+        
+        $sql = "SELECT DATE(created_at) as date, 
+                       COUNT(*) as orders, 
+                       COALESCE(SUM(total), 0) as revenue
+                FROM invoices
+                WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                GROUP BY DATE(created_at)
+                ORDER BY date ASC";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $days);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = [];
+        
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $data[] = $row;
+            }
+        }
+        $stmt->close();
+        
+        echo json_encode(['success' => true, 'data' => $data]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب بيانات المبيعات: ' . $e->getMessage()]);
+    }
+}
+
+function getTopProducts($conn) {
+    try {
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 7;
+        
+        $sql = "SELECT p.id, p.name, p.quantity as stock,
+                       COALESCE(SUM(ii.quantity), 0) as units_sold,
+                       COALESCE(SUM(ii.quantity * ii.price), 0) as revenue
+                FROM products p
+                LEFT JOIN invoice_items ii ON p.id = ii.product_id
+                LEFT JOIN invoices i ON ii.invoice_id = i.id
+                WHERE i.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) OR i.created_at IS NULL
+                GROUP BY p.id
+                HAVING units_sold > 0
+                ORDER BY units_sold DESC
+                LIMIT 10";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $days);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $products = [];
+        
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $products[] = $row;
+            }
+        }
+        $stmt->close();
+        
+        echo json_encode(['success' => true, 'data' => $products]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب المنتجات الأكثر مبيعاً: ' . $e->getMessage()]);
+    }
+}
+
+function getCategorySales($conn) {
+    try {
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+        
+        $sql = "SELECT c.name as category,
+                       COALESCE(SUM(ii.quantity * ii.price), 0) as revenue,
+                       COALESCE(SUM(ii.quantity), 0) as units_sold
+                FROM categories c
+                LEFT JOIN products p ON c.id = p.category_id
+                LEFT JOIN invoice_items ii ON p.id = ii.product_id
+                LEFT JOIN invoices i ON ii.invoice_id = i.id
+                WHERE i.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) OR i.created_at IS NULL
+                GROUP BY c.id
+                HAVING revenue > 0
+                ORDER BY revenue DESC";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $days);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $categories = [];
+        
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $categories[] = $row;
+            }
+        }
+        $stmt->close();
+        
+        echo json_encode(['success' => true, 'data' => $categories]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب مبيعات الفئات: ' . $e->getMessage()]);
+    }
+}
+
+function getRecentInvoices($conn) {
+    try {
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+        
+        $sql = "SELECT i.id, i.total, i.created_at,
+                       c.name as customer_name
+                FROM invoices i
+                LEFT JOIN customers c ON i.customer_id = c.id
+                ORDER BY i.created_at DESC
+                LIMIT ?";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $invoices = [];
+        
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $invoices[] = $row;
+            }
+        }
+        $stmt->close();
+        
+        echo json_encode(['success' => true, 'data' => $invoices]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب الفواتير الأخيرة: ' . $e->getMessage()]);
+    }
+}
+
+function getTopCustomers($conn) {
+    try {
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+        
+        $sql = "SELECT c.id, c.name, c.phone,
+                       COUNT(i.id) as order_count,
+                       COALESCE(SUM(i.total), 0) as total_spent,
+                       MAX(i.created_at) as last_purchase
+                FROM customers c
+                LEFT JOIN invoices i ON c.id = i.customer_id
+                WHERE i.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                GROUP BY c.id
+                HAVING order_count > 0
+                ORDER BY total_spent DESC
+                LIMIT 5";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $days);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $customers = [];
+        
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $customers[] = $row;
+            }
+        }
+        $stmt->close();
+        
+        echo json_encode(['success' => true, 'data' => $customers]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب أفضل العملاء: ' . $e->getMessage()]);
+    }
+}
+
 $conn->close();
 ?>
