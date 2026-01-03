@@ -15,7 +15,7 @@ if (!isset($shopName)) {
             </div>
             <div>
                 <h1 class="text-lg font-bold text-white dark:text-white text-gray-900"><?php echo htmlspecialchars($shopName); ?></h1>
-                <p class="text-xs text-gray-400 dark:text-gray-400 text-gray-600">نظام إدارة المتاجر</p>
+                <p class="text-xs text-gray-400 dark:text-gray-400 text-gray-600">نظام إدارة المتاجر الذكي</p>
             </div>
         </div>
     </div>

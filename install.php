@@ -445,6 +445,19 @@ foreach ($delivery_inserts as $q) {
     }
 }
 
+// إضافة أعمدة التوصيل للفواتير
+$check_delivery_city = $conn->query("SHOW COLUMNS FROM invoices LIKE 'delivery_city'");
+if ($check_delivery_city->num_rows == 0) {
+    $sql_alter_invoices = "ALTER TABLE invoices 
+                          ADD COLUMN delivery_city VARCHAR(100) NULL AFTER total,
+                          ADD COLUMN delivery_cost DECIMAL(10, 2) NULL DEFAULT 0 AFTER delivery_city";
+    if ($conn->query($sql_alter_invoices) === TRUE) {
+        echo "Columns 'delivery_city' and 'delivery_cost' added to invoices table successfully.<br>";
+    } else {
+        echo "Error adding columns to invoices table: " . $conn->error . "<br>";
+    }
+}
+
 echo "<h3>Delivery settings added successfully</h3>";
 
 $conn->close();

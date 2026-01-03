@@ -219,7 +219,6 @@ html:not(.dark) #delivery-options label:has(:checked) {
         <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
 
         <div class="p-6 bg-dark-surface border-t border-white/5">
-            <!-- Delivery Options -->
             <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-gray-400">التوصيل</span>
@@ -228,21 +227,23 @@ html:not(.dark) #delivery-options label:has(:checked) {
                         <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                 </div>
-                <div id="delivery-options" class="hidden grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-white/5">
-                    <label class="flex items-center justify-center p-2 rounded-lg border border-white/10 cursor-pointer bg-dark/30 hover:bg-dark/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-                        <input type="radio" name="delivery-type" value="<?php echo $deliveryInsideCity; ?>" class="hidden" checked>
-                        <div class="text-xs text-center">
-                            <div class="font-bold text-white mb-1">داخل المدينة</div>
-                            <div class="text-gray-400 text-[10px]">+<?php echo $deliveryInsideCity; ?> <?php echo $currency; ?></div>
-                        </div>
-                    </label>
-                    <label class="flex items-center justify-center p-2 rounded-lg border border-white/10 cursor-pointer bg-dark/30 hover:bg-dark/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-                        <input type="radio" name="delivery-type" value="<?php echo $deliveryOutsideCity; ?>" class="hidden">
-                        <div class="text-xs text-center">
-                            <div class="font-bold text-white mb-1">خارج المدينة</div>
-                            <div class="text-gray-400 text-[10px]">+<?php echo $deliveryOutsideCity; ?> <?php echo $currency; ?></div>
-                        </div>
-                    </label>
+                <div id="delivery-options" class="hidden mt-3 space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1.5">اختر المدينة</label>
+                        <select id="delivery-city-select" 
+                                class="w-full bg-dark/50 border border-white/10 text-white text-right px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
+                            <option value="">-- اختر المدينة --</option>
+                            <option value="inside|<?php echo $deliveryInsideCity; ?>">داخل المدينة (<?php echo $deliveryInsideCity; ?> <?php echo $currency; ?>)</option>
+                            <option value="outside|<?php echo $deliveryOutsideCity; ?>">خارج المدينة (<?php echo $deliveryOutsideCity; ?> <?php echo $currency; ?>)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1.5">اسم المدينة (اختياري)</label>
+                        <input type="text" id="delivery-city-name" 
+                            placeholder="مثال: الرباط، الدار البيضاء..."
+                            class="w-full bg-dark/50 border border-white/10 text-white text-right px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
+                        <p class="text-xs text-gray-500 mt-1">سيتم حفظه مع الفاتورة للمرجع</p>
+                    </div>
                 </div>
             </div>
 
@@ -866,8 +867,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (deliveryToggle.checked) {
             deliveryOptionsDiv.classList.remove('hidden');
             cartDeliveryRow.classList.remove('hidden');
-            const selectedType = document.querySelector('input[name="delivery-type"]:checked');
-            deliveryCost = selectedType ? parseFloat(selectedType.value) : 0;
+            
+            // قراءة التكلفة من القائمة المنسدلة
+            const citySelect = document.getElementById('delivery-city-select');
+            if (citySelect && citySelect.value) {
+                const parts = citySelect.value.split('|');
+                deliveryCost = parts[1] ? parseFloat(parts[1]) : 0;
+            } else {
+                deliveryCost = 0;
+            }
         } else {
             deliveryOptionsDiv.classList.add('hidden');
             cartDeliveryRow.classList.add('hidden');
@@ -877,8 +885,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     deliveryToggle.addEventListener('change', updateDeliveryState);
-    deliveryTypeInputs.forEach(input => {
-        input.addEventListener('change', updateDeliveryState);
+
+    // إضافة مستمع للتغيير في القائمة المنسدلة
+    const citySelect = document.getElementById('delivery-city-select');
+    if (citySelect) {
+        citySelect.addEventListener('change', function() {
+            if (deliveryToggle.checked) {
+                const parts = this.value.split('|');
+                deliveryCost = parts[1] ? parseFloat(parts[1]) : 0;
+                updateTotals();
+            }
+        });
+    }
+
+    deliveryToggle.addEventListener('change', updateDeliveryState);
+
+    // إضافة مستمع للتغيير في حقل التكلفة
+    document.addEventListener('DOMContentLoaded', function() {
+        const costInput = document.getElementById('delivery-cost-input');
+        if (costInput) {
+            costInput.addEventListener('input', function() {
+                if (deliveryToggle.checked) {
+                    deliveryCost = parseFloat(this.value) || 0;
+                    updateTotals();
+                }
+            });
+        }
     });
 
     function updateTotals() {
@@ -993,31 +1025,52 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // التحقق من اختيار المدينة عند تفعيل التوصيل
+        const citySelect = document.getElementById('delivery-city-select');
+        const cityNameInput = document.getElementById('delivery-city-name');
+        
+        let deliveryCity = null;
+        let deliveryCostValue = 0;
+        let deliveryType = null;
+        
+        if (deliveryToggle.checked) {
+            if (!citySelect || !citySelect.value) {
+                showToast('⚠️ الرجاء اختيار نوع التوصيل (داخل/خارج المدينة)', false);
+                citySelect.focus();
+                return;
+            }
+            
+            const parts = citySelect.value.split('|');
+            deliveryType = parts[0]; // inside أو outside
+            deliveryCostValue = parseFloat(parts[1]) || 0;
+            
+            // استخدام اسم المدينة المدخل أو النوع الافتراضي
+            if (cityNameInput && cityNameInput.value.trim()) {
+                deliveryCity = cityNameInput.value.trim();
+            } else {
+                deliveryCity = deliveryType === 'inside' ? 'داخل المدينة' : 'خارج المدينة';
+            }
+        }
+
         if (!confirm('هل أنت متأكد من إتمام عملية البيع؟')) {
             return;
         }
 
-        const deliveryType = document.querySelector('input[name="delivery-type"]:checked');
-        const deliveryCostValue = (deliveryToggle.checked && deliveryType) ? parseFloat(deliveryType.value) : 0;
-
-        const orderData = {
-            items: cart.map(item => ({
-                id: item.id,
-                quantity: item.quantity,
-                price: item.price
-            })),
-            customer_id: selectedCustomer ? selectedCustomer.id : null,
-            delivery_cost: deliveryCostValue
-        };
+        // حساب المجاميع قبل إرسال البيانات
+        const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        const tax = taxEnabled ? subtotal * taxRate : 0;
+        const total = subtotal + tax + deliveryCostValue;
 
         try {
             showLoading('جاري معالجة عملية البيع...');
             const response = await fetch('api.php?action=checkout', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     customer_id: selectedCustomer ? selectedCustomer.id : null,
                     total: total,
-                    delivery_cost: deliveryCost,
+                    delivery_cost: deliveryCostValue,
+                    delivery_city: deliveryCity,
                     items: cart
                 }),
             });
@@ -1030,7 +1083,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     items: cart,
                     subtotal: subtotal,
                     tax: tax,
-                    delivery: deliveryCost,
+                    delivery: deliveryCostValue,
+                    deliveryCity: deliveryCity,
                     total: total,
                     date: new Date()
                 };
@@ -1041,6 +1095,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 // Reset Delivery
                 deliveryToggle.checked = false;
+                if (citySelect) citySelect.value = '';
+                if (cityNameInput) cityNameInput.value = '';
                 updateDeliveryState();
                 
                 customerNameDisplay.textContent = 'عميل نقدي';
@@ -1054,14 +1110,15 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('خطأ في إنشاء الفاتورة:', error);
             showToast('حدث خطأ أثناء إنشاء الفاتورة', false);
+        } finally {
+            hideLoading();
         }
     }
-    
     checkoutBtn.addEventListener('click', processCheckout);
 
     function displayInvoice(data) {
         document.getElementById('invoice-number').textContent = `#${String(data.id).padStart(6, '0')}`;
-    
+
         // توليد الباركود
         try {
             JsBarcode("#invoice-barcode", String(data.id).padStart(6, '0'), {
@@ -1074,10 +1131,9 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (e) {
             console.error('Error generating barcode:', e);
         }
-    
+
         document.getElementById('invoice-date').textContent = formatDualDate(data.date);
 
-        // إضافة الوقت
         const formattedTime = data.date.toLocaleTimeString('ar-SA', { 
             hour: '2-digit', 
             minute: '2-digit',
@@ -1091,9 +1147,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p><strong>الاسم:</strong> ${data.customer.name}</p>
                 ${data.customer.phone ? `<p><strong>الهاتف:</strong> ${data.customer.phone}</p>` : ''}
                 ${data.customer.email ? `<p><strong>البريد:</strong> ${data.customer.email}</p>` : ''}
+                ${data.deliveryCity ? `<p><strong>التوصيل:</strong> ${data.deliveryCity}</p>` : ''}
             `;
         } else {
-            customerInfo.innerHTML = '<p>عميل نقدي</p>';
+            customerInfo.innerHTML = `
+                <p>عميل نقدي</p>
+                ${data.deliveryCity ? `<p><strong>التوصيل:</strong> ${data.deliveryCity}</p>` : ''}
+            `;
         }
         
         const itemsTable = document.getElementById('invoice-items');
@@ -1215,9 +1275,15 @@ document.addEventListener('DOMContentLoaded', function () {
     ${currentInvoiceData.customer ? `
     <div class="customer-section">
         <div style="font-weight: bold;">العميل: ${currentInvoiceData.customer.name}</div>
-        ${currentInvoiceData.customer.phone ? `<div>📞 ${currentInvoiceData.customer.phone}</div>` : ''}
+        ${currentInvoiceData.customer.phone ? `<div>${currentInvoiceData.customer.phone}</div>` : ''}
+        ${currentInvoiceData.deliveryCity ? `<div>${currentInvoiceData.deliveryCity}</div>` : ''}
     </div>
-    ` : '<div class="customer-section"><div>💵 عميل نقدي</div></div>'}
+    ` : `
+    <div class="customer-section">
+        <div>💵 عميل نقدي</div>
+        ${currentInvoiceData.deliveryCity ? `<div>${currentInvoiceData.deliveryCity}</div>` : ''}
+    </div>
+    `}
 
     <div class="items-table">
         <div class="items-header">المنتجات (${currentInvoiceData.items.length})</div>

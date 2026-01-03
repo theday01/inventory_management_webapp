@@ -475,10 +475,11 @@ function checkout($conn) {
     try {
         $customer_id = isset($data['customer_id']) ? (int)$data['customer_id'] : null;
         $delivery_cost = isset($data['delivery_cost']) ? (float)$data['delivery_cost'] : 0;
+        $delivery_city = isset($data['delivery_city']) ? $data['delivery_city'] : null;
         $total = (float)$data['total'];
 
-        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total) VALUES (?, ?)");
-        $stmt->bind_param("id", $customer_id, $total);
+        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("idds", $customer_id, $total, $delivery_cost, $delivery_city);
         $stmt->execute();
         $invoiceId = $stmt->insert_id;
         $stmt->close();
