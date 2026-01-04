@@ -954,7 +954,6 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
 
     <div class="flex h-screen overflow-hidden">
 
-
 <!-- Global Confirm Modal - أضف هذا في نهاية header.php قبل </body> -->
 <div id="global-confirm-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
     <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-md border border-white/10 animate-scale-in">

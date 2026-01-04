@@ -1,6 +1,6 @@
 <?php
 $page_title = 'الفواتير والضريبة';
-$current_page = 'invoices.php';
+$current_page = 'customers.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 

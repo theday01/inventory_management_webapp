@@ -119,6 +119,20 @@ switch ($action) {
     case 'getInventoryStats':
         getInventoryStats($conn);
         break;
+    case 'getNotifications':
+        getNotifications($conn);
+        break;
+    // --- أضف هذه الحالات الجديدة ---
+    case 'markAllNotificationsRead':
+        markAllNotificationsRead($conn);
+        break;
+    case 'markNotificationRead':
+        markNotificationRead($conn);
+        break;
+    case 'deleteNotification':
+        deleteNotification($conn);
+        break;
+    // ----------------------------
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -227,6 +241,9 @@ function restoreProducts($conn) {
         $delete_stmt->close();
 
         $conn->commit();
+        if ($restored_count > 0) {
+            create_notification($conn, "تمت استعادة {$restored_count} منتج من الأرشيف.", "product_restore");
+        }
         echo json_encode(['success' => true, 'message' => "تم استعادة {$restored_count} منتج بنجاح"]);
     } catch (Exception $e) {
         $conn->rollback();
@@ -414,6 +431,10 @@ function bulkDeleteProducts($conn) {
 
         $conn->commit();
         
+        if ($deleted_count > 0) {
+            create_notification($conn, "تمت أرشفة {$deleted_count} منتج.", "product_delete");
+        }
+        
         $response = [
             'success' => true,
             'message' => "تمت أرشفة {$deleted_count} منتج بنجاح",
@@ -577,6 +598,7 @@ function addProduct($conn) {
         }
 
         $conn->commit();
+        create_notification($conn, "تمت إضافة منتج جديد: " . $data['name'], "product_add");
         echo json_encode(['success' => true, 'message' => 'تم إضافة المنتج بنجاح', 'id' => $productId]);
     } catch (Exception $e) {
         $conn->rollback();
@@ -944,6 +966,7 @@ function checkout($conn) {
         $updateStmt->close();
 
         $conn->commit();
+        create_notification($conn, "تم إنشاء فاتورة جديدة برقم: " . $barcode, "new_sale");
         echo json_encode(['success' => true, 'message' => 'تم إنشاء الفاتورة بنجاح', 'invoice_id' => $invoiceId]);
     } catch (Exception $e) {
         $conn->rollback();
@@ -1139,6 +1162,23 @@ function getLowStockProducts($conn) {
     $critical = array_filter($products, function($p) use ($critical_alert) { return $p['quantity'] > 0 && $p['quantity'] <= $critical_alert; });
     $low = array_filter($products, function($p) use ($critical_alert, $low_alert) { return $p['quantity'] > $critical_alert && $p['quantity'] <= $low_alert; });
     
+    // Check if we should create a notification
+    $last_check_query = "SELECT setting_value FROM settings WHERE setting_name = 'last_stock_check_notification'";
+    $last_check_result = $conn->query($last_check_query);
+    $last_check_time = $last_check_result->num_rows > 0 ? $last_check_result->fetch_assoc()['setting_value'] : 0;
+
+    $interval_query = "SELECT setting_value FROM settings WHERE setting_name = 'stockAlertInterval'";
+    $interval_result = $conn->query($interval_query);
+    $interval = $interval_result->num_rows > 0 ? (int)$interval_result->fetch_assoc()['setting_value'] : 20;
+
+    if (time() - $last_check_time > $interval * 60) {
+        $total_low_stock = count($outOfStock) + count($critical) + count($low);
+        if ($total_low_stock > 0) {
+            create_notification($conn, "يوجد {$total_low_stock} منتجًا على وشك النفاد.", "low_stock");
+            $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_stock_check_notification', '" . time() . "') ON DUPLICATE KEY UPDATE setting_value = '" . time() . "'");
+        }
+    }
+
     echo json_encode([
         'success' => true,
         'data' => $products,
@@ -1366,6 +1406,108 @@ function getTopCustomers($conn) {
         echo json_encode(['success' => true, 'data' => $customers]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => 'خطأ في جلب أفضل العملاء: ' . $e->getMessage()]);
+    }
+}
+
+function create_notification($conn, $message, $type) {
+    $stmt = $conn->prepare("INSERT INTO notifications (message, type) VALUES (?, ?)");
+    $stmt->bind_param("ss", $message, $type);
+    $stmt->execute();
+    $stmt->close();
+}
+
+function getNotifications($conn) {
+    $limit = 20; 
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all'; // استقبال الفلتر
+    $offset = ($page - 1) * $limit;
+
+    // بناء شرط الاستعلام بناءً على الفلتر
+    $whereClause = "";
+    if ($filter === 'unread') {
+        $whereClause = "WHERE status = 'unread'";
+    } elseif ($filter === 'read') {
+        $whereClause = "WHERE status = 'read'";
+    }
+
+    // جلب العدد الإجمالي للإشعارات (مع الفلتر) لحساب عدد الصفحات
+    $countSql = "SELECT COUNT(*) as count FROM notifications $whereClause";
+    $total_result = $conn->query($countSql);
+    $total_rows = $total_result->fetch_assoc()['count'];
+    $total_pages = ceil($total_rows / $limit);
+
+    // جلب عدد الإشعارات غير المقروءة (للعرض في العداد الأحمر دائماً)
+    $unread_result = $conn->query("SELECT COUNT(*) as count FROM notifications WHERE status = 'unread'");
+    $unread_count = $unread_result->fetch_assoc()['count'];
+
+    // جلب الإشعارات للصفحة الحالية مع الفلتر
+    $sql = "SELECT * FROM notifications $whereClause ORDER BY (status = 'unread') DESC, created_at DESC LIMIT ? OFFSET ?";
+    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $limit, $offset);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $notifications = [];
+    while ($row = $result->fetch_assoc()) {
+        $notifications[] = $row;
+    }
+    $stmt->close();
+
+    echo json_encode([
+        'success' => true, 
+        'data' => $notifications,
+        'unread_count' => $unread_count,
+        'pagination' => [
+            'current_page' => $page,
+            'total_pages' => $total_pages,
+            'total_items' => $total_rows
+        ]
+    ]);
+}
+
+function markNotificationRead($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $id = isset($data['id']) ? (int)$data['id'] : 0;
+
+    if ($id > 0) {
+        $stmt = $conn->prepare("UPDATE notifications SET status = 'read' WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'فشل التحديث']);
+        }
+        $stmt->close();
+    } else {
+        echo json_encode(['success' => false, 'message' => 'معرف غير صالح']);
+    }
+}
+
+function deleteNotification($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $id = isset($data['id']) ? (int)$data['id'] : 0;
+
+    if ($id > 0) {
+        $stmt = $conn->prepare("DELETE FROM notifications WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'فشل الحذف']);
+        }
+        $stmt->close();
+    } else {
+        echo json_encode(['success' => false, 'message' => 'معرف غير صالح']);
+    }
+}
+
+function markAllNotificationsRead($conn) {
+    // تحديث كل الإشعارات التي حالتها 'unread' لتصبح 'read'
+    if ($conn->query("UPDATE notifications SET status = 'read' WHERE status = 'unread'")) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'فشل في تحديث الإشعارات']);
     }
 }
 

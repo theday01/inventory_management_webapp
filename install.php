@@ -116,6 +116,14 @@ $sql_removed_products = "CREATE TABLE IF NOT EXISTS removed_products (
     removed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
 
+$sql_notifications = "CREATE TABLE IF NOT EXISTS notifications (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    message TEXT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'unread',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)";
+
 // Execute table creation queries
 $tables = [
     'users' => $sql_users,
@@ -128,6 +136,7 @@ $tables = [
     'categories' => $sql_categories,
     'category_fields' => $sql_category_fields,
     'product_field_values' => $sql_product_field_values,
+    'notifications' => $sql_notifications,
 ];
 
 foreach ($tables as $name => $sql) {

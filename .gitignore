@@ -14,3 +14,4 @@ node_modules/
 add_test_data.php
 add_test_invoices.php
 add_test_customers.php
+notif_test.php
