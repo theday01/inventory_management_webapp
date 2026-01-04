@@ -1,5 +1,5 @@
 <?php
-$page_title = 'المنتجات';
+$page_title = 'إدارة المخزون';
 $current_page = 'products.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';

@@ -208,7 +208,7 @@ function bulkDeleteProducts($conn) {
             return;
         }
 
-        $in_clause = implode(',', array_fill(0, count($product_ids), '?'));
+        $placeholders = implode(',', array_fill(0, count($product_ids), '?'));
         $types = str_repeat('i', count($product_ids));
         
         // الحصول على معلومات المنتجات قبل الحذف
@@ -216,9 +216,14 @@ function bulkDeleteProducts($conn) {
                      COUNT(ii.id) as invoice_count
                      FROM products p
                      LEFT JOIN invoice_items ii ON p.id = ii.product_id
-                     WHERE p.id IN ($in_clause)
-                     GROUP BY p.id";
+                     WHERE p.id IN ($placeholders)
+                     GROUP BY p.id, p.name";
+        
         $info_stmt = $conn->prepare($info_sql);
+        if (!$info_stmt) {
+            throw new Exception('فشل في تحضير استعلام المعلومات: ' . $conn->error);
+        }
+        
         $info_stmt->bind_param($types, ...$product_ids);
         $info_stmt->execute();
         $result = $info_stmt->get_result();
@@ -237,8 +242,13 @@ function bulkDeleteProducts($conn) {
         $info_stmt->close();
 
         // حذف جميع المنتجات المحددة
-        $delete_sql = "DELETE FROM products WHERE id IN ($in_clause)";
+        $delete_sql = "DELETE FROM products WHERE id IN ($placeholders)";
         $delete_stmt = $conn->prepare($delete_sql);
+        
+        if (!$delete_stmt) {
+            throw new Exception('فشل في تحضير استعلام الحذف: ' . $conn->error);
+        }
+        
         $delete_stmt->bind_param($types, ...$product_ids);
 
         if ($delete_stmt->execute()) {
@@ -267,7 +277,7 @@ function bulkDeleteProducts($conn) {
             
             echo json_encode($response);
         } else {
-            throw new Exception('فشل في تنفيذ استعلام الحذف: ' . $conn->error);
+            throw new Exception('فشل في تنفيذ استعلام الحذف: ' . $delete_stmt->error);
         }
         
     } catch (Exception $e) {
@@ -277,6 +287,7 @@ function bulkDeleteProducts($conn) {
         ]);
     }
 }
+
 function getProducts($conn) {
     $search = isset($_GET['search']) ? $_GET['search'] : '';
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
@@ -706,9 +717,10 @@ function checkout($conn) {
         $invoiceId = $stmt->insert_id;
         $stmt->close();
 
-        $stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)");
         foreach ($data['items'] as $item) {
             $product_id = (int)$item['id'];
+            $product_name = $item['name'];
             $quantity = (int)$item['quantity'];
             $price = (float)$item['price'];
             
@@ -730,7 +742,7 @@ function checkout($conn) {
                 throw new Exception("الكمية المتوفرة غير كافية للمنتج (متوفر: " . $currentStock . ")");
             }
             
-            $stmt->bind_param("iiid", $invoiceId, $product_id, $quantity, $price);
+            $stmt->bind_param("iisid", $invoiceId, $product_id, $product_name, $quantity, $price);
             $stmt->execute();
 
             // تحديث المخزون بطريقة آمنة - منع الكميات السالبة
@@ -788,10 +800,11 @@ function getInvoice($conn) {
         return;
     }
 
-    $stmt = $conn->prepare("SELECT ii.*, p.name as product_name 
-                            FROM invoice_items ii 
-                            JOIN products p ON ii.product_id = p.id 
-                            WHERE ii.invoice_id = ?");
+    $stmt = $conn->prepare("SELECT ii.*, 
+                        COALESCE(ii.product_name, p.name, 'منتج محذوف') as product_name 
+                        FROM invoice_items ii 
+                        LEFT JOIN products p ON ii.product_id = p.id 
+                        WHERE ii.invoice_id = ?");
     $stmt->bind_param("i", $invoice_id);
     $stmt->execute();
     $result = $stmt->get_result();

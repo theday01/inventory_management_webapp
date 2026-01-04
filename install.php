@@ -67,10 +67,11 @@ $sql_invoice_items = "CREATE TABLE IF NOT EXISTS invoice_items (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     invoice_id INT(6) UNSIGNED,
     product_id INT(6) UNSIGNED,
+    product_name VARCHAR(255) NOT NULL,
     quantity INT(6) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
-    FOREIGN KEY (invoice_id) REFERENCES invoices(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
+    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 )";
 
 $sql_settings = "CREATE TABLE IF NOT EXISTS settings (
@@ -484,5 +485,31 @@ if ($check_barcode->num_rows == 0) {
         echo "Error adding column 'barcode' to invoices table: " . $conn->error . "<br>";
     }
 }
+
+// تحديث جدول invoice_items لإضافة حقل product_name
+$check_product_name = $conn->query("SHOW COLUMNS FROM invoice_items LIKE 'product_name'");
+if ($check_product_name->num_rows == 0) {
+    $sql_alter_invoice_items = "ALTER TABLE invoice_items ADD COLUMN product_name VARCHAR(255) NOT NULL DEFAULT 'منتج محذوف' AFTER product_id";
+    if ($conn->query($sql_alter_invoice_items) === TRUE) {
+        echo "Column 'product_name' added to invoice_items table successfully.<br>";
+        
+        // تحديث الفواتير القديمة بأسماء المنتجات من جدول products
+        $update_old_items = "UPDATE invoice_items ii 
+                            LEFT JOIN products p ON ii.product_id = p.id 
+                            SET ii.product_name = COALESCE(p.name, 'منتج محذوف')";
+        if ($conn->query($update_old_items) === TRUE) {
+            echo "Old invoice items updated with product names successfully.<br>";
+        }
+    } else {
+        echo "Error adding column 'product_name': " . $conn->error . "<br>";
+    }
+}
+
+// تعديل FOREIGN KEY لمنع حذف بيانات الفواتير عند حذف المنتج
+$conn->query("ALTER TABLE invoice_items DROP FOREIGN KEY invoice_items_ibfk_2");
+$conn->query("ALTER TABLE invoice_items ADD CONSTRAINT invoice_items_ibfk_2 
+              FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL");
+echo "Foreign key constraint updated to prevent data loss on product deletion.<br>";
+
 $conn->close();
 ?>
