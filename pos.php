@@ -126,77 +126,91 @@ $criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc(
         to { transform: scale(1); opacity: 1; }
     }
 
-@media print {
-    /* 1. إعدادات الصفحة الأساسية */
-    @page {
-        margin: 0;
-        size: auto;
+    @media print {
+    /* 1. ضبط إعدادات الصفحة الأساسية */
+    @page { 
+        size: auto;   /* auto is the initial value */
+        margin: 0mm;  /* this affects the margin in the printer settings */
     }
 
-    body {
-        margin: 0;
-        padding: 0;
+    html, body {
+        height: auto !important;
+        overflow: visible !important;
         background-color: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
-    /* 2. إخفاء كل عناصر الموقع تماماً */
+    /* 2. إخفاء كل شيء في البداية */
     body * {
         visibility: hidden;
-        height: 0; /* لضمان عدم حجز مساحة */
-        overflow: hidden;
     }
 
-    /* 3. استثناء نافذة الفاتورة ومحتوياتها */
+    /* 3. إظهار نافذة الفاتورة ومحتوياتها */
     #invoice-modal, 
     #invoice-modal * {
-        visibility: visible !important;
-        height: auto !important; /* استعادة الطول الطبيعي */
-        overflow: visible !important; /* إظهار المحتوى المخفي */
+        visibility: visible;
     }
 
-    /* 4. تنسيق حاوية الفاتورة لتملأ الورقة */
+    /* 4. ضبط موضع النافذة لتأخذ كامل الورقة */
     #invoice-modal {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
-        margin: 0 !important;
-        padding: 10px !important; /* مسافة بسيطة من الحواف */
-        background: white !important;
-        z-index: 999999 !important;
+        /* هذا السطر مهم جداً لمنع قص المحتوى */
+        height: auto !important;
+        min-height: 100% !important;
+        overflow: visible !important;
         display: block !important;
+        background: white !important;
+        z-index: 9999 !important;
     }
 
-    /* 5. معالجة قائمة المنتجات الطويلة (أهم جزء) */
-    /* هذا الكود يلغي السكرول ويجبر القائمة على التمدد */
-    #invoice-items-list, 
-    .overflow-y-auto,
-    .max-h-96,
-    .max-h-[60vh] {
+    /* 5. أهم خطوة: إلغاء التمرير والارتفاع الثابت لأي عنصر داخل الفاتورة */
+    /* هذا سيجعل قائمة المنتجات تتمدد للأسفل بدلاً من الاختفاء */
+    #invoice-modal .overflow-y-auto,
+    #invoice-modal .max-h-96, /* إذا كنت تستخدم Tailwind */
+    .invoice-items-scrollable,
+    .modal-content,
+    div {
         max-height: none !important;
         height: auto !important;
         overflow: visible !important;
-        display: block !important;
     }
 
-    /* 6. إخفاء العناصر غير المرغوب فيها داخل الفاتورة */
-    #invoice-modal button,     /* أزرار الإغلاق والطباعة */
-    .no-print,                /* أي عنصر يحمل هذا الكلاس */
-    header, aside, footer,    /* العناصر الهيكلية */
-    ::-webkit-scrollbar {     /* إخفاء شريط التمرير */
+    /* 6. إخفاء العناصر غير المرغوبة */
+    .no-print, 
+    button, 
+    #close-invoice-modal, 
+    .bg-gradient-to-r, /* الهيدر الملون */
+    footer {
         display: none !important;
     }
-    
-    /* 7. تحسينات للجدول */
+
+    /* 7. تحسينات الجداول لمنع تكسر الصفوف بين الصفحات */
     table {
         width: 100% !important;
         border-collapse: collapse !important;
     }
-    th, td {
-        border: 1px solid #ddd !important; /* حدود واضحة في الطباعة */
-        padding: 4px !important;
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    thead {
+        display: table-header-group;
+    }
+    tfoot {
+        display: table-footer-group;
+    }
+    
+    /* ضمان أن النصوص سوداء بالكامل للوضوح */
+    * {
+        color: black !important;
+        text-shadow: none !important;
     }
 }
+
 .invoice-modal-content {
     max-height: 80vh;
     overflow-y: auto;
@@ -2076,34 +2090,50 @@ document.addEventListener('DOMContentLoaded', function () {
             const imgWidth = pdfWidth;
             const imgHeight = (canvas.height * pdfWidth) / canvas.width;
             
+            // If image is taller than a single PDF page, split it into slices
+            // and add a small gap between pages (top + bottom) for readability.
             if (imgHeight > pdfHeight) {
-                let heightLeft = imgHeight;
-                let position = 0;
-                let page = 0;
-                
-                while (heightLeft > 0) {
-                    if (page > 0) {
-                        pdf.addPage();
-                    }
-                    
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pdfHeight;
-                    position -= pdfHeight;
-                    page++;
+                const gapMm = 10; // total gap between pages in mm
+                const topMargin = gapMm / 2; // top margin on each page in mm
+
+                const pxPerMm = canvas.width / pdfWidth; // canvas px per mm
+                const sliceHeightPx = Math.floor((pdfHeight - gapMm) * pxPerMm);
+
+                let remainingHeightPx = canvas.height;
+                let pageIndex = 0;
+
+                while (remainingHeightPx > 0) {
+                    const sy = pageIndex * sliceHeightPx;
+                    const sh = Math.min(sliceHeightPx, remainingHeightPx);
+
+                    const tmpCanvas = document.createElement('canvas');
+                    tmpCanvas.width = canvas.width;
+                    tmpCanvas.height = sh;
+                    const tmpCtx = tmpCanvas.getContext('2d');
+                    tmpCtx.fillStyle = '#ffffff';
+                    tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+                    tmpCtx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+
+                    const imgDataPage = tmpCanvas.toDataURL('image/png');
+                    const pageImgHeightMm = (sh * pdfWidth) / canvas.width;
+
+                    if (pageIndex > 0) pdf.addPage();
+
+                    pdf.addImage(imgDataPage, 'PNG', 0, topMargin, pdfWidth, pageImgHeightMm);
+
+                    remainingHeightPx -= sh;
+                    pageIndex++;
                 }
             } else {
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                // For single-page content, place it with a small top margin as well
+                const gapMm = 10;
+                const topMargin = gapMm / 2;
+                pdf.addImage(imgData, 'PNG', 0, topMargin, imgWidth, imgHeight);
             }
             
             pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
             
             showToast('تم تحميل الفاتورة بصيغة PDF', true);
-            
-            // إغلاق Modal وتحديث المنتجات بعد التحميل
-            setTimeout(() => {
-                invoiceModal.classList.add('hidden');
-                loadProducts();
-            }, 1000);
         } catch (error) {
             console.error('خطأ في تحميل PDF:', error);
             showToast('فشل في تحميل PDF', false);

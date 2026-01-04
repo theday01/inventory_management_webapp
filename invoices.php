@@ -36,48 +36,90 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
 <style>
 @media print {
-    /* إخفاء كل شيء ما عدا المودال */
-    body > * {
-        display: none !important;
+    /* 1. ضبط إعدادات الصفحة الأساسية */
+    @page { 
+        size: auto;   /* auto is the initial value */
+        margin: 0mm;  /* this affects the margin in the printer settings */
     }
-    
-    /* استثناء المودال الخاص بتفاصيل الفاتورة */
-    #invoice-details-modal {
-        display: block !important;
-        visibility: visible !important;
+
+    html, body {
+        height: auto !important;
+        overflow: visible !important;
+        background-color: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 2. إخفاء كل شيء في البداية */
+    body * {
+        visibility: hidden;
+    }
+
+    /* 3. إظهار نافذة الفاتورة ومحتوياتها */
+    #invoice-modal, 
+    #invoice-modal * {
+        visibility: visible;
+    }
+
+    /* 4. ضبط موضع النافذة لتأخذ كامل الورقة */
+    #invoice-modal {
         position: absolute !important;
-        top: 0 !important;
         left: 0 !important;
+        top: 0 !important;
         width: 100% !important;
+        /* هذا السطر مهم جداً لمنع قص المحتوى */
         height: auto !important;
-        z-index: 9999 !important;
+        min-height: 100% !important;
+        overflow: visible !important;
+        display: block !important;
         background: white !important;
-        overflow: visible !important;
+        z-index: 9999 !important;
     }
 
-    /* التأكد من ظهور المحتوى الداخلي */
-    #invoice-details-modal * {
-        visibility: visible !important;
-    }
-
-    /* إصلاح مشكلة اختفاء المنتجات (إلغاء السكرول) */
-    #invoice-details-modal .overflow-y-auto,
-    #invoice-items-body {
+    /* 5. أهم خطوة: إلغاء التمرير والارتفاع الثابت لأي عنصر داخل الفاتورة */
+    /* هذا سيجعل قائمة المنتجات تتمدد للأسفل بدلاً من الاختفاء */
+    #invoice-modal .overflow-y-auto,
+    #invoice-modal .max-h-96, /* إذا كنت تستخدم Tailwind */
+    .invoice-items-scrollable,
+    .modal-content,
+    div {
         max-height: none !important;
-        overflow: visible !important;
         height: auto !important;
+        overflow: visible !important;
     }
 
-    /* إخفاء الأزرار (طباعة، إغلاق) */
-    button, .no-print {
+    /* 6. إخفاء العناصر غير المرغوبة */
+    .no-print, 
+    button, 
+    #close-invoice-modal, 
+    .bg-gradient-to-r, /* الهيدر الملون */
+    footer {
         display: none !important;
+    }
+
+    /* 7. تحسينات الجداول لمنع تكسر الصفوف بين الصفحات */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    thead {
+        display: table-header-group;
+    }
+    tfoot {
+        display: table-footer-group;
     }
     
-    /* إخفاء السايدبار */
-    aside, nav, .w-64 {
-        display: none !important;
+    /* ضمان أن النصوص سوداء بالكامل للوضوح */
+    * {
+        color: black !important;
+        text-shadow: none !important;
     }
 }
+
 .invoice-modal-content {
     max-height: 80vh;
     overflow-y: auto;
@@ -903,23 +945,45 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             const imgWidth = pdfWidth;
             const imgHeight = (canvas.height * pdfWidth) / canvas.width;
             
+            // If image is taller than a single PDF page, split it into slices
+            // and add a small gap between pages (top + bottom) for readability.
             if (imgHeight > pdfHeight) {
-                let heightLeft = imgHeight;
-                let position = 0;
-                let page = 0;
-                
-                while (heightLeft > 0) {
-                    if (page > 0) {
-                        pdf.addPage();
-                    }
-                    
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pdfHeight;
-                    position -= pdfHeight;
-                    page++;
+                const gapMm = 10; // total gap between pages in mm
+                const topMargin = gapMm / 2; // top margin on each page in mm
+
+                const pxPerMm = canvas.width / pdfWidth; // canvas px per mm
+                const sliceHeightPx = Math.floor((pdfHeight - gapMm) * pxPerMm);
+
+                let remainingHeightPx = canvas.height;
+                let pageIndex = 0;
+
+                while (remainingHeightPx > 0) {
+                    const sy = pageIndex * sliceHeightPx;
+                    const sh = Math.min(sliceHeightPx, remainingHeightPx);
+
+                    const tmpCanvas = document.createElement('canvas');
+                    tmpCanvas.width = canvas.width;
+                    tmpCanvas.height = sh;
+                    const tmpCtx = tmpCanvas.getContext('2d');
+                    tmpCtx.fillStyle = '#ffffff';
+                    tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+                    tmpCtx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+
+                    const imgDataPage = tmpCanvas.toDataURL('image/png');
+                    const pageImgHeightMm = (sh * pdfWidth) / canvas.width;
+
+                    if (pageIndex > 0) pdf.addPage();
+
+                    pdf.addImage(imgDataPage, 'PNG', 0, topMargin, pdfWidth, pageImgHeightMm);
+
+                    remainingHeightPx -= sh;
+                    pageIndex++;
                 }
             } else {
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                // For single-page content, place it with a small top margin as well
+                const gapMm = 10;
+                const topMargin = gapMm / 2;
+                pdf.addImage(imgData, 'PNG', 0, topMargin, imgWidth, imgHeight);
             }
             
             pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
