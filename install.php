@@ -536,5 +536,20 @@ $conn->query("ALTER TABLE invoice_items ADD CONSTRAINT invoice_items_ibfk_2
               FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL");
 echo "Foreign key constraint updated to prevent data loss on product deletion.<br>";
 
+// ... existing code ...
+
+// إضافة حقول المبلغ المستلم والباقي إلى جدول invoices
+$check_amount_received = $conn->query("SHOW COLUMNS FROM invoices LIKE 'amount_received'");
+if ($check_amount_received->num_rows == 0) {
+    $sql_alter_invoices_amounts = "ALTER TABLE invoices 
+                                  ADD COLUMN amount_received DECIMAL(10, 2) DEFAULT 0.00 AFTER payment_method,
+                                  ADD COLUMN change_due DECIMAL(10, 2) DEFAULT 0.00 AFTER amount_received";
+    if ($conn->query($sql_alter_invoices_amounts) === TRUE) {
+        echo "Columns 'amount_received' and 'change_due' added to invoices table successfully.<br>";
+    } else {
+        echo "Error adding amount columns to invoices table: " . $conn->error . "<br>";
+    }
+}
+
 $conn->close();
 ?>

@@ -36,32 +36,48 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
 <style>
 @media print {
-    body * {
-        visibility: hidden;
-    }
-    #invoice-print-area, #invoice-print-area * {
-        visibility: visible;
-    }
-    #invoice-print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: white;
-    }
-    .no-print {
+    /* إخفاء كل شيء ما عدا المودال */
+    body > * {
         display: none !important;
     }
     
-    .invoice-items-container {
-        page-break-inside: auto;
+    /* استثناء المودال الخاص بتفاصيل الفاتورة */
+    #invoice-details-modal {
+        display: block !important;
+        visibility: visible !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        z-index: 9999 !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    /* التأكد من ظهور المحتوى الداخلي */
+    #invoice-details-modal * {
+        visibility: visible !important;
+    }
+
+    /* إصلاح مشكلة اختفاء المنتجات (إلغاء السكرول) */
+    #invoice-details-modal .overflow-y-auto,
+    #invoice-items-body {
+        max-height: none !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    /* إخفاء الأزرار (طباعة، إغلاق) */
+    button, .no-print {
+        display: none !important;
     }
     
-    .invoice-item-row {
-        page-break-inside: avoid;
+    /* إخفاء السايدبار */
+    aside, nav, .w-64 {
+        display: none !important;
     }
 }
-
 .invoice-modal-content {
     max-height: 80vh;
     overflow-y: auto;
@@ -647,6 +663,36 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         }
 
         document.getElementById('invoice-total').textContent = `${total.toFixed(2)} ${currency}`;
+
+        // --- NEW CODE START ---
+        const taxRow = document.getElementById('invoice-tax-row');
+        const totalsContainer = taxRow.parentNode;
+
+        const existingReceived = document.getElementById('invoice-received-row');
+        if (existingReceived) existingReceived.remove();
+        const existingChange = document.getElementById('invoice-change-row');
+        if (existingChange) existingChange.remove();
+
+        if (invoice.amount_received > 0) {
+            const receivedRow = document.createElement('div');
+            receivedRow.id = 'invoice-received-row';
+            receivedRow.className = 'flex justify-between text-sm mt-2 pt-2 border-t border-dashed border-gray-300';
+            receivedRow.innerHTML = `
+                <span class="text-gray-600 font-bold">المبلغ المستلم:</span>
+                <span class="font-bold text-gray-800">${parseFloat(invoice.amount_received).toFixed(2)} ${currency}</span>
+            `;
+            totalsContainer.appendChild(receivedRow);
+
+            const changeRow = document.createElement('div');
+            changeRow.id = 'invoice-change-row';
+            changeRow.className = 'flex justify-between text-sm';
+            changeRow.innerHTML = `
+                <span class="text-gray-600 font-bold">المبلغ الذي تم رده:</span>
+                <span class="font-bold text-gray-800">${parseFloat(invoice.change_due).toFixed(2)} ${currency}</span>
+            `;
+            totalsContainer.appendChild(changeRow);
+        }
+        // --- NEW CODE END ---
     }
 
     closeInvoiceModal.addEventListener('click', () => {
@@ -761,13 +807,29 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
         if (deliveryCost > 0) {
             thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${deliveryCost.toFixed(2)} ${currency}</span></div>`;
+            // ... inside printThermal function ...
             if (currentInvoiceData.delivery_city) {
                 thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${currentInvoiceData.delivery_city}</span></div>`;
             }
         }
 
         thermalContent += `
-            <div class="total-row grand-total"><span>الإجمالي:</span><span>${total.toFixed(2)} ${currency}</span></div>
+            <div class="total-row grand-total"><span>الإجمالي:</span><span>${total.toFixed(2)} ${currency}</span></div>`;
+
+        // --- NEW CODE START ---
+        if (currentInvoiceData.amount_received > 0) {
+            thermalContent += `
+            <div class="total-row" style="border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm;">
+                <span>المبلغ المستلم:</span>
+                <span>${parseFloat(currentInvoiceData.amount_received).toFixed(2)} ${currency}</span>
+            </div>
+            <div class="total-row">
+                <span>المبلغ الذي تم رده:</span>
+                <span>${parseFloat(currentInvoiceData.change_due).toFixed(2)} ${currency}</span>
+            </div>`;
+        }
+
+        thermalContent += `
         </div>
 
     <div style="text-align: center; margin: 5mm 0;">
@@ -912,6 +974,13 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         }
         
         txtContent += `الإجمالي: ${total.toFixed(2)} ${currency}\n`;
+
+        if (currentInvoiceData.amount_received > 0) {
+            txtContent += `المبلغ المستلم: ${parseFloat(currentInvoiceData.amount_received).toFixed(2)} ${currency}\n`;
+            txtContent += `المبلغ الذي تم رده: ${parseFloat(currentInvoiceData.change_due).toFixed(2)} ${currency}\n`;
+        }
+
+        txtContent += `${'='.repeat(50)}\n\n`;
         txtContent += `${'='.repeat(50)}\n\n`;
         txtContent += `شكراً لثقتكم بنا\n\n`;
         

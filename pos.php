@@ -127,32 +127,76 @@ $criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc(
     }
 
 @media print {
+    /* 1. إعدادات الصفحة الأساسية */
+    @page {
+        margin: 0;
+        size: auto;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: white !important;
+    }
+
+    /* 2. إخفاء كل عناصر الموقع تماماً */
     body * {
         visibility: hidden;
+        height: 0; /* لضمان عدم حجز مساحة */
+        overflow: hidden;
     }
-    #invoice-print-area, #invoice-print-area * {
-        visibility: visible;
+
+    /* 3. استثناء نافذة الفاتورة ومحتوياتها */
+    #invoice-modal, 
+    #invoice-modal * {
+        visibility: visible !important;
+        height: auto !important; /* استعادة الطول الطبيعي */
+        overflow: visible !important; /* إظهار المحتوى المخفي */
     }
-    #invoice-print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: white;
+
+    /* 4. تنسيق حاوية الفاتورة لتملأ الورقة */
+    #invoice-modal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 10px !important; /* مسافة بسيطة من الحواف */
+        background: white !important;
+        z-index: 999999 !important;
+        display: block !important;
     }
-    .no-print {
+
+    /* 5. معالجة قائمة المنتجات الطويلة (أهم جزء) */
+    /* هذا الكود يلغي السكرول ويجبر القائمة على التمدد */
+    #invoice-items-list, 
+    .overflow-y-auto,
+    .max-h-96,
+    .max-h-[60vh] {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        display: block !important;
+    }
+
+    /* 6. إخفاء العناصر غير المرغوب فيها داخل الفاتورة */
+    #invoice-modal button,     /* أزرار الإغلاق والطباعة */
+    .no-print,                /* أي عنصر يحمل هذا الكلاس */
+    header, aside, footer,    /* العناصر الهيكلية */
+    ::-webkit-scrollbar {     /* إخفاء شريط التمرير */
         display: none !important;
     }
     
-    .invoice-items-container {
-        page-break-inside: auto;
+    /* 7. تحسينات للجدول */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
     }
-    
-    .invoice-item-row {
-        page-break-inside: avoid;
+    th, td {
+        border: 1px solid #ddd !important; /* حدود واضحة في الطباعة */
+        padding: 4px !important;
     }
 }
-
 .invoice-modal-content {
     max-height: 80vh;
     overflow-y: auto;
@@ -1566,7 +1610,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     delivery: deliveryCostValue,
                     deliveryCity: deliveryCity,
                     total: total,
-                    date: new Date()
+                    date: new Date(),
+                    // --- NEW FIELDS ---
+                    amountReceived: paymentData.amountReceived,
+                    changeDue: paymentData.changeDue
                 };
                 
                 displayInvoice(currentInvoiceData);
@@ -1771,6 +1818,42 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         document.getElementById('invoice-total').textContent = `${data.total.toFixed(2)} ${currency}`;
+
+        // --- NEW CODE START: Add Amount Received and Change Due BELOW Total ---
+        const taxRow = document.getElementById('invoice-tax-row');
+        const totalsContainer = taxRow.parentNode;
+
+        // Remove old rows if they exist (to prevent duplicates on re-open)
+        const existingReceived = document.getElementById('invoice-received-row');
+        if (existingReceived) existingReceived.remove();
+        const existingChange = document.getElementById('invoice-change-row');
+        if (existingChange) existingChange.remove();
+
+        // Only show if amount received is greater than 0
+        if (data.amount_received > 0 || (currentInvoiceData && currentInvoiceData.amountReceived > 0)) {
+             // We check both data.amount_received (from DB) and data.amountReceived (from JS object during checkout)
+             const recVal = data.amount_received || data.amountReceived || 0;
+             const chgVal = data.change_due || data.changeDue || 0;
+
+            const receivedRow = document.createElement('div');
+            receivedRow.id = 'invoice-received-row';
+            receivedRow.className = 'flex justify-between text-sm mt-2 pt-2 border-t border-dashed border-gray-300';
+            receivedRow.innerHTML = `
+                <span class="text-gray-600 font-bold">المبلغ المستلم:</span>
+                <span class="font-bold text-gray-800">${parseFloat(recVal).toFixed(2)} ${currency}</span>
+            `;
+            totalsContainer.appendChild(receivedRow);
+
+            const changeRow = document.createElement('div');
+            changeRow.id = 'invoice-change-row';
+            changeRow.className = 'flex justify-between text-sm';
+            changeRow.innerHTML = `
+                <span class="text-gray-600 font-bold">المبلغ الذي تم رده:</span>
+                <span class="font-bold text-gray-800">${parseFloat(chgVal).toFixed(2)} ${currency}</span>
+            `;
+            totalsContainer.appendChild(changeRow);
+        }
+        // --- NEW CODE END ---
     }
 
     // دالة الطباعة الحرارية
@@ -1872,13 +1955,32 @@ document.addEventListener('DOMContentLoaded', function () {
         if (currentInvoiceData.delivery > 0) {
             thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${currentInvoiceData.delivery.toFixed(2)} ${currency}</span></div>`;
             if (currentInvoiceData.deliveryCity) {
-                thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${currentInvoiceData.deliveryCity}</span></div>`;
-            }
+            thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${currentInvoiceData.deliveryCity}</span></div>`;
         }
+    }
 
+    thermalContent += `
+        <div class="total-row grand-total"><span>الإجمالي:</span><span>${currentInvoiceData.total.toFixed(2)} ${currency}</span></div>`;
+
+    // --- NEW CODE START ---
+    const recVal = currentInvoiceData.amount_received || currentInvoiceData.amountReceived || 0;
+    const chgVal = currentInvoiceData.change_due || currentInvoiceData.changeDue || 0;
+
+    if (recVal > 0) {
         thermalContent += `
-            <div class="total-row grand-total"><span>الإجمالي:</span><span>${currentInvoiceData.total.toFixed(2)} ${currency}</span></div>
+        <div class="total-row" style="border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm;">
+            <span>المبلغ المستلم:</span>
+            <span>${parseFloat(recVal).toFixed(2)} ${currency}</span>
         </div>
+        <div class="total-row">
+            <span>المبلغ الذي تم رده:</span>
+            <span>${parseFloat(chgVal).toFixed(2)} ${currency}</span>
+        </div>`;
+    }
+    // --- NEW CODE END ---
+
+    thermalContent += `
+    </div>
 
     <div style="text-align: center; margin: 5mm 0;">
         <svg id="barcode-thermal"></svg>
@@ -2043,12 +2145,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (currentInvoiceData.delivery > 0) {
             txtContent += `التوصيل: ${currentInvoiceData.delivery.toFixed(2)} ${currency}\n`;
+            // ... inside downloadTxtBtn event listener ...
             if (currentInvoiceData.deliveryCity) {
                 txtContent += `مدينة التوصيل: ${currentInvoiceData.deliveryCity}\n`;
             }
         }
 
         txtContent += `الإجمالي: ${currentInvoiceData.total.toFixed(2)} ${currency}\n`;
+
+        // --- NEW CODE START ---
+        const recVal = currentInvoiceData.amount_received || currentInvoiceData.amountReceived || 0;
+        const chgVal = currentInvoiceData.change_due || currentInvoiceData.changeDue || 0;
+        
+        if (recVal > 0) {
+            txtContent += `المبلغ المستلم: ${parseFloat(recVal).toFixed(2)} ${currency}\n`;
+            txtContent += `المبلغ الذي تم رده: ${parseFloat(chgVal).toFixed(2)} ${currency}\n`;
+        }
+        // --- NEW CODE END ---
+
+        txtContent += `${'='.repeat(50)}\n\n`;
         txtContent += `${'='.repeat(50)}\n\n`;
         txtContent += `شكرا لثقتكم بنا\n\n`;
         

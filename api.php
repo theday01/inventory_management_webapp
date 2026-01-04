@@ -879,14 +879,22 @@ function checkout($conn) {
         $delivery_cost = isset($data['delivery_cost']) ? (float)$data['delivery_cost'] : 0;
         $delivery_city = isset($data['delivery_city']) ? $data['delivery_city'] : null;
         $payment_method = isset($data['payment_method']) ? $data['payment_method'] : 'cash';
+        
+        // --- NEW CODE START ---
+        $amount_received = isset($data['amount_received']) ? (float)$data['amount_received'] : 0;
+        $change_due = isset($data['change_due']) ? (float)$data['change_due'] : 0;
+        // --- NEW CODE END ---
+
         $total = (float)$data['total'];
 
-        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, payment_method) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("iddss", $customer_id, $total, $delivery_cost, $delivery_city, $payment_method);
+        // Update Query to include amount_received and change_due
+        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, payment_method, amount_received, change_due) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("iddssdd", $customer_id, $total, $delivery_cost, $delivery_city, $payment_method, $amount_received, $change_due);
+        
         $stmt->execute();
         $invoiceId = $stmt->insert_id;
         $stmt->close();
-
+        
         $stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)");
         foreach ($data['items'] as $item) {
             $product_id = (int)$item['id'];
