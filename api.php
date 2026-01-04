@@ -762,11 +762,23 @@ function deleteCategory($conn) {
 
 function getCustomers($conn) {
     $search = isset($_GET['search']) ? $_GET['search'] : '';
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 500;
 
-    $sql = "SELECT * FROM customers WHERE name LIKE ? OR phone LIKE ?";
-    $stmt = $conn->prepare($sql);
+    $baseSql = "FROM customers WHERE name LIKE ? OR phone LIKE ?";
     $searchTerm = "%{$search}%";
+    
+    $countSql = "SELECT COUNT(*) as total " . $baseSql;
+    $stmt = $conn->prepare($countSql);
     $stmt->bind_param("ss", $searchTerm, $searchTerm);
+    $stmt->execute();
+    $total_customers = $stmt->get_result()->fetch_assoc()['total'];
+    $stmt->close();
+
+    $offset = ($page - 1) * $limit;
+    $dataSql = "SELECT * " . $baseSql . " ORDER BY name ASC LIMIT ? OFFSET ?";
+    $stmt = $conn->prepare($dataSql);
+    $stmt->bind_param("ssii", $searchTerm, $searchTerm, $limit, $offset);
     $stmt->execute();
     $result = $stmt->get_result();
     $customers = [];
@@ -775,7 +787,7 @@ function getCustomers($conn) {
     }
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $customers]);
+    echo json_encode(['success' => true, 'data' => $customers, 'total_customers' => $total_customers]);
 }
 
 function addCustomer($conn) {
@@ -978,20 +990,25 @@ function getInvoice($conn) {
 
 function getInvoices($conn) {
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-    $searchDate = isset($_GET['searchDate']) && !empty($_GET['searchDate']) ? $_GET['searchDate'] : date('Y-m-d');
+    $searchDate = isset($_GET['searchDate']) && !empty($_GET['searchDate']) ? $_GET['searchDate'] : '';
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 500;
 
-    $sql = "SELECT DISTINCT i.id, i.total, i.created_at, c.name as customer_name 
-            FROM invoices i 
-            LEFT JOIN customers c ON i.customer_id = c.id
-            LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
-            LEFT JOIN products p ON ii.product_id = p.id
-            WHERE DATE(i.created_at) = ?";
+    $baseSql = "FROM invoices i 
+                LEFT JOIN customers c ON i.customer_id = c.id
+                WHERE 1=1";
+    
+    $params = [];
+    $types = '';
 
-    $params = [$searchDate];
-    $types = 's';
+    if (!empty($searchDate)) {
+        $baseSql .= " AND DATE(i.created_at) = ?";
+        $params[] = $searchDate;
+        $types .= 's';
+    }
 
     if (!empty($search)) {
-        $sql .= " AND (i.id LIKE ? OR c.name LIKE ? OR i.barcode LIKE ?)";
+        $baseSql .= " AND (i.id LIKE ? OR c.name LIKE ? OR i.barcode LIKE ?)";
         $searchTerm = "%{$search}%";
         $params[] = $searchTerm;
         $params[] = $searchTerm;
@@ -999,23 +1016,34 @@ function getInvoices($conn) {
         $types .= 'sss';
     }
 
-    $sql .= " ORDER BY i.created_at DESC LIMIT 150";
+    $countSql = "SELECT COUNT(DISTINCT i.id) as total " . $baseSql;
+    $stmt = $conn->prepare($countSql);
+    if (!empty($types)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $total_invoices = $stmt->get_result()->fetch_assoc()['total'];
+    $stmt->close();
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param($types, ...$params);
+    $offset = ($page - 1) * $limit;
+    $dataSql = "SELECT DISTINCT i.id, i.total, i.created_at, c.name as customer_name "
+             . $baseSql 
+             . " ORDER BY i.created_at DESC LIMIT ? OFFSET ?";
+    
+    $dataTypes = $types . 'ii';
+    $dataParams = array_merge($params, [$limit, $offset]);
+
+    $stmt = $conn->prepare($dataSql);
+    $stmt->bind_param($dataTypes, ...$dataParams);
     $stmt->execute();
     $result = $stmt->get_result();
     $invoices = [];
-    
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $invoices[] = $row;
-        }
+    while ($row = $result->fetch_assoc()) {
+        $invoices[] = $row;
     }
-    
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $invoices]);
+    echo json_encode(['success' => true, 'data' => $invoices, 'total_invoices' => $total_invoices]);
 }
 
 function getDeliverySettings($conn) {

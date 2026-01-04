@@ -176,6 +176,11 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             </div>
         </div>
     </div>
+
+    <!-- Pagination -->
+    <div id="pagination-container" class="p-6 pt-2 flex justify-center items-center relative z-10 shrink-0">
+        <!-- Pagination will be loaded here -->
+    </div>
 </main>
 
 <!-- Invoice Modal -->
@@ -335,7 +340,10 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     const searchTermInput = document.getElementById('search-term');
     const searchDateInput = document.getElementById('search-date');
     const clearSearchBtn = document.getElementById('clear-search-btn');
-    
+    const paginationContainer = document.getElementById('pagination-container');
+
+    let currentPage = 1;
+    const invoicesPerPage = 500;
     let currentInvoiceData = null;
     const currency = '<?php echo $currency; ?>';
     const taxEnabled = <?php echo $taxEnabled; ?> == 1;
@@ -381,22 +389,21 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">جاري تحميل البيانات...</td></tr>';
         
         showLoading('جاري تحميل الفواتير...');
-        let apiUrl = 'api.php?action=getInvoices';
-        const params = new URLSearchParams();
-
-        if (searchTerm) params.append('search', searchTerm);
-        if (searchDate) params.append('searchDate', searchDate);
-
-        if (params.toString()) {
-            apiUrl += '&' + params.toString();
-        }
+        const params = new URLSearchParams({
+            action: 'getInvoices',
+            search: searchTerm,
+            searchDate: searchDate,
+            page: currentPage,
+            limit: invoicesPerPage
+        });
         
         try {
-            const response = await fetch(apiUrl);
+            const response = await fetch(`api.php?${params.toString()}`);
             const result = await response.json();
             
             if (result.success) {
                 displayInvoices(result.data);
+                renderPagination(result.total_invoices);
             } else {
                 invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">فشل في تحميل الفواتير</td></tr>';
             }
@@ -407,6 +414,56 @@ $taxLabel = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             hideLoading();
         }
     }
+
+    function renderPagination(totalInvoices) {
+        const totalPages = Math.ceil(totalInvoices / invoicesPerPage);
+        paginationContainer.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        let paginationHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-sm">صفحة ${currentPage} من ${totalPages}</span>
+            </div>
+            <div class="flex items-center gap-1">`;
+        
+        paginationHTML += `<button class="pagination-btn ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-icons-round">chevron_right</span></button>`;
+
+        const pagesToShow = [];
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+        } else {
+            pagesToShow.push(1);
+            if (currentPage > 3) pagesToShow.push('...');
+            let start = Math.max(2, currentPage - 1);
+            let end = Math.min(totalPages - 1, currentPage + 1);
+            for (let i = start; i <= end; i++) pagesToShow.push(i);
+            if (currentPage < totalPages - 2) pagesToShow.push('...');
+            pagesToShow.push(totalPages);
+        }
+
+        pagesToShow.forEach(page => {
+            if (page === '...') {
+                paginationHTML += `<span class="pagination-dots">...</span>`;
+            } else if (page === currentPage) {
+                paginationHTML += `<button class="pagination-btn bg-primary text-white" data-page="${page}">${page}</button>`;
+            } else {
+                paginationHTML += `<button class="pagination-btn" data-page="${page}">${page}</button>`;
+            }
+        });
+        
+        paginationHTML += `<button class="pagination-btn ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}><span class="material-icons-round">chevron_left</span></button>`;
+        paginationHTML += `</div>`;
+        paginationContainer.innerHTML = paginationHTML;
+    }
+
+    paginationContainer.addEventListener('click', e => {
+        if (e.target.closest('.pagination-btn')) {
+            const btn = e.target.closest('.pagination-btn');
+            currentPage = parseInt(btn.dataset.page);
+            loadInvoices(searchTermInput.value, searchDateInput.value);
+        }
+    });
 
     function displayInvoices(invoices) {
         invoicesTableBody.innerHTML = '';

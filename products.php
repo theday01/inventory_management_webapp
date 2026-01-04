@@ -27,7 +27,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
     <!-- Header -->
     <header
-        class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+        class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-30 shrink-0">
         <h2 class="text-xl font-bold text-white">إدارة المخزون</h2>
 
         <div class="flex items-center gap-4">
@@ -98,29 +98,28 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         </div>
     </div>
     <!-- Products Table -->
-    <div class="flex-1 overflow-auto p-6 relative z-10">
-        <div
-            class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-auto max-h-[65vh]">
-            <table class="w-full min-w-full table-auto">
-                <thead>
-                    <tr class="bg-white/5 text-right">
-                        <th class="p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
-                        <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="name">المنتج <span class="sort-icon opacity-30">▲</span></th>
-                        <th class="p-4 text-sm font-medium text-gray-300">الصورة</th>
-                        <th class="p-4 text-sm font-medium text-gray-300">الفئة</th>
-                        <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="price">السعر <span class="sort-icon opacity-30">▲</span></th>
-                        <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="quantity">الكمية <span class="sort-icon opacity-30">▲</span></th>
-                        <th class="p-4 text-sm font-medium text-gray-300">تفاصيل</th>
-                        <th class="p-4 text-sm font-medium text-gray-300">الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="products-table-body" class="divide-y divide-white/5">
-                    <!-- Products will be loaded here -->
-                </tbody>
-            </table>
-            <!-- Pagination and info -->
-            <div id="pagination-container" class="p-4 bg-dark-surface/60 border-t border-white/5 flex items-center justify-between text-sm text-gray-400">
+    <div class="flex-1 flex flex-col p-6 pt-0 relative z-10">
+        <div class="flex-1 flex flex-col bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
+            <div class="flex-1 overflow-y-auto">
+                <table class="w-full min-w-full table-auto">
+                    <thead>
+                        <tr class="text-right">
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="name">المنتج <span class="sort-icon opacity-30">▲</span></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الصورة</th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الفئة</th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="price">السعر <span class="sort-icon opacity-30">▲</span></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="quantity">الكمية <span class="sort-icon opacity-30">▲</span></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">تفاصيل</th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body" class="divide-y divide-white/5">
+                        <!-- Products will be loaded here -->
+                    </tbody>
+                </table>
             </div>
+            <!-- Pagination removed from table container to be placed below the page for consistent layout -->
         </div>
     </div>
 
@@ -152,7 +151,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <div class="p-6 border-t border-white/5 flex justify-end gap-3 shrink-0">
                 <button id="export-stock-report" class="bg-primary/10 hover:bg-primary/20 text-primary px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2">
                     <span class="material-icons-round text-sm">download</span>
-                    تصدير التقرير
+                    تصدير التقرير TXT
                 </button>
                 <button id="close-stock-modal-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2 rounded-xl font-bold transition-all">
                     إغلاق
@@ -268,7 +267,18 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     html:not(.dark) #delete-success-modal .bg-white\/5 {
         background-color: rgba(0, 0, 0, 0.05) !important;
     }
+    #pagination-container{
+        background-color: rgb(13 16 22);
+    }
+    header{
+        background-color: #171d27;
+    }
     </style>
+
+    <!-- Pagination (moved here from inside the table for a fixed bottom placement) -->
+    <div id="pagination-container" class="sticky bottom-0 p-6 pt-2 flex justify-center items-center z-20 ">
+        <!-- Pagination will be loaded here -->
+    </div>
 </main>
 
 <!-- Bulk Edit Modal -->
@@ -473,7 +483,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     let currentPage = 1;
     let sortBy = 'name';
     let sortOrder = 'asc';
-    const productsPerPage = 500;
+    const productsPerPage = 300;
 
     loadProducts();
     loadCategoriesIntoFilter();
@@ -621,21 +631,32 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             </div>
             <div class="flex items-center gap-1">`;
         
-        // Previous Button
         paginationHTML += `<button class="pagination-btn ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-icons-round">chevron_right</span></button>`;
 
-        // Page numbers
-        for (let i = 1; i <= totalPages; i++) {
-            if (i === currentPage) {
-                paginationHTML += `<button class="pagination-btn bg-primary text-white" data-page="${i}">${i}</button>`;
-            } else {
-                paginationHTML += `<button class="pagination-btn" data-page="${i}">${i}</button>`;
-            }
+        const pagesToShow = [];
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+        } else {
+            pagesToShow.push(1);
+            if (currentPage > 3) pagesToShow.push('...');
+            let start = Math.max(2, currentPage - 1);
+            let end = Math.min(totalPages - 1, currentPage + 1);
+            for (let i = start; i <= end; i++) pagesToShow.push(i);
+            if (currentPage < totalPages - 2) pagesToShow.push('...');
+            pagesToShow.push(totalPages);
         }
-        
-        // Next Button
-        paginationHTML += `<button class="pagination-btn ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}><span class="material-icons-round">chevron_left</span></button>`;
 
+        pagesToShow.forEach(page => {
+            if (page === '...') {
+                paginationHTML += `<span class="pagination-dots">...</span>`;
+            } else if (page === currentPage) {
+                paginationHTML += `<button class="pagination-btn bg-primary text-white" data-page="${page}">${page}</button>`;
+            } else {
+                paginationHTML += `<button class="pagination-btn" data-page="${page}">${page}</button>`;
+            }
+        });
+        
+        paginationHTML += `<button class="pagination-btn ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}><span class="material-icons-round">chevron_left</span></button>`;
         paginationHTML += `</div>`;
         paginationContainer.innerHTML = paginationHTML;
     }
@@ -1433,17 +1454,20 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                             </div>
                     `;
                     
-                    // المنتجات المنتهية
+                    // المنتجات المنتهية (تفاصيل قابلة للطي)
                     if (outOfStock.length > 0) {
                         content += `
-                            <div>
-                                <h4 class="text-lg font-bold text-gray-400 mb-3 flex items-center gap-2">
-                                    <span class="material-icons-round">block</span>
-                                    منتجات منتهية تماماً (كمية = 0)
-                                </h4>
-                                <div class="space-y-2">
+                            <details class="bg-gray-800/30 border border-gray-500/40 rounded-xl p-4">
+                                <summary class="flex items-center justify-between cursor-pointer list-none">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-icons-round text-gray-400">block</span>
+                                        <h4 class="text-lg font-bold text-gray-400">منتجات منتهية تماماً (كمية = 0)</h4>
+                                    </div>
+                                    <span class="text-sm text-gray-400">${outOfStock.length}</span>
+                                </summary>
+                                <div class="mt-4 space-y-2">
                         `;
-                        
+
                         outOfStock.forEach(product => {
                             content += `
                                 <div class="bg-gray-900/30 border border-gray-500/40 rounded-lg p-4 flex justify-between items-center hover:bg-gray-900/40 transition-colors">
@@ -1458,24 +1482,27 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                                 </div>
                             `;
                         });
-                        
+
                         content += `
                                 </div>
-                            </div>
+                            </details>
                         `;
                     }
-                    
-                    // المنتجات الحرجة
+
+                    // المنتجات الحرجة (تفاصيل قابلة للطي)
                     if (critical.length > 0) {
                         content += `
-                            <div>
-                                <h4 class="text-lg font-bold text-red-500 mb-3 flex items-center gap-2">
-                                    <span class="material-icons-round">error</span>
-                                    منتجات حرجة (كمية 1-5)
-                                </h4>
-                                <div class="space-y-2">
+                            <details class="bg-red-900/10 border border-red-500/30 rounded-xl p-4 mt-4">
+                                <summary class="flex items-center justify-between cursor-pointer list-none">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-icons-round text-red-500">error</span>
+                                        <h4 class="text-lg font-bold text-red-500">منتجات حرجة (كمية 1-5)</h4>
+                                    </div>
+                                    <span class="text-sm text-red-500">${critical.length}</span>
+                                </summary>
+                                <div class="mt-4 space-y-2">
                         `;
-                        
+
                         critical.forEach(product => {
                             content += `
                                 <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-red-900/30 transition-colors">
@@ -1487,24 +1514,27 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                                 </div>
                             `;
                         });
-                        
+
                         content += `
                                 </div>
-                            </div>
+                            </details>
                         `;
                     }
-                    
-                    // المنتجات المنخفضة
+
+                    // المنتجات المنخفضة (تفاصيل قابلة للطي)
                     if (low.length > 0) {
                         content += `
-                            <div>
-                                <h4 class="text-lg font-bold text-orange-500 mb-3 flex items-center gap-2">
-                                    <span class="material-icons-round">warning</span>
-                                    منتجات منخفضة (كمية 6-10)
-                                </h4>
-                                <div class="space-y-2">
+                            <details class="bg-orange-900/10 border border-orange-500/30 rounded-xl p-4 mt-4">
+                                <summary class="flex items-center justify-between cursor-pointer list-none">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-icons-round text-orange-500">warning</span>
+                                        <h4 class="text-lg font-bold text-orange-500">منتجات منخفضة (كمية 6-10)</h4>
+                                    </div>
+                                    <span class="text-sm text-orange-500">${low.length}</span>
+                                </summary>
+                                <div class="mt-4 space-y-2">
                         `;
-                        
+
                         low.forEach(product => {
                             content += `
                                 <div class="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-orange-900/30 transition-colors">
@@ -1516,10 +1546,10 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                                 </div>
                             `;
                         });
-                        
+
                         content += `
                                 </div>
-                            </div>
+                            </details>
                         `;
                     }
                     
