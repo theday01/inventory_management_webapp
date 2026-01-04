@@ -688,22 +688,6 @@ html:not(.dark) .text-red-500 {
                 <p id="payment-total-amount" class="text-white text-4xl font-bold text-center">0.00 <?php echo $currency; ?></p>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <label class="payment-method-option relative flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
-                    <input type="radio" name="payment-method" value="cash" class="sr-only peer" checked>
-                    <div class="text-center">
-                        <span class="material-icons-round text-primary text-2xl block mb-1">payments</span>
-                        <span class="text-sm font-bold text-white block">نقداً</span>
-                    </div>
-                </label>
-                <label class="payment-method-option relative flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
-                    <input type="radio" name="payment-method" value="card" class="sr-only peer">
-                    <div class="text-center">
-                        <span class="material-icons-round text-gray-400 text-2xl block mb-1">credit_card</span>
-                        <span class="text-sm font-bold text-white block">بطاقة</span>
-                    </div>
-                </label>
-            </div>
 
             <div id="cash-payment-details" class="space-y-4">
                 <div>
@@ -1631,7 +1615,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const confirmPaymentBtn = document.getElementById('confirm-payment-btn');
         const cancelPaymentBtn = document.getElementById('cancel-payment-btn');
         const closePaymentModalBtn = document.getElementById('close-payment-modal');
-        const paymentMethodRadios = document.querySelectorAll('input[name="payment-method"]');
 
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         const tax = taxEnabled ? subtotal * taxRate : 0;
@@ -1649,18 +1632,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         };
 
-        const handlePaymentMethodChange = () => {
-            const selectedMethod = document.querySelector('input[name="payment-method"]:checked').value;
-            if (selectedMethod === 'cash') {
-                cashPaymentDetails.style.display = 'block';
-                amountReceivedInput.focus();
-            } else {
-                cashPaymentDetails.style.display = 'none';
-            }
-        };
-
         amountReceivedInput.addEventListener('input', calculateChange);
-        paymentMethodRadios.forEach(radio => radio.addEventListener('change', handlePaymentMethodChange));
 
         const closeModal = () => {
             paymentModal.classList.add('hidden');
@@ -1670,7 +1642,7 @@ document.addEventListener('DOMContentLoaded', function () {
         closePaymentModalBtn.addEventListener('click', closeModal);
 
         confirmPaymentBtn.onclick = () => {
-            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            const paymentMethod = 'cash';
             const amountReceived = parseFloat(amountReceivedInput.value) || 0;
 
             if (paymentMethod === 'cash' && amountReceived < total) {
@@ -1686,9 +1658,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         };
         
-        // Reset modal state
-        document.querySelector('input[name="payment-method"][value="cash"]').checked = true;
-        handlePaymentMethodChange();
         amountReceivedInput.value = '';
         calculateChange();
 

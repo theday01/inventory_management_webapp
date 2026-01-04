@@ -59,6 +59,7 @@ $sql_invoices = "CREATE TABLE IF NOT EXISTS invoices (
     customer_id INT(6) UNSIGNED,
     total DECIMAL(10, 2) NOT NULL,
     barcode VARCHAR(50),
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'cash',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id)
 )";
@@ -134,6 +135,17 @@ foreach ($tables as $name => $sql) {
         echo "Table '$name' created successfully.<br>";
     } else {
         echo "Error creating table '$name': " . $conn->error . "<br>";
+    }
+}
+
+// إضافة حقل payment_method إلى جدول invoices إذا لم يكن موجوداً
+$check_payment_method = $conn->query("SHOW COLUMNS FROM invoices LIKE 'payment_method'");
+if ($check_payment_method->num_rows == 0) {
+    $sql_alter_invoices_payment = "ALTER TABLE invoices ADD COLUMN payment_method VARCHAR(50) NOT NULL DEFAULT 'cash' AFTER barcode";
+    if ($conn->query($sql_alter_invoices_payment) === TRUE) {
+        echo "Column 'payment_method' added to invoices table successfully.<br>";
+    } else {
+        echo "Error adding column 'payment_method' to invoices table: " . $conn->error . "<br>";
     }
 }
 

@@ -878,10 +878,11 @@ function checkout($conn) {
         $customer_id = isset($data['customer_id']) ? (int)$data['customer_id'] : null;
         $delivery_cost = isset($data['delivery_cost']) ? (float)$data['delivery_cost'] : 0;
         $delivery_city = isset($data['delivery_city']) ? $data['delivery_city'] : null;
+        $payment_method = isset($data['payment_method']) ? $data['payment_method'] : 'cash';
         $total = (float)$data['total'];
 
-        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("idds", $customer_id, $total, $delivery_cost, $delivery_city);
+        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, payment_method) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("iddss", $customer_id, $total, $delivery_cost, $delivery_city, $payment_method);
         $stmt->execute();
         $invoiceId = $stmt->insert_id;
         $stmt->close();
