@@ -20,7 +20,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 ?>
 
 <!-- Main Content -->
-<main class="flex-1 flex flex-col relative overflow-hidden">
+<main class="flex-1 flex flex-col relative overflow-auto">
     <div
         class="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none">
     </div>
@@ -100,8 +100,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     <!-- Products Table -->
     <div class="flex-1 overflow-auto p-6 relative z-10">
         <div
-            class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
-            <table class="w-full">
+            class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-auto max-h-[65vh]">
+            <table class="w-full min-w-full table-auto">
                 <thead>
                     <tr class="bg-white/5 text-right">
                         <th class="p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
@@ -473,7 +473,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     let currentPage = 1;
     let sortBy = 'name';
     let sortOrder = 'asc';
-    const productsPerPage = 10;
+    const productsPerPage = 200;
 
     loadProducts();
     loadCategoriesIntoFilter();
@@ -1381,7 +1381,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     const checkStockBtn = document.createElement('button');
     checkStockBtn.innerHTML = `
         <span class="material-icons-round text-sm">inventory</span>
-        <span>فحص المخزون</span>
+        <span>فحص المخزون المنخفض</span>
     `;
     checkStockBtn.className = 'bg-yellow-600 hover:bg-yellow-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5';
     checkStockBtn.onclick = async function() {
