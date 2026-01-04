@@ -298,6 +298,12 @@ html:not(.dark) .text-orange-500 {
 html:not(.dark) .text-red-500 {
     color: #EF4444 !important;
 }
+#pagination-container{
+        background-color: rgb(13 16 22);
+    }
+    header{
+        background-color: #171d27;
+    }
 </style>
 
 <!-- Main Content -->
@@ -440,6 +446,8 @@ html:not(.dark) .text-red-500 {
 
         <div class="flex-1 overflow-y-auto p-6 z-10">
             <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+        </div>
+        <div id="pagination-container" class="sticky bottom-0 p-6 pt-2 flex justify-center items-center z-20 ">
         </div>
     </div>
 </main>
@@ -831,6 +839,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let selectedCustomer = null;
     let currentInvoiceData = null;
     let deliveryCost = 0;
+    let currentPage = 1;
+    const productsPerPage = 500;
     
     const taxEnabled = <?php echo $taxEnabled; ?> == 1;
     const taxRate = <?php echo $taxRate; ?> / 100;
@@ -974,13 +984,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function loadProducts() {
+        const searchTerm = searchInput.value;
+        const categoryId = categoryFilter.value;
+
         try {
             showLoading('جاري تحميل المنتجات...');
-            const response = await fetch('api.php?action=getProducts&limit=9999');
+            const response = await fetch(`api.php?action=getProducts&search=${searchTerm}&category_id=${categoryId}&page=${currentPage}&limit=${productsPerPage}`);
             const result = await response.json();
             if (result.success) {
                 allProducts = result.data;
-                applyFilters();
+                displayProducts(result.data);
+                renderPagination(result.total_products);
             }
         } catch (error) {
             console.error('خطأ في تحميل المنتجات:', error);
@@ -991,27 +1005,63 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function applyFilters() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const categoryId = categoryFilter.value;
-        
-        let filteredProducts = allProducts;
-        
-        if (categoryId) {
-            filteredProducts = filteredProducts.filter(product => product.category_id == categoryId);
-        }
-        
-        if (searchTerm) {
-            filteredProducts = filteredProducts.filter(product =>
-                product.name.toLowerCase().includes(searchTerm) ||
-                (product.barcode && product.barcode.includes(searchTerm))
-            );
-        }
-        
-        displayProducts(filteredProducts);
+        currentPage = 1;
+        loadProducts();
     }
 
     searchInput.addEventListener('input', applyFilters);
     categoryFilter.addEventListener('change', applyFilters);
+
+    function renderPagination(totalProducts) {
+        const paginationContainer = document.getElementById('pagination-container');
+        const totalPages = Math.ceil(totalProducts / productsPerPage);
+        paginationContainer.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        let paginationHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-sm">صفحة ${currentPage} من ${totalPages}</span>
+            </div>
+            <div class="flex items-center gap-1">`;
+        
+        paginationHTML += `<button class="pagination-btn ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-icons-round">chevron_right</span></button>`;
+
+        const pagesToShow = [];
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+        } else {
+            pagesToShow.push(1);
+            if (currentPage > 3) pagesToShow.push('...');
+            let start = Math.max(2, currentPage - 1);
+            let end = Math.min(totalPages - 1, currentPage + 1);
+            for (let i = start; i <= end; i++) pagesToShow.push(i);
+            if (currentPage < totalPages - 2) pagesToShow.push('...');
+            pagesToShow.push(totalPages);
+        }
+
+        pagesToShow.forEach(page => {
+            if (page === '...') {
+                paginationHTML += `<span class="pagination-dots">...</span>`;
+            } else if (page === currentPage) {
+                paginationHTML += `<button class="pagination-btn bg-primary text-white" data-page="${page}">${page}</button>`;
+            } else {
+                paginationHTML += `<button class="pagination-btn" data-page="${page}">${page}</button>`;
+            }
+        });
+        
+        paginationHTML += `<button class="pagination-btn ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}><span class="material-icons-round">chevron_left</span></button>`;
+        paginationHTML += `</div>`;
+        paginationContainer.innerHTML = paginationHTML;
+    }
+
+    document.getElementById('pagination-container').addEventListener('click', e => {
+        if (e.target.closest('.pagination-btn')) {
+            const btn = e.target.closest('.pagination-btn');
+            currentPage = parseInt(btn.dataset.page);
+            loadProducts();
+        }
+    });
 
     function displayProducts(products) {
         productsGrid.innerHTML = '';
