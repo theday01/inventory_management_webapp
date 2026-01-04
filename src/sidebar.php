@@ -67,6 +67,12 @@ if (!isset($shopName)) {
                 <span class="material-icons-round text-xl">mosque</span>
                 <span class="font-bold">حساب الزكاة</span>
             </a>
+
+            <a href="#0"
+                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'notifications.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
+                <span class="material-icons-round text-xl">notifications</span>
+                <span class="font-bold">إشعارات</span>
+            </a>
             
             <a href="settings.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'settings.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">

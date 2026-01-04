@@ -78,7 +78,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         let currentPage = 1;
         let sortBy = 'removed_at';
         let sortOrder = 'desc';
-        const productsPerPage = 10;
+        const productsPerPage = 300;
 
         // Show the global loading screen immediately when the page opens
         if (typeof showLoading === 'function') showLoading('جاري تحميل المنتجات المحذوفة...');
