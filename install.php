@@ -103,10 +103,23 @@ $sql_product_field_values = "CREATE TABLE IF NOT EXISTS product_field_values (
     FOREIGN KEY (field_id) REFERENCES category_fields(id) ON DELETE CASCADE
 )";
 
+$sql_removed_products = "CREATE TABLE IF NOT EXISTS removed_products (
+    id INT(6) UNSIGNED NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    quantity INT(6) NOT NULL,
+    category_id INT(6) UNSIGNED,
+    barcode VARCHAR(255),
+    image VARCHAR(255),
+    created_at TIMESTAMP NULL,
+    removed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)";
+
 // Execute table creation queries
 $tables = [
     'users' => $sql_users,
     'products' => $sql_products,
+    'removed_products' => $sql_removed_products,
     'customers' => $sql_customers,
     'invoices' => $sql_invoices,
     'invoice_items' => $sql_invoice_items,

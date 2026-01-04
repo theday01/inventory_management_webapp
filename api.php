@@ -107,12 +107,159 @@ switch ($action) {
     case 'bulkDeleteProducts':
         bulkDeleteProducts($conn);
         break;
+    case 'getRemovedProducts':
+        getRemovedProducts($conn);
+        break;
+    case 'restoreProducts':
+        restoreProducts($conn);
+        break;
+    case 'permanentlyDeleteProducts':
+        permanentlyDeleteProducts($conn);
+        break;
     case 'getInventoryStats':
         getInventoryStats($conn);
         break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
+}
+
+function getRemovedProducts($conn) {
+    $search = isset($_GET['search']) ? $_GET['search'] : '';
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+    $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'removed_at';
+    $sortOrder = isset($_GET['sortOrder']) ? $_GET['sortOrder'] : 'desc';
+
+    // Auto-cleanup: permanently remove entries older than 30 days
+    // This ensures that after 30 days from deletion the product
+    // is no longer recoverable and won't appear in the removed list.
+    try {
+        $conn->query("DELETE FROM removed_products WHERE removed_at <= (NOW() - INTERVAL 30 DAY)");
+    } catch (Exception $e) {
+        // ignore cleanup errors, proceed to return remaining items
+    }
+
+    $baseSql = "FROM removed_products rp LEFT JOIN categories c ON rp.category_id = c.id WHERE 1=1";
+    $params = [];
+    $types = '';
+
+    if (!empty($search)) {
+        $baseSql .= " AND (rp.name LIKE ? OR rp.barcode LIKE ?)";
+        $searchTerm = "%{$search}%";
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $types .= 'ss';
+    }
+
+    $countSql = "SELECT COUNT(rp.id) as total " . $baseSql;
+    $stmt = $conn->prepare($countSql);
+    if (!empty($types)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $total_products = $stmt->get_result()->fetch_assoc()['total'];
+    $stmt->close();
+
+    $allowedSortColumns = ['name', 'price', 'quantity', 'removed_at'];
+    if (!in_array($sortBy, $allowedSortColumns)) {
+        $sortBy = 'removed_at';
+    }
+    $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
+    $offset = ($page - 1) * $limit;
+    $dataSql = "SELECT rp.id, rp.name, rp.price, rp.quantity, rp.image, rp.category_id, rp.barcode, rp.removed_at, c.name as category_name "
+             . $baseSql 
+             . " ORDER BY rp.{$sortBy} {$sortOrder} LIMIT ? OFFSET ?";
+    
+    $dataTypes = $types . 'ii';
+    $dataParams = array_merge($params, [$limit, $offset]);
+
+    $stmt = $conn->prepare($dataSql);
+    $stmt->bind_param($dataTypes, ...$dataParams);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $products = [];
+    while ($row = $result->fetch_assoc()) {
+        $products[] = $row;
+    }
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'data' => $products, 'total_products' => $total_products]);
+}
+
+function restoreProducts($conn) {
+    try {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $product_ids = $data['product_ids'] ?? [];
+
+        if (empty($product_ids)) {
+            echo json_encode(['success' => false, 'message' => 'لم يتم تحديد منتجات للاستعادة']);
+            return;
+        }
+
+        $product_ids = array_map('intval', $product_ids);
+        $placeholders = implode(',', array_fill(0, count($product_ids), '?'));
+        $types = str_repeat('i', count($product_ids));
+        
+        $conn->begin_transaction();
+
+        // 1. Move products back to products table
+        $restore_sql = "INSERT INTO products (id, name, price, quantity, category_id, barcode, image, created_at)
+                        SELECT id, name, price, quantity, category_id, barcode, image, created_at
+                        FROM removed_products
+                        WHERE id IN ($placeholders)";
+        $restore_stmt = $conn->prepare($restore_sql);
+        $restore_stmt->bind_param($types, ...$product_ids);
+        if (!$restore_stmt->execute()) {
+             throw new Exception('فشل في استعادة المنتجات: ' . $restore_stmt->error);
+        }
+        $restore_stmt->close();
+        
+        // 2. Delete from removed_products
+        $delete_sql = "DELETE FROM removed_products WHERE id IN ($placeholders)";
+        $delete_stmt = $conn->prepare($delete_sql);
+        $delete_stmt->bind_param($types, ...$product_ids);
+        if (!$delete_stmt->execute()) {
+            throw new Exception('فشل في الحذف من الأرشيف: ' . $delete_stmt->error);
+        }
+        $restored_count = $delete_stmt->affected_rows;
+        $delete_stmt->close();
+
+        $conn->commit();
+        echo json_encode(['success' => true, 'message' => "تم استعادة {$restored_count} منتج بنجاح"]);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'خطأ في استعادة المنتجات: ' . $e->getMessage()]);
+    }
+}
+
+function permanentlyDeleteProducts($conn) {
+     try {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $product_ids = $data['product_ids'] ?? [];
+
+        if (empty($product_ids)) {
+            echo json_encode(['success' => false, 'message' => 'لم يتم تحديد منتجات للحذف النهائي']);
+            return;
+        }
+        $product_ids = array_map('intval', $product_ids);
+        $placeholders = implode(',', array_fill(0, count($product_ids), '?'));
+        $types = str_repeat('i', count($product_ids));
+        
+        $delete_sql = "DELETE FROM removed_products WHERE id IN ($placeholders)";
+        $delete_stmt = $conn->prepare($delete_sql);
+        $delete_stmt->bind_param($types, ...$product_ids);
+        if (!$delete_stmt->execute()) {
+            throw new Exception('فشل في الحذف النهائي: ' . $delete_stmt->error);
+        }
+        $deleted_count = $delete_stmt->affected_rows;
+        $delete_stmt->close();
+        
+        echo json_encode(['success' => true, 'message' => "تم حذف {$deleted_count} منتج نهائياً"]);
+     } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في الحذف النهائي: ' . $e->getMessage()]);
+    }
 }
 
 function getInventoryStats($conn) {
@@ -241,49 +388,59 @@ function bulkDeleteProducts($conn) {
         }
         $info_stmt->close();
 
-        // حذف جميع المنتجات المحددة
+        $conn->begin_transaction();
+
+        // 1. Move products to removed_products table
+        $archive_sql = "INSERT INTO removed_products (id, name, price, quantity, category_id, barcode, image, created_at)
+                        SELECT id, name, price, quantity, category_id, barcode, image, created_at
+                        FROM products
+                        WHERE id IN ($placeholders)";
+        $archive_stmt = $conn->prepare($archive_sql);
+        $archive_stmt->bind_param($types, ...$product_ids);
+        if (!$archive_stmt->execute()) {
+             throw new Exception('فشل في أرشفة المنتجات: ' . $archive_stmt->error);
+        }
+        $archive_stmt->close();
+        
+        // 2. Delete from products table
         $delete_sql = "DELETE FROM products WHERE id IN ($placeholders)";
         $delete_stmt = $conn->prepare($delete_sql);
-        
-        if (!$delete_stmt) {
-            throw new Exception('فشل في تحضير استعلام الحذف: ' . $conn->error);
-        }
-        
         $delete_stmt->bind_param($types, ...$product_ids);
-
-        if ($delete_stmt->execute()) {
-            $deleted_count = $delete_stmt->affected_rows;
-            $delete_stmt->close();
-            
-            $response = [
-                'success' => true,
-                'message' => "تم حذف {$deleted_count} منتج بنجاح",
-                'deleted_count' => $deleted_count
-            ];
-            
-            // معلومات المنتجات المرتبطة بفواتير
-            if (!empty($linked_products)) {
-                $linked_count = count($linked_products);
-                $linked_names = array_map(function($p) { 
-                    return $p['name'] . " ({$p['invoice_count']} فاتورة)"; 
-                }, $linked_products);
-                
-                $response['linked_info'] = [
-                    'count' => $linked_count,
-                    'products' => $linked_names,
-                    'note' => "تنبيه: {$linked_count} من المنتجات المحذوفة كانت مرتبطة بفواتير سابقة. الفواتير القديمة ستحتفظ بأسماء وأسعار هذه المنتجات."
-                ];
-            }
-            
-            echo json_encode($response);
-        } else {
-            throw new Exception('فشل في تنفيذ استعلام الحذف: ' . $delete_stmt->error);
+        if (!$delete_stmt->execute()) {
+            throw new Exception('فشل في حذف المنتجات من القائمة الرئيسية: ' . $delete_stmt->error);
         }
+        $deleted_count = $delete_stmt->affected_rows;
+        $delete_stmt->close();
+
+        $conn->commit();
+        
+        $response = [
+            'success' => true,
+            'message' => "تمت أرشفة {$deleted_count} منتج بنجاح",
+            'deleted_count' => $deleted_count
+        ];
+        
+        // معلومات المنتجات المرتبطة بفواتير (لا تتغير)
+        if (!empty($linked_products)) {
+            $linked_count = count($linked_products);
+            $linked_names = array_map(function($p) { 
+                return $p['name'] . " ({$p['invoice_count']} فاتورة)"; 
+            }, $linked_products);
+            
+            $response['linked_info'] = [
+                'count' => $linked_count,
+                'products' => $linked_names,
+                'note' => "تنبيه: {$linked_count} من المنتجات المؤرشفة مرتبطة بفواتير سابقة. الفواتير القديمة ستحتفظ بمعلومات هذه المنتجات."
+            ];
+        }
+        
+        echo json_encode($response);
         
     } catch (Exception $e) {
+        $conn->rollback();
         echo json_encode([
             'success' => false, 
-            'message' => 'حدث خطأ في حذف المنتجات: ' . $e->getMessage()
+            'message' => 'حدث خطأ في أرشفة المنتجات: ' . $e->getMessage()
         ]);
     }
 }
