@@ -409,7 +409,7 @@ html:not(.dark) .text-red-500 {
 
                 <button id="checkout-btn" class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
                     <span class="material-icons-round">payments</span>
-                    دفع (space)
+                    دفع
                 </button>
             </div>
         </div>
@@ -669,6 +669,61 @@ html:not(.dark) .text-red-500 {
                     موافق
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="payment-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 m-4 transform transition-all">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">طريقة الدفع</h3>
+            <button id="close-payment-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="p-6">
+            <div class="mb-6">
+                <p class="text-gray-400 text-center mb-2">المبلغ الإجمالي</p>
+                <p id="payment-total-amount" class="text-white text-4xl font-bold text-center">0.00 <?php echo $currency; ?></p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <label class="payment-method-option relative flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
+                    <input type="radio" name="payment-method" value="cash" class="sr-only peer" checked>
+                    <div class="text-center">
+                        <span class="material-icons-round text-primary text-2xl block mb-1">payments</span>
+                        <span class="text-sm font-bold text-white block">نقداً</span>
+                    </div>
+                </label>
+                <label class="payment-method-option relative flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
+                    <input type="radio" name="payment-method" value="card" class="sr-only peer">
+                    <div class="text-center">
+                        <span class="material-icons-round text-gray-400 text-2xl block mb-1">credit_card</span>
+                        <span class="text-sm font-bold text-white block">بطاقة</span>
+                    </div>
+                </label>
+            </div>
+
+            <div id="cash-payment-details" class="space-y-4">
+                <div>
+                    <label for="amount-received" class="block text-sm text-gray-400 mb-2">المبلغ المستلم</label>
+                    <input type="number" id="amount-received" placeholder="أدخل المبلغ..." class="w-full bg-dark/50 border border-white/10 text-white text-center text-xl font-bold py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                </div>
+                <div class="bg-white/5 p-4 rounded-xl text-center">
+                    <p class="text-sm text-gray-400">الباقي</p>
+                    <p id="change-due" class="text-2xl font-bold text-accent">0.00 <?php echo $currency; ?></p>
+                </div>
+            </div>
+        </div>
+        <div class="p-6 border-t border-white/5 grid grid-cols-2 gap-3">
+             <button id="cancel-payment-btn" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold transition-all">
+                إلغاء
+            </button>
+            <button id="confirm-payment-btn" class="bg-accent hover:bg-lime-500 text-dark-surface py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                 <span class="material-icons-round">check_circle</span>
+                تأكيد الدفع
+            </button>
         </div>
     </div>
 </div>
@@ -1460,7 +1515,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    async function processCheckout() {
+    async function processCheckout(paymentData) {
         if (cart.length === 0) {
             showToast('السلة فارغة!', false);
             return;
@@ -1493,9 +1548,6 @@ document.addEventListener('DOMContentLoaded', function () {
             deliveryCity = cityInput.value.trim();
             deliveryCostValue = deliveryCost;
         }
-        if (!await showConfirm('هل أنت متأكد من إتمام عملية البيع؟')) {
-            return;
-        }
 
         // حساب المجاميع قبل إرسال البيانات
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -1512,7 +1564,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     total: total,
                     delivery_cost: deliveryCostValue,
                     delivery_city: deliveryCity,
-                    items: cart
+                    items: cart,
+                    payment_method: paymentData.paymentMethod,
+                    amount_received: paymentData.amountReceived,
+                    change_due: paymentData.changeDue
                 }),
             });
             
@@ -1562,7 +1617,85 @@ document.addEventListener('DOMContentLoaded', function () {
             hideLoading();
         }
     }
-    checkoutBtn.addEventListener('click', processCheckout);
+    checkoutBtn.addEventListener('click', () => {
+        if (cart.length === 0) {
+            showToast('السلة فارغة!', false);
+            return;
+        }
+
+        const paymentModal = document.getElementById('payment-modal');
+        const paymentTotalAmount = document.getElementById('payment-total-amount');
+        const amountReceivedInput = document.getElementById('amount-received');
+        const changeDueDisplay = document.getElementById('change-due');
+        const cashPaymentDetails = document.getElementById('cash-payment-details');
+        const confirmPaymentBtn = document.getElementById('confirm-payment-btn');
+        const cancelPaymentBtn = document.getElementById('cancel-payment-btn');
+        const closePaymentModalBtn = document.getElementById('close-payment-modal');
+        const paymentMethodRadios = document.querySelectorAll('input[name="payment-method"]');
+
+        const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        const tax = taxEnabled ? subtotal * taxRate : 0;
+        const total = subtotal + tax + deliveryCost;
+
+        paymentTotalAmount.textContent = `${total.toFixed(2)} ${currency}`;
+
+        const calculateChange = () => {
+            const received = parseFloat(amountReceivedInput.value) || 0;
+            const change = received - total;
+            if (change >= 0) {
+                changeDueDisplay.textContent = `${change.toFixed(2)} ${currency}`;
+            } else {
+                changeDueDisplay.textContent = '0.00 '  + currency;
+            }
+        };
+
+        const handlePaymentMethodChange = () => {
+            const selectedMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            if (selectedMethod === 'cash') {
+                cashPaymentDetails.style.display = 'block';
+                amountReceivedInput.focus();
+            } else {
+                cashPaymentDetails.style.display = 'none';
+            }
+        };
+
+        amountReceivedInput.addEventListener('input', calculateChange);
+        paymentMethodRadios.forEach(radio => radio.addEventListener('change', handlePaymentMethodChange));
+
+        const closeModal = () => {
+            paymentModal.classList.add('hidden');
+        };
+
+        cancelPaymentBtn.addEventListener('click', closeModal);
+        closePaymentModalBtn.addEventListener('click', closeModal);
+
+        confirmPaymentBtn.onclick = () => {
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            const amountReceived = parseFloat(amountReceivedInput.value) || 0;
+
+            if (paymentMethod === 'cash' && amountReceived < total) {
+                showToast('المبلغ المستلم أقل من الإجمالي', false);
+                return;
+            }
+
+            closeModal();
+            processCheckout({
+                paymentMethod: paymentMethod,
+                amountReceived: amountReceived,
+                changeDue: amountReceived - total
+            });
+        };
+        
+        // Reset modal state
+        document.querySelector('input[name="payment-method"][value="cash"]').checked = true;
+        handlePaymentMethodChange();
+        amountReceivedInput.value = '';
+        calculateChange();
+
+        paymentModal.classList.remove('hidden');
+        amountReceivedInput.focus();
+    });
+
 
     function displayInvoice(data) {
         document.getElementById('invoice-number').textContent = `#${String(data.id).padStart(6, '0')}`;
