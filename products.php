@@ -473,7 +473,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     let currentPage = 1;
     let sortBy = 'name';
     let sortOrder = 'asc';
-    const productsPerPage = 200;
+    const productsPerPage = 500;
 
     loadProducts();
     loadCategoriesIntoFilter();
