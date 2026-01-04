@@ -58,6 +58,7 @@ $sql_invoices = "CREATE TABLE IF NOT EXISTS invoices (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     customer_id INT(6) UNSIGNED,
     total DECIMAL(10, 2) NOT NULL,
+    barcode VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id)
 )";
@@ -467,5 +468,21 @@ if ($check_delivery_city->num_rows == 0) {
 
 echo "<h3>Delivery settings added successfully</h3>";
 
+// إضافة حقل barcode إلى جدول invoices إذا لم يكن موجوداً
+$check_barcode = $conn->query("SHOW COLUMNS FROM invoices LIKE 'barcode'");
+if ($check_barcode->num_rows == 0) {
+    $sql_alter_invoices_barcode = "ALTER TABLE invoices ADD COLUMN barcode VARCHAR(50) NULL AFTER total";
+    if ($conn->query($sql_alter_invoices_barcode) === TRUE) {
+        echo "Column 'barcode' added to invoices table successfully.<br>";
+        
+        // تحديث الفواتير القديمة بباركود تلقائي
+        $update_old_invoices = "UPDATE invoices SET barcode = CONCAT('INV', LPAD(id, 8, '0')) WHERE barcode IS NULL";
+        if ($conn->query($update_old_invoices) === TRUE) {
+            echo "Old invoices updated with barcodes successfully.<br>";
+        }
+    } else {
+        echo "Error adding column 'barcode' to invoices table: " . $conn->error . "<br>";
+    }
+}
 $conn->close();
 ?>
