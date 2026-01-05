@@ -58,8 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_user'])) {
     $current_role = $stmt_check->get_result()->fetch_assoc()['role'];
     $stmt_check->close();
     
-    // إذا كان آخر admin ويحاول تغيير دوره
-    if ($current_role === 'admin' && $admin_count == 1 && $role !== 'admin') {
+    if ($current_role === 'admin' && $role !== 'admin') {
         header("Location: users.php?error=" . urlencode("لا يمكن تغيير دور المدير في النظام"));
         exit();
     }
@@ -423,8 +422,7 @@ require_once 'src/sidebar.php';
         document.getElementById('edit_role').value = role;
         document.getElementById('edit_password').value = '';
         
-        // إذا كان آخر admin في النظام، عطّل تغيير الدور
-        if (role === 'admin' && adminCount === 1) {
+        if (role === 'admin') {
             editRoleSelect.disabled = true;
             editRoleSelect.classList.add('opacity-50', 'cursor-not-allowed');
             adminWarning.classList.remove('hidden');
