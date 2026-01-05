@@ -35,6 +35,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("sss", $username, $hashed_password, $role);
 
         if ($stmt->execute()) {
+            // إنشاء إشعار التسجيل الناجح
+            $notification_message = "تم إنشاء حساب جديد باسم '{$username}' بصلاحيات '{$role}'";
+            $notification_type = "user_registration";
+            
+            $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
+            $notif_stmt->bind_param("ss", $notification_message, $notification_type);
+            $notif_stmt->execute();
+            $notif_stmt->close();
+
+            $stmt->close();
             header("Location: login.php?success=" . urlencode("تم إنشاء الحساب بنجاح"));
             exit();
         } else {

@@ -303,6 +303,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(() => loadNotifications(true, currentPage), 10000); // تحديث كل 10 ثواني بدلاً من 30 للتجربة الأسرع
 });
 
+fetch('api.php?action=checkExpiringProducts')
+    .then(res => res.json())
+    .then(() => loadNotifications(true, currentPage))
+    .catch(err => console.log('Auto-check error:', err));
+    
 function markAsRead(id) {
     fetch('api.php?action=markNotificationRead', { 
         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: id}) 

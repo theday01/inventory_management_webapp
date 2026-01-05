@@ -21,6 +21,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_user'])) {
     $stmt->bind_param("sss", $username, $hashed_password, $role);
 
     if ($stmt->execute()) {
+        // إنشاء إشعار بإضافة المستخدم الجديد
+        $created_by = $_SESSION['username'];
+        $notification_message = "قام المدير '{$created_by}' بإنشاء حساب جديد باسم '{$username}' بصلاحيات '{$role}'";
+        $notification_type = "user_registration";
+        
+        $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
+        $notif_stmt->bind_param("ss", $notification_message, $notification_type);
+        $notif_stmt->execute();
+        $notif_stmt->close();
+
         $stmt->close();
         header("Location: users.php?success=" . urlencode("تم إضافة المستخدم بنجاح"));
         exit();
@@ -68,6 +78,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_user'])) {
     }
 
     if ($stmt->execute()) {
+        // إنشاء إشعار تحديث المستخدم
+        $updated_by = $_SESSION['username'];
+        $notification_message = "قام المدير '{$updated_by}' بتحديث حساب المستخدم '{$username}' إلى دور '{$role}'";
+        $notification_type = "user_update";
+        
+        $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
+        $notif_stmt->bind_param("ss", $notification_message, $notification_type);
+        $notif_stmt->execute();
+        $notif_stmt->close();
+
         $stmt->close();
         header("Location: users.php?success=" . urlencode("تم تحديث المستخدم بنجاح"));
         exit();
@@ -92,6 +112,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
     $stmt->bind_param("i", $user_id);
 
     if ($stmt->execute()) {
+        // إنشاء إشعار حذف المستخدم
+        $deleted_by = $_SESSION['username'];
+        $notification_message = "قام المدير '{$deleted_by}' بحذف حساب المستخدم '{$username}'";
+        $notification_type = "user_deletion";
+        
+        $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
+        $notif_stmt->bind_param("ss", $notification_message, $notification_type);
+        $notif_stmt->execute();
+        $notif_stmt->close();
+
         $stmt->close();
         header("Location: users.php?success=" . urlencode("تم حذف المستخدم بنجاح"));
         exit();

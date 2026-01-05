@@ -83,6 +83,9 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         // Show the global loading screen immediately when the page opens
         if (typeof showLoading === 'function') showLoading('جاري تحميل المنتجات المحذوفة...');
         loadProducts();
+        fetch('api.php?action=checkExpiringProducts')
+            .then(res => res.json())
+            .catch(err => console.log('Expiry check error:', err));
         searchInput.addEventListener('input', () => { currentPage = 1; loadProducts(); });
 
         async function loadProducts() {

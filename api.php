@@ -132,6 +132,10 @@ switch ($action) {
     case 'deleteNotification':
         deleteNotification($conn);
         break;
+    case 'checkExpiringProducts':
+        checkExpiringProducts($conn);
+        echo json_encode(['success' => true]);
+        break;
     // ----------------------------
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
@@ -242,7 +246,7 @@ function restoreProducts($conn) {
 
         $conn->commit();
         if ($restored_count > 0) {
-            create_notification($conn, "تمت استعادة {$restored_count} منتج من الأرشيف.", "product_restore");
+            create_notification($conn, "✅ تمت استعادة {$restored_count} منتج بنجاح إلى المخزون الرئيسي.", "product_restore");
         }
         echo json_encode(['success' => true, 'message' => "تم استعادة {$restored_count} منتج بنجاح"]);
     } catch (Exception $e) {
@@ -432,7 +436,12 @@ function bulkDeleteProducts($conn) {
         $conn->commit();
         
         if ($deleted_count > 0) {
-            create_notification($conn, "تمت أرشفة {$deleted_count} منتج.", "product_delete");
+            $msg = "تمت أرشفة {$deleted_count} منتج.";
+            if ($deleted_count === 1 && !empty($products_info)) {
+                $firstName = $products_info[0]['name'];
+                $msg = "تمت أرشفة 1 منتج ({$firstName})، سيتم حذفه نهائيا بعد 30 يوم دون امكانية استرجاعه";
+            }
+            create_notification($conn, $msg, "product_delete");
         }
         
         $response = [
@@ -1508,6 +1517,50 @@ function markAllNotificationsRead($conn) {
         echo json_encode(['success' => true]);
     } else {
         echo json_encode(['success' => false, 'message' => 'فشل في تحديث الإشعارات']);
+    }
+}
+
+function checkExpiringProducts($conn) {
+    // Get products that will be auto-deleted in less than 24 hours
+    $check_sql = "SELECT id, name, removed_at 
+                  FROM removed_products 
+                  WHERE removed_at <= (NOW() - INTERVAL 29 DAY) 
+                  AND removed_at > (NOW() - INTERVAL 30 DAY)";
+    
+    $result = $conn->query($check_sql);
+    
+    if ($result && $result->num_rows > 0) {
+        $expiring_products = [];
+        while ($row = $result->fetch_assoc()) {
+            $expiring_products[] = $row['name'];
+        }
+        
+        if (count($expiring_products) > 0) {
+            // Check if we already sent notification for these products today
+            $last_check_query = "SELECT setting_value FROM settings WHERE setting_name = 'last_expiry_notification_date'";
+            $last_check_result = $conn->query($last_check_query);
+            $last_check_date = $last_check_result->num_rows > 0 ? $last_check_result->fetch_assoc()['setting_value'] : '';
+            
+            $today = date('Y-m-d');
+            
+            if ($last_check_date !== $today) {
+                $product_list = implode('، ', array_slice($expiring_products, 0, 5));
+                if (count($expiring_products) > 5) {
+                    $product_list .= ' و ' . (count($expiring_products) - 5) . ' منتجات أخرى';
+                }
+                
+                create_notification(
+                    $conn, 
+                    "⚠️ تحذير: سيتم الحذف النهائي خلال 24 ساعة: " . $product_list, 
+                    "product_expiry_warning"
+                );
+                
+                // Update last notification date
+                $conn->query("INSERT INTO settings (setting_name, setting_value) 
+                             VALUES ('last_expiry_notification_date', '$today') 
+                             ON DUPLICATE KEY UPDATE setting_value = '$today'");
+            }
+        }
     }
 }
 

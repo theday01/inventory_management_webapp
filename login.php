@@ -19,6 +19,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['username'] = $username;
             $_SESSION['role'] = $user['role'];
 
+            // إنشاء إشعار تسجيل الدخول
+            $notification_message = "قام المستخدم '{$username}' بتسجيل الدخول إلى النظام";
+            $notification_type = "user_login";
+            
+            $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
+            $notif_stmt->bind_param("ss", $notification_message, $notification_type);
+            $notif_stmt->execute();
+            $notif_stmt->close();
+
+            $stmt->close();
             header("location: dashboard.php");
             exit;
         } else {
