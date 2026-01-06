@@ -24,7 +24,7 @@ if ($conn->query($sql_create_db) === TRUE) {
 // Select the database
 $conn->select_db($dbname);
 
-// SQL to create tables
+// SQL to create tables (Existing tables...)
 $sql_users = "CREATE TABLE IF NOT EXISTS users (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(30) NOT NULL,
@@ -124,6 +124,19 @@ $sql_notifications = "CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
 
+$sql_rental_payments = "CREATE TABLE IF NOT EXISTS rental_payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    paid_month VARCHAR(7) NOT NULL,
+    payment_date DATE NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    rental_type ENUM('monthly','yearly') NOT NULL,
+    landlord_name VARCHAR(255),
+    landlord_phone VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)";
+
 // Execute table creation queries
 $tables = [
     'users' => $sql_users,
@@ -137,6 +150,7 @@ $tables = [
     'category_fields' => $sql_category_fields,
     'product_field_values' => $sql_product_field_values,
     'notifications' => $sql_notifications,
+    'rental_payments' => $sql_rental_payments
 ];
 
 foreach ($tables as $name => $sql) {
@@ -146,7 +160,6 @@ foreach ($tables as $name => $sql) {
         echo "Error creating table '$name': " . $conn->error . "<br>";
     }
 }
-
 // إضافة حقل payment_method إلى جدول invoices إذا لم يكن موجوداً
 $check_payment_method = $conn->query("SHOW COLUMNS FROM invoices LIKE 'payment_method'");
 if ($check_payment_method->num_rows == 0) {
@@ -157,6 +170,38 @@ if ($check_payment_method->num_rows == 0) {
         echo "Error adding column 'payment_method' to invoices table: " . $conn->error . "<br>";
     }
 }
+
+// ========================================
+// 1. Virtual Keyboard Settings
+// ========================================
+echo "<h3>Configuring Virtual Keyboard...</h3>";
+
+$vk_inserts = [
+    // Enable/Disable the feature globally
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardEnabled', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    
+    // Theme: 'dark', 'light', 'system'
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardTheme', 'system') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    
+    // Size: 'small', 'medium', 'large'
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardSize', 'medium') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    
+    // Haptic feedback (Vibration)
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardVibrate', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    
+    // Auto show on search input focus
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardAutoSearch', '1') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+];
+
+foreach ($vk_inserts as $q) {
+    if ($conn->query($q) === TRUE) {
+        // Success
+    } else {
+        echo "Error applying virtual keyboard setting: " . $conn->error . "<br>";
+    }
+}
+echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>✅ Virtual Keyboard settings configured successfully.</div>";
+
 
 // Insert default currency setting
 $sql_insert_currency = "INSERT INTO settings (setting_name, setting_value) VALUES ('currency', 'MAD') ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)";
@@ -203,6 +248,22 @@ foreach ($tax_inserts as $q) {
         // Success
     } else {
         echo "Error applying tax setting: " . $conn->error . "<br>";
+    }
+}
+
+// Virtual Keyboard default settings
+$vk_inserts = [
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardEnabled', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardTheme', 'system') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardSize', 'medium') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardVibrate', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardAutoSearch', '1') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+];
+foreach ($vk_inserts as $q) {
+    if ($conn->query($q) === TRUE) {
+        // Success
+    } else {
+        echo "Error applying virtual keyboard setting: " . $conn->error . "<br>";
     }
 }
 

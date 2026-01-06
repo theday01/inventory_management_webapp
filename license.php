@@ -1,7 +1,6 @@
 <?php
 $page_title = 'اتفاقية الترخيص';
 $current_page = 'license.php';
-$current_page = 'settings.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 ?>
@@ -18,39 +17,7 @@ require_once 'src/sidebar.php';
 
     <div class="flex-1 flex overflow-hidden relative z-10">
 
-        <aside class="w-64 bg-dark-surface/30 backdrop-blur-md border-l border-white/5 flex flex-col overflow-y-auto shrink-0">
-            <div class="p-4 space-y-2">
-                <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    الإعدادات العامة
-                </div>
-
-                <a href="settings.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all group">
-                    <span class="material-icons-round text-[20px] group-hover:text-primary transition-colors">store</span>
-                    <span class="font-medium text-sm">إعدادات المتجر</span>
-                </a>
-
-                <a href="users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all group">
-                    <span class="material-icons-round text-[20px] group-hover:text-primary transition-colors">people</span>
-                    <span class="font-medium text-sm">المستخدمين</span>
-                </a>
-
-                <div class="my-2 border-t border-white/5"></div>
-
-                <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    النظام
-                </div>
-
-                <a href="version.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all group">
-                    <span class="material-icons-round text-[20px] group-hover:text-primary transition-colors">info</span>
-                    <span class="font-medium text-sm">إصدار النظام</span>
-                </a>
-                 
-                <a href="license.php" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary border border-primary/20 transition-all shadow-lg shadow-primary/5">
-                    <span class="material-icons-round text-[20px]">verified_user</span>
-                    <span class="font-bold text-sm">الترخيص</span>
-                </a>
-            </div>
-        </aside>
+        <?php require_once 'src/settings_sidebar.php'; ?>
 
         <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
             <div class="max-w-4xl mx-auto">
