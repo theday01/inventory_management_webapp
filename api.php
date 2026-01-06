@@ -132,9 +132,18 @@ switch ($action) {
     case 'deleteNotification':
         deleteNotification($conn);
         break;
+    case 'checkRentalDue':
+        checkRentalDue($conn);
+        break;
     case 'checkExpiringProducts':
         checkExpiringProducts($conn);
         echo json_encode(['success' => true]);
+        break;
+    case 'markRentalPaidThisMonth':
+        markRentalPaidThisMonth($conn);
+        break;
+    case 'getRentalPayments':
+        getRentalPayments($conn);
         break;
     // ----------------------------
     default:
@@ -1140,7 +1149,7 @@ function updateDeliverySettings($conn) {
 
 function getLowStockProducts($conn) {
     // جلب إعدادات تنبيهات الكمية
-    $settings_sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('low_quantity_alert', 'critical_quantity_alert')";
+    $settings_sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('low_quantity_alert', 'critical_quantity_alert', 'last_stock_check_notification')";
     $settings_result = $conn->query($settings_sql);
     $quantity_settings = [];
     while ($row = $settings_result->fetch_assoc()) {
@@ -1171,21 +1180,16 @@ function getLowStockProducts($conn) {
     $critical = array_filter($products, function($p) use ($critical_alert) { return $p['quantity'] > 0 && $p['quantity'] <= $critical_alert; });
     $low = array_filter($products, function($p) use ($critical_alert, $low_alert) { return $p['quantity'] > $critical_alert && $p['quantity'] <= $low_alert; });
     
-    // Check if we should create a notification
-    $last_check_query = "SELECT setting_value FROM settings WHERE setting_name = 'last_stock_check_notification'";
-    $last_check_result = $conn->query($last_check_query);
-    $last_check_time = $last_check_result->num_rows > 0 ? $last_check_result->fetch_assoc()['setting_value'] : 0;
-
-    $interval_query = "SELECT setting_value FROM settings WHERE setting_name = 'stockAlertInterval'";
-    $interval_result = $conn->query($interval_query);
-    $interval = $interval_result->num_rows > 0 ? (int)$interval_result->fetch_assoc()['setting_value'] : 20;
-
-    if (time() - $last_check_time > $interval * 60) {
-        $total_low_stock = count($outOfStock) + count($critical) + count($low);
-        if ($total_low_stock > 0) {
-            create_notification($conn, "يوجد {$total_low_stock} منتجًا على وشك النفاد.", "low_stock");
-            $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_stock_check_notification', '" . time() . "') ON DUPLICATE KEY UPDATE setting_value = '" . time() . "'");
-        }
+    // فحص إذا تم إرسال إشعار اليوم
+    $last_check_time = $quantity_settings['last_stock_check_notification'] ?? 0;
+    $last_check_date = date('Y-m-d', $last_check_time);
+    $today_date = date('Y-m-d');
+    $total_low_stock = count($outOfStock) + count($critical) + count($low);
+    
+    // إرسال إشعار فقط إذا لم يتم إرساله اليوم
+    if ($last_check_date !== $today_date && $total_low_stock > 0) {
+        create_notification($conn, "يوجد {$total_low_stock} منتجًا على وشك النفاد.", "low_stock");
+        $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_stock_check_notification', '" . time() . "') ON DUPLICATE KEY UPDATE setting_value = '" . time() . "'");
     }
 
     echo json_encode([
@@ -1562,6 +1566,254 @@ function checkExpiringProducts($conn) {
             }
         }
     }
+}
+
+function checkRentalDue($conn) {
+    try {
+        // جلب إعدادات الإيجار
+        $settings_query = "SELECT setting_name, setting_value FROM settings WHERE setting_name LIKE 'rental%'";
+        $result = $conn->query($settings_query);
+        
+        $settings = [];
+        while ($row = $result->fetch_assoc()) {
+            $settings[$row['setting_name']] = $row['setting_value'];
+        }
+        
+        // التحقق من تفعيل الميزة
+        if (!isset($settings['rentalEnabled']) || $settings['rentalEnabled'] != '1') {
+            echo json_encode(['success' => true, 'message' => 'Rental feature disabled']);
+            return;
+        }
+        
+        // منع التذكير إذا تم الدفع لهذا الشهر
+        $currentMonth = date('Y-m');
+        if (isset($settings['rentalPaidMonth']) && $settings['rentalPaidMonth'] === $currentMonth) {
+            echo json_encode(['success' => true, 'notification_sent' => false, 'message' => 'تم دفع إيجار هذا الشهر', 'paid_this_month' => true]);
+            return;
+        }
+        
+        // التحقق من وجود تاريخ الدفع ونوعية التأجير
+        if (!isset($settings['rentalPaymentDate']) || !isset($settings['rentalType'])) {
+            echo json_encode(['success' => false, 'message' => 'إعدادات الإيجار غير مكتملة']);
+            return;
+        }
+        
+        $paymentDate = $settings['rentalPaymentDate']; // Y-m-d format
+        $rentalType = $settings['rentalType']; // 'monthly' or 'yearly'
+        $reminderDays = (int)($settings['rentalReminderDays'] ?? 7);
+        $lastNotification = (int)($settings['rentalLastNotification'] ?? 0);
+        $currentTime = time();
+        
+        // منع إرسال إشعارات متكررة - يجب أن يكون آخر إشعار في يوم مختلف
+        $lastNotificationDate = date('Y-m-d', $lastNotification);
+        $todayDate = date('Y-m-d');
+        
+        if ($lastNotificationDate === $todayDate) {
+            echo json_encode(['success' => true, 'message' => 'Already notified today']);
+            return;
+        }
+        
+        // تحويل تاريخ الدفع إلى timestamp
+        $paymentTimestamp = strtotime($paymentDate);
+        $today = strtotime(date('Y-m-d'));
+        
+        // حساب الفرق بالأيام
+        $daysUntilDue = floor(($paymentTimestamp - $today) / (60 * 60 * 24));
+        
+        $shouldNotify = false;
+        $notificationMessage = '';
+        $notificationType = 'rental_reminder';
+        
+        // 1. إذا كان موعد الدفع خلال أيام التذكير
+        if ($daysUntilDue > 0 && $daysUntilDue <= $reminderDays) {
+            $amount = number_format((float)($settings['rentalAmount'] ?? 0), 2);
+            $currency = $settings['currency'] ?? 'MAD';
+            
+            $notificationMessage = "🏠 تذكير: يتبقى {$daysUntilDue} يوم لدفع إيجار المتجر بمبلغ {$amount} {$currency}";
+            
+            if (isset($settings['rentalLandlordName']) && !empty($settings['rentalLandlordName'])) {
+                $notificationMessage .= "\nالمالك: " . $settings['rentalLandlordName'];
+            }
+            
+            $shouldNotify = true;
+        }
+        // 2. إذا كان اليوم هو يوم الاستحقاق بالضبط
+        elseif ($daysUntilDue == 0) {
+            $amount = number_format((float)($settings['rentalAmount'] ?? 0), 2);
+            $currency = $settings['currency'] ?? 'MAD';
+            
+            $notificationMessage = "🚨 تنبيه عاجل: اليوم هو موعد دفع إيجار المتجر بمبلغ {$amount} {$currency}!";
+            
+            if (isset($settings['rentalLandlordPhone']) && !empty($settings['rentalLandlordPhone'])) {
+                $notificationMessage .= "\nهاتف المالك: " . $settings['rentalLandlordPhone'];
+            }
+            
+            $shouldNotify = true;
+            $notificationType = 'rental_due_today';
+        }
+        // 3. إذا تأخر الدفع (بعد الموعد)
+        elseif ($daysUntilDue < 0) {
+            $daysOverdue = abs($daysUntilDue);
+            $amount = number_format((float)($settings['rentalAmount'] ?? 0), 2);
+            $currency = $settings['currency'] ?? 'MAD';
+            
+            $notificationMessage = "⚠️ تحذير: تأخرت عن دفع الإيجار بـ {$daysOverdue} يوم! المبلغ المستحق: {$amount} {$currency}";
+            
+            if (isset($settings['rentalLandlordPhone']) && !empty($settings['rentalLandlordPhone'])) {
+                $notificationMessage .= "\nهاتف المالك للتواصل: " . $settings['rentalLandlordPhone'];
+            }
+            
+            $shouldNotify = true;
+            $notificationType = 'rental_overdue';
+            
+            // إذا مضى أكثر من 7 أيام على التأخير، حدّث التاريخ للدفع التالي تلقائياً
+            if ($daysOverdue >= 7) {
+                $nextPaymentDate = calculateNextPaymentDate($paymentDate, $rentalType);
+                $conn->query("UPDATE settings SET setting_value = '{$nextPaymentDate}' WHERE setting_name = 'rentalPaymentDate'");
+                
+                $nextDateFormatted = date('Y/m/d', strtotime($nextPaymentDate));
+                create_notification($conn, "تم تحديث موعد الإيجار التالي تلقائياً إلى {$nextDateFormatted}", "rental_auto_update");
+            }
+        }
+        
+        // إرسال الإشعار إذا لزم الأمر
+        if ($shouldNotify) {
+            create_notification($conn, $notificationMessage, $notificationType);
+            
+            // تحديث وقت آخر إشعار
+            $conn->query("UPDATE settings SET setting_value = '{$currentTime}' WHERE setting_name = 'rentalLastNotification'");
+            
+            echo json_encode([
+                'success' => true, 
+                'notification_sent' => true,
+                'days_until_due' => $daysUntilDue,
+                'message' => $notificationMessage
+            ]);
+        } else {
+            echo json_encode([
+                'success' => true, 
+                'notification_sent' => false,
+                'days_until_due' => $daysUntilDue,
+                'message' => 'No notification needed yet'
+            ]);
+        }
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error checking rental: ' . $e->getMessage()]);
+    }
+}
+
+function markRentalPaidThisMonth($conn) {
+    try {
+        $settings_query = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('rentalPaymentDate','rentalType','rentalAmount','currency','rentalLandlordName','rentalLandlordPhone','rentalNotes')";
+        $result = $conn->query($settings_query);
+        $settings = [];
+        while ($row = $result->fetch_assoc()) {
+            $settings[$row['setting_name']] = $row['setting_value'];
+        }
+        if (!isset($settings['rentalPaymentDate']) || !isset($settings['rentalType'])) {
+            echo json_encode(['success' => false, 'message' => 'إعدادات الإيجار غير مكتملة']);
+            return;
+        }
+        $currentMonth = date('Y-m');
+        $nextPaymentDate = calculateNextPaymentDate($settings['rentalPaymentDate'], $settings['rentalType']);
+        
+        $conn->begin_transaction();
+        $conn->query("UPDATE settings SET setting_value = '{$conn->real_escape_string($nextPaymentDate)}' WHERE setting_name = 'rentalPaymentDate'");
+        $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('rentalPaidMonth', '{$conn->real_escape_string($currentMonth)}') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $conn->query("UPDATE settings SET setting_value = '" . time() . "' WHERE setting_name = 'rentalLastNotification'");
+        
+        ensureRentalPaymentsTable($conn);
+        $stmt = $conn->prepare("INSERT INTO rental_payments (paid_month, payment_date, amount, currency, rental_type, landlord_name, landlord_phone, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $paidMonth = $currentMonth;
+        $paymentDate = date('Y-m-d');
+        $amount = (float)($settings['rentalAmount'] ?? 0);
+        $currency = $settings['currency'] ?? 'MAD';
+        $rentalType = $settings['rentalType'] ?? 'monthly';
+        $landlordName = $settings['rentalLandlordName'] ?? '';
+        $landlordPhone = $settings['rentalLandlordPhone'] ?? '';
+        $notes = $settings['rentalNotes'] ?? '';
+        $stmt->bind_param('ssdsssss', $paidMonth, $paymentDate, $amount, $currency, $rentalType, $landlordName, $landlordPhone, $notes);
+        $stmt->execute();
+        $stmt->close();
+        
+        create_notification($conn, "✅ تم تأكيد دفع إيجار هذا الشهر. الموعد القادم: " . date('Y/m/d', strtotime($nextPaymentDate)), "rental_paid");
+        $conn->commit();
+        
+        echo json_encode(['success' => true, 'message' => 'تم تسجيل دفع الإيجار لهذا الشهر', 'next_payment_date' => $nextPaymentDate, 'paid_month' => $currentMonth]);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'خطأ أثناء تسجيل الدفع: ' . $e->getMessage()]);
+    }
+}
+
+function ensureRentalPaymentsTable($conn) {
+    $sql = "CREATE TABLE IF NOT EXISTS rental_payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        paid_month VARCHAR(7) NOT NULL,
+        payment_date DATE NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        currency VARCHAR(10) NOT NULL,
+        rental_type ENUM('monthly','yearly') NOT NULL,
+        landlord_name VARCHAR(255),
+        landlord_phone VARCHAR(50),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+    $conn->query($sql);
+}
+
+function getRentalPayments($conn) {
+    try {
+        ensureRentalPaymentsTable($conn);
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
+        if ($limit < 1) $limit = 50;
+        if ($page < 1) $page = 1;
+        $offset = ($page - 1) * $limit;
+        
+        $countRes = $conn->query("SELECT COUNT(*) as total FROM rental_payments");
+        $total = ($countRes && $countRes->num_rows) ? (int)$countRes->fetch_assoc()['total'] : 0;
+        
+        $stmt = $conn->prepare("SELECT id, paid_month, payment_date, amount, currency, rental_type, landlord_name, landlord_phone, notes, created_at FROM rental_payments ORDER BY payment_date DESC, id DESC LIMIT ? OFFSET ?");
+        $stmt->bind_param('ii', $limit, $offset);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $rows = [];
+        while ($row = $res->fetch_assoc()) {
+            $rows[] = $row;
+        }
+        $stmt->close();
+        
+        echo json_encode([
+            'success' => true,
+            'data' => $rows,
+            'pagination' => [
+                'total' => $total,
+                'limit' => $limit,
+                'current_page' => $page,
+                'total_pages' => $limit ? ceil($total / $limit) : 1
+            ]
+        ]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب سجل المدفوعات: ' . $e->getMessage()]);
+    }
+}
+/**
+ * حساب تاريخ الدفع التالي بناءً على نوعية التأجير
+ */
+function calculateNextPaymentDate($currentDate, $rentalType) {
+    $date = new DateTime($currentDate);
+    
+    if ($rentalType === 'monthly') {
+        // إضافة شهر واحد
+        $date->modify('+1 month');
+    } elseif ($rentalType === 'yearly') {
+        // إضافة سنة واحدة
+        $date->modify('+1 year');
+    }
+    
+    return $date->format('Y-m-d');
 }
 
 if (ob_get_length()) ob_end_flush();

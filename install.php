@@ -545,9 +545,6 @@ $conn->query("ALTER TABLE invoice_items ADD CONSTRAINT invoice_items_ibfk_2
               FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL");
 echo "Foreign key constraint updated to prevent data loss on product deletion.<br>";
 
-// ... existing code ...
-
-// إضافة حقول المبلغ المستلم والباقي إلى جدول invoices
 $check_amount_received = $conn->query("SHOW COLUMNS FROM invoices LIKE 'amount_received'");
 if ($check_amount_received->num_rows == 0) {
     $sql_alter_invoices_amounts = "ALTER TABLE invoices 
@@ -559,6 +556,79 @@ if ($check_amount_received->num_rows == 0) {
         echo "Error adding amount columns to invoices table: " . $conn->error . "<br>";
     }
 }
+
+
+echo "<h3>تحديث نظام الإيجار إلى النسخة الجديدة...</h3>";
+
+// حذف الإعدادات القديمة
+$old_settings = ['rentalDueDay', 'rentalDueMonth', 'rentalDueYear'];
+foreach ($old_settings as $setting) {
+    $conn->query("DELETE FROM settings WHERE setting_name = '$setting'");
+}
+
+// إضافة الإعدادات الجديدة
+$rental_settings_v2 = [
+    // تاريخ دفع الإيجار (بصيغة Y-m-d)
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalPaymentDate', '" . date('Y-m-01') . "') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    
+    // نوعية التأجير: monthly أو yearly
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalType', 'monthly') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    
+    // الإعدادات الموجودة مسبقاً (نبقيها)
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalEnabled', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalAmount', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalReminderDays', '7') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalLastNotification', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalLandlordName', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalLandlordPhone', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalNotes', '') ON DUPLICATE KEY UPDATE setting_value = setting_value"
+];
+
+$success_count = 0;
+foreach ($rental_settings_v2 as $query) {
+    if ($conn->query($query) === TRUE) {
+        $success_count++;
+    } else {
+        echo "خطأ في تحديث إعداد الإيجار: " . $conn->error . "<br>";
+    }
+}
+
+// عرض النتيجة
+if ($success_count > 0) {
+    echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>";
+    echo "✅ تم تحديث نظام الإيجار بنجاح إلى النسخة الجديدة!<br>";
+    echo "تم إضافة: نوعية التأجير (شهري/سنوي) وتاريخ دفع الإيجار<br>";
+    echo "تم حذف: نظام اختيار اليوم/الشهر/السنة المنفصل";
+    echo "</div>";
+    
+    // عرض الإعدادات الجديدة
+    $result = $conn->query("SELECT setting_name, setting_value FROM settings WHERE setting_name LIKE 'rental%' ORDER BY setting_name");
+    if ($result && $result->num_rows > 0) {
+        echo "<table border='1' cellpadding='6' style='border-collapse:collapse; margin-top: 10px;'>";
+        echo "<tr><th>الإعداد</th><th>القيمة</th></tr>";
+        while ($row = $result->fetch_assoc()) {
+            $value = $row['setting_value'];
+            if ($row['setting_name'] == 'rentalType') {
+                $value = ($value == 'monthly') ? 'شهري' : 'سنوي';
+            } elseif ($row['setting_name'] == 'rentalPaymentDate') {
+                $value = date('Y/m/d', strtotime($value));
+            }
+            echo "<tr><td>" . htmlspecialchars($row['setting_name']) . "</td><td>" . htmlspecialchars($value) . "</td></tr>";
+        }
+        echo "</table>";
+    }
+}
+
+echo "<br><div style='background: #cce5ff; padding: 15px; border: 1px solid #b3d9ff; border-radius: 5px; margin: 10px 0;'>";
+echo "📋 <strong>كيف يعمل النظام الجديد:</strong><br>";
+echo "<ul style='margin-right: 20px;'>";
+echo "<li>اختر تاريخ دفع الإيجار الأول (مثلاً: 2025/01/01)</li>";
+echo "<li>اختر نوعية التأجير (شهري أو سنوي)</li>";
+echo "<li>سيتم حساب موعد الدفع التالي تلقائياً</li>";
+echo "<li>مثال: إذا كان التاريخ 2025/01/01 ونوعية التأجير شهري → الدفع التالي: 2025/02/01</li>";
+echo "<li>مثال: إذا كان التاريخ 2025/01/01 ونوعية التأجير سنوي → الدفع التالي: 2026/01/01</li>";
+echo "</ul>";
+echo "</div>";
 
 $conn->close();
 ?>

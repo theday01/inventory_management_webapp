@@ -695,39 +695,35 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
             }
         });
     </script>
-    
+
     <script>
         // نظام التذكير بالمنتجات منخفضة المخزون مع إشعارات Windows
+
         (function() {
             let isCheckingStock = false;
-            // استخدام القيمة من الإعدادات (بالدقائق) وتحويلها إلى ميلي ثانية
-            const stockAlertMinutes = <?php echo isset($stockAlertInterval) ? $stockAlertInterval : 20; ?>;
-            const NOTIFICATION_INTERVAL = stockAlertMinutes * 60 * 1000;
-            let notificationPermission = 'default';
+            let stockNotificationPermission = 'default';
+            let lastStockCheckDate = '';
             
             // طلب إذن الإشعارات
-            async function requestNotificationPermission() {
-                if ('Notification' in window) {
+            async function requestStockNotificationPermission() {
+                if ('Notification' in window && stockNotificationPermission !== 'granted') {
                     try {
-                        notificationPermission = await Notification.requestPermission();
-                        console.log('✅ حالة إذن الإشعارات:', notificationPermission);
+                        stockNotificationPermission = await Notification.requestPermission();
                     } catch (error) {
-                        console.error('❌ خطأ في طلب إذن الإشعارات:', error);
+                        console.error('❌ خطأ في طلب إذن إشعارات المخزون:', error);
                     }
                 }
             }
             
             // إرسال إشعار Windows
-            function sendWindowsNotification(title, body, icon = '⚠️') {
-                if ('Notification' in window && notificationPermission === 'granted') {
+            function sendStockNotification(message, count) {
+                if ('Notification' in window && stockNotificationPermission === 'granted') {
                     try {
-                        const notification = new Notification(title, {
-                            body: body,
-                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">' + icon + '</text></svg>',
-                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">🏪</text></svg>',
-                            tag: 'low-stock-alert',
-                            requireInteraction: true,
-                            vibrate: [200, 100, 200],
+                        const notification = new Notification('⚠️ تنبيه المخزون', {
+                            body: message,
+                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">📦</text></svg>',
+                            tag: 'stock-alert',
+                            requireInteraction: count > 10,
                             dir: 'rtl',
                             lang: 'ar'
                         });
@@ -736,169 +732,289 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
                             window.focus();
                             notification.close();
                             if (!window.location.pathname.includes('products.php')) {
-                                window.location.href = 'products.php';
+                                window.location.href = 'products.php?stock_status=low_stock';
                             }
                         };
                         
                         return notification;
                     } catch (error) {
-                        console.error('❌ خطأ في إرسال الإشعار:', error);
+                        console.error('❌ خطأ في إرسال إشعار المخزون:', error);
                     }
                 }
                 return null;
             }
             
+            // فحص المخزون المنخفض
             async function checkLowStock() {
                 if (isCheckingStock) return;
+                const throttleKey = 'stock_notify_last_ts';
+                const now = Date.now();
+                const lastTs = parseInt(localStorage.getItem(throttleKey) || '0', 10);
+                const fifteenMinutes = 15 * 60 * 1000;
+                if (lastTs && (now - lastTs) < fifteenMinutes) return;
+                
                 isCheckingStock = true;
                 
                 try {
                     const response = await fetch('api.php?action=getLowStockProducts');
                     const result = await response.json();
                     
-                    if (result.success && result.data.length > 0) {
-                        const lastNotification = localStorage.getItem('lastLowStockNotification');
-                        const now = Date.now();
+                    if (result.success && result.count > 0) {
+                        const message = `يوجد ${result.count} منتج على وشك النفاد يرجى إعادة الطلب.`;
+                        localStorage.setItem(throttleKey, String(Date.now()));
                         
-                        if (!lastNotification || (now - parseInt(lastNotification)) > NOTIFICATION_INTERVAL) {
-                            showLowStockAlert(result);
-                            localStorage.setItem('lastLowStockNotification', now.toString());
+                        // عرض Toast
+                        if (typeof showToast === 'function') {
+                            showToast(message, false);
                         }
+                        
+                        // إرسال إشعار Windows
+                        sendStockNotification(message, result.count);
                     }
                 } catch (error) {
-                    console.error('❌ خطأ في التحقق من المخزون:', error);
+                    console.error('❌ خطأ في فحص المخزون:', error);
                 } finally {
                     isCheckingStock = false;
                 }
             }
             
-            function showLowStockAlert(data) {
-                const outOfStockCount = data.outOfStockCount || 0;
-                const criticalCount = data.criticalCount || 0;
-                const lowCount = data.lowCount || 0;
-                const totalCount = data.count || 0;
-                
-                let message = '';
-                let notificationTitle = 'تنبيه المخزون';
-                let notificationBody = '';
-                let notificationIcon = '📦';
-                let isUrgent = false;
-                
-                if (outOfStockCount > 0) {
-                    message = `🚫 تحذير عاجل: ${outOfStockCount} منتج نفذت كميته!`;
-                    notificationTitle = '🚫 تحذير عاجل - مخزون منتهي!';
-                    notificationBody = `${outOfStockCount} منتج نفذت كميته تماماً.\nيجب طلب مخزون فوراً!`;
-                    notificationIcon = '🚫';
-                    isUrgent = true;
-                    
-                    if (data.outOfStock && data.outOfStock.length > 0) {
-                        const products = data.outOfStock.slice(0, 3).map(p => p.name).join('، ');
-                        notificationBody += `\n\n📦 منتجات منتهية:\n${products}`;
-                        if (data.outOfStock.length > 3) {
-                            notificationBody += ` و${data.outOfStock.length - 3} منتج آخر`;
-                        }
-                    }
-                } 
-                else if (criticalCount > 0) {
-                    message = `⚠️ تحذير: ${criticalCount} منتج على وشك النفاذ!`;
-                    notificationTitle = '⚠️ تحذير - مخزون حرج!';
-                    notificationBody = `${criticalCount} منتج بكمية حرجة (1-5 قطع).\nيجب إعادة التخزين قريباً.`;
-                    notificationIcon = '⚠️';
-                    isUrgent = true;
-                    
-                    if (data.critical && data.critical.length > 0) {
-                        const products = data.critical.slice(0, 3).map(p => `${p.name} (${p.quantity})`).join('، ');
-                        notificationBody += `\n\n⚠️ منتجات حرجة:\n${products}`;
-                        if (data.critical.length > 3) {
-                            notificationBody += ` و${data.critical.length - 3} منتج آخر`;
-                        }
-                    }
-                } 
-                else if (lowCount > 0) {
-                    message = `📦 تنبيه: ${lowCount} منتج بكمية منخفضة`;
-                    notificationTitle = '📦 تنبيه - مخزون منخفض';
-                    notificationBody = `${lowCount} منتج بكمية منخفضة (6-10 قطع).\nراقب هذه المنتجات.`;
-                    notificationIcon = '📦';
-                }
-                
-                if (message) {
-                    showToast(message, !isUrgent);
-                    sendWindowsNotification(notificationTitle, notificationBody, notificationIcon);
-                    
-                    const soundEnabled = <?php 
-                        $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'soundNotifications'");
-                        echo ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
-                    ?>;
-                    
-                    if (soundEnabled == 1) {
-                        playNotificationSound(isUrgent);
-                    }
-                    
-                    console.log('📊 حالة المخزون:', {
-                        منتهية: outOfStockCount,
-                        حرجة: criticalCount,
-                        منخفضة: lowCount,
-                        الإجمالي: totalCount
-                    });
-                }
-            }
-            
-            function playNotificationSound(isUrgent) {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                if (isUrgent) {
-                    oscillator.frequency.value = 1000;
-                    oscillator.type = 'square';
-                    
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime + 0.1);
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.2);
-                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime + 0.3);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.6);
-                } else {
-                    oscillator.frequency.value = 800;
-                    oscillator.type = 'sine';
-                    
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.5);
-                }
-            }
-            
-            // التحقق عند تحميل الصفحة
+            // التحقق عند تحميل الصفحة فقط
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', async () => {
-                    await requestNotificationPermission();
-                    checkLowStock();
+                    await requestStockNotificationPermission();
+                    setTimeout(checkLowStock, 10000); // بعد 10 ثوان من التحميل
                 });
             } else {
-                requestNotificationPermission().then(() => checkLowStock());
+                requestStockNotificationPermission().then(() => {
+                    setTimeout(checkLowStock, 10000);
+                });
             }
             
-            setTimeout(checkLowStock, 10000);
-            setInterval(checkLowStock, NOTIFICATION_INTERVAL);
-            
-            // دالة عامة لتفعيل الإشعارات
+            // دالة لتفعيل إشعارات المخزون يدوياً
             window.enableStockNotifications = async function() {
-                await requestNotificationPermission();
-                if (notificationPermission === 'granted') {
-                    showToast('✅ تم تفعيل إشعارات Windows بنجاح', true);
+                await requestStockNotificationPermission();
+                if (stockNotificationPermission === 'granted') {
+                    // إعادة تعيين التاريخ للسماح بالفحص
+                    lastStockCheckDate = '';
+                    showToast('✅ تم تفعيل إشعارات المخزون', true);
                     checkLowStock();
-                } else if (notificationPermission === 'denied') {
-                    showToast('❌ تم رفض إذن الإشعارات. يرجى تفعيلها من إعدادات المتصفح', false);
+                } else if (stockNotificationPermission === 'denied') {
+                    showToast('❌ تم رفض إذن الإشعارات', false);
                 }
             };
+            
+            console.log('📦 نظام إشعارات المخزون - فحص يومي واحد فقط');
         })();
+        
+        (function() {
+            let isCheckingRental = false;
+            const RENTAL_CHECK_INTERVAL = 21600000; // كل 6 ساعات (بالميلي ثانية)
+            let rentalNotificationPermission = 'default';
+            let lastCheckDate = '';
+            
+            // طلب إذن الإشعارات
+            async function requestRentalNotificationPermission() {
+                if ('Notification' in window && rentalNotificationPermission !== 'granted') {
+                    try {
+                        rentalNotificationPermission = await Notification.requestPermission();
+                        console.log('✅ حالة إذن إشعارات الإيجار:', rentalNotificationPermission);
+                    } catch (error) {
+                        console.error('❌ خطأ في طلب إذن إشعارات الإيجار:', error);
+                    }
+                }
+            }
+            
+            // إرسال إشعار Windows للإيجار
+            function sendRentalNotification(message, isUrgent = false) {
+                if ('Notification' in window && rentalNotificationPermission === 'granted') {
+                    try {
+                        const icon = isUrgent ? '🚨' : '🏠';
+                        const title = isUrgent ? 'تنبيه عاجل - إيجار المتجر' : 'تذكير - إيجار المتجر';
+                        
+                        const notification = new Notification(title, {
+                            body: message,
+                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">' + icon + '</text></svg>',
+                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">🏠</text></svg>',
+                            tag: 'rental-reminder',
+                            requireInteraction: isUrgent,
+                            vibrate: isUrgent ? [300, 100, 300, 100, 300] : [200, 100, 200],
+                            dir: 'rtl',
+                            lang: 'ar'
+                        });
+                        
+                        notification.onclick = function() {
+                            window.focus();
+                            notification.close();
+                            if (!window.location.pathname.includes('settings.php')) {
+                                window.location.href = 'settings.php';
+                            }
+                        };
+                        
+                        return notification;
+                    } catch (error) {
+                        console.error('❌ خطأ في إرسال إشعار الإيجار:', error);
+                    }
+                }
+                return null;
+            }
+            
+            // فحص موعد الإيجار
+            async function checkRentalDue() {
+                if (isCheckingRental) return;
+                const dayKey = 'rental_notify_day';
+                const countKey = 'rental_notify_count';
+                const lastKey = 'rental_notify_last_ts';
+                const now = Date.now();
+                const today = new Date().toDateString();
+                const storedDay = localStorage.getItem(dayKey) || '';
+                let count = parseInt(localStorage.getItem(countKey) || '0', 10);
+                if (storedDay !== today) { localStorage.setItem(dayKey, today); count = 0; localStorage.setItem(countKey, '0'); }
+                const lastTs = parseInt(localStorage.getItem(lastKey) || '0', 10);
+                const fiveHours = 5 * 60 * 60 * 1000;
+                if (count >= 2) return;
+                if (lastTs && (now - lastTs) < fiveHours) return;
+                
+                isCheckingRental = true;
+                
+                try {
+                    const response = await fetch('api.php?action=checkRentalDue');
+                    const result = await response.json();
+                    
+                    if (result.success && result.notification_sent) {
+                        const daysUntilDue = result.days_until_due || 0;
+                        const isUrgent = daysUntilDue <= 1;
+                        localStorage.setItem(countKey, String(count + 1));
+                        localStorage.setItem(lastKey, String(Date.now()));
+                        
+                        // عرض Toast في الواجهة
+                        if (typeof showToast === 'function') {
+                            showToast(result.message, !isUrgent);
+                        }
+                        
+                        // إرسال إشعار Windows
+                        sendRentalNotification(result.message, isUrgent);
+                        
+                        // تشغيل صوت تنبيه إذا كان مفعلاً
+                        const soundEnabled = <?php 
+                            $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'soundNotifications'");
+                            echo ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
+                        ?>;
+                        
+                        if (soundEnabled == 1) {
+                            playRentalNotificationSound(isUrgent);
+                        }
+                        
+                        console.log('📅 حالة الإيجار:', {
+                            أيام_متبقية: daysUntilDue,
+                            رسالة: result.message,
+                            عاجل: isUrgent
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ خطأ في التحقق من الإيجار:', error);
+                } finally {
+                    isCheckingRental = false;
+                }
+            }
+            
+            // تشغيل صوت تنبيه مخصص للإيجار
+            function playRentalNotificationSound(isUrgent) {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    if (isUrgent) {
+                        // صوت تنبيه عاجل (متكرر وأعلى)
+                        oscillator.frequency.value = 1200;
+                        oscillator.type = 'square';
+                        
+                        gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                        
+                        for (let i = 0; i < 3; i++) {
+                            gainNode.gain.setValueAtTime(0.4, audioContext.currentTime + (i * 0.3));
+                            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime + (i * 0.3) + 0.15);
+                        }
+                        
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 1);
+                    } else {
+                        const osc1 = audioContext.createOscillator();
+                        const g1 = audioContext.createGain();
+                        osc1.type = 'sine';
+                        osc1.frequency.value = 660;
+                        g1.gain.setValueAtTime(0.0, audioContext.currentTime);
+                        g1.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
+                        g1.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.6);
+                        osc1.connect(g1); g1.connect(audioContext.destination);
+                        osc1.start(audioContext.currentTime); osc1.stop(audioContext.currentTime + 0.6);
+                        
+                        const osc2 = audioContext.createOscillator();
+                        const g2 = audioContext.createGain();
+                        osc2.type = 'sine';
+                        osc2.frequency.value = 880;
+                        g2.gain.setValueAtTime(0.0, audioContext.currentTime + 0.35);
+                        g2.gain.linearRampToValueAtTime(0.12, audioContext.currentTime + 0.38);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.95);
+                        osc2.connect(g2); g2.connect(audioContext.destination);
+                        osc2.start(audioContext.currentTime + 0.35); osc2.stop(audioContext.currentTime + 0.95);
+                    }
+                } catch (error) {
+                    console.error('❌ خطأ في تشغيل الصوت:', error);
+                }
+            }
+            
+            // التحقق عند تحميل الصفحة فقط (لا يوجد فحص دوري)
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', async () => {
+                    await requestRentalNotificationPermission();
+                    setTimeout(checkRentalDue, 5000);
+                });
+            } else {
+                requestRentalNotificationPermission().then(() => {
+                    setTimeout(checkRentalDue, 5000);
+                });
+            }
+            
+            // تم إلغاء الفحص الدوري لتقليل الإزعاج
+            // يتم الفحص فقط عند تحميل الصفحة
+            
+            // دالة عامة لتفعيل إشعارات الإيجار يدوياً
+            window.enableRentalNotifications = async function() {
+                await requestRentalNotificationPermission();
+                if (rentalNotificationPermission === 'granted') {
+                    showToast('✅ تم تفعيل إشعارات الإيجار بنجاح', true);
+                    checkRentalDue();
+                } else if (rentalNotificationPermission === 'denied') {
+                    showToast('❌ تم رفض إذن إشعارات الإيجار. يرجى تفعيلها من إعدادات المتصفح', false);
+                }
+            };
+            
+            // دالة لفحص الإيجار يدوياً
+            window.checkRentalNow = function() {
+                showToast('جاري التحقق من موعد الإيجار...', true);
+                checkRentalDue();
+            };
+            
+            // معلومات للمطورين
+            console.log('🏠 نظام تذكير الإيجار v2.0 تم تحميله');
+            console.log('📋 الميزات الجديدة:');
+            console.log('  ✅ دعم التأجير الشهري والسنوي');
+            console.log('  ✅ حساب تلقائي لموعد الدفع التالي');
+            console.log('  ✅ إشعارات Windows متقدمة');
+            console.log('  ✅ أصوات تنبيه مخصصة');
+            console.log('');
+            console.log('📞 الأوامر المتاحة:');
+            console.log('  window.enableRentalNotifications() - تفعيل الإشعارات');
+            console.log('  window.checkRentalNow() - فحص الإيجار الآن');
+        })();
+
+
         // دالة عرض Modal التأكيد المخصص
         window.showConfirmModal = function(title, message, onConfirm, onCancel = null) {
             return new Promise((resolve) => {
@@ -950,7 +1066,7 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
             });
         };
 
-</script>
+    </script>
 
     <div class="flex h-screen overflow-hidden">
 

@@ -74,8 +74,37 @@ require_once 'src/sidebar.php';
 
 <script>
 // صوت تنبيه قصير مدمج (Base64) لتجنب مشاكل الروابط الخارجية
-const soundBase64 = "data:audio/mp3;base64,//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+const soundBase64 = "data:audio/mp3;base64,//uQxAAAAANIAAAAABxBTUUzLjEwMAr///8=";
 const notificationSound = new Audio(soundBase64);
+let audioCtx = null;
+function gentleChime() {
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 660;
+        gain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.value = 880;
+        gain2.gain.setValueAtTime(0.0, audioCtx.currentTime + 0.35);
+        gain2.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.38);
+        gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.95);
+        osc2.connect(gain2); gain2.connect(audioCtx.destination);
+        osc2.start(audioCtx.currentTime + 0.35); osc2.stop(audioCtx.currentTime + 0.95);
+    } catch (e) {
+        notificationSound.currentTime = 0;
+        notificationSound.volume = 0.2;
+        notificationSound.play().catch(()=>{});
+    }
+}
 
 let lastUnreadCount = null;
 let currentFilter = 'all';
@@ -159,11 +188,7 @@ function loadNotifications(isBackgroundUpdate = false, page = 1) {
                 // --- منطق تشغيل الصوت المحدث ---
                 // الشرط: العدد الحالي أكبر من السابق، والعدد الحالي لا يساوي 0
                 if (lastUnreadCount !== null && totalUnread > lastUnreadCount) {
-                    console.log("New notification detected! Playing sound...");
-                    notificationSound.currentTime = 0;
-                    notificationSound.play().catch(e => {
-                        console.warn("Autoplay blocked. User needs to interact with page first.", e);
-                    });
+                    gentleChime();
                     
                     if(markAllBtn) markAllBtn.classList.add('new-notification-blink', 'shake-icon');
                 } else {

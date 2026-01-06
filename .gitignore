@@ -15,3 +15,5 @@ add_test_data.php
 add_test_invoices.php
 add_test_customers.php
 notif_test.php
+sound_test.php
+settings copy.php
