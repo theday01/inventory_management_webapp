@@ -39,10 +39,18 @@ function tabClass($tab, $current_page, $active_tab) {
     </a>
 
     <a href="settings.php?tab=finance" id="tab-btn-finance" class="<?php echo tabClass('finance', $current_page, $active_tab); ?>" data-tab="finance">
-        <span class="material-icons-round text-[20px] transition-colors">receipt_long</span>
+        <span class="material-icons-round text-[20px] transition-colors">account_balance</span>
         <div class="flex-1">
             <span class="font-bold text-sm block">المالية والضرائب</span>
             <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">العملة ونسب الضريبة</span>
+        </div>
+    </a>
+
+    <a href="settings.php?tab=invoice" id="tab-btn-invoice" class="<?php echo tabClass('invoice', $current_page, $active_tab); ?>" data-tab="invoice">
+        <span class="material-icons-round text-[20px] transition-colors">receipt_long</span>
+        <div class="flex-1">
+            <span class="font-bold text-sm block">الفاتورة والقوالب</span>
+            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">تعديل قالب الفاتورة</span>
         </div>
     </a>
 
