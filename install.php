@@ -267,6 +267,19 @@ foreach ($vk_inserts as $q) {
     }
 }
 
+$logo_settings = [
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('shopLogoUrl', '') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('invoiceShowLogo', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+];
+foreach ($logo_settings as $q) {
+    if ($conn->query($q) !== TRUE) {
+        echo "Error applying logo settings: " . $conn->error . "<br>";
+    }
+}
+
+// Remove deprecated shopDescription setting if exists
+$conn->query("DELETE FROM settings WHERE setting_name = 'shopDescription'");
+
 // Verify and display the added settings
 $result = $conn->query("SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('taxEnabled', 'taxRate', 'taxLabel')");
 if ($result) {

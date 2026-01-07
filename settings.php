@@ -7,12 +7,18 @@ $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
 
 // معالجة حفظ البيانات - فقط للمدراء
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
+    $currentLogo = '';
+    $resLogo = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopLogoUrl'");
+    if ($resLogo && $resLogo->num_rows > 0) {
+        $currentLogo = $resLogo->fetch_assoc()['setting_value'];
+    }
     $settings_to_save = [
         'shopName' => $_POST['shopName'] ?? '',
         'shopPhone' => $_POST['shopPhone'] ?? '',
         'shopCity' => $_POST['shopCity'] ?? '',
         'shopAddress' => $_POST['shopAddress'] ?? '',
-        'shopDescription' => $_POST['shopDescription'] ?? '',
+        'shopLogoUrl' => $currentLogo,
+        'invoiceShowLogo' => isset($_POST['invoiceShowLogo']) ? '1' : '0',
         'darkMode' => isset($_POST['darkMode']) ? '1' : '0',
         'soundNotifications' => isset($_POST['soundNotifications']) ? '1' : '0',
         'currency' => $_POST['currency'] ?? 'MAD',
@@ -34,14 +40,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'rentalLandlordName' => $_POST['rentalLandlordName'] ?? '',
         'rentalLandlordPhone' => $_POST['rentalLandlordPhone'] ?? '',
         'rentalNotes' => $_POST['rentalNotes'] ?? '',
-        
-        // ===== إعدادات لوحة المفاتيح الافتراضية =====
         'virtualKeyboardEnabled' => isset($_POST['virtualKeyboardEnabled']) ? '1' : '0',
         'virtualKeyboardTheme' => $_POST['virtualKeyboardTheme'] ?? 'system',
         'virtualKeyboardSize' => $_POST['virtualKeyboardSize'] ?? 'medium',
         'virtualKeyboardVibrate' => isset($_POST['virtualKeyboardVibrate']) ? '1' : '0',
         'virtualKeyboardAutoSearch' => isset($_POST['virtualKeyboardAutoSearch']) ? '1' : '0',
     ];
+
+    if (isset($_FILES['shopLogoFile']) && $_FILES['shopLogoFile']['error'] === UPLOAD_ERR_OK) {
+        $allowed = ['png', 'jpg', 'jpeg'];
+        $ext = strtolower(pathinfo($_FILES['shopLogoFile']['name'], PATHINFO_EXTENSION));
+        if ($ext === 'jpeg') $ext = 'jpg';
+        if (in_array($ext, $allowed)) {
+            $uploadDir = __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'uploads';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+            $filename = 'shop_logo.' . $ext;
+            $destFs = $uploadDir . DIRECTORY_SEPARATOR . $filename;
+            if (@move_uploaded_file($_FILES['shopLogoFile']['tmp_name'], $destFs)) {
+                $settings_to_save['shopLogoUrl'] = 'src/uploads/' . $filename;
+            }
+        }
+    }
+
+    $existing = [];
+    $resAll = $conn->query("SELECT setting_name, setting_value FROM settings");
+    if ($resAll) {
+        while ($row = $resAll->fetch_assoc()) {
+            $existing[$row['setting_name']] = $row['setting_value'];
+        }
+    }
 
     $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
 
@@ -51,6 +80,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     }
 
     $stmt->close();
+    $labels = [
+        'shopName' => 'اسم المتجر',
+        'shopPhone' => 'رقم الهاتف',
+        'shopCity' => 'مدينة المتجر',
+        'shopAddress' => 'العنوان التفصيلي',
+        'shopLogoUrl' => 'شعار المتجر',
+        'invoiceShowLogo' => 'إظهار الشعار في الفواتير',
+        'darkMode' => 'الوضع الداكن',
+        'soundNotifications' => 'تنبيهات الصوت',
+        'currency' => 'العملة',
+        'taxEnabled' => 'تفعيل الضريبة',
+        'taxRate' => 'نسبة الضريبة',
+        'taxLabel' => 'وسم الضريبة',
+        'low_quantity_alert' => 'حد تنبيه الكمية المنخفضة',
+        'critical_quantity_alert' => 'حد الكمية الحرجة',
+        'deliveryHomeCity' => 'المدينة الرئيسية للمتجر',
+        'deliveryInsideCity' => 'سعر التوصيل داخل المدينة',
+        'deliveryOutsideCity' => 'سعر التوصيل خارج المدينة',
+        'stockAlertsEnabled' => 'تنبيهات المخزون التلقائية',
+        'stockAlertInterval' => 'تكرار فحص المخزون بالدقائق',
+        'rentalEnabled' => 'تفعيل تذكير الإيجار',
+        'rentalAmount' => 'مبلغ الإيجار',
+        'rentalPaymentDate' => 'تاريخ دفع الإيجار',
+        'rentalType' => 'نوع الإيجار',
+        'rentalReminderDays' => 'أيام التذكير قبل الموعد',
+        'rentalLandlordName' => 'اسم المالك',
+        'rentalLandlordPhone' => 'هاتف المالك',
+        'rentalNotes' => 'ملاحظات الإيجار',
+        'virtualKeyboardEnabled' => 'تفعيل لوحة المفاتيح الافتراضية',
+        'virtualKeyboardTheme' => 'سمة لوحة المفاتيح',
+        'virtualKeyboardSize' => 'حجم لوحة المفاتيح',
+        'virtualKeyboardVibrate' => 'اهتزاز لوحة المفاتيح',
+        'virtualKeyboardAutoSearch' => 'بحث تلقائي بلوحة المفاتيح'
+    ];
+    $changedLabels = [];
+    foreach ($settings_to_save as $name => $value) {
+        $oldVal = isset($existing[$name]) ? (string)$existing[$name] : null;
+        if ($oldVal === null || (string)$value !== $oldVal) {
+            $changedLabels[] = isset($labels[$name]) ? $labels[$name] : $name;
+        }
+    }
+    if (!empty($changedLabels)) {
+        $msg = "تم تحديث الإعدادات (" . count($changedLabels) . " عنصر): " . implode('، ', $changedLabels);
+        if (in_array('deliveryInsideCity', $changedLabels) || in_array('deliveryOutsideCity', $changedLabels)) {
+            $msg .= " | داخل المدينة " . ($settings_to_save['deliveryInsideCity'] ?? '') . "، خارج المدينة " . ($settings_to_save['deliveryOutsideCity'] ?? '');
+        }
+        $notifStmt = $conn->prepare("INSERT INTO notifications (message, type) VALUES (?, ?)");
+        $type = "settings_update";
+        $notifStmt->bind_param("ss", $msg, $type);
+        $notifStmt->execute();
+        $notifStmt->close();
+    }
     header("Location: settings.php?success=" . urlencode("تم حفظ التغييرات بنجاح"));
     exit();
 }
@@ -77,7 +158,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark">
     <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <form method="POST" action="settings.php" class="flex-1 flex flex-col overflow-hidden" <?php echo $isAdmin ? '' : 'onsubmit="return false;"'; ?>>
+    <form method="POST" action="settings.php" enctype="multipart/form-data" class="flex-1 flex flex-col overflow-hidden" <?php echo $isAdmin ? '' : 'onsubmit="return false;"'; ?>>
         
         <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
             <div class="flex items-center gap-4">
@@ -137,19 +218,30 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             
                             <div class="lg:col-span-4 flex flex-col items-center justify-center p-6 border border-dashed border-white/10 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors group relative">
                                 <div class="w-32 h-32 rounded-full bg-gradient-to-tr from-gray-800 to-gray-700 flex items-center justify-center mb-4 shadow-xl shadow-black/20 overflow-hidden relative">
-                                    <span class="material-icons-round text-5xl text-gray-500 group-hover:scale-110 transition-transform duration-300">add_a_photo</span>
+                                    <?php if (!empty($settings['shopLogoUrl'] ?? '')): ?>
+                                        <img src="<?php echo htmlspecialchars($settings['shopLogoUrl']); ?>" alt="Logo" class="w-full h-full object-cover">
+                                    <?php else: ?>
+                                        <span class="material-icons-round text-5xl text-gray-500 group-hover:scale-110 transition-transform duration-300">add_a_photo</span>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="text-center">
                                     <p class="text-sm font-bold text-white mb-1">شعار المتجر</p>
                                     <p class="text-[10px] text-gray-400 mb-3">تنسيق PNG أو JPG (مربع)</p>
-                                    <button type="button" class="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all <?php echo $disabledAttr; ?>">
+                                    <button type="button" onclick="document.getElementById('shopLogoFile').click();" class="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all <?php echo $disabledAttr; ?>">
                                         تغيير الصورة
                                     </button>
                                 </div>
-                                <input type="file" class="absolute inset-0 opacity-0 cursor-pointer <?php echo $isAdmin ? '' : 'pointer-events-none'; ?>" title="تغيير الشعار">
+                                <input type="file" name="shopLogoFile" id="shopLogoFile" accept="image/png,image/jpeg" class="absolute inset-0 opacity-0 cursor-pointer <?php echo $isAdmin ? '' : 'pointer-events-none'; ?>" title="">
                             </div>
 
                             <div class="lg:col-span-8 space-y-6">
+                                <?php $hasLogo = !empty($settings['shopLogoUrl'] ?? ''); ?>
+                                <?php if ($hasLogo): ?>
+                                <label class="inline-flex items-center gap-2">
+                                    <input type="checkbox" name="invoiceShowLogo" value="1" <?php echo (($settings['invoiceShowLogo'] ?? '0') === '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?>>
+                                    <span class="text-xs font-bold text-gray-300">إضافة الشعار إلى الفواتير</span>
+                                </label>
+                                <?php endif; ?>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">اسم المتجر (يظهر في الفواتير)</label>
                                     <div class="relative group">
@@ -163,19 +255,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">وصف المتجر / الشعار اللفظي</label>
-                                    <div class="relative group">
-                                        <div class="absolute right-4 top-4 text-gray-500 group-focus-within:text-primary transition-colors">
-                                            <span class="material-icons-round text-lg">short_text</span>
-                                        </div>
-                                        <textarea rows="3" name="shopDescription"
-                                            placeholder="مثال: الجودة والأناقة في مكان واحد..."
-                                            class="w-full bg-dark/50 border border-white/10 text-white text-right pr-12 pl-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all resize-none placeholder-gray-600 <?php echo $readonlyClass; ?>"
-                                            <?php echo $disabledAttr; ?>><?php echo htmlspecialchars($settings['shopDescription'] ?? ''); ?></textarea>
-                                    </div>
-                                    <p class="text-[10px] text-gray-500 mt-2 mr-1">يظهر هذا الوصف أسفل اسم المتجر في الترويسة والفواتير المطبوعة.</p>
-                                </div>
+                               
                             </div>
                         </div>
                     </div>

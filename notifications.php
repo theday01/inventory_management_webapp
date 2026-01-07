@@ -178,9 +178,14 @@ function loadNotifications(isBackgroundUpdate = false, page = 1) {
 
                 if (sidebarBadge) {
                     sidebarBadge.textContent = totalUnread;
-                    sidebarBadge.style.display = totalUnread > 0 ? 'inline-flex' : 'none';
-                    if (totalUnread > 0) sidebarBadge.classList.remove('hidden');
-                    else sidebarBadge.classList.add('hidden');
+                    if (totalUnread > 0) {
+                        sidebarBadge.classList.remove('bg-green-500');
+                        sidebarBadge.classList.add('bg-red-500');
+                    } else {
+                        sidebarBadge.classList.remove('bg-red-500');
+                        sidebarBadge.classList.add('bg-green-500');
+                    }
+                    sidebarBadge.style.display = 'inline-flex';
                 }
 
                 if(unreadDot) unreadDot.classList.toggle('hidden', totalUnread === 0);

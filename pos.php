@@ -30,6 +30,10 @@ $shopCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 // Get sound notifications setting
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'soundNotifications'");
 $soundEnabled = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopLogoUrl'");
+$shopLogoUrl = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'invoiceShowLogo'");
+$invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
 
 $locationParts = [];
 if (!empty($shopCity)) $locationParts[] = $shopCity;
@@ -530,15 +534,22 @@ html:not(.dark) .text-red-500 {
 
         <div class="flex-1 overflow-y-auto">
             <div id="invoice-print-area" class="p-8 bg-white text-gray-900">
-                <div class="text-center border-b-2 border-gray-300 pb-6 mb-6">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($shopName); ?></h1>
-                    <?php if ($shopPhone): ?>
-                        <p class="text-sm text-gray-600">هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
+                <div class="border-b-2 border-gray-300 pb-6 mb-6 flex items-center">
+                    <?php if ($invoiceShowLogo === '1' && !empty($shopLogoUrl)): ?>
+                        <div class="w-28 h-28 md:w-32 md:h-32 mr-4 shrink-0">
+                            <img src="<?php echo htmlspecialchars($shopLogoUrl); ?>" alt="Logo" class="w-full h-full object-contain">
+                        </div>
                     <?php endif; ?>
-                    
-                    <?php if (!empty($fullLocation)): ?>
-                        <p class="text-sm text-gray-600"><?php echo htmlspecialchars($fullLocation); ?></p>
-                    <?php endif; ?>
+                    <div class="flex-1 text-center">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($shopName); ?></h1>
+                        <?php if ($shopPhone): ?>
+                            <p class="text-sm text-gray-600">هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($fullLocation)): ?>
+                            <p class="text-sm text-gray-600"><?php echo htmlspecialchars($fullLocation); ?></p>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
@@ -926,7 +937,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const deliveryInsideCost = <?php echo $deliveryInsideCity; ?>;
     const deliveryOutsideCost = <?php echo $deliveryOutsideCity; ?>;
-    const homeCity = '<?php echo addslashes($deliveryHomeCity); ?>';
+    const homeCity = '<?php echo addslashes(!empty($deliveryHomeCity) ? $deliveryHomeCity : $deliveryHomeCity); ?>';
 
     const lowAlert = <?php echo $lowAlert; ?>;       // الكمية المنخفضة (أصفر)
     const criticalAlert = <?php echo $criticalAlert; ?>; // الكمية الحرجة (أحمر)

@@ -360,6 +360,14 @@ function bulkUpdateProducts($conn) {
     $stmt->bind_param($types, ...$params);
 
     if ($stmt->execute()) {
+        $changed = [];
+        if (!empty($data['category_id'])) $changed[] = 'الفئة';
+        if ($data['price'] !== '' && !is_null($data['price'])) $changed[] = 'السعر';
+        if ($data['quantity'] !== '' && !is_null($data['quantity'])) $changed[] = 'الكمية';
+        if (!empty($changed)) {
+            $msg = "تم تعديل " . implode(' و ', $changed) . " لعدد " . count($product_ids) . " منتج";
+            create_notification($conn, $msg, "stock_update");
+        }
         echo json_encode(['success' => true, 'message' => 'تم تحديث المنتجات بنجاح']);
     } else {
         echo json_encode(['success' => false, 'message' => 'فشل في تحديث المنتجات']);
@@ -1140,6 +1148,7 @@ function updateDeliverySettings($conn) {
         $stmt->close();
         $conn->commit();
         
+        create_notification($conn, "تم تحديث إعدادات التوصيل: داخل المدينة {$data['deliveryInsideCity']}، خارج المدينة {$data['deliveryOutsideCity']}", "settings_update");
         echo json_encode(['success' => true, 'message' => 'تم تحديث إعدادات التوصيل بنجاح']);
     } catch (Exception $e) {
         $conn->rollback();
