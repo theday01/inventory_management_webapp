@@ -25,6 +25,9 @@ $shopPhone = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['settin
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopAddress'");
 $shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopLogoUrl'");
+$shopLogoUrl = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopCity'");
 $shopCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 // Get sound notifications setting
@@ -130,11 +133,11 @@ $criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc(
         to { transform: scale(1); opacity: 1; }
     }
 
-    @media print {
-    /* 1. ضبط إعدادات الصفحة الأساسية */
+@media print {
+    /* 1. إعدادات الصفحة الأساسية */
     @page { 
-        size: auto;   /* auto is the initial value */
-        margin: 0mm;  /* this affects the margin in the printer settings */
+        size: A4 portrait;
+        margin: 10mm;
     }
 
     html, body {
@@ -143,6 +146,8 @@ $criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc(
         background-color: white !important;
         margin: 0 !important;
         padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     /* 2. إخفاء كل شيء في البداية */
@@ -162,56 +167,321 @@ $criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc(
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
-        /* هذا السطر مهم جداً لمنع قص المحتوى */
         height: auto !important;
         min-height: 100% !important;
         overflow: visible !important;
         display: block !important;
         background: white !important;
         z-index: 9999 !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
-    /* 5. أهم خطوة: إلغاء التمرير والارتفاع الثابت لأي عنصر داخل الفاتورة */
-    /* هذا سيجعل قائمة المنتجات تتمدد للأسفل بدلاً من الاختفاء */
+    /* 5. إلغاء التمرير والارتفاع الثابت */
     #invoice-modal .overflow-y-auto,
-    #invoice-modal .max-h-96, /* إذا كنت تستخدم Tailwind */
+    #invoice-modal .max-h-96,
     .invoice-items-scrollable,
     .modal-content,
-    div {
+    #invoice-modal > div,
+    #invoice-print-area {
         max-height: none !important;
         height: auto !important;
         overflow: visible !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
     }
 
     /* 6. إخفاء العناصر غير المرغوبة */
     .no-print, 
     button, 
-    #close-invoice-modal, 
-    .bg-gradient-to-r, /* الهيدر الملون */
-    footer {
+    #close-invoice-modal,
+    .bg-gradient-to-r,
+    footer,
+    #invoice-modal .bg-gray-50,
+    .no-print * {
         display: none !important;
     }
 
-    /* 7. تحسينات الجداول لمنع تكسر الصفوف بين الصفحات */
+    /* 7. تحسين مظهر منطقة الطباعة */
+    #invoice-print-area {
+        padding: 15mm !important;
+        background: white !important;
+        color: black !important;
+        font-size: 11pt !important;
+        line-height: 1.5 !important;
+    }
+
+    /* 8. تحسين Header الفاتورة */
+    #invoice-print-area > div:first-child {
+        border-bottom: 3px solid #000 !important;
+        padding-bottom: 10px !important;
+        margin-bottom: 15px !important;
+    }
+
+    #invoice-print-area h1 {
+        color: #059669 !important;
+        font-size: 28pt !important;
+        font-weight: bold !important;
+        margin: 0 !important;
+    }
+
+    /* 9. تحسين معلومات المحل والعميل */
+    #invoice-print-area .grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 15px !important;
+        margin-bottom: 15px !important;
+    }
+
+    #invoice-print-area h3 {
+        font-size: 10pt !important;
+        font-weight: bold !important;
+        color: #666 !important;
+        text-transform: uppercase !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* 10. تحسين الجداول */
     table {
         width: 100% !important;
         border-collapse: collapse !important;
+        margin: 15px 0 !important;
     }
-    tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
-    }
+
     thead {
-        display: table-header-group;
+        display: table-header-group !important;
+        background: linear-gradient(to left, #f3f4f6, #e5e7eb) !important;
     }
-    tfoot {
-        display: table-footer-group;
+
+    thead th {
+        padding: 10px !important;
+        font-weight: bold !important;
+        color: #000 !important;
+        border: 2px solid #d1d5db !important;
+        text-align: center !important;
+        font-size: 10pt !important;
     }
-    
-    /* ضمان أن النصوص سوداء بالكامل للوضوح */
+
+    tbody tr {
+        page-break-inside: avoid !important;
+        border-bottom: 1px solid #e5e7eb !important;
+    }
+
+    tbody td {
+        padding: 8px !important;
+        color: #000 !important;
+        font-size: 10pt !important;
+    }
+
+    /* 11. تحسين صف الكميات */
+    tbody td:nth-child(2) {
+        text-align: center !important;
+    }
+
+    tbody td:nth-child(2) span {
+        background: #dbeafe !important;
+        color: #1e40af !important;
+        padding: 4px 10px !important;
+        border-radius: 5px !important;
+        font-weight: bold !important;
+    }
+    /* ضمان توزيع ثلاثي الأعمدة في رأس الفاتورة أثناء الطباعة */
+    .invoice-header-grid {
+        display: grid !important;
+        grid-template-columns: 33.333% 33.333% 33.333% !important;
+        gap: 0 !important;
+        align-items: start !important;
+        margin-bottom: 20px !important;
+        page-break-inside: avoid !important;
+        width: 100% !important;
+    }
+
+    .invoice-header-grid > div {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        min-height: 80px !important;
+    }
+
+    /* تنسيق عمود التاريخ (يمين) */
+    .invoice-header-grid > div:first-child {
+        text-align: right !important;
+        grid-column: 1 !important;
+        padding: 0 10px !important;
+    }
+
+    /* تنسيق عمود الباركود (وسط) */
+    .invoice-header-grid > div:nth-child(2) {
+        text-align: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        grid-column: 2 !important;
+        padding: 0 10px !important;
+    }
+
+    /* تنسيق عمود رقم الفاتورة (يسار) */
+    .invoice-header-grid > div:last-child {
+        text-align: left !important;
+        grid-column: 3 !important;
+        padding: 0 10px !important;
+    }
+
+    /* إزالة أي float أو positioning قد يتعارض */
+    .invoice-header-grid > div * {
+        float: none !important;
+        position: static !important;
+    }
+
+    /* تحسين حجم الباركود في الطباعة */
+    #invoice-barcode {
+        width: 100% !important;
+        max-width: 200px !important;
+        height: 50px !important;
+        margin: 8px auto !important;
+        display: block !important;
+    }
+
+    /* تحسين عناوين الأقسام الثلاثة */
+    .invoice-header-grid h3 {
+        font-size: 9pt !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+        color: #666 !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* تحسين التاريخ */
+    .invoice-header-grid #invoice-date {
+        font-size: 11pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    .invoice-header-grid #invoice-time {
+        font-size: 10pt !important;
+        color: #666 !important;
+        margin-top: 3px !important;
+    }
+
+    /* تحسين رقم الفاتورة */
+    .invoice-header-grid #invoice-number {
+        font-size: 18pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    /* تحسين مظهر البطاقات في الرأس */
+    .invoice-header-grid .bg-gray-50 {
+        padding: 10px !important;
+        border: 1px solid #ddd !important;
+        background: #f9fafb !important;
+    }
+    /* 12. تحسين قسم المجاميع */
+    #invoice-print-area > div:last-child > div:last-child > div {
+        border: 2px solid #d1d5db !important;
+        background: linear-gradient(to bottom right, #f9fafb, white) !important;
+        padding: 15px !important;
+        border-radius: 10px !important;
+    }
+
+    /* 13. تحسين الإجمالي النهائي */
+    #invoice-print-area .grand-total,
+    #invoice-print-area div[class*="text-2xl"],
+    #invoice-print-area div[class*="text-3xl"] {
+        font-size: 18pt !important;
+        font-weight: bold !important;
+        color: #3b82f6 !important;
+        border-top: 3px solid #3b82f6 !important;
+        padding-top: 10px !important;
+        margin-top: 10px !important;
+    }
+
+    /* 14. تحسين الباركود */
+    #invoice-barcode {
+        max-width: 200px !important;
+        height: 50px !important;
+        margin: 10px auto !important;
+        display: block !important;
+    }
+
+    /* 15. ضمان أن النصوص سوداء بالكامل */
     * {
         color: black !important;
         text-shadow: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* 16. استثناءات الألوان المهمة */
+    h1 {
+        color: #059669 !important;
+    }
+
+    #invoice-total {
+        color: #3b82f6 !important;
+    }
+
+    /* 17. تحسين Footer */
+    #invoice-print-area > div:last-child {
+        border-top: 2px dashed #000 !important;
+        padding-top: 15px !important;
+        margin-top: 20px !important;
+        text-align: center !important;
+        font-size: 10pt !important;
+    }
+
+    /* 18. تحسين Logo */
+    img[alt="Logo"] {
+        max-width: 60px !important;
+        max-height: 60px !important;
+        border: 2px solid #e5e7eb !important;
+    }
+
+    /* 19. إصلاح مشكلة القص في الصفحات المتعددة */
+    .invoice-items-container,
+    tbody {
+        page-break-inside: auto !important;
+    }
+
+    tr {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+    }
+
+    /* 20. تحسين التواريخ */
+    #invoice-date,
+    #invoice-time {
+        font-weight: bold !important;
+        color: #000 !important;
+        font-size: 11pt !important;
+    }
+
+    /* 21. تحسين بطاقات المعلومات */
+    .bg-gray-50,
+    div[class*="bg-gray"] {
+        background: #f9fafb !important;
+        border: 1px solid #d1d5db !important;
+        padding: 10px !important;
+    }
+
+    /* 22. إصلاح المسافات */
+    #invoice-print-area > * {
+        margin-bottom: 10px !important;
+    }
+
+    /* 23. تحسين رقم الفاتورة */
+    #invoice-number {
+        font-size: 20pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    /* 24. إخفاء عناصر الديليفري غير الضرورية */
+    #invoice-delivery-row:empty,
+    #invoice-delivery-city-row:empty {
+        display: none !important;
     }
 }
 
@@ -534,101 +804,104 @@ html:not(.dark) .text-red-500 {
 
         <div class="flex-1 overflow-y-auto">
             <div id="invoice-print-area" class="p-8 bg-white text-gray-900">
-                <div class="border-b-2 border-gray-300 pb-6 mb-6 flex items-center">
-                    <?php if ($invoiceShowLogo === '1' && !empty($shopLogoUrl)): ?>
-                        <div class="w-28 h-28 md:w-32 md:h-32 mr-4 shrink-0">
-                            <img src="<?php echo htmlspecialchars($shopLogoUrl); ?>" alt="Logo" class="w-full h-full object-contain">
+                            <!-- Header: Invoice Title and Logo -->
+                <div class="flex items-center justify-between pb-6 mb-6 border-b-2 border-gray-300">
+                    <div>
+                        <h1 class="text-4xl font-extrabold text-green-600">فاتورة</h1>
+                    </div>
+                    <?php if (!empty($shopLogoUrl)): ?>
+                        <img src="<?php echo htmlspecialchars($shopLogoUrl); ?>" alt="Logo" class="w-16 h-16 rounded-full border border-gray-200 object-contain bg-white">
+                    <?php else: ?>
+                        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                            <span class="material-icons-round text-3xl">store</span>
                         </div>
                     <?php endif; ?>
-                    <div class="flex-1 text-center">
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($shopName); ?></h1>
-                        <?php if ($shopPhone): ?>
-                            <p class="text-sm text-gray-600">هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
-                        <?php endif; ?>
-                        
-                        <?php if (!empty($fullLocation)): ?>
-                            <p class="text-sm text-gray-600"><?php echo htmlspecialchars($fullLocation); ?></p>
-                        <?php endif; ?>
-                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
+                <!-- Two Columns: Shop Info and Client Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 mb-6 border-b border-gray-200">
+                    <!-- Your Information (Shop Info) -->
                     <div>
-                        <p class="text-gray-600 mb-1">رقم الفاتورة</p>
-                        <p class="font-bold text-lg" id="invoice-number">-</p>
-                        <!-- باركود الفاتورة -->
-                        <svg id="invoice-barcode" class="mt-2"></svg>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3">معلومات المحل</h3>
+                        <div class="text-sm text-gray-700 space-y-1">
+                            <p class="font-bold text-base"><?php echo htmlspecialchars($shopName); ?></p>
+                            <?php if ($shopPhone): ?>
+                                <p><?php echo htmlspecialchars($shopPhone); ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($fullLocation)): ?>
+                                <p><?php echo htmlspecialchars($fullLocation); ?></p>
+                            <?php endif; ?>
+                        </div>
                     </div>
+
+                    <!-- Client Information -->
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3">معلومات العميل</h3>
+                        <div id="customer-info" class="text-sm text-gray-700 space-y-1"></div>
+                    </div>
+                </div>
+
+                <!-- Two Columns: Issue Date and Invoice Number with Barcode -->
+                <!-- Three Columns: Date, Barcode, Invoice Number -->
+                <div class="grid grid-cols-3 gap-6 pb-6 mb-6 border-b border-gray-200 invoice-header-grid">
+                        <!-- تاريخ الإصدار - يمين -->
+                    <div class="text-right">
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">تاريخ الإصدار</h3>
+                        <p class="text-base font-bold text-gray-900" id="invoice-date">-</p>
+                        <p class="text-sm text-gray-600" id="invoice-time">-</p>
+                    </div>
+
+                    <!-- الباركود - وسط -->
+                    <div class="flex flex-col items-center justify-start">
+                        <svg id="invoice-barcode" style="max-width: 200px; height: 50px; margin: 0 auto;"></svg>
+                    </div>
+
+                    <!-- رقم الفاتورة - يسار -->
                     <div class="text-left">
-                        <p class="text-gray-600 mb-1">التاريخ</p>
-                        <p class="font-bold" id="invoice-date">-</p>
-                        <p class="text-gray-600 text-xs mt-1">الوقت: <span class="font-medium text-gray-900" id="invoice-time">-</span></p>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">رقم الفاتورة</h3>
+                        <p class="text-2xl font-bold text-gray-900" id="invoice-number">-</p>
                     </div>
                 </div>
-
-                <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <h3 class="font-bold text-gray-900 mb-2">معلومات العميل</h3>
-                    <div id="customer-info" class="text-sm text-gray-700"></div>
-                </div>
-
+            
                 <div class="mb-6">
-                    <div class="invoice-items-scrollable">
+                    <div class="rounded-2xl border-2 border-gray-200 overflow-hidden bg-white shadow-sm">
                         <table class="w-full text-sm invoice-items-container">
-                            <thead class="sticky top-0 bg-white">
+                            <thead class="bg-gradient-to-l from-gray-50 to-gray-100">
                                 <tr class="border-b-2 border-gray-300">
-                                    <th class="text-right py-3 font-bold">#</th>
-                                    <th class="text-right py-3 font-bold">المنتج</th>
-                                    <th class="text-center py-3 font-bold">الكمية</th>
-                                    <th class="text-center py-3 font-bold">السعر</th>
-                                    <th class="text-left py-3 font-bold">الإجمالي</th>
+                                    <th class="text-right py-4 px-4 font-extrabold text-gray-800 text-xs uppercase tracking-wide">المنتج</th>
+                                    <th class="text-center py-4 px-4 font-extrabold text-gray-800 text-xs uppercase tracking-wide">الكمية</th>
+                                    <th class="text-center py-4 px-4 font-extrabold text-gray-800 text-xs uppercase tracking-wide">السعر</th>
+                                    <th class="text-left py-4 px-4 font-extrabold text-gray-800 text-xs uppercase tracking-wide">الإجمالي</th>
                                 </tr>
                             </thead>
                             <tbody id="invoice-items"></tbody>
                         </table>
                     </div>
-                    <div id="items-count-badge" class="text-xs text-gray-500 mt-2 text-center hidden"></div>
+                    <div id="items-count-badge" class="text-xs text-gray-500 mt-3 text-center hidden"></div>
                 </div>
 
-                <div class="border-t-2 border-gray-300 pt-4">
+                <div class="pt-6">
                     <div class="flex justify-end">
-                        <div class="w-64 space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">المجموع الفرعي:</span>
-                                <span class="font-medium" id="invoice-subtotal">-</span>
+                        <div class="w-full md:w-96 space-y-3 text-sm rounded-2xl border-2 border-gray-300 p-6 bg-gradient-to-br from-gray-50 to-white shadow-lg">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                <span class="text-gray-600 font-semibold">المجموع الفرعي:</span>
+                                <span class="font-bold text-gray-800 text-base" id="invoice-subtotal">-</span>
                             </div>
-                            <div class="flex justify-between" id="invoice-tax-row">
-                                <span class="text-gray-600"><span id="invoice-tax-label">TVA</span> (<span id="invoice-tax-rate">20</span>%):</span>
-                                <span class="font-medium" id="invoice-tax-amount">-</span>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-200" id="invoice-tax-row">
+                                <span class="text-gray-600 font-semibold"><span id="invoice-tax-label">TVA</span> (<span id="invoice-tax-rate">20</span>%):</span>
+                                <span class="font-bold text-gray-800 text-base" id="invoice-tax-amount">-</span>
                             </div>
-                            <div class="flex justify-between text-lg font-bold border-t-2 border-gray-300 pt-2">
-                                <span>الإجمالي:</span>
-                                <span class="text-primary" id="invoice-total">-</span>
+                            <div class="flex justify-between items-center text-2xl font-extrabold border-t-4 border-primary/30 pt-4 mt-2">
+                                <span class="text-gray-800">الإجمالي:</span>
+                                <span class="text-primary text-3xl" id="invoice-total">-</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="text-center mt-8 pt-6 border-t border-gray-200 text-xs text-gray-500">
-                    <p class="font-semibold text-gray-700 mb-3" style="font-size: 14px;">شكرا لثقتكم بنا</p>
-                    <?php if (!empty($shopName) || !empty($shopPhone) || !empty($shopAddress)): ?>
-                        <div class="mt-3 text-gray-600 space-y-1">
-                            <?php if (!empty($shopName)): ?>
-                                <p class="font-medium"><?php echo htmlspecialchars($shopName); ?></p>
-                            <?php endif; ?>
-                            <?php if (!empty($shopPhone)): ?>
-                                <p>هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
-                            <?php endif; ?>
-                            
-                            <?php if (!empty($fullLocation)): ?>
-                                <p><?php echo htmlspecialchars($fullLocation); ?></p>
-                            <?php endif; ?>
-                        </div>
-                    <?php else: ?>
-                        <div class="mt-3 space-y-1">
-                            <p class="text-gray-600">تم تصميم وتطوير النظام من طرف حمزة سعدي 2025</p>
-                            <p class="text-gray-600">الموقع الإلكتروني: <span class="text-blue-600">https://eagleshadow.technology</span></p>
-                        </div>
-                    <?php endif; ?>
+                <div class="text-center mt-8 pt-6 border-t-2 border-gray-300">
+                    <p class="font-bold text-gray-800 mb-2" style="font-size: 18px;">شكراً لثقتكم بنا</p>
+                    <p class="text-gray-600 italic" style="font-size: 13px;">نسعد بخدمتكم دائماً ونتطلع لزيارتكم القادمة</p>
                 </div>
             </div>
         </div>
@@ -953,6 +1226,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const taxEnabled = <?php echo $taxEnabled; ?> == 1;
     const taxRate = <?php echo $taxRate; ?> / 100;
     const taxLabel = '<?php echo addslashes($taxLabel); ?>';
+    const shopLogoUrl = "<?php echo htmlspecialchars($shopLogoUrl); ?>";
     const currency = '<?php echo $currency; ?>';
     const shopName = '<?php echo addslashes($shopName); ?>';
     const shopPhone = '<?php echo addslashes($shopPhone); ?>';
@@ -1766,12 +2040,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const customerInfo = document.getElementById('customer-info');
         if (data.customer) {
             customerInfo.innerHTML = `
-                <p><strong>الاسم:</strong> ${data.customer.name}</p>
-                ${data.customer.phone ? `<p><strong>الهاتف:</strong> ${data.customer.phone}</p>` : ''}
-                ${data.customer.email ? `<p><strong>البريد:</strong> ${data.customer.email}</p>` : ''}
+                <p class="font-bold text-base">${data.customer.name}</p>
+                ${data.customer.phone ? `<p>${data.customer.phone}</p>` : ''}
+                ${data.customer.email ? `<p>${data.customer.email}</p>` : ''}
             `;
         } else {
-            customerInfo.innerHTML = '<p>عميل نقدي</p>';
+            customerInfo.innerHTML = '<p class="font-bold">عميل نقدي</p><p class="text-gray-500">افتراضي</p>';
         }
         
         const itemsTable = document.getElementById('invoice-items');
@@ -1787,13 +2061,20 @@ document.addEventListener('DOMContentLoaded', function () {
         
         data.items.forEach((item, index) => {
             const row = document.createElement('tr');
-            row.className = 'border-b border-gray-200 invoice-item-row';
+            row.className = 'border-b border-gray-200 invoice-item-row hover:bg-gray-50 transition-colors';
             row.innerHTML = `
-                <td class="py-2">${index + 1}</td>
-                <td class="py-2">${item.name}</td>
-                <td class="py-2 text-center">${item.quantity}</td>
-                <td class="py-2 text-center">${item.price} ${currency}</td>
-                <td class="py-2 text-left font-medium">${(item.price * item.quantity).toFixed(2)} ${currency}</td>
+                <td class="py-3 px-4 text-gray-800 font-bold">${item.name}</td>
+                <td class="py-3 px-4 text-center">
+                    <span class="inline-block bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-lg text-sm">
+                        ${item.quantity}
+                    </span>
+                </td>
+                <td class="py-3 px-4 text-center text-gray-700 font-semibold">${parseFloat(item.price).toFixed(2)} ${currency}</td>
+                <td class="py-3 px-4 text-left">
+                    <span class="font-extrabold text-gray-900 text-base">
+                        ${(item.price * item.quantity).toFixed(2)} ${currency}
+                    </span>
+                </td>
             `;
             itemsTable.appendChild(row);
         });
