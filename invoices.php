@@ -40,10 +40,10 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
 <style>
 @media print {
-    /* 1. ضبط إعدادات الصفحة الأساسية */
+    /* 1. إعدادات الصفحة الأساسية */
     @page { 
-        size: auto;   /* auto is the initial value */
-        margin: 0mm;  /* this affects the margin in the printer settings */
+        size: A4 portrait;
+        margin: 10mm;
     }
 
     html, body {
@@ -52,6 +52,8 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         background-color: white !important;
         margin: 0 !important;
         padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     /* 2. إخفاء كل شيء في البداية */
@@ -71,56 +73,332 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
-        /* هذا السطر مهم جداً لمنع قص المحتوى */
         height: auto !important;
         min-height: 100% !important;
         overflow: visible !important;
         display: block !important;
         background: white !important;
         z-index: 9999 !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
-    /* 5. أهم خطوة: إلغاء التمرير والارتفاع الثابت لأي عنصر داخل الفاتورة */
-    /* هذا سيجعل قائمة المنتجات تتمدد للأسفل بدلاً من الاختفاء */
+    /* 5. إلغاء التمرير والارتفاع الثابت */
     #invoice-modal .overflow-y-auto,
-    #invoice-modal .max-h-96, /* إذا كنت تستخدم Tailwind */
+    #invoice-modal .max-h-96,
     .invoice-items-scrollable,
     .modal-content,
-    div {
+    #invoice-modal > div,
+    #invoice-print-area {
         max-height: none !important;
         height: auto !important;
         overflow: visible !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
     }
 
     /* 6. إخفاء العناصر غير المرغوبة */
     .no-print, 
     button, 
-    #close-invoice-modal, 
-    .bg-gradient-to-r, /* الهيدر الملون */
-    footer {
+    #close-invoice-modal,
+    .bg-gradient-to-r,
+    footer,
+    #invoice-modal .bg-gray-50,
+    .no-print * {
         display: none !important;
     }
 
-    /* 7. تحسينات الجداول لمنع تكسر الصفوف بين الصفحات */
+    /* 7. تحسين مظهر منطقة الطباعة */
+    #invoice-print-area {
+        padding: 15mm !important;
+        background: white !important;
+        color: black !important;
+        font-size: 11pt !important;
+        line-height: 1.5 !important;
+    }
+
+    /* 8. تحسين Header الفاتورة */
+    #invoice-print-area > div:first-child {
+        border-bottom: 3px solid #000 !important;
+        padding-bottom: 10px !important;
+        margin-bottom: 15px !important;
+    }
+
+    #invoice-print-area h1 {
+        color: #059669 !important;
+        font-size: 28pt !important;
+        font-weight: bold !important;
+        margin: 0 !important;
+    }
+
+    /* 9. تحسين معلومات المحل والعميل */
+    #invoice-print-area .grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 15px !important;
+        margin-bottom: 15px !important;
+    }
+
+    #invoice-print-area h3 {
+        font-size: 10pt !important;
+        font-weight: bold !important;
+        color: #666 !important;
+        text-transform: uppercase !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* 10. تحسين الجداول */
     table {
         width: 100% !important;
         border-collapse: collapse !important;
+        margin: 15px 0 !important;
+        table-layout: fixed !important;
     }
-    tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
-    }
+
     thead {
-        display: table-header-group;
+        display: table-header-group !important;
+        background: #f3f4f6 !important;
     }
-    tfoot {
-        display: table-footer-group;
+
+    thead th {
+        padding: 8px !important;
+        font-weight: bold !important;
+        color: #000 !important;
+        border: 1px solid #d1d5db !important;
+        font-size: 10pt !important;
+        white-space: nowrap !important;
     }
-    
-    /* ضمان أن النصوص سوداء بالكامل للوضوح */
+
+    /* تنسيق محدد لأعمدة الجدول */
+    thead th:nth-child(1) { text-align: right !important; width: 45% !important; }
+    thead th:nth-child(2) { text-align: center !important; width: 15% !important; }
+    thead th:nth-child(3) { text-align: center !important; width: 20% !important; }
+    thead th:nth-child(4) { text-align: left !important; width: 20% !important; }
+
+    tbody tr {
+        page-break-inside: avoid !important;
+        border-bottom: 1px solid #e5e7eb !important;
+    }
+
+    tbody td {
+        padding: 8px !important;
+        color: #000 !important;
+        font-size: 10pt !important;
+        border: 1px solid #e5e7eb !important;
+    }
+
+    /* تنسيق محدد لخلايا الجدول */
+    tbody td:nth-child(1) { text-align: right !important; }
+    tbody td:nth-child(2) { text-align: center !important; }
+    tbody td:nth-child(3) { text-align: center !important; }
+    tbody td:nth-child(4) { text-align: left !important; }
+
+    /* 11. تحسين صف الكميات */
+    tbody td:nth-child(2) span {
+        background: #dbeafe !important;
+        color: #1e40af !important;
+        padding: 2px 6px !important;
+        border-radius: 3px !important;
+        font-weight: bold !important;
+        display: inline-block !important;
+    }
+    /* ضمان توزيع ثلاثي الأعمدة في رأس الفاتورة أثناء الطباعة */
+    .invoice-header-grid {
+        display: grid !important;
+        grid-template-columns: 33.333% 33.333% 33.333% !important;
+        gap: 0 !important;
+        align-items: start !important;
+        margin-bottom: 20px !important;
+        page-break-inside: avoid !important;
+        width: 100% !important;
+    }
+
+    .invoice-header-grid > div {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        min-height: 80px !important;
+    }
+
+    /* تنسيق عمود التاريخ (يمين) */
+    .invoice-header-grid > div:first-child {
+        text-align: right !important;
+        grid-column: 1 !important;
+        padding: 0 10px !important;
+    }
+
+    /* تنسيق عمود الباركود (وسط) */
+    .invoice-header-grid > div:nth-child(2) {
+        text-align: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        grid-column: 2 !important;
+        padding: 0 10px !important;
+    }
+
+    /* تنسيق عمود رقم الفاتورة (يسار) */
+    .invoice-header-grid > div:last-child {
+        text-align: left !important;
+        grid-column: 3 !important;
+        padding: 0 10px !important;
+    }
+
+    /* إزالة أي float أو positioning قد يتعارض */
+    .invoice-header-grid > div * {
+        float: none !important;
+        position: static !important;
+    }
+
+    /* تحسين حجم الباركود في الطباعة */
+    #invoice-barcode {
+        width: 100% !important;
+        max-width: 200px !important;
+        height: 50px !important;
+        margin: 8px auto !important;
+        display: block !important;
+    }
+
+    /* تحسين عناوين الأقسام الثلاثة */
+    .invoice-header-grid h3 {
+        font-size: 9pt !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+        color: #666 !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* تحسين التاريخ */
+    .invoice-header-grid #invoice-date {
+        font-size: 11pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    .invoice-header-grid #invoice-time {
+        font-size: 10pt !important;
+        color: #666 !important;
+        margin-top: 3px !important;
+    }
+
+    /* تحسين رقم الفاتورة */
+    .invoice-header-grid #invoice-number {
+        font-size: 18pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    /* تحسين مظهر البطاقات في الرأس */
+    .invoice-header-grid .bg-gray-50 {
+        padding: 10px !important;
+        border: 1px solid #ddd !important;
+        background: #f9fafb !important;
+    }
+    /* 12. تحسين قسم المجاميع */
+    #invoice-print-area > div:last-child > div:last-child > div {
+        border: 2px solid #d1d5db !important;
+        background: linear-gradient(to bottom right, #f9fafb, white) !important;
+        padding: 15px !important;
+        border-radius: 10px !important;
+    }
+
+    /* 13. تحسين الإجمالي النهائي */
+    #invoice-print-area .grand-total,
+    #invoice-print-area div[class*="text-2xl"],
+    #invoice-print-area div[class*="text-3xl"] {
+        font-size: 18pt !important;
+        font-weight: bold !important;
+        color: #3b82f6 !important;
+        border-top: 3px solid #3b82f6 !important;
+        padding-top: 10px !important;
+        margin-top: 10px !important;
+    }
+
+    /* 14. تحسين الباركود */
+    #invoice-barcode {
+        max-width: 200px !important;
+        height: 50px !important;
+        margin: 10px auto !important;
+        display: block !important;
+    }
+
+    /* 15. ضمان أن النصوص سوداء بالكامل */
     * {
         color: black !important;
         text-shadow: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* 16. استثناءات الألوان المهمة */
+    h1 {
+        color: #059669 !important;
+    }
+
+    #invoice-total {
+        color: #3b82f6 !important;
+    }
+
+    /* 17. تحسين Footer */
+    #invoice-print-area > div:last-child {
+        border-top: 2px dashed #000 !important;
+        padding-top: 15px !important;
+        margin-top: 20px !important;
+        text-align: center !important;
+        font-size: 10pt !important;
+    }
+
+    /* 18. تحسين Logo */
+    img[alt="Logo"] {
+        max-width: 60px !important;
+        max-height: 60px !important;
+        border: 2px solid #e5e7eb !important;
+    }
+
+    /* 19. إصلاح مشكلة القص في الصفحات المتعددة */
+    .invoice-items-container,
+    tbody {
+        page-break-inside: auto !important;
+    }
+
+    tr {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+    }
+
+    /* 20. تحسين التواريخ */
+    #invoice-date,
+    #invoice-time {
+        font-weight: bold !important;
+        color: #000 !important;
+        font-size: 11pt !important;
+    }
+
+    /* 21. تحسين بطاقات المعلومات */
+    .bg-gray-50,
+    div[class*="bg-gray"] {
+        background: #f9fafb !important;
+        border: 1px solid #d1d5db !important;
+        padding: 10px !important;
+    }
+
+    /* 22. إصلاح المسافات */
+    #invoice-print-area > * {
+        margin-bottom: 10px !important;
+    }
+
+    /* 23. تحسين رقم الفاتورة */
+    #invoice-number {
+        font-size: 20pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    /* 24. إخفاء عناصر الديليفري غير الضرورية */
+    #invoice-delivery-row:empty,
+    #invoice-delivery-city-row:empty {
+        display: none !important;
     }
 }
 
@@ -248,14 +526,13 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 <!-- Invoice Modal -->
 <div id="invoice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto overflow-hidden flex flex-col" style="max-height: 90vh;">
-        <!-- Modal Header -->
         <div class="bg-gradient-to-r from-primary to-accent p-6 text-white no-print shrink-0">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <span class="material-icons-round text-3xl">receipt_long</span>
                     <div>
-                        <h3 class="text-2xl font-bold">عرض الفاتورة</h3>
-                        <p class="text-sm opacity-90">تفاصيل الفاتورة الكاملة</p>
+                        <h3 class="text-2xl font-bold">فاتورة ناجحة!</h3>
+                        <p class="text-sm opacity-90">تم إتمام عملية البيع بنجاح</p>
                     </div>
                 </div>
                 <button id="close-invoice-modal" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
@@ -264,112 +541,110 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             </div>
         </div>
 
-        <!-- Invoice Content -->
         <div class="flex-1 overflow-y-auto">
             <div id="invoice-print-area" class="p-8 bg-white text-gray-900">
-                <div class="border-b-2 border-gray-300 pb-6 mb-6 flex items-center">
-                    <?php if ($invoiceShowLogo === '1' && !empty($shopLogoUrl)): ?>
-                        <div class="w-28 h-28 md:w-32 md:h-32 mr-4 shrink-0">
-                            <img src="<?php echo htmlspecialchars($shopLogoUrl); ?>" alt="Logo" class="w-full h-full object-contain">
+                            <!-- Header: Invoice Title and Logo -->
+                <div class="flex items-center justify-between pb-6 mb-6 border-b-2 border-gray-300">
+                    <div>
+                        <h1 class="text-4xl font-extrabold text-green-600">فاتورة</h1>
+                    </div>
+                    <?php if (!empty($shopLogoUrl)): ?>
+                        <img src="<?php echo htmlspecialchars($shopLogoUrl); ?>" alt="Logo" class="w-16 h-16 rounded-full border border-gray-200 object-contain bg-white">
+                    <?php else: ?>
+                        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                            <span class="material-icons-round text-3xl">store</span>
                         </div>
                     <?php endif; ?>
-                    <div class="flex-1 text-center">
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($shopName); ?></h1>
-                        <?php if ($shopPhone): ?>
-                            <p class="text-sm text-gray-600">هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
-                        <?php endif; ?>
-                        <?php if (!empty($fullLocation)): ?>
-                            <p class="text-sm text-gray-600"><?php echo htmlspecialchars($fullLocation); ?></p>
-                        <?php endif; ?>
-                    </div>
                 </div>
 
-                <!-- Invoice Info -->
-                <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
+                <!-- Two Columns: Shop Info and Client Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 mb-6 border-b border-gray-200">
+                    <!-- Your Information (Shop Info) -->
                     <div>
-                        <p class="text-gray-600 mb-1">رقم الفاتورة</p>
-                        <p class="font-bold text-lg" id="invoice-number">-</p>
-                        <!-- باركود الفاتورة -->
-                        <svg id="invoice-barcode" class="mt-2"></svg>
-                    </div>
-                    <div class="text-left">
-                        <p class="text-gray-600 mb-1">التاريخ</p>
-                        <p class="font-bold" id="invoice-date">-</p>
-                        <p class="text-gray-600 text-xs mt-1">الوقت: <span class="font-medium text-gray-900" id="invoice-time">-</span></p>
-                    </div>
-                </div>
-
-                <!-- Customer Info -->
-                <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <h3 class="font-bold text-gray-900 mb-2">معلومات العميل</h3>
-                    <div id="customer-info" class="text-sm text-gray-700"></div>
-                </div>
-
-                <!-- Items Table -->
-                <div class="mb-6">
-                    <div class="invoice-items-scrollable">
-                        <table class="w-full text-sm invoice-items-container">
-                            <thead class="sticky top-0 bg-white">
-                                <tr class="border-b-2 border-gray-300">
-                                    <th class="text-right py-3 font-bold">#</th>
-                                    <th class="text-right py-3 font-bold">المنتج</th>
-                                    <th class="text-center py-3 font-bold">الكمية</th>
-                                    <th class="text-center py-3 font-bold">السعر</th>
-                                    <th class="text-left py-3 font-bold">الإجمالي</th>
-                                </tr>
-                            </thead>
-                            <tbody id="invoice-items"></tbody>
-                        </table>
-                    </div>
-                    <div id="items-count-badge" class="text-xs text-gray-500 mt-2 text-center hidden"></div>
-                </div>
-
-                <!-- Totals -->
-                <div class="border-t-2 border-gray-300 pt-4">
-                    <div class="flex justify-end">
-                        <div class="w-64 space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">المجموع الفرعي:</span>
-                                <span class="font-medium" id="invoice-subtotal">-</span>
-                            </div>
-                            <div class="flex justify-between" id="invoice-tax-row">
-                                <span class="text-gray-600"><span id="invoice-tax-label">TVA</span> (<span id="invoice-tax-rate">20</span>%):</span>
-                                <span class="font-medium" id="invoice-tax-amount">-</span>
-                            </div>
-                            <div class="flex justify-between text-lg font-bold border-t-2 border-gray-300 pt-2">
-                                <span>الإجمالي:</span>
-                                <span class="text-primary" id="invoice-total">-</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="text-center mt-8 pt-6 border-t border-gray-200 text-xs text-gray-500">
-                    <p class="font-semibold text-gray-700 mb-3" style="font-size: 14px;">شكراً لثقتكم بنا</p>
-                    <?php if (!empty($shopName) || !empty($shopPhone) || !empty($shopAddress)): ?>
-                        <div class="mt-3 text-gray-600 space-y-1">
-                            <?php if (!empty($shopName)): ?>
-                                <p class="font-medium"><?php echo htmlspecialchars($shopName); ?></p>
-                            <?php endif; ?>
-                            <?php if (!empty($shopPhone)): ?>
-                                <p>هاتف: <?php echo htmlspecialchars($shopPhone); ?></p>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3">معلومات المحل</h3>
+                        <div class="text-sm text-gray-700 space-y-1">
+                            <p class="font-bold text-base"><?php echo htmlspecialchars($shopName); ?></p>
+                            <?php if ($shopPhone): ?>
+                                <p><?php echo htmlspecialchars($shopPhone); ?></p>
                             <?php endif; ?>
                             <?php if (!empty($fullLocation)): ?>
                                 <p><?php echo htmlspecialchars($fullLocation); ?></p>
                             <?php endif; ?>
                         </div>
-                    <?php else: ?>
-                        <div class="mt-3 space-y-1">
-                            <p class="text-gray-600">تم تصميم وتطوير النظام من طرف حمزة سعدي 2025</p>
-                            <p class="text-gray-600">الموقع الإلكتروني: <span class="text-blue-600">https://eagleshadow.technology</span></p>
+                    </div>
+
+                    <!-- Client Information -->
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3">معلومات العميل</h3>
+                        <div id="customer-info" class="text-sm text-gray-700 space-y-1"></div>
+                    </div>
+                </div>
+
+                <!-- Two Columns: Issue Date and Invoice Number with Barcode -->
+                <!-- Three Columns: Date, Barcode, Invoice Number -->
+                <div class="grid grid-cols-3 gap-6 pb-6 mb-6 border-b border-gray-200 invoice-header-grid">
+                        <!-- تاريخ الإصدار - يمين -->
+                    <div class="text-right">
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">تاريخ الإصدار</h3>
+                        <p class="text-base font-bold text-gray-900" id="invoice-date">-</p>
+                        <p class="text-sm text-gray-600" id="invoice-time">-</p>
+                    </div>
+
+                    <!-- الباركود - وسط -->
+                    <div class="flex flex-col items-center justify-start">
+                        <svg id="invoice-barcode" style="max-width: 200px; height: 50px; margin: 0 auto;"></svg>
+                    </div>
+
+                    <!-- رقم الفاتورة - يسار -->
+                    <div class="text-left">
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">رقم الفاتورة</h3>
+                        <p class="text-2xl font-bold text-gray-900" id="invoice-number">-</p>
+                    </div>
+                </div>
+            
+                <div class="mb-6">
+                    <div class="rounded-2xl border-2 border-gray-200 overflow-hidden bg-white shadow-sm">
+                        <table class="w-full text-sm invoice-items-container">
+                            <thead class="bg-gray-100">
+                                <tr class="border-b-2 border-gray-300">
+                                    <th class="text-right py-3 px-4 font-bold text-gray-800 text-sm uppercase">المنتج</th>
+                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase">الكمية</th>
+                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase">السعر</th>
+                                    <th class="text-left py-3 px-4 font-bold text-gray-800 text-sm uppercase">الإجمالي</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-items"></tbody>
+                        </table>
+                    </div>
+                    <div id="items-count-badge" class="text-xs text-gray-500 mt-3 text-center hidden"></div>
+                </div>
+
+                <div class="pt-6">
+                    <div class="flex justify-end">
+                        <div class="w-full md:w-96 space-y-3 text-sm rounded-2xl border-2 border-gray-300 p-6 bg-gradient-to-br from-gray-50 to-white shadow-lg">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                                <span class="text-gray-600 font-semibold">المجموع الفرعي:</span>
+                                <span class="font-bold text-gray-800 text-base" id="invoice-subtotal">-</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-200" id="invoice-tax-row">
+                                <span class="text-gray-600 font-semibold"><span id="invoice-tax-label">TVA</span> (<span id="invoice-tax-rate">20</span>%):</span>
+                                <span class="font-bold text-gray-800 text-base" id="invoice-tax-amount">-</span>
+                            </div>
+                            <div class="flex justify-between items-center text-2xl font-extrabold border-t-4 border-primary/30 pt-4 mt-2">
+                                <span class="text-gray-800">الإجمالي:</span>
+                                <span class="text-primary text-3xl" id="invoice-total">-</span>
+                            </div>
                         </div>
-                    <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="text-center mt-8 pt-6 border-t-2 border-gray-300">
+                    <p class="font-bold text-gray-800 mb-2" style="font-size: 18px;">شكراً لثقتكم بنا</p>
+                    <p class="text-gray-600 italic" style="font-size: 13px;">نسعد بخدمتكم دائماً ونتطلع لزيارتكم القادمة</p>
                 </div>
             </div>
         </div>
 
-        <!-- Action Buttons -->
         <div class="bg-gray-50 p-6 grid grid-cols-2 gap-3 no-print border-t shrink-0">
             <button id="print-invoice-btn" class="bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
                 <span class="material-icons-round text-lg">print</span>
@@ -586,8 +861,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             
             if (result.success) {
                 currentInvoiceData = result.data;
-                // تحويل created_at إلى Date object
-                currentInvoiceData.created_at = new Date(currentInvoiceData.created_at);
+                currentInvoiceData.date = new Date(currentInvoiceData.created_at);
                 displayInvoiceDetails(currentInvoiceData);
                 invoiceModal.classList.remove('hidden');
             } else {
@@ -599,12 +873,11 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         }
     }
 
-    function displayInvoiceDetails(invoice) {
-        document.getElementById('invoice-number').textContent = `#${String(invoice.id).padStart(6, '0')}`;
+    function displayInvoiceDetails(data) {
+        document.getElementById('invoice-number').textContent = `#${String(data.id).padStart(6, '0')}`;
 
-        // توليد الباركود
         try {
-            JsBarcode("#invoice-barcode", String(invoice.id).padStart(6, '0'), {
+            JsBarcode("#invoice-barcode", String(data.id).padStart(6, '0'), {
                 format: "CODE128",
                 width: 1,
                 height: 40,
@@ -615,59 +888,57 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             console.error('Error generating barcode:', e);
         }
 
-        document.getElementById('invoice-date').textContent = formatDualDate(invoice.created_at);
-
-        // إضافة الوقت
-        const invoiceDate = new Date(invoice.created_at);
-        const formattedTime = invoiceDate.toLocaleTimeString('ar-SA', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-        });
-        document.getElementById('invoice-time').textContent = toEnglishNumbers(formattedTime);
+        const invoiceDate = new Date(data.created_at);
+        document.getElementById('invoice-date').textContent = formatDualDate(invoiceDate);
+        const formattedTime = toEnglishNumbers(invoiceDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: false }));
+        document.getElementById('invoice-time').textContent = formattedTime;
 
         const customerInfo = document.getElementById('customer-info');
-        if (invoice.customer_name) {
+        if (data.customer_name) {
             customerInfo.innerHTML = `
-                <p><strong>الاسم:</strong> ${invoice.customer_name}</p>
-                ${invoice.customer_phone ? `<p><strong>الهاتف:</strong> ${invoice.customer_phone}</p>` : ''}
-                ${invoice.customer_email ? `<p><strong>البريد:</strong> ${invoice.customer_email}</p>` : ''}
-                ${invoice.customer_address ? `<p><strong>العنوان:</strong> ${invoice.customer_address}</p>` : ''}
+                <p class="font-bold text-base">${data.customer_name}</p>
+                ${data.customer_phone ? `<p>${data.customer_phone}</p>` : ''}
+                ${data.customer_email ? `<p>${data.customer_email}</p>` : ''}
             `;
         } else {
-            customerInfo.innerHTML = '<p>عميل نقدي</p>';
+            customerInfo.innerHTML = '<p class="font-bold">عميل نقدي</p><p class="text-gray-500">افتراضي</p>';
         }
         
         const itemsTable = document.getElementById('invoice-items');
         itemsTable.innerHTML = '';
         
         const itemsCountBadge = document.getElementById('items-count-badge');
-        if (invoice.items.length > 10) {
-            itemsCountBadge.textContent = `إجمالي ${invoice.items.length} منتج في هذه الفاتورة`;
+        if (data.items.length > 10) {
+            itemsCountBadge.textContent = `إجمالي ${data.items.length} منتج في هذه الفاتورة`;
             itemsCountBadge.classList.remove('hidden');
         } else {
             itemsCountBadge.classList.add('hidden');
         }
         
         let subtotal = 0;
-        invoice.items.forEach((item, index) => {
+        data.items.forEach((item, index) => {
             const itemTotal = item.price * item.quantity;
             subtotal += itemTotal;
-            
             const row = document.createElement('tr');
-            row.className = 'border-b border-gray-200 invoice-item-row';
+            row.className = 'border-b border-gray-200 invoice-item-row hover:bg-gray-50 transition-colors';
             row.innerHTML = `
-                <td class="py-2">${index + 1}</td>
-                <td class="py-2">${item.product_name}</td>
-                <td class="py-2 text-center">${item.quantity}</td>
-                <td class="py-2 text-center">${parseFloat(item.price).toFixed(2)} ${currency}</td>
-                <td class="py-2 text-left font-medium">${itemTotal.toFixed(2)} ${currency}</td>
+                <td class="py-3 px-4 text-gray-800 font-bold">${item.product_name}</td>
+                <td class="py-3 px-4 text-center">
+                    <span class="inline-block bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-lg text-sm">
+                        ${item.quantity}
+                    </span>
+                </td>
+                <td class="py-3 px-4 text-center text-gray-700 font-semibold">${parseFloat(item.price).toFixed(2)} ${currency}</td>
+                <td class="py-3 px-4 text-left">
+                    <span class="font-extrabold text-gray-900 text-base">
+                        ${itemTotal.toFixed(2)} ${currency}
+                    </span>
+                </td>
             `;
             itemsTable.appendChild(row);
         });
-        
+
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        const total = subtotal + tax;
         
         document.getElementById('invoice-subtotal').textContent = `${subtotal.toFixed(2)} ${currency}`;
         
@@ -679,72 +950,34 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         } else {
             document.getElementById('invoice-tax-row').style.display = 'none';
         }
+        
+        document.getElementById('invoice-total').textContent = `${parseFloat(data.total).toFixed(2)} ${currency}`;
 
-        const existingDeliveryRow = document.getElementById('invoice-delivery-row');
-        if (existingDeliveryRow) existingDeliveryRow.remove();
-        const existingDeliveryCityRow = document.getElementById('invoice-delivery-city-row');
-        if (existingDeliveryCityRow) existingDeliveryCityRow.remove();
-
-        // إضافة صفوف التوصيل إذا كان موجوداً
-        if (invoice.delivery_cost > 0) {
-            const taxRow = document.getElementById('invoice-tax-row');
-            const totalsContainer = taxRow.parentNode;
-            const totalRow = totalsContainer.querySelector('.text-lg.font-bold.border-t-2') || totalsContainer.lastElementChild;
-            
-            // إضافة سطر التوصيل
-            const deliveryRow = document.createElement('div');
-            deliveryRow.id = 'invoice-delivery-row';
-            deliveryRow.className = 'flex justify-between';
-            deliveryRow.innerHTML = `
-                <span class="text-gray-600">التوصيل:</span>
-                <span class="font-medium">${parseFloat(invoice.delivery_cost).toFixed(2)} ${currency}</span>
-            `;
-            totalsContainer.insertBefore(deliveryRow, totalRow);
-            
-            // إضافة مدينة التوصيل أسفل ثمن التوصيل
-            if (invoice.delivery_city) {
-                const deliveryCityRow = document.createElement('div');
-                deliveryCityRow.id = 'invoice-delivery-city-row';
-                deliveryCityRow.className = 'flex justify-between text-sm';
-                deliveryCityRow.innerHTML = `
-                    <span class="text-gray-500">مدينة التوصيل:</span>
-                    <span class="text-gray-600">${invoice.delivery_city}</span>
-                `;
-                totalsContainer.insertBefore(deliveryCityRow, totalRow);
-            }
-        }
-
-        document.getElementById('invoice-total').textContent = `${total.toFixed(2)} ${currency}`;
-
-        // --- NEW CODE START ---
-        const taxRow = document.getElementById('invoice-tax-row');
-        const totalsContainer = taxRow.parentNode;
-
+        const totalsContainer = document.getElementById('invoice-tax-row').parentNode;
         const existingReceived = document.getElementById('invoice-received-row');
         if (existingReceived) existingReceived.remove();
         const existingChange = document.getElementById('invoice-change-row');
         if (existingChange) existingChange.remove();
 
-        if (invoice.amount_received > 0) {
+        if (data.amount_received > 0) {
             const receivedRow = document.createElement('div');
             receivedRow.id = 'invoice-received-row';
-            receivedRow.className = 'flex justify-between text-sm mt-2 pt-2 border-t border-dashed border-gray-300';
+            receivedRow.className = 'flex justify-between items-center text-sm mt-2 pt-2 border-t border-dashed border-gray-300';
             receivedRow.innerHTML = `
                 <span class="text-gray-600 font-bold">المبلغ المستلم:</span>
-                <span class="font-bold text-gray-800">${parseFloat(invoice.amount_received).toFixed(2)} ${currency}</span>
+                <span class="font-bold text-gray-800">${parseFloat(data.amount_received).toFixed(2)} ${currency}</span>
             `;
             totalsContainer.appendChild(receivedRow);
 
             const changeRow = document.createElement('div');
             changeRow.id = 'invoice-change-row';
-            changeRow.className = 'flex justify-between text-sm';
+            changeRow.className = 'flex justify-between items-center text-sm';
             changeRow.innerHTML = `
-                <span class="text-gray-600 font-bold">المبلغ الذي تم رده:</span>
-                <span class="font-bold text-gray-800">${parseFloat(invoice.change_due).toFixed(2)} ${currency}</span>
+                <span class="text-gray-600 font-bold">الباقي:</span>
+                <span class="font-bold text-gray-800">${parseFloat(data.change_due).toFixed(2)} ${currency}</span>
             `;
             totalsContainer.appendChild(changeRow);
         }
-        // --- NEW CODE END ---
     }
 
     closeInvoiceModal.addEventListener('click', () => {
@@ -755,7 +988,6 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         window.print();
     });
 
-// دالة الطباعة الحرارية - invoices.php
     function printThermal() {
         if (!currentInvoiceData) return;
 
@@ -767,12 +999,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             hour12: false 
         }));
 
-        // --- تصحيح: معالجة النص قبل فتح القالب النصي ---
-        let locationText = '';
-        if(shopCity) locationText += shopCity;
-        if(shopCity && shopAddress) locationText += '، ';
-        if(shopAddress) locationText += shopAddress;
-        // ---------------------------------------------
+        let locationText = [shopCity, shopAddress].filter(Boolean).join('، ');
 
         let thermalContent = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -783,11 +1010,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     <style>
         @page { size: 80mm auto; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            width: 80mm; padding: 5mm; font-size: 11pt;
-            line-height: 1.4; background: white; color: #000;
-        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; width: 80mm; padding: 5mm; font-size: 11pt; line-height: 1.4; background: white; color: #000; }
         .header { text-align: center; margin-bottom: 5mm; border-bottom: 2px dashed #000; padding-bottom: 3mm; }
         .shop-name { font-size: 16pt; font-weight: bold; margin-bottom: 1mm; }
         .shop-info { font-size: 9pt; color: #333; margin: 1mm 0; }
@@ -810,30 +1033,22 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         ${shopPhone ? `<div class="shop-info">📞 ${shopPhone}</div>` : ''}
         ${locationText ? `<div class="shop-info">📍 ${locationText}</div>` : ''}
     </div>
-
     <div class="invoice-info">
         <div class="info-row"><span>رقم الفاتورة:</span><span>#${String(currentInvoiceData.id).padStart(6, '0')}</span></div>
         <div class="info-row"><span>التاريخ:</span><span>${formattedDate}</span></div>
         <div class="info-row"><span>الوقت:</span><span>${formattedTime}</span></div>
     </div>
-
-    ${currentInvoiceData.customer_name ? `
     <div class="customer-section">
-        <div style="font-weight: bold;">العميل: ${currentInvoiceData.customer_name}</div>
+        <div style="font-weight: bold;">العميل: ${currentInvoiceData.customer_name || 'عميل نقدي'}</div>
         ${currentInvoiceData.customer_phone ? `<div>📞 ${currentInvoiceData.customer_phone}</div>` : ''}
     </div>
-    ` : `
-    <div class="customer-section">
-        <div>💵 عميل نقدي</div>
-    </div>
-    `}
-
     <div class="items-table">
-        <div class="items-header">المنتجات (${currentInvoiceData.items.length})</div>
-`;
+        <div class="items-header">المنتجات (${currentInvoiceData.items.length})</div>`;
 
+        let subtotal = 0;
         currentInvoiceData.items.forEach((item, index) => {
             const itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
             thermalContent += `
         <div class="item-row">
             <div style="font-weight:bold">${index + 1}. ${item.product_name}</div>
@@ -843,11 +1058,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             </div>
         </div>`;
         });
-
-        const subtotal = currentInvoiceData.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        const deliveryCost = parseFloat(currentInvoiceData.delivery_cost || currentInvoiceData.delivery || 0);
-        const total = subtotal + tax + deliveryCost;
 
         thermalContent += `</div>
             <div class="totals-section">
@@ -856,19 +1067,9 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         if (taxEnabled) {
             thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${tax.toFixed(2)} ${currency}</span></div>`;
         }
+        
+        thermalContent += `<div class="total-row grand-total"><span>الإجمالي:</span><span>${parseFloat(currentInvoiceData.total).toFixed(2)} ${currency}</span></div>`;
 
-        if (deliveryCost > 0) {
-            thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${deliveryCost.toFixed(2)} ${currency}</span></div>`;
-            // ... inside printThermal function ...
-            if (currentInvoiceData.delivery_city) {
-                thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${currentInvoiceData.delivery_city}</span></div>`;
-            }
-        }
-
-        thermalContent += `
-            <div class="total-row grand-total"><span>الإجمالي:</span><span>${total.toFixed(2)} ${currency}</span></div>`;
-
-        // --- NEW CODE START ---
         if (currentInvoiceData.amount_received > 0) {
             thermalContent += `
             <div class="total-row" style="border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm;">
@@ -876,42 +1077,29 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 <span>${parseFloat(currentInvoiceData.amount_received).toFixed(2)} ${currency}</span>
             </div>
             <div class="total-row">
-                <span>المبلغ الذي تم رده:</span>
+                <span>الباقي:</span>
                 <span>${parseFloat(currentInvoiceData.change_due).toFixed(2)} ${currency}</span>
             </div>`;
         }
 
-        thermalContent += `
-        </div>
-
-    <div style="text-align: center; margin: 5mm 0;">
-        <svg id="barcode-thermal"></svg>
-    </div>
-
+        thermalContent += `</div>
+    <div style="text-align: center; margin: 5mm 0;"><svg id="barcode-thermal"></svg></div>
     <div class="footer">
         <div style="font-weight: bold; margin-bottom: 2mm;">🌟 شكراً لثقتكم بنا 🌟</div>
-        ${shopName ? `<div>${shopName}</div>` : ''}
-        ${!shopName ? '<div>نظام Smart Shop</div>' : ''}
+        <div>${shopName || 'نظام Smart Shop'}</div>
     </div>
-</body>
-</html>`;
+</body></html>`;
 
         const printWindow = window.open('', '_blank', 'width=302,height=600');
         printWindow.document.write(thermalContent);
         printWindow.document.close();
         
-        // إصلاح الباركود في الطباعة الحرارية
         const script = printWindow.document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
         script.onload = function() {
             try {
-                // نستخدم دالة JsBarcode داخل النافذة الجديدة
                 printWindow.JsBarcode("#barcode-thermal", String(currentInvoiceData.id).padStart(6, '0'), {
-                    format: "CODE128",
-                    width: 2,
-                    height: 40,
-                    displayValue: false,
-                    margin: 0
+                    format: "CODE128", width: 2, height: 40, displayValue: false, margin: 0
                 });
             } catch (e) { console.error(e); }
             
@@ -927,50 +1115,26 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
     downloadPdfBtn.addEventListener('click', async () => {
         const { jsPDF } = window.jspdf;
-        
         try {
             showToast('جاري إنشاء ملف PDF...', true);
-            
-            const scrollableDiv = document.querySelector('.invoice-items-scrollable');
-            const originalMaxHeight = scrollableDiv.style.maxHeight;
-            scrollableDiv.style.maxHeight = 'none';
-            scrollableDiv.style.overflow = 'visible';
-            
             const element = document.getElementById('invoice-print-area');
-            
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                logging: false,
-                useCORS: true
-            });
-            
-            scrollableDiv.style.maxHeight = originalMaxHeight;
-            scrollableDiv.style.overflow = 'auto';
-            
+            const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
-            const imgWidth = pdfWidth;
             const imgHeight = (canvas.height * pdfWidth) / canvas.width;
             
-            // If image is taller than a single PDF page, split it into slices
-            // and add a small gap between pages (top + bottom) for readability.
             if (imgHeight > pdfHeight) {
-                const gapMm = 10; // total gap between pages in mm
-                const topMargin = gapMm / 2; // top margin on each page in mm
-
-                const pxPerMm = canvas.width / pdfWidth; // canvas px per mm
+                const gapMm = 10;
+                const topMargin = gapMm / 2;
+                const pxPerMm = canvas.width / pdfWidth;
                 const sliceHeightPx = Math.floor((pdfHeight - gapMm) * pxPerMm);
-
                 let remainingHeightPx = canvas.height;
                 let pageIndex = 0;
-
                 while (remainingHeightPx > 0) {
                     const sy = pageIndex * sliceHeightPx;
                     const sh = Math.min(sliceHeightPx, remainingHeightPx);
-
                     const tmpCanvas = document.createElement('canvas');
                     tmpCanvas.width = canvas.width;
                     tmpCanvas.height = sh;
@@ -978,26 +1142,19 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                     tmpCtx.fillStyle = '#ffffff';
                     tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
                     tmpCtx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
-
                     const imgDataPage = tmpCanvas.toDataURL('image/png');
                     const pageImgHeightMm = (sh * pdfWidth) / canvas.width;
-
                     if (pageIndex > 0) pdf.addPage();
-
                     pdf.addImage(imgDataPage, 'PNG', 0, topMargin, pdfWidth, pageImgHeightMm);
-
                     remainingHeightPx -= sh;
                     pageIndex++;
                 }
             } else {
-                // For single-page content, place it with a small top margin as well
                 const gapMm = 10;
                 const topMargin = gapMm / 2;
-                pdf.addImage(imgData, 'PNG', 0, topMargin, imgWidth, imgHeight);
+                pdf.addImage(imgData, 'PNG', 0, topMargin, pdfWidth, imgHeight);
             }
-            
             pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
-            
             showToast('تم تحميل الفاتورة بصيغة PDF', true);
         } catch (error) {
             console.error('خطأ في تحميل PDF:', error);
@@ -1009,66 +1166,43 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         if (!currentInvoiceData) return;
         
         const invoiceDate = new Date(currentInvoiceData.created_at);
-        
-        let txtContent = `${shopName}\n`;
-        txtContent += `${'='.repeat(50)}\n\n`;
-        txtContent += `رقم الفاتورة: #${String(currentInvoiceData.id).padStart(6, '0')}\n`;
-        txtContent += `التاريخ: ${formatDualDate(invoiceDate)}\n\n`;
+        let txtContent = `${shopName}\n${'='.repeat(50)}\n\nرقم الفاتورة: #${String(currentInvoiceData.id).padStart(6, '0')}\nالتاريخ: ${formatDualDate(invoiceDate)}\n\n`;
         
         if (currentInvoiceData.customer_name) {
             txtContent += `العميل: ${currentInvoiceData.customer_name}\n`;
-            if (currentInvoiceData.customer_phone) {
-                txtContent += `الهاتف: ${currentInvoiceData.customer_phone}\n`;
-            }
+            if (currentInvoiceData.customer_phone) txtContent += `الهاتف: ${currentInvoiceData.customer_phone}\n`;
         } else {
             txtContent += `العميل: عميل نقدي\n`;
         }
         
-        txtContent += `\n${'-'.repeat(50)}\n`;
-        txtContent += `المنتجات (${currentInvoiceData.items.length} منتج):\n`;
-        txtContent += `${'-'.repeat(50)}\n\n`;
+        txtContent += `\n${'-'.repeat(50)}\nالمنتجات (${currentInvoiceData.items.length} منتج):\n${'-'.repeat(50)}\n\n`;
         
         let subtotal = 0;
         currentInvoiceData.items.forEach((item, index) => {
             const itemTotal = item.price * item.quantity;
             subtotal += itemTotal;
-            
-            txtContent += `${index + 1}. ${item.product_name}\n`;
-            txtContent += `   الكمية: ${item.quantity} × ${parseFloat(item.price).toFixed(2)} ${currency} = ${itemTotal.toFixed(2)} ${currency}\n\n`;
+            txtContent += `${index + 1}. ${item.product_name}\n   الكمية: ${item.quantity} × ${parseFloat(item.price).toFixed(2)} ${currency} = ${itemTotal.toFixed(2)} ${currency}\n\n`;
         });
-        
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        const total = subtotal + tax;
         
-        txtContent += `${'-'.repeat(50)}\n`;
-        txtContent += `المجموع الفرعي: ${subtotal.toFixed(2)} ${currency}\n`;
-        
-        if (taxEnabled) {
-            txtContent += `${taxLabel} (${(taxRate * 100).toFixed(0)}%): ${tax.toFixed(2)} ${currency}\n`;
-        }
-        
-        txtContent += `الإجمالي: ${total.toFixed(2)} ${currency}\n`;
+        txtContent += `${'-'.repeat(50)}\nالمجموع الفرعي: ${subtotal.toFixed(2)} ${currency}\n`;
+        if (taxEnabled) txtContent += `${taxLabel} (${(taxRate * 100).toFixed(0)}%): ${tax.toFixed(2)} ${currency}\n`;
+        txtContent += `الإجمالي: ${parseFloat(currentInvoiceData.total).toFixed(2)} ${currency}\n`;
 
         if (currentInvoiceData.amount_received > 0) {
             txtContent += `المبلغ المستلم: ${parseFloat(currentInvoiceData.amount_received).toFixed(2)} ${currency}\n`;
-            txtContent += `المبلغ الذي تم رده: ${parseFloat(currentInvoiceData.change_due).toFixed(2)} ${currency}\n`;
+            txtContent += `الباقي: ${parseFloat(currentInvoiceData.change_due).toFixed(2)} ${currency}\n`;
         }
 
-        txtContent += `${'='.repeat(50)}\n\n`;
-        txtContent += `${'='.repeat(50)}\n\n`;
-        txtContent += `شكراً لثقتكم بنا\n\n`;
+        txtContent += `${'='.repeat(50)}\n\nشكراً لثقتكم بنا\n\n`;
         
-        if (shopName || shopPhone || shopAddress) {
-            let loc = [];
-            if(shopCity) loc.push(shopCity);
-            if(shopAddress) loc.push(shopAddress);
-            if(loc.length > 0) txtContent += `${loc.join('، ')}\n`;
+        let loc = [shopCity, shopAddress].filter(Boolean).join('، ');
+        if (shopName || shopPhone || loc) {
             if (shopName) txtContent += `${shopName}\n`;
             if (shopPhone) txtContent += `هاتف: ${shopPhone}\n`;
-            if (shopAddress) txtContent += `${shopAddress}\n`;
+            if (loc) txtContent += `${loc}\n`;
         } else {
-            txtContent += `تم تصميم وتطوير النظام من طرف حمزة سعدي 2025\n`;
-            txtContent += `الموقع الإلكتروني: https://eagleshadow.technology\n`;
+            txtContent += `تم تطويره بواسطة حمزة سعدي\nhttps://eagleshadow.technology\n`;
         }
         
         const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
@@ -1076,117 +1210,22 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         link.href = URL.createObjectURL(blob);
         link.download = `invoice-${currentInvoiceData.id}.txt`;
         link.click();
-        
         showToast('تم تحميل الفاتورة بصيغة TXT', true);
     });
 
     invoiceSearchForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        currentPage = 1;
         loadInvoices(searchTermInput.value, searchDateInput.value);
     });
 
     clearSearchBtn.addEventListener('click', function() {
         invoiceSearchForm.reset();
+        currentPage = 1;
         loadInvoices();
     });
     
     loadInvoices();
-});
-// ==========================================
-// نظام مسح الباركود للفواتير
-// ==========================================
-
-const scanInvoiceBarcodeBtn = document.getElementById('scan-invoice-barcode-btn');
-const invoiceBarcodeScannerModal = document.getElementById('invoice-barcode-scanner-modal');
-const closeInvoiceBarcodeScannerModal = document.getElementById('close-invoice-barcode-scanner-modal');
-const searchTermInput = document.getElementById('search-term');
-let invoiceCodeReader = null;
-
-// صوت عند المسح الناجح
-const beepSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
-
-// 1. تشغيل الكاميرا عند الضغط على زر المسح
-if (scanInvoiceBarcodeBtn) {
-    scanInvoiceBarcodeBtn.addEventListener('click', () => {
-        invoiceBarcodeScannerModal.classList.remove('hidden');
-        startInvoiceBarcodeScanning();
-    });
-}
-
-// 2. إغلاق نافذة المسح
-if (closeInvoiceBarcodeScannerModal) {
-    closeInvoiceBarcodeScannerModal.addEventListener('click', stopInvoiceBarcodeScanning);
-}
-
-// دالة بدء المسح باستخدام ZXing
-async function startInvoiceBarcodeScanning() {
-    try {
-        invoiceCodeReader = new ZXing.BrowserMultiFormatReader();
-        const videoInputDevices = await invoiceCodeReader.listVideoInputDevices();
-        
-        if (videoInputDevices.length === 0) {
-            showToast('لم يتم العثور على كاميرا', false);
-            stopInvoiceBarcodeScanning();
-            return;
-        }
-        
-        // محاولة اختيار الكاميرا الخلفية إن وجدت
-        const selectedDeviceId = videoInputDevices.find(device => 
-            device.label.toLowerCase().includes('back')
-        )?.deviceId || videoInputDevices[0].deviceId;
-
-        invoiceCodeReader.decodeFromVideoDevice(selectedDeviceId, 'invoice-barcode-video', (result, err) => {
-            if (result) {
-                handleInvoiceScannedCode(result.text);
-                stopInvoiceBarcodeScanning();
-            }
-        });
-    } catch (err) {
-        console.error('خطأ في تشغيل الكاميرا:', err);
-        showToast('لا يمكن الوصول للكاميرا. تأكد من السماح بالوصول للكاميرا في المتصفح.', false);
-        invoiceBarcodeScannerModal.classList.add('hidden');
-    }
-}
-
-// دالة إيقاف المسح
-function stopInvoiceBarcodeScanning() {
-    if (invoiceCodeReader) {
-        invoiceCodeReader.reset();
-        invoiceCodeReader = null;
-    }
-    invoiceBarcodeScannerModal.classList.add('hidden');
-}
-
-// 3. معالجة الكود الممسوح
-function handleInvoiceScannedCode(code) {
-    // تشغيل صوت
-    beepSound.play().catch(e => {});
-    
-    // وضع الكود في خانة البحث
-    searchTermInput.value = code;
-    
-    // تنفيذ البحث تلقائياً
-    const searchForm = document.getElementById('invoice-search-form');
-    if (searchForm) {
-        searchForm.dispatchEvent(new Event('submit'));
-    }
-    
-    showToast(`تم مسح الباركود: ${code}`, true);
-}
-
-// 4. دعم قارئ الباركود اليدوي (USB Scanner)
-searchTermInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && searchTermInput.value.trim() !== '') {
-        e.preventDefault();
-        handleInvoiceScannedCode(searchTermInput.value.trim());
-    }
-});
-
-// إغلاق Modal عند النقر خارجها
-invoiceBarcodeScannerModal?.addEventListener('click', (e) => {
-    if (e.target === invoiceBarcodeScannerModal) {
-        stopInvoiceBarcodeScanning();
-    }
 });
 </script>
 
