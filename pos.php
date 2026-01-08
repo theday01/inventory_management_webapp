@@ -246,21 +246,28 @@ $criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc(
         width: 100% !important;
         border-collapse: collapse !important;
         margin: 15px 0 !important;
+        table-layout: fixed !important;
     }
 
     thead {
         display: table-header-group !important;
-        background: linear-gradient(to left, #f3f4f6, #e5e7eb) !important;
+        background: #f3f4f6 !important;
     }
 
     thead th {
-        padding: 10px !important;
+        padding: 8px !important;
         font-weight: bold !important;
         color: #000 !important;
-        border: 2px solid #d1d5db !important;
-        text-align: center !important;
+        border: 1px solid #d1d5db !important;
         font-size: 10pt !important;
+        white-space: nowrap !important;
     }
+
+    /* تنسيق محدد لأعمدة الجدول */
+    thead th:nth-child(1) { text-align: right !important; width: 45% !important; }
+    thead th:nth-child(2) { text-align: center !important; width: 15% !important; }
+    thead th:nth-child(3) { text-align: center !important; width: 20% !important; }
+    thead th:nth-child(4) { text-align: left !important; width: 20% !important; }
 
     tbody tr {
         page-break-inside: avoid !important;
@@ -271,19 +278,23 @@ $criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc(
         padding: 8px !important;
         color: #000 !important;
         font-size: 10pt !important;
+        border: 1px solid #e5e7eb !important;
     }
+
+    /* تنسيق محدد لخلايا الجدول */
+    tbody td:nth-child(1) { text-align: right !important; }
+    tbody td:nth-child(2) { text-align: center !important; }
+    tbody td:nth-child(3) { text-align: center !important; }
+    tbody td:nth-child(4) { text-align: left !important; }
 
     /* 11. تحسين صف الكميات */
-    tbody td:nth-child(2) {
-        text-align: center !important;
-    }
-
     tbody td:nth-child(2) span {
         background: #dbeafe !important;
         color: #1e40af !important;
-        padding: 4px 10px !important;
-        border-radius: 5px !important;
+        padding: 2px 6px !important;
+        border-radius: 3px !important;
         font-weight: bold !important;
+        display: inline-block !important;
     }
     /* ضمان توزيع ثلاثي الأعمدة في رأس الفاتورة أثناء الطباعة */
     .invoice-header-grid {
@@ -866,12 +877,12 @@ html:not(.dark) .text-red-500 {
                 <div class="mb-6">
                     <div class="rounded-2xl border-2 border-gray-200 overflow-hidden bg-white shadow-sm">
                         <table class="w-full text-sm invoice-items-container">
-                            <thead class="bg-gradient-to-l from-gray-50 to-gray-100">
+                            <thead class="bg-gray-100">
                                 <tr class="border-b-2 border-gray-300">
-                                    <th class="text-right py-4 px-4 font-extrabold text-gray-800 text-xs uppercase tracking-wide">المنتج</th>
-                                    <th class="text-center py-4 px-4 font-extrabold text-gray-800 text-xs uppercase tracking-wide">الكمية</th>
-                                    <th class="text-center py-4 px-4 font-extrabold text-gray-800 text-xs uppercase tracking-wide">السعر</th>
-                                    <th class="text-left py-4 px-4 font-extrabold text-gray-800 text-xs uppercase tracking-wide">الإجمالي</th>
+                                    <th class="text-right py-3 px-4 font-bold text-gray-800 text-sm uppercase">المنتج</th>
+                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase">الكمية</th>
+                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase">السعر</th>
+                                    <th class="text-left py-3 px-4 font-bold text-gray-800 text-sm uppercase">الإجمالي</th>
                                 </tr>
                             </thead>
                             <tbody id="invoice-items"></tbody>
@@ -2358,22 +2369,50 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             showToast('جاري إنشاء ملف PDF...', true);
             
-            const scrollableDiv = document.querySelector('.invoice-items-scrollable');
-            const originalMaxHeight = scrollableDiv.style.maxHeight;
-            scrollableDiv.style.maxHeight = 'none';
-            scrollableDiv.style.overflow = 'visible';
-            
+            // احفظ خصائص CSS الأصلية قبل التعديل
             const element = document.getElementById('invoice-print-area');
+            const originalStyles = {
+                maxHeight: element.style.maxHeight,
+                overflow: element.style.overflow,
+                position: element.style.position
+            };
+            
+            // Initialize itemsOriginalStyles to avoid undefined reference
+            let itemsOriginalStyles = null;
+            
+            // أضف أي عناصر أخرى تحتاج إلى تعديل
+            const invoiceItemsContainer = document.querySelector('.invoice-items-container');
+            if (invoiceItemsContainer) {
+                itemsOriginalStyles = {
+                    maxHeight: invoiceItemsContainer.style.maxHeight,
+                    overflow: invoiceItemsContainer.style.overflow
+                };
+                invoiceItemsContainer.style.maxHeight = 'none';
+                invoiceItemsContainer.style.overflow = 'visible';
+            }
+            
+            // ضبط العنصر للتصوير
+            element.style.maxHeight = 'none';
+            element.style.overflow = 'visible';
+            element.style.position = 'relative';
             
             const canvas = await html2canvas(element, {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 logging: false,
-                useCORS: true
+                useCORS: true,
+                scrollY: 0
             });
             
-            scrollableDiv.style.maxHeight = originalMaxHeight;
-            scrollableDiv.style.overflow = 'auto';
+            // استعادة الخصائص الأصلية
+            element.style.maxHeight = originalStyles.maxHeight;
+            element.style.overflow = originalStyles.overflow;
+            element.style.position = originalStyles.position;
+            
+            if (invoiceItemsContainer && itemsOriginalStyles) {
+                invoiceItemsContainer.style.maxHeight = itemsOriginalStyles.maxHeight;
+                invoiceItemsContainer.style.overflow = itemsOriginalStyles.overflow;
+            }
             
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
@@ -2383,21 +2422,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const imgHeight = (canvas.height * pdfWidth) / canvas.width;
             
             // If image is taller than a single PDF page, split it into slices
-            // and add a small gap between pages (top + bottom) for readability.
             if (imgHeight > pdfHeight) {
-                const gapMm = 10; // total gap between pages in mm
-                const topMargin = gapMm / 2; // top margin on each page in mm
-
-                const pxPerMm = canvas.width / pdfWidth; // canvas px per mm
+                const gapMm = 10;
+                const topMargin = gapMm / 2;
+                const pxPerMm = canvas.width / pdfWidth;
                 const sliceHeightPx = Math.floor((pdfHeight - gapMm) * pxPerMm);
-
+                
                 let remainingHeightPx = canvas.height;
                 let pageIndex = 0;
-
+                
                 while (remainingHeightPx > 0) {
                     const sy = pageIndex * sliceHeightPx;
                     const sh = Math.min(sliceHeightPx, remainingHeightPx);
-
+                    
                     const tmpCanvas = document.createElement('canvas');
                     tmpCanvas.width = canvas.width;
                     tmpCanvas.height = sh;
@@ -2405,33 +2442,30 @@ document.addEventListener('DOMContentLoaded', function () {
                     tmpCtx.fillStyle = '#ffffff';
                     tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
                     tmpCtx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
-
+                    
                     const imgDataPage = tmpCanvas.toDataURL('image/png');
                     const pageImgHeightMm = (sh * pdfWidth) / canvas.width;
-
+                    
                     if (pageIndex > 0) pdf.addPage();
-
                     pdf.addImage(imgDataPage, 'PNG', 0, topMargin, pdfWidth, pageImgHeightMm);
-
+                    
                     remainingHeightPx -= sh;
                     pageIndex++;
                 }
             } else {
-                // For single-page content, place it with a small top margin as well
                 const gapMm = 10;
                 const topMargin = gapMm / 2;
                 pdf.addImage(imgData, 'PNG', 0, topMargin, imgWidth, imgHeight);
             }
             
             pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
-            
             showToast('تم تحميل الفاتورة بصيغة PDF', true);
         } catch (error) {
             console.error('خطأ في تحميل PDF:', error);
             showToast('فشل في تحميل PDF', false);
         }
     });
-    
+
     downloadTxtBtn.addEventListener('click', () => {
         if (!currentInvoiceData) return;
         
