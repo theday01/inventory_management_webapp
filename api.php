@@ -122,6 +122,10 @@ switch ($action) {
     case 'getNotifications':
         getNotifications($conn);
         break;
+    case 'cleanOldNotifications':
+        cleanOldNotifications($conn);
+        echo json_encode(['success' => true]);
+        break;
     // --- أضف هذه الحالات الجديدة ---
     case 'markAllNotificationsRead':
         markAllNotificationsRead($conn);
@@ -1439,9 +1443,12 @@ function create_notification($conn, $message, $type) {
 }
 
 function getNotifications($conn) {
+    // تنظيف الإشعارات القديمة (أكثر من دقيقة) تلقائياً
+    cleanOldNotifications($conn);
+    
     $limit = 20; 
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-    $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all'; // استقبال الفلتر
+    $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
     $offset = ($page - 1) * $limit;
 
     // بناء شرط الاستعلام بناءً على الفلتر
@@ -1486,6 +1493,19 @@ function getNotifications($conn) {
             'total_items' => $total_rows
         ]
     ]);
+}
+
+function cleanOldNotifications($conn) {
+    try {
+        // حذف الإشعارات التي مضى عليها أكثر من 30 يوم
+        $sql = "DELETE FROM notifications WHERE created_at <= (NOW() - INTERVAL 30 DAY)";
+        $conn->query($sql);
+        
+        // يمكنك إضافة log للمراقبة (اختياري)
+        error_log("Old notifications cleaned successfully");
+    } catch (Exception $e) {
+        error_log("Error cleaning old notifications: " . $e->getMessage());
+    }
 }
 
 function markNotificationRead($conn) {

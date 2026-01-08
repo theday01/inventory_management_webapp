@@ -330,7 +330,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(backdrop) backdrop.addEventListener('click', hideConfirm);
 
     loadNotifications(false, 1);
-    setInterval(() => loadNotifications(true, currentPage), 10000); // تحديث كل 10 ثواني بدلاً من 30 للتجربة الأسرع
 });
 
 fetch('api.php?action=checkExpiringProducts')
