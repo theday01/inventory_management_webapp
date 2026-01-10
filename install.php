@@ -137,9 +137,16 @@ $sql_rental_payments = "CREATE TABLE IF NOT EXISTS rental_payments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
 
+$sql_media_gallery = "CREATE TABLE IF NOT EXISTS media_gallery (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    file_path VARCHAR(255) NOT NULL UNIQUE,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)";
+
 // Execute table creation queries
 $tables = [
     'users' => $sql_users,
+    'media_gallery' => $sql_media_gallery,
     'products' => $sql_products,
     'removed_products' => $sql_removed_products,
     'customers' => $sql_customers,

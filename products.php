@@ -36,6 +36,11 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 <span class="material-icons-round text-sm">add</span>
                 <span>منتج جديد</span>
             </button>
+            <button id="bulk-add-btn"
+                class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                <span class="material-icons-round text-sm">playlist_add</span>
+                <span>إضافة جماعية</span>
+            </button>
             <button id="manage-categories-btn"
                 class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">category</span>
@@ -356,9 +361,14 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     </div>
                     <div class="mb-4 col-span-2">
                         <label for="product-image" class="block text-sm font-medium text-gray-300 mb-2">صورة المنتج</label>
-                        <input type="file" id="product-image" name="image" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                        <div class="flex gap-2">
+                            <input type="file" id="product-image" name="image" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                            <button type="button" id="select-from-gallery-btn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold">...</button>
+                        </div>
                     </div>
                 </div>
+                <input type="hidden" id="selected-image-path" name="image_path">
+
 
                 <div id="custom-fields-container" class="my-4 space-y-4">
                     <!-- Custom fields will be loaded here -->
@@ -366,6 +376,70 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end gap-4">
                 <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ المنتج</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Image Gallery Modal -->
+<!-- Image Gallery Modal -->
+<div id="image-gallery-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-4xl border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">اختر صورة من المعرض</h3>
+            <button id="close-gallery-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="p-6 max-h-[70vh] overflow-y-auto">
+            <div id="image-gallery-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Images will be loaded here -->
+            </div>
+        </div>
+        <div class="p-6 border-t border-white/5 flex justify-end gap-4">
+            <button id="select-image-btn" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold">اختر الصورة</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Add Modal -->
+<div id="bulk-add-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-4xl border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">إضافة منتجات جماعية</h3>
+            <button id="close-bulk-add-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <form id="bulk-add-form">
+            <div class="p-6 max-h-[70vh] overflow-y-auto">
+                <div class="grid grid-cols-1 gap-4">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-right border-b border-white/10">
+                                <th class="p-2 text-sm font-medium text-gray-300">اسم المنتج</th>
+                                <th class="p-2 text-sm font-medium text-gray-300">الفئة</th>
+                                <th class="p-2 text-sm font-medium text-gray-300">السعر</th>
+                                <th class="p-2 text-sm font-medium text-gray-300">الكمية</th>
+                                <th class="p-2 text-sm font-medium text-gray-300">الباركود</th>
+                                <th class="p-2 text-sm font-medium text-gray-300">الصورة</th>
+                                <th class="p-2 text-sm font-medium text-gray-300"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulk-add-table-body">
+                            <!-- Rows will be added dynamically here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4">
+                    <button type="button" id="add-bulk-row" class="text-primary hover:text-primary-hover font-bold flex items-center gap-2">
+                        <span class="material-icons-round text-sm">add</span>
+                        <span>إضافة صف جديد</span>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 border-t border-white/5 flex justify-end gap-4">
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ كل المنتجات</button>
             </div>
         </form>
     </div>
@@ -1068,6 +1142,249 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         productModal.classList.remove('hidden');
     });
 
+    const bulkAddBtn = document.getElementById('bulk-add-btn');
+    const bulkAddModal = document.getElementById('bulk-add-modal');
+    const closeBulkAddModalBtn = document.getElementById('close-bulk-add-modal');
+    const addBulkRowBtn = document.getElementById('add-bulk-row');
+    const bulkAddTableBody = document.getElementById('bulk-add-table-body');
+    let categoriesCache = [];
+    let imagesCache = [];
+
+    async function addBulkRow() {
+        if (categoriesCache.length === 0) {
+            categoriesCache = await loadCategories();
+        }
+
+        const row = document.createElement('tr');
+        row.className = 'border-b border-white/5';
+        let categoryOptions = '<option value="">اختر فئة</option>';
+        if (categoriesCache) {
+            categoriesCache.forEach(category => {
+                categoryOptions += `<option value="${category.id}">${category.name}</option>`;
+            });
+        }
+
+        row.innerHTML = `
+            <td class="p-2"><input type="text" name="name[]" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required></td>
+            <td class="p-2">
+                <select name="category_id[]" class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+                    ${categoryOptions}
+                </select>
+            </td>
+            <td class="p-2"><input type="number" name="price[]" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required></td>
+            <td class="p-2"><input type="number" name="quantity[]" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required></td>
+            <td class="p-2"><input type="text" name="barcode[]" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50"></td>
+            <td class="p-2">
+                <input type="hidden" name="image_path[]" class="bulk-image-path">
+                <div class="flex items-center gap-1">
+                    <span class="bulk-image-display text-xs text-gray-400 truncate flex-1" title="لم تختر صورة">لم تختر...</span>
+                    <button type="button" class="bulk-upload-btn p-1.5 text-gray-400 hover:text-primary transition-colors" title="رفع صورة"><span class="material-icons-round text-lg">upload</span></button>
+                    <button type="button" class="bulk-gallery-btn p-1.5 text-gray-400 hover:text-primary transition-colors" title="اختر من المعرض"><span class="material-icons-round text-lg">photo_library</span></button>
+                </div>
+                <input type="file" class="hidden-file-input" accept="image/*" style="display:none;">
+            </td>
+            <td class="p-2">
+                <button type="button" class="remove-bulk-row text-red-500 hover:text-red-400">
+                    <span class="material-icons-round text-lg">delete</span>
+                </button>
+            </td>
+        `;
+        bulkAddTableBody.appendChild(row);
+    }
+
+    bulkAddBtn.addEventListener('click', () => {
+        bulkAddModal.classList.remove('hidden');
+        if (bulkAddTableBody.rows.length === 0) {
+            addBulkRow();
+        }
+    });
+
+    closeBulkAddModalBtn.addEventListener('click', () => {
+        bulkAddModal.classList.add('hidden');
+    });
+
+    addBulkRowBtn.addEventListener('click', addBulkRow);
+
+    let bulkImageTarget = null; // To store the row elements for the gallery
+
+    bulkAddTableBody.addEventListener('click', e => {
+        if (e.target.closest('.remove-bulk-row')) {
+            e.target.closest('tr').remove();
+        }
+        if (e.target.closest('.bulk-upload-btn')) {
+            const row = e.target.closest('tr');
+            const fileInput = row.querySelector('.hidden-file-input');
+            fileInput.click();
+        }
+        if (e.target.closest('.bulk-gallery-btn')) {
+            const row = e.target.closest('tr');
+            bulkImageTarget = {
+                pathInput: row.querySelector('.bulk-image-path'),
+                displaySpan: row.querySelector('.bulk-image-display')
+            };
+            imageGalleryModal.classList.remove('hidden');
+            populateGallery();
+        }
+    });
+
+    bulkAddTableBody.addEventListener('change', async e => {
+        if (e.target.classList.contains('hidden-file-input')) {
+            const fileInput = e.target;
+            const row = fileInput.closest('tr');
+            const pathInput = row.querySelector('.bulk-image-path');
+            const displaySpan = row.querySelector('.bulk-image-display');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    displaySpan.textContent = 'جاري الرفع...';
+                    const response = await fetch('api.php?action=uploadImage', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (result.success && result.filePath) {
+                        pathInput.value = result.filePath;
+                        const fileName = result.filePath.split('/').pop();
+                        displaySpan.textContent = fileName;
+                        displaySpan.title = result.filePath;
+                        showToast('تم رفع الصورة بنجاح', true);
+                    } else {
+                        displaySpan.textContent = 'فشل الرفع';
+                        showToast(result.message || 'فشل رفع الصورة', false);
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    displaySpan.textContent = 'خطأ';
+                    showToast('حدث خطأ أثناء الرفع', false);
+                } finally {
+                    fileInput.value = '';
+                }
+            }
+        }
+    });
+
+    const bulkAddForm = document.getElementById('bulk-add-form');
+    bulkAddForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const formData = new FormData(bulkAddForm);
+        const products = [];
+        const names = formData.getAll('name[]');
+        const category_ids = formData.getAll('category_id[]');
+        const prices = formData.getAll('price[]');
+        const quantities = formData.getAll('quantity[]');
+        const barcodes = formData.getAll('barcode[]');
+        const image_paths = formData.getAll('image_path[]');
+
+        for (let i = 0; i < names.length; i++) {
+            products.push({
+                name: names[i],
+                category_id: category_ids[i],
+                price: prices[i],
+                quantity: quantities[i],
+                barcode: barcodes[i],
+                image_path: image_paths[i]
+            });
+        }
+
+        try {
+            showLoading('جاري إضافة المنتجات...');
+            const response = await fetch('api.php?action=bulkAddProducts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ products })
+            });
+            const result = await response.json();
+            if (result.success) {
+                bulkAddModal.classList.add('hidden');
+                bulkAddForm.reset();
+                bulkAddTableBody.innerHTML = '';
+                addBulkRow();
+                loadProducts();
+                showToast(result.message || 'تم إضافة المنتجات بنجاح', true);
+            } else {
+                showToast(result.message || 'فشل في إضافة المنتجات', false);
+            }
+        } catch (error) {
+            console.error('خطأ في الإضافة الجماعية:', error);
+            showToast('حدث خطأ في الإضافة الجماعية', false);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    const selectFromGalleryBtn = document.getElementById('select-from-gallery-btn');
+    const imageGalleryModal = document.getElementById('image-gallery-modal');
+    const closeGalleryModalBtn = document.getElementById('close-gallery-modal');
+    const imageGalleryGrid = document.getElementById('image-gallery-grid');
+    const selectImageBtn = document.getElementById('select-image-btn');
+    let selectedImage = null;
+
+    async function populateGallery() {
+        try {
+            const response = await fetch('api.php?action=getUploadedImages');
+            const result = await response.json();
+            if (result.success) {
+                imageGalleryGrid.innerHTML = '';
+                result.data.forEach(image => {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = image.file_path;
+                    imgElement.dataset.path = image.file_path;
+                    imgElement.className = 'w-full h-32 object-cover rounded-lg cursor-pointer border-2 border-transparent hover:border-primary';
+                    imgElement.addEventListener('click', () => {
+                        if (selectedImage) {
+                            selectedImage.classList.remove('border-primary');
+                        }
+                        imgElement.classList.add('border-primary');
+                        selectedImage = imgElement;
+                    });
+                    imageGalleryGrid.appendChild(imgElement);
+                });
+            }
+        } catch (error) {
+            console.error('Error populating gallery:', error);
+            showToast('Failed to load image gallery', false);
+        }
+    }
+
+    selectFromGalleryBtn.addEventListener('click', () => {
+        imageGalleryModal.classList.remove('hidden');
+        populateGallery();
+    });
+
+    closeGalleryModalBtn.addEventListener('click', () => {
+        imageGalleryModal.classList.add('hidden');
+        if (bulkImageTarget) {
+            bulkImageTarget = null; // Reset on close
+        }
+    });
+
+    selectImageBtn.addEventListener('click', () => {
+        if (selectedImage) {
+            if (bulkImageTarget) {
+                // We are selecting for a bulk add row
+                bulkImageTarget.pathInput.value = selectedImage.dataset.path;
+                const fileName = selectedImage.dataset.path.split('/').pop();
+                bulkImageTarget.displaySpan.textContent = fileName;
+                bulkImageTarget.displaySpan.title = selectedImage.dataset.path;
+                bulkImageTarget = null; // Reset the target
+            } else {
+                // Original behavior: selecting for the single product modal
+                document.getElementById('selected-image-path').value = selectedImage.dataset.path;
+            }
+            imageGalleryModal.classList.add('hidden');
+            if (selectedImage) {
+                selectedImage.classList.remove('border-primary');
+            }
+            selectedImage = null; // Reset selection
+        } else {
+            showToast('الرجاء تحديد صورة أولاً', false);
+        }
+    });
+
     closeProductModalBtn.addEventListener('click', () => {
         productModal.classList.add('hidden');
     });
@@ -1131,15 +1448,23 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 method: 'POST',
                 body: formData,
             });
-            const result = await response.json();
-            if (result.success) {
-                productModal.classList.add('hidden');
-                productForm.reset();
-                customFieldsContainer.innerHTML = '';
-                loadProducts();
-                showToast(result.message || 'تم إضافة المنتج بنجاح', true);
-            } else {
-                showToast(result.message || 'فشل في إضافة المنتج', false);
+
+            const responseText = await response.text();
+            try {
+                const result = JSON.parse(responseText);
+                if (result.success) {
+                    productModal.classList.add('hidden');
+                    productForm.reset();
+                    customFieldsContainer.innerHTML = '';
+                    loadProducts();
+                    showToast(result.message || 'تم إضافة المنتج بنجاح', true);
+                } else {
+                    console.error('API Error:', result.message);
+                    showToast(result.message || 'فشل في إضافة المنتج', false);
+                }
+            } catch (e) {
+                console.error("Failed to parse JSON response. Server response:", responseText);
+                showToast('An invalid response was received from the server.', false);
             }
         } catch (error) {
             console.error('خطأ في إضافة المنتج:', error);

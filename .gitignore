@@ -17,3 +17,7 @@ add_test_customers.php
 notif_test.php
 sound_test.php
 settings copy.php
+src/img/uploads/
+vendor
+composer.json
+composer.lock

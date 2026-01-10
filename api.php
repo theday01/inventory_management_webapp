@@ -44,6 +44,9 @@ switch ($action) {
     case 'addProduct':
         addProduct($conn);
         break;
+    case 'bulkAddProducts':
+        bulkAddProducts($conn);
+        break;
     case 'getProductDetails':
         getProductDetails($conn);
         break;
@@ -119,6 +122,9 @@ switch ($action) {
     case 'getInventoryStats':
         getInventoryStats($conn);
         break;
+    case 'getUploadedImages':
+        getUploadedImages($conn);
+        break;
     case 'getNotifications':
         getNotifications($conn);
         break;
@@ -149,10 +155,71 @@ switch ($action) {
     case 'getRentalPayments':
         getRentalPayments($conn);
         break;
+    case 'uploadImage':
+        uploadImage($conn);
+        break;
     // ----------------------------
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
+}
+
+function handle_image_upload($conn, $file) {
+    $targetDir = "src/img/uploads/";
+    if (!file_exists($targetDir)) {
+        mkdir($targetDir, 0755, true);
+    }
+    $fileName = uniqid() . '_' . basename($file["name"]);
+    $targetFilePath = $targetDir . $fileName;
+    $fileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
+
+    $allowTypes = array('jpg','png','jpeg','gif');
+    if (in_array($fileType, $allowTypes)) {
+        if (move_uploaded_file($file["tmp_name"], $targetFilePath)) {
+            $stmt_gallery = $conn->prepare("INSERT IGNORE INTO media_gallery (file_path) VALUES (?)");
+            $stmt_gallery->bind_param("s", $targetFilePath);
+            $stmt_gallery->execute();
+            $stmt_gallery->close();
+            return $targetFilePath;
+        }
+    }
+    return null;
+}
+
+function uploadImage($conn) {
+    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        $imagePath = handle_image_upload($conn, $_FILES['image']);
+        if ($imagePath) {
+            echo json_encode(['success' => true, 'filePath' => $imagePath]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'فشل في رفع الصورة']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'لم يتم إرسال أي صورة']);
+    }
+}
+
+function is_valid_image_path($path) {
+    if (empty($path)) {
+        return true; // No image is a valid state
+    }
+
+    // Prevent path traversal attacks
+    if (strpos($path, '..') !== false) {
+        return false;
+    }
+
+    $allowed_prefixes = ['src/img/uploads/', 'src/img/'];
+    $path_is_allowed = false;
+    foreach ($allowed_prefixes as $prefix) {
+        if (strpos($path, $prefix) === 0) {
+            $path_is_allowed = true;
+            break;
+        }
+    }
+
+    // Check if the file actually exists to prevent pointing to arbitrary non-image files
+    return $path_is_allowed && file_exists($path) && is_file($path);
 }
 
 function getRemovedProducts($conn) {
@@ -319,6 +386,15 @@ function getInventoryStats($conn) {
     $stmt->close();
 
     echo json_encode(['success' => true, 'data' => $stats]);
+}
+
+function getUploadedImages($conn) {
+    $result = $conn->query("SELECT id, file_path FROM media_gallery ORDER BY uploaded_at DESC");
+    $images = [];
+    while ($row = $result->fetch_assoc()) {
+        $images[] = $row;
+    }
+    echo json_encode(['success' => true, 'data' => $images]);
 }
 
 function bulkUpdateProducts($conn) {
@@ -591,28 +667,23 @@ function addProduct($conn) {
     $data = $_POST;
     $imagePath = null;
 
-    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-        $targetDir = "src/img/uploads/";
-        if (!file_exists($targetDir)) {
-            mkdir($targetDir, 0777, true);
+    if (!empty($data['image_path'])) {
+        if (!is_valid_image_path($data['image_path'])) {
+            echo json_encode(['success' => false, 'message' => 'مسار صورة غير صالح']);
+            return;
         }
-        $fileName = basename($_FILES["image"]["name"]);
-        $targetFilePath = $targetDir . $fileName;
-        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
-
-        $allowTypes = array('jpg','png','jpeg','gif');
-        if (in_array($fileType, $allowTypes)) {
-            if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFilePath)) {
-                $imagePath = $targetFilePath;
-            }
-        }
+        $imagePath = $data['image_path'];
+    } else if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        $imagePath = handle_image_upload($conn, $_FILES['image']);
     }
 
     $conn->begin_transaction();
 
     try {
         $stmt = $conn->prepare("INSERT INTO products (name, price, quantity, category_id, barcode, image) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sdiiss", $data['name'], $data['price'], $data['quantity'], $data['category_id'], $data['barcode'], $imagePath);
+        $category_id = !empty($data['category_id']) ? (int)$data['category_id'] : null;
+        $barcode = !empty($data['barcode']) ? $data['barcode'] : null;
+        $stmt->bind_param("sdiiss", $data['name'], $data['price'], $data['quantity'], $category_id, $barcode, $imagePath);
         $stmt->execute();
         $productId = $stmt->insert_id;
         $stmt->close();
@@ -633,6 +704,55 @@ function addProduct($conn) {
     } catch (Exception $e) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => 'فشل في إضافة المنتج: ' . $e->getMessage()]);
+    }
+}
+
+function bulkAddProducts($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $products = $data['products'] ?? [];
+
+    if (empty($products)) {
+        echo json_encode(['success' => false, 'message' => 'لم يتم إرسال أي منتجات']);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        $stmt = $conn->prepare("INSERT INTO products (name, price, quantity, category_id, barcode, image) VALUES (?, ?, ?, ?, ?, ?)");
+        
+        $name = '';
+        $price = 0.0;
+        $quantity = 0;
+        $category_id = null;
+        $barcode = null;
+        $image_path = null;
+
+        $stmt->bind_param("sdiiss", $name, $price, $quantity, $category_id, $barcode, $image_path);
+
+        foreach ($products as $product) {
+            $name = $product['name'];
+            $price = $product['price'];
+            $quantity = $product['quantity'];
+            $category_id = !empty($product['category_id']) ? (int)$product['category_id'] : null;
+            $barcode = !empty($product['barcode']) ? $product['barcode'] : null;
+            $image_path = !empty($product['image_path']) ? $product['image_path'] : null;
+            
+            if (!is_valid_image_path($image_path)) {
+                throw new Exception("مسار صورة غير صالح للمنتج: " . htmlspecialchars($name));
+            }
+
+            $stmt->execute();
+        }
+        
+        $stmt->close();
+        $conn->commit();
+        
+        create_notification($conn, "تمت إضافة " . count($products) . " منتج جديد بنجاح.", "product_add");
+        echo json_encode(['success' => true, 'message' => 'تم إضافة المنتجات بنجاح']);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'فشل في إضافة المنتجات: ' . $e->getMessage()]);
     }
 }
 
