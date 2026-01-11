@@ -898,7 +898,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             customerInfo.innerHTML = `
                 <p class="font-bold text-base">${data.customer_name}</p>
                 ${data.customer_phone ? `<p>${data.customer_phone}</p>` : ''}
-                ${data.customer_email ? `<p>${data.customer_email}</p>` : ''}
+                ${data.customer_address ? `<p>${data.customer_address}</p>` : ''}
             `;
         } else {
             customerInfo.innerHTML = '<p class="font-bold">عميل نقدي</p><p class="text-gray-500">افتراضي</p>';
@@ -1041,6 +1041,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     <div class="customer-section">
         <div style="font-weight: bold;">العميل: ${currentInvoiceData.customer_name || 'عميل نقدي'}</div>
         ${currentInvoiceData.customer_phone ? `<div>📞 ${currentInvoiceData.customer_phone}</div>` : ''}
+        ${currentInvoiceData.customer_address ? `<div>📍 ${currentInvoiceData.customer_address}</div>` : ''}
     </div>
     <div class="items-table">
         <div class="items-header">المنتجات (${currentInvoiceData.items.length})</div>`;
@@ -1166,16 +1167,30 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         if (!currentInvoiceData) return;
         
         const invoiceDate = new Date(currentInvoiceData.created_at);
-        let txtContent = `${shopName}\n${'='.repeat(50)}\n\nرقم الفاتورة: #${String(currentInvoiceData.id).padStart(6, '0')}\nالتاريخ: ${formatDualDate(invoiceDate)}\n\n`;
+        let txtContent = `${shopName}
+${'='.repeat(50)}
+
+رقم الفاتورة: #${String(currentInvoiceData.id).padStart(6, '0')}
+التاريخ: ${formatDualDate(invoiceDate)}
+
+`;
         
         if (currentInvoiceData.customer_name) {
             txtContent += `العميل: ${currentInvoiceData.customer_name}\n`;
             if (currentInvoiceData.customer_phone) txtContent += `الهاتف: ${currentInvoiceData.customer_phone}\n`;
-        } else {
+            if (currentInvoiceData.customer_address) txtContent += `العنوان: ${currentInvoiceData.customer_address}\n`;
+        } 
+        
+        else {
             txtContent += `العميل: عميل نقدي\n`;
         }
         
-        txtContent += `\n${'-'.repeat(50)}\nالمنتجات (${currentInvoiceData.items.length} منتج):\n${'-'.repeat(50)}\n\n`;
+        txtContent += `
+${'-'.repeat(50)}
+المنتجات (${currentInvoiceData.items.length} منتج):
+${'-'.repeat(50)}
+
+`;
         
         let subtotal = 0;
         currentInvoiceData.items.forEach((item, index) => {
@@ -1194,7 +1209,11 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             txtContent += `الباقي: ${parseFloat(currentInvoiceData.change_due).toFixed(2)} ${currency}\n`;
         }
 
-        txtContent += `${'='.repeat(50)}\n\nشكراً لثقتكم بنا\n\n`;
+        txtContent += `${'='.repeat(50)}
+
+شكراً لثقتكم بنا
+
+`;
         
         let loc = [shopCity, shopAddress].filter(Boolean).join('، ');
         if (shopName || shopPhone || loc) {

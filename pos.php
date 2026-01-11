@@ -2053,7 +2053,7 @@ document.addEventListener('DOMContentLoaded', function () {
             customerInfo.innerHTML = `
                 <p class="font-bold text-base">${data.customer.name}</p>
                 ${data.customer.phone ? `<p>${data.customer.phone}</p>` : ''}
-                ${data.customer.email ? `<p>${data.customer.email}</p>` : ''}
+                ${data.customer.address ? `<p>${data.customer.address}</p>` : ''}
             `;
         } else {
             customerInfo.innerHTML = '<p class="font-bold">عميل نقدي</p><p class="text-gray-500">افتراضي</p>';
