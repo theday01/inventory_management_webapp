@@ -463,15 +463,20 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
 <!-- Product Details Modal -->
 <div id="product-details-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-6xl border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
             <h3 class="text-lg font-bold text-white">تفاصيل المنتج</h3>
             <button id="close-product-details-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
-        <div id="product-details-content" class="p-6 max-h-[70vh] overflow-y-auto">
-            <!-- Details will be loaded here -->
+        <div id="product-details-content" class="p-6 max-h-[70vh] overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div id="product-barcode-section" class="border-l border-white/10 pl-8 flex flex-col items-center justify-center">
+                <!-- Barcode will be rendered here -->
+            </div>
+            <div id="product-details-info">
+                <!-- Details will be loaded here -->
+            </div>
         </div>
     </div>
 </div>
@@ -527,6 +532,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -1118,6 +1125,9 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     }
 
     function displayProductDetails(product) {
+        const productDetailsInfo = document.getElementById('product-details-info');
+        const productBarcodeSection = document.getElementById('product-barcode-section');
+
         let fieldsHtml = product.custom_fields.map(field => `
             <div class="flex justify-between py-1">
                 <span class="font-medium text-gray-400">${field.field_name}:</span>
@@ -1125,7 +1135,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             </div>
         `).join('');
 
-        productDetailsContent.innerHTML = `
+        productDetailsInfo.innerHTML = `
             <div class="space-y-2 text-sm">
                 <div class="flex justify-between"><span class="font-medium text-gray-400">الاسم:</span><span class="text-white">${product.name}</span></div>
                 <div class="flex justify-between"><span class="font-medium text-gray-400">الفئة:</span><span class="text-white">${product.category_name}</span></div>
@@ -1135,6 +1145,67 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 ${fieldsHtml ? '<hr class="border-white/10 my-3"><h4 class="text-md font-bold text-white pt-2 mb-2">حقول مخصصة</h4>' + fieldsHtml : '<hr class="border-white/10 my-3"><p class="text-gray-500">لا توجد حقول مخصصة.</p>'}
             </div>
         `;
+
+        if (product.barcode) {
+            productBarcodeSection.innerHTML = `
+                <svg id="barcode-svg"></svg>
+                <div class="flex gap-4 mt-4">
+                    <button id="download-barcode-pdf" class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2">
+                        <span class="material-icons-round text-sm">picture_as_pdf</span>
+                        <span>تحميل PDF</span>
+                    </button>
+                    <button id="print-barcode" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2">
+                        <span class="material-icons-round text-sm">print</span>
+                        <span>طباعة</span>
+                    </button>
+                </div>
+            `;
+
+            JsBarcode("#barcode-svg", product.barcode, {
+                format: "CODE128",
+                displayValue: true,
+                fontSize: 18,
+                textMargin: 0,
+                background: '#ffffff',
+                lineColor: '#000000',
+                width: 2,
+                height: 100,
+                fontOptions: "bold"
+            });
+            
+            document.getElementById('download-barcode-pdf').addEventListener('click', () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const svgElement = document.getElementById('barcode-svg');
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    const dataUrl = canvas.toDataURL("image/png");
+                    doc.addImage(dataUrl, 'PNG', 15, 40, 180, 72);
+                    doc.save(`${product.name}-barcode.pdf`);
+                };
+                img.src = "data:image/svg+xml;base64," + btoa(svgData);
+            });
+
+            document.getElementById('print-barcode').addEventListener('click', () => {
+                const svgElement = document.getElementById('barcode-svg');
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const printWindow = window.open('', '', 'height=400,width=800');
+                printWindow.document.write('<html><head><title>طباعة الباركود</title></head><body>');
+                printWindow.document.write(svgData);
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+                printWindow.print();
+            });
+
+        } else {
+            productBarcodeSection.innerHTML = '<p class="text-gray-500">لا يوجد باركود لهذا المنتج.</p>';
+        }
     }
 
     addProductBtn.addEventListener('click', async () => {
