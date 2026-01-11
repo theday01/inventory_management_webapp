@@ -964,29 +964,37 @@ html:not(.dark) .text-red-500 {
 
 <!-- Customer Modal -->
 <div id="customer-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-lg border border-white/10 m-4">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-4xl border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">اختر عميل</h3>
             <button id="close-customer-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
         <div class="p-6">
-            <input type="text" id="customer-search" placeholder="بحث عن عميل..." class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 mb-4">
-            <div id="customer-list" class="max-h-60 overflow-y-auto"></div>
-        </div>
-        <div class="p-6 border-t border-white/5">
-            <h3 class="text-lg font-bold text-white mb-4">أو أضف عميل جديد</h3>
-            <form id="add-customer-form">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="customer-name" placeholder="الاسم" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
-                    <input type="text" id="customer-phone" placeholder="الهاتف" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
-                    <input type="email" id="customer-email" placeholder="البريد الإلكتروني" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left Column: Choose Customer -->
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-4">اختر عميل</h3>
+                    <input type="text" id="customer-search" placeholder="بحث عن عميل (رقم الهاتف /الاسم /العنوان)" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 mb-4">
+                    <div id="customer-list" class="max-h-60 overflow-y-auto"></div>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all mt-4">
-                    إضافة عميل
-                </button>
-            </form>
+                
+                <!-- Right Column: Or Add New Customer -->
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-4">أو أضف عميل جديد</h3>
+                    <form id="add-customer-form">
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="text" id="customer-name" placeholder="الاسم" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                            <input type="text" id="customer-phone" placeholder="الهاتف" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                            <input type="email" id="customer-email" placeholder="البريد الإلكتروني" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2">
+                            <textarea id="customer-address" placeholder="العنوان" rows="2" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 col-span-2"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all mt-4">
+                            إضافة عميل
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -2609,6 +2617,7 @@ document.addEventListener('DOMContentLoaded', function () {
             name: document.getElementById('customer-name').value,
             phone: document.getElementById('customer-phone').value,
             email: document.getElementById('customer-email').value,
+            address: document.getElementById('customer-address').value,
         };
 
         if (!newCustomer.name) {
