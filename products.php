@@ -749,6 +749,36 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             loadProducts();
         }
     });
+    
+    async function confirmAndDelete(productId) {
+        const confirmed = await showConfirmModal(
+            'حذف منتج',
+            'هل أنت متأكد من حذف هذا المنتج؟ سيتم نقله إلى الأرشيف ويمكن استعادته لاحقًا.'
+        );
+        
+        if (confirmed) {
+            try {
+                showLoading('جاري حذف المنتج...');
+                const response = await fetch('api.php?action=bulkDeleteProducts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_ids: [productId] })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    loadProducts();
+                    showToast('تم حذف المنتج بنجاح', true);
+                } else {
+                    showToast(result.message || 'فشل في حذف المنتج', false);
+                }
+            } catch (error) {
+                console.error('خطأ في الحذف:', error);
+                showToast('حدث خطأ في الحذف', false);
+            } finally {
+                hideLoading();
+            }
+        }
+    }
 
     const exportCsvBtn = document.getElementById('export-csv-btn');
     exportCsvBtn.addEventListener('click', async () => {
@@ -1103,6 +1133,20 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 productDetailsModal.classList.remove('hidden');
             }
         }
+        
+        if (e.target.closest('.edit-product-btn')) {
+            const btn = e.target.closest('.edit-product-btn');
+            const productId = btn.dataset.id;
+            await openEditModal(productId);
+        }
+        
+        if (e.target.closest('.delete-product-btn')) {
+            const btn = e.target.closest('.delete-product-btn');
+            const productId = btn.dataset.id;
+            // You would typically show a confirmation dialog before deleting
+            console.log(`Delete product with ID: ${productId}`);
+            await confirmAndDelete(productId);
+        }
     });
 
     closeProductDetailsModalBtn.addEventListener('click', () => {
@@ -1207,8 +1251,57 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             productBarcodeSection.innerHTML = '<p class="text-gray-500">لا يوجد باركود لهذا المنتج.</p>';
         }
     }
+    async function openEditModal(productId) {
+    try {
+        showLoading('جاري تحميل بيانات المنتج...');
+        const product = await getProductDetails(productId);
+        if (product) {
+            // Reset form and set modal title
+            productForm.reset();
+            customFieldsContainer.innerHTML = '';
+            document.getElementById('product-modal-title').textContent = 'تعديل المنتج';
 
+            // Populate main form fields
+            document.getElementById('product-id').value = product.id;
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-price').value = product.price;
+            document.getElementById('product-quantity').value = product.quantity;
+            document.getElementById('product-barcode').value = product.barcode || '';
+            
+            // Load categories and set the correct one
+            await loadCategoriesIntoSelect();
+            document.getElementById('product-category').value = product.category_id;
+            
+            // Load and display custom fields synchronously
+            if (product.category_id) {
+                const fields = await getCategoryFields(product.category_id);
+                displayCustomFields(fields);
+
+                // Now that fields are in the DOM, populate them
+                if (product.custom_fields && Array.isArray(product.custom_fields)) {
+                    product.custom_fields.forEach(savedField => {
+                        const fieldInput = document.getElementById(`custom-field-${savedField.id}`);
+                        if (fieldInput) {
+                            fieldInput.value = savedField.value;
+                        }
+                    });
+                }
+            }
+            
+            productModal.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Error opening edit modal:', error);
+        showToast('فشل في تحميل بيانات المنتج للتعديل', false);
+    } finally {
+        hideLoading();
+    }
+}
     addProductBtn.addEventListener('click', async () => {
+        productForm.reset();
+        document.getElementById('product-modal-title').textContent = 'إضافة منتج جديد';
+        document.getElementById('product-id').value = '';
+        customFieldsContainer.innerHTML = '';
         await loadCategoriesIntoSelect();
         productModal.classList.remove('hidden');
     });
@@ -1513,9 +1606,14 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         }
         formData.append('fields', JSON.stringify(customFields));
 
+        const productId = document.getElementById('product-id').value;
+        const action = productId ? 'updateProduct' : 'addProduct';
+        const successMessage = productId ? 'تم تحديث المنتج بنجاح' : 'تم إضافة المنتج بنجاح';
+        const errorMessage = productId ? 'فشل في تحديث المنتج' : 'فشل في إضافة المنتج';
+
         try {
             showLoading('جاري حفظ المنتج...');
-            const response = await fetch('api.php?action=addProduct', {
+            const response = await fetch(`api.php?action=${action}`, {
                 method: 'POST',
                 body: formData,
             });
@@ -1527,19 +1625,19 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     productModal.classList.add('hidden');
                     productForm.reset();
                     customFieldsContainer.innerHTML = '';
-                    loadProducts();
-                    showToast(result.message || 'تم إضافة المنتج بنجاح', true);
+                    loadProducts(); // Reload products to show changes
+                    showToast(result.message || successMessage, true);
                 } else {
                     console.error('API Error:', result.message);
-                    showToast(result.message || 'فشل في إضافة المنتج', false);
+                    showToast(result.message || errorMessage, false);
                 }
             } catch (e) {
                 console.error("Failed to parse JSON response. Server response:", responseText);
                 showToast('An invalid response was received from the server.', false);
             }
         } catch (error) {
-            console.error('خطأ في إضافة المنتج:', error);
-            showToast('حدث خطأ في إضافة المنتج', false);
+            console.error(`خطأ في ${productId ? 'تحديث' : 'إضافة'} المنتج:`, error);
+            showToast(`حدث خطأ في ${productId ? 'تحديث' : 'إضافة'} المنتج`, false);
         } finally {
             hideLoading();
         }

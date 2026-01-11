@@ -44,6 +44,9 @@ switch ($action) {
     case 'addProduct':
         addProduct($conn);
         break;
+    case 'updateProduct':
+        updateProduct($conn);
+        break;
     case 'bulkAddProducts':
         bulkAddProducts($conn);
         break;
@@ -704,6 +707,83 @@ function addProduct($conn) {
     } catch (Exception $e) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => 'فشل في إضافة المنتج: ' . $e->getMessage()]);
+    }
+}
+
+function updateProduct($conn) {
+    $data = $_POST;
+    $productId = isset($data['id']) ? (int)$data['id'] : 0;
+
+    if ($productId === 0) {
+        echo json_encode(['success' => false, 'message' => 'معرف المنتج مطلوب']);
+        return;
+    }
+
+    $imagePath = null;
+    if (!empty($data['image_path'])) {
+        if (!is_valid_image_path($data['image_path'])) {
+            echo json_encode(['success' => false, 'message' => 'مسار صورة غير صالح']);
+            return;
+        }
+        $imagePath = $data['image_path'];
+    } else if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        $imagePath = handle_image_upload($conn, $_FILES['image']);
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        $sql = "UPDATE products SET name = ?, price = ?, quantity = ?, category_id = ?, barcode = ?";
+        $params = [
+            $data['name'],
+            $data['price'],
+            $data['quantity'],
+            !empty($data['category_id']) ? (int)$data['category_id'] : null,
+            !empty($data['barcode']) ? $data['barcode'] : null
+        ];
+        $types = "sdiis";
+
+        if ($imagePath !== null) {
+            $sql .= ", image = ?";
+            $params[] = $imagePath;
+            $types .= "s";
+        }
+
+        $sql .= " WHERE id = ?";
+        $params[] = $productId;
+        $types .= "i";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $stmt->close();
+
+        // Clear existing custom fields for simplicity, then re-insert.
+        $stmt = $conn->prepare("DELETE FROM product_field_values WHERE product_id = ?");
+        $stmt->bind_param("i", $productId);
+        $stmt->execute();
+        $stmt->close();
+
+        if (!empty($data['fields'])) {
+            $fields = json_decode($data['fields'], true);
+            if (is_array($fields)) {
+                $stmt = $conn->prepare("INSERT INTO product_field_values (product_id, field_id, value) VALUES (?, ?, ?)");
+                foreach ($fields as $field) {
+                    if (!empty($field['value'])) {
+                        $stmt->bind_param("iis", $productId, $field['id'], $field['value']);
+                        $stmt->execute();
+                    }
+                }
+                $stmt->close();
+            }
+        }
+
+        $conn->commit();
+        create_notification($conn, "تم تحديث المنتج: " . $data['name'], "product_update");
+        echo json_encode(['success' => true, 'message' => 'تم تحديث المنتج بنجاح']);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'فشل في تحديث المنتج: ' . $e->getMessage()]);
     }
 }
 
