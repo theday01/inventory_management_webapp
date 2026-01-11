@@ -236,12 +236,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
                             <div class="lg:col-span-8 space-y-6">
                                 <?php $hasLogo = !empty($settings['shopLogoUrl'] ?? ''); ?>
-                                <?php if ($hasLogo): ?>
-                                <label class="inline-flex items-center gap-2">
+                                <label class="inline-flex items-center gap-2 invoice-logo-checkbox <?php echo $hasLogo ? '' : 'hidden'; ?>">
                                     <input type="checkbox" name="invoiceShowLogo" value="1" <?php echo (($settings['invoiceShowLogo'] ?? '0') === '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?>>
                                     <span class="text-xs font-bold text-gray-300">إضافة الشعار إلى الفواتير</span>
                                 </label>
-                                <?php endif; ?>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">اسم المتجر (يظهر في الفواتير)</label>
                                     <div class="relative group">
@@ -930,6 +928,75 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         content.classList.add('opacity-0', 'scale-95');
         setTimeout(() => document.getElementById('stockGuideModal').classList.add('hidden'), 300);
     }
+
+    // === بداية كود الحفظ التلقائي للشعار ===
+    document.getElementById('shopLogoFile').addEventListener('change', async function(event) {
+        if (event.target.files && event.target.files[0]) {
+            const file = event.target.files[0];
+            const formData = new FormData();
+            formData.append('shopLogoFile', file);
+
+            // عرض مؤشر التحميل
+            const previewContainer = document.querySelector('.w-32.h-32.rounded-full');
+            const previewImage = previewContainer.querySelector('img');
+            const originalContent = previewContainer.innerHTML;
+            previewContainer.innerHTML = `
+                <div class="w-full h-full flex items-center justify-center bg-dark/50">
+                    <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>`;
+
+            try {
+                const response = await fetch('api.php?action=updateShopLogo', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success && result.logoUrl) {
+                    // تحديث الصورة في الواجهة
+                    const newImageUrl = result.logoUrl + '?t=' + new Date().getTime(); // لمنع التخزين المؤقت
+                    previewContainer.innerHTML = `<img src="${newImageUrl}" alt="Logo" class="w-full h-full object-cover">`;
+                                        
+                    // إظهار رسالة نجاح
+                    showToast('success', 'تم تحديث الشعار بنجاح!');
+                                        
+                    // تحديث رابط الصورة في كل مكان آخر إذا لزم الأمر
+                    // مثال: تحديث الشعار في الشريط الجانبي
+                    const sidebarLogo = document.querySelector('.sidebar-logo');
+                    if(sidebarLogo) sidebarLogo.src = newImageUrl;
+                                                             
+                    // جعل خانة "إضافة الشعار إلى الفواتير" مرئية تلقائيًا
+                    // نبحث عن عنصر checkbox ونجعله مرئيًا
+                    const invoiceCheckboxContainer = document.querySelector('.invoice-logo-checkbox');
+                    if(invoiceCheckboxContainer) {
+                        invoiceCheckboxContainer.classList.remove('hidden');
+                        // تحسين الظهور باستخدام fade in
+                        setTimeout(() => {
+                            invoiceCheckboxContainer.style.opacity = '0';
+                            invoiceCheckboxContainer.style.transition = 'opacity 0.3s ease-in-out';
+                            setTimeout(() => {
+                                invoiceCheckboxContainer.style.opacity = '1';
+                            }, 10);
+                        }, 10);
+                    }
+                    
+                } else {
+                    // إرجاع المحتوى الأصلي عند الفشل
+                    previewContainer.innerHTML = originalContent;
+                    showToast('error', result.message || 'حدث خطأ غير متوقع');
+                }
+            } catch (error) {
+                previewContainer.innerHTML = originalContent;
+                showToast('error', 'فشل الاتصال بالخادم');
+                console.error('Error uploading logo:', error);
+            }
+        }
+    });
+    // === نهاية كود الحفظ التلقائي للشعار ===
+
 
     // Load Rental Data Logic (Simplified for brevity, same as original logic)
     function formatArDate(d) {

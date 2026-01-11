@@ -39,7 +39,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <button id="bulk-add-btn"
                 class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">playlist_add</span>
-                <span>إضافة جماعية</span>
+                <span>إضافة جماعية للمنتجات</span>
             </button>
             <button id="manage-categories-btn"
                 class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">

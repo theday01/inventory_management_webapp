@@ -161,10 +161,72 @@ switch ($action) {
     case 'uploadImage':
         uploadImage($conn);
         break;
+    case 'updateShopLogo':
+        updateShopLogo($conn);
+        break;
     // ----------------------------
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
+}
+
+function updateShopLogo($conn) {
+    // فقط المدير يمكنه تغيير الشعار
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+
+    if (isset($_FILES['shopLogoFile']) && $_FILES['shopLogoFile']['error'] === UPLOAD_ERR_OK) {
+        $allowed = ['png', 'jpg', 'jpeg'];
+        $ext = strtolower(pathinfo($_FILES['shopLogoFile']['name'], PATHINFO_EXTENSION));
+        if ($ext === 'jpeg') $ext = 'jpg';
+
+        if (in_array($ext, $allowed)) {
+            $uploadDir = __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'uploads';
+            if (!is_dir($uploadDir)) {
+                if (!@mkdir($uploadDir, 0755, true)) {
+                    echo json_encode(['success' => false, 'message' => 'فشل في إنشاء مجلد الرفع']);
+                    return;
+                }
+            }
+
+            // استخدام اسم ثابت لملف الشعار لسهولة الإدارة
+            $filename = 'shop_logo.' . $ext;
+            $destFs = $uploadDir . DIRECTORY_SEPARATOR . $filename;
+            $destUrl = 'src/uploads/' . $filename;
+            
+            // حذف الشعار القديم إذا كان موجوداً بامتداد مختلف
+            $oldLogoJpg = $uploadDir . DIRECTORY_SEPARATOR . 'shop_logo.jpg';
+            $oldLogoPng = $uploadDir . DIRECTORY_SEPARATOR . 'shop_logo.png';
+            if (file_exists($oldLogoJpg) && $destFs !== $oldLogoJpg) {
+                @unlink($oldLogoJpg);
+            }
+            if (file_exists($oldLogoPng) && $destFs !== $oldLogoPng) {
+                @unlink($oldLogoPng);
+            }
+
+            if (@move_uploaded_file($_FILES['shopLogoFile']['tmp_name'], $destFs)) {
+                // تحديث قاعدة البيانات
+                $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('shopLogoUrl', ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+                $stmt->bind_param("ss", $destUrl, $destUrl);
+                
+                if ($stmt->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'تم تحديث الشعار بنجاح', 'logoUrl' => $destUrl]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'فشل في تحديث قاعدة البيانات']);
+                }
+                $stmt->close();
+
+            } else {
+                echo json_encode(['success' => false, 'message' => 'فشل في نقل الملف المرفوع']);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'نوع الملف غير مسموح به']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'لم يتم العثور على ملف مرفوع أو حدث خطأ']);
+    }
 }
 
 function handle_image_upload($conn, $file) {
