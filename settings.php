@@ -167,7 +167,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 </div>
                 <div>
                     <h2 class="text-xl font-bold text-white">إعدادات النظام</h2>
-                    <p class="text-xs text-gray-400">تحكم في تفاصيل المتجر، التنبيهات، ولوحة المفاتيح</p>
+                    <p class="text-xs text-gray-400">تحكم كامل وسهل في إعدادات المتجر والعلامة التجارية</p>
                 </div>
                 
                 <?php if (!$isAdmin): ?>
