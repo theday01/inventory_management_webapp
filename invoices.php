@@ -1243,6 +1243,62 @@ ${'-'.repeat(50)}
         currentPage = 1;
         loadInvoices();
     });
+
+    // Barcode scanner logic
+    const scanInvoiceBarcodeBtn = document.getElementById('scan-invoice-barcode-btn');
+    const invoiceBarcodeScannerModal = document.getElementById('invoice-barcode-scanner-modal');
+    const closeInvoiceBarcodeScannerModal = document.getElementById('close-invoice-barcode-scanner-modal');
+    const invoiceBarcodeVideo = document.getElementById('invoice-barcode-video');
+    
+    let invoiceCodeReader;
+    
+    scanInvoiceBarcodeBtn.addEventListener('click', () => {
+        invoiceBarcodeScannerModal.classList.remove('hidden');
+        startInvoiceBarcodeScanner();
+    });
+
+    closeInvoiceBarcodeScannerModal.addEventListener('click', () => {
+        stopInvoiceBarcodeScanner();
+    });
+
+    async function startInvoiceBarcodeScanner() {
+        if (typeof ZXing === 'undefined') {
+            showToast('خطأ: مكتبة المسح الضوئي غير محملة', false);
+            return;
+        }
+        
+        invoiceCodeReader = new ZXing.BrowserMultiFormatReader();
+        try {
+            const videoInputDevices = await invoiceCodeReader.listVideoInputDevices();
+            if (videoInputDevices.length > 0) {
+                invoiceCodeReader.decodeFromVideoDevice(videoInputDevices[1].deviceId, 'invoice-barcode-video', (result, err) => {
+                    if (result) {
+                        searchTermInput.value = result.text;
+                        stopInvoiceBarcodeScanner();
+                        invoiceSearchForm.dispatchEvent(new Event('submit'));
+                        showToast('تم العثور على الباركود!', true);
+                    }
+                    if (err && !(err instanceof ZXing.NotFoundException)) {
+                        console.error('Barcode scan error:', err);
+                        showToast('حدث خطأ أثناء المسح', false);
+                        stopInvoiceBarcodeScanner();
+                    }
+                });
+            } else {
+                showToast('لم يتم العثور على كاميرا', false);
+            }
+        } catch (error) {
+            console.error('Error starting barcode scanner:', error);
+            showToast('فشل في بدء تشغيل الماسح الضوئي', false);
+        }
+    }
+
+    function stopInvoiceBarcodeScanner() {
+        if (invoiceCodeReader) {
+            invoiceCodeReader.reset();
+        }
+        invoiceBarcodeScannerModal.classList.add('hidden');
+    }
     
     loadInvoices();
 });
