@@ -721,6 +721,31 @@ html:not(.dark) .text-red-500 {
                 </div>
             </div>
 
+            <!-- قسم الخصم -->
+            <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-400">الخصم</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="discount-toggle" class="sr-only peer">
+                        <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                </div>
+                <div id="discount-options" class="hidden mt-3 space-y-3">
+                    <div class="flex items-center gap-3">
+                        <input type="number" id="discount-percent" min="0" max="100" step="0.1" 
+                            placeholder="نسبة الخصم %"
+                            class="flex-1 bg-dark/50 border border-white/10 text-white text-right px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
+                        <button id="apply-discount-btn" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-bold transition-colors">
+                            تطبيق
+                        </button>
+                    </div>
+                    <div class="text-xs text-gray-500 flex items-center gap-1">
+                        <span class="material-icons-round text-xs">info</span>
+                        <span id="discount-amount-display">0.00 <?php echo $currency; ?></span>
+                    </div>
+                </div>
+            </div>
+
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm text-gray-400">
                     <span>المجموع الفرعي</span>
@@ -736,6 +761,11 @@ html:not(.dark) .text-red-500 {
                 <div id="cart-delivery-row" class="flex justify-between text-sm text-gray-400 hidden">
                     <span>التوصيل</span>
                     <span id="cart-delivery-amount">0 <?php echo $currency; ?></span>
+                </div>
+
+                <div id="cart-discount-row" class="flex justify-between text-sm text-gray-400 hidden">
+                    <span>الخصم</span>
+                    <span id="cart-discount-amount">0 <?php echo $currency; ?></span>
                 </div>
 
                 <div class="flex justify-between text-lg font-bold text-white pt-2 border-t border-white/5">
@@ -1209,7 +1239,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const deliveryCityInput = document.getElementById('delivery-city-input');
     const deliveryCostInfo = document.getElementById('delivery-cost-info');
     const cartDeliveryRow = document.getElementById('cart-delivery-row');
-    const cartDeliveryAmount = document.getElementById('cart-delivery-amount');    
+    const cartDeliveryAmount = document.getElementById('cart-delivery-amount');
+    
+    // Discount Elements
+    const discountToggle = document.getElementById('discount-toggle');
+    const discountOptionsDiv = document.getElementById('discount-options');
+    const discountPercentInput = document.getElementById('discount-percent');
+    const applyDiscountBtn = document.getElementById('apply-discount-btn');
+    const discountAmountDisplay = document.getElementById('discount-amount-display');
+    const cartDiscountRow = document.getElementById('cart-discount-row');
+    const cartDiscountAmount = document.getElementById('cart-discount-amount');
+    
+    // Global variables for discount
+    let discountPercent = 0;
+    let discountAmount = 0;    
     const customerModal = document.getElementById('customer-modal');
     const closeCustomerModalBtn = document.getElementById('close-customer-modal');
     const customerSelection = document.getElementById('customer-selection');
@@ -1745,6 +1788,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     deliveryToggle.addEventListener('change', updateDeliveryState);
 
+    // Discount Toggle
+    discountToggle.addEventListener('change', updateDiscountState);
+
     document.addEventListener('change', function(e) {
         if (e.target.name === 'delivery-type') {
             handleDeliveryTypeChange();
@@ -1752,11 +1798,30 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     deliveryCityInput.addEventListener('input', calculateDeliveryCost);
+    
+    // Apply discount button
+    applyDiscountBtn.addEventListener('click', function() {
+        applyDiscount();
+    });
+    
+    // Also apply discount when pressing Enter in the discount input
+    discountPercentInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            applyDiscount();
+        }
+    });
 
     function updateTotals() {
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        const total = subtotal + tax + deliveryCost;
+        
+        // Calculate discount
+        discountAmount = 0;
+        if (discountPercent > 0) {
+            discountAmount = subtotal * (discountPercent / 100);
+        }
+        
+        const total = subtotal + tax + deliveryCost - discountAmount;
 
         cartSubtotal.textContent = `${subtotal.toFixed(2)} ${currency}`;
         if (cartTax) {
@@ -1764,7 +1829,53 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         cartDeliveryAmount.textContent = `${deliveryCost.toFixed(2)} ${currency}`;
+        cartDiscountAmount.textContent = `-${discountAmount.toFixed(2)} ${currency}`;
+        
+        // Show/hide discount row based on discount amount
+        if (discountAmount > 0) {
+            cartDiscountRow.classList.remove('hidden');
+        } else {
+            cartDiscountRow.classList.add('hidden');
+        }
+        
         cartTotal.textContent = `${total.toFixed(2)} ${currency}`;
+    }
+    
+    function updateDiscountState() {
+        if (discountToggle.checked) {
+            discountOptionsDiv.classList.remove('hidden');
+        } else {
+            discountOptionsDiv.classList.add('hidden');
+            // Reset discount when toggled off
+            discountPercent = 0;
+            discountPercentInput.value = '';
+            discountAmount = 0;
+            discountAmountDisplay.textContent = `0.00 ${currency}`;
+        }
+        updateTotals();
+    }
+    
+    function applyDiscount() {
+        const inputPercent = parseFloat(discountPercentInput.value) || 0;
+        
+        // Validate discount percentage
+        if (inputPercent < 0 || inputPercent > 100) {
+            showToast('الرجاء إدخال نسبة خصم صحيحة (0-100%)', false);
+            return;
+        }
+        
+        discountPercent = inputPercent;
+        
+        // Calculate discount amount based on current subtotal
+        const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        discountAmount = subtotal * (discountPercent / 100);
+        
+        // Update display
+        discountAmountDisplay.textContent = `-${discountAmount.toFixed(2)} ${currency}`;
+        
+        updateTotals();
+        
+        showToast(`تم تطبيق خصم ${discountPercent}% ( ${discountAmount.toFixed(2)} ${currency} )`, true);
     }
 
     cartItemsContainer.addEventListener('click', function (e) {
@@ -1898,7 +2009,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // حساب المجاميع قبل إرسال البيانات
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        const total = subtotal + tax + deliveryCostValue;
+        
+        // Calculate discount
+        discountAmount = 0;
+        if (discountPercent > 0) {
+            discountAmount = subtotal * (discountPercent / 100);
+        }
+        
+        const total = subtotal + tax + deliveryCostValue - discountAmount;
 
         try {
             showLoading('جاري معالجة عملية البيع...');
@@ -1910,6 +2028,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     total: total,
                     delivery_cost: deliveryCostValue,
                     delivery_city: deliveryCity,
+                    discount_percent: discountPercent,
+                    discount_amount: discountAmount,
                     items: cart,
                     payment_method: paymentData.paymentMethod,
                     amount_received: paymentData.amountReceived,
@@ -1927,6 +2047,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     tax: tax,
                     delivery: deliveryCostValue,
                     deliveryCity: deliveryCity,
+                    discount_percent: discountPercent,
+                    discount_amount: discountAmount,
                     total: total,
                     date: new Date(),
                     // --- NEW FIELDS ---
@@ -2141,6 +2263,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 totalsContainer.insertBefore(deliveryCityRow, totalRow);
             }
         }
+        
+        // إزالة سطر الخصم القديم إذا كان موجودًا
+        const existingDiscountRow = document.getElementById('invoice-discount-row');
+        if (existingDiscountRow) existingDiscountRow.remove();
+        
+        // إضافة سطر الخصم إذا كان موجودًا
+        if (data.discount_amount && data.discount_amount > 0) {
+            const taxRow = document.getElementById('invoice-tax-row');
+            const totalsContainer = taxRow.parentNode;
+            const totalRow = totalsContainer.querySelector('.text-lg.font-bold.border-t-2') || totalsContainer.lastElementChild;
+            
+            // إضافة سطر الخصم
+            const discountRow = document.createElement('div');
+            discountRow.id = 'invoice-discount-row';
+            discountRow.className = 'flex justify-between';
+            discountRow.innerHTML = `
+                <span class="text-gray-600">الخصم:</span>
+                <span class="font-medium text-red-500">-${data.discount_amount.toFixed(2)} ${currency}</span>
+            `;
+            totalsContainer.insertBefore(discountRow, totalRow);
+        }
 
         document.getElementById('invoice-total').textContent = `${data.total.toFixed(2)} ${currency}`;
 
@@ -2282,6 +2425,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (currentInvoiceData.deliveryCity) {
             thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${currentInvoiceData.deliveryCity}</span></div>`;
         }
+    }
+    
+    // إضافة الخصم إذا كان موجودًا
+    if (currentInvoiceData.discount_amount && currentInvoiceData.discount_amount > 0) {
+        thermalContent += `<div class="total-row"><span>الخصم:</span><span>-${currentInvoiceData.discount_amount.toFixed(2)} ${currency}</span></div>`;
     }
 
     thermalContent += `
@@ -2513,6 +2661,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (currentInvoiceData.deliveryCity) {
                 txtContent += `مدينة التوصيل: ${currentInvoiceData.deliveryCity}\n`;
             }
+        }
+        
+        // إضافة الخصم إذا كان موجودًا
+        if (currentInvoiceData.discount_amount && currentInvoiceData.discount_amount > 0) {
+            txtContent += `الخصم: -${currentInvoiceData.discount_amount.toFixed(2)} ${currency}\n`;
         }
 
         txtContent += `الإجمالي: ${currentInvoiceData.total.toFixed(2)} ${currency}\n`;

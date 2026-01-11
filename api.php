@@ -708,9 +708,18 @@ function getProducts($conn) {
     $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
 
     $offset = ($page - 1) * $limit;
-    $dataSql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name "
-             . $baseSql 
-             . " ORDER BY p.{$sortBy} {$sortOrder} LIMIT ? OFFSET ?";
+    // Modify to show out-of-stock products last
+    if ($sortBy === 'quantity') {
+        // If sorting by quantity, prioritize non-zero quantities first, then sort by quantity
+        $dataSql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name "
+                 . $baseSql 
+                 . " ORDER BY CASE WHEN p.quantity = 0 THEN 1 ELSE 0 END, p.{$sortBy} {$sortOrder} LIMIT ? OFFSET ?";
+    } else {
+        // For other sorts, always put out-of-stock items last, then apply the requested sort
+        $dataSql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name "
+                 . $baseSql 
+                 . " ORDER BY CASE WHEN p.quantity = 0 THEN 1 ELSE 0 END, p.{$sortBy} {$sortOrder} LIMIT ? OFFSET ?";
+    }
     
     $dataTypes = $types . 'ii';
     $dataParams = array_merge($params, [$limit, $offset]);
@@ -1202,8 +1211,10 @@ function checkout($conn) {
         $total = (float)$data['total'];
 
         // Update Query to include amount_received and change_due
-        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, payment_method, amount_received, change_due) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("iddssdd", $customer_id, $total, $delivery_cost, $delivery_city, $payment_method, $amount_received, $change_due);
+        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $discount_percent = isset($data['discount_percent']) ? (float)$data['discount_percent'] : 0;
+        $discount_amount = isset($data['discount_amount']) ? (float)$data['discount_amount'] : 0;
+        $stmt->bind_param("iddsdssdd", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due);
         
         $stmt->execute();
         $invoiceId = $stmt->insert_id;

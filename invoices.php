@@ -938,6 +938,9 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             itemsTable.appendChild(row);
         });
 
+        // Calculate discount
+        const discountAmount = parseFloat(data.discount_amount) || 0;
+        const discountPercent = parseFloat(data.discount_percent) || 0;
         const tax = taxEnabled ? subtotal * taxRate : 0;
         
         document.getElementById('invoice-subtotal').textContent = `${subtotal.toFixed(2)} ${currency}`;
@@ -949,6 +952,26 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             document.getElementById('invoice-tax-amount').textContent = `${tax.toFixed(2)} ${currency}`;
         } else {
             document.getElementById('invoice-tax-row').style.display = 'none';
+        }
+        
+        // Remove existing discount row if present
+        const existingDiscountRow = document.getElementById('invoice-discount-row');
+        if (existingDiscountRow) existingDiscountRow.remove();
+        
+        // Add discount row if discount exists
+        if (discountAmount > 0) {
+            const taxRow = document.getElementById('invoice-tax-row');
+            const totalsContainer = taxRow.parentNode;
+            const totalRow = totalsContainer.querySelector('.text-2xl.font-extrabold') || totalsContainer.lastElementChild;
+            
+            const discountRow = document.createElement('div');
+            discountRow.id = 'invoice-discount-row';
+            discountRow.className = 'flex justify-between items-center py-2 border-b border-gray-200';
+            discountRow.innerHTML = `
+                <span class="text-gray-600 font-semibold">الخصم (<span id="invoice-discount-percent">${discountPercent.toFixed(2)}</span>%):</span>
+                <span class="font-bold text-red-500 text-base">-${discountAmount.toFixed(2)} ${currency}</span>
+            `;
+            totalsContainer.insertBefore(discountRow, totalRow);
         }
         
         document.getElementById('invoice-total').textContent = `${parseFloat(data.total).toFixed(2)} ${currency}`;
@@ -1060,6 +1083,8 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         </div>`;
         });
         const tax = taxEnabled ? subtotal * taxRate : 0;
+        const discountAmount = parseFloat(currentInvoiceData.discount_amount) || 0;
+        const discountPercent = parseFloat(currentInvoiceData.discount_percent) || 0;
 
         thermalContent += `</div>
             <div class="totals-section">
@@ -1067,6 +1092,11 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
         if (taxEnabled) {
             thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${tax.toFixed(2)} ${currency}</span></div>`;
+        }
+        
+        // Add discount if applicable
+        if (discountAmount > 0) {
+            thermalContent += `<div class="total-row"><span>الخصم (${discountPercent.toFixed(2)}%):</span><span>-${discountAmount.toFixed(2)} ${currency}</span></div>`;
         }
         
         thermalContent += `<div class="total-row grand-total"><span>الإجمالي:</span><span>${parseFloat(currentInvoiceData.total).toFixed(2)} ${currency}</span></div>`;
@@ -1116,26 +1146,76 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
     downloadPdfBtn.addEventListener('click', async () => {
         const { jsPDF } = window.jspdf;
+        
         try {
             showToast('جاري إنشاء ملف PDF...', true);
+            
+            // احفظ خصائص CSS الأصلية قبل التعديل
             const element = document.getElementById('invoice-print-area');
-            const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+            const originalStyles = {
+                maxHeight: element.style.maxHeight,
+                overflow: element.style.overflow,
+                position: element.style.position
+            };
+            
+            // Initialize itemsOriginalStyles to avoid undefined reference
+            let itemsOriginalStyles = null;
+            
+            // أضف أي عناصر أخرى تحتاج إلى تعديل
+            const invoiceItemsContainer = document.querySelector('.invoice-items-container');
+            if (invoiceItemsContainer) {
+                itemsOriginalStyles = {
+                    maxHeight: invoiceItemsContainer.style.maxHeight,
+                    overflow: invoiceItemsContainer.style.overflow
+                };
+                invoiceItemsContainer.style.maxHeight = 'none';
+                invoiceItemsContainer.style.overflow = 'visible';
+            }
+            
+            // ضبط العنصر للتصوير
+            element.style.maxHeight = 'none';
+            element.style.overflow = 'visible';
+            element.style.position = 'relative';
+            
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false,
+                useCORS: true,
+                scrollY: 0
+            });
+            
+            // استعادة الخصائص الأصلية
+            element.style.maxHeight = originalStyles.maxHeight;
+            element.style.overflow = originalStyles.overflow;
+            element.style.position = originalStyles.position;
+            
+            if (invoiceItemsContainer && itemsOriginalStyles) {
+                invoiceItemsContainer.style.maxHeight = itemsOriginalStyles.maxHeight;
+                invoiceItemsContainer.style.overflow = itemsOriginalStyles.overflow;
+            }
+            
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pdfWidth;
             const imgHeight = (canvas.height * pdfWidth) / canvas.width;
             
+            // If image is taller than a single PDF page, split it into slices
             if (imgHeight > pdfHeight) {
                 const gapMm = 10;
                 const topMargin = gapMm / 2;
                 const pxPerMm = canvas.width / pdfWidth;
                 const sliceHeightPx = Math.floor((pdfHeight - gapMm) * pxPerMm);
+                
                 let remainingHeightPx = canvas.height;
                 let pageIndex = 0;
+                
                 while (remainingHeightPx > 0) {
                     const sy = pageIndex * sliceHeightPx;
                     const sh = Math.min(sliceHeightPx, remainingHeightPx);
+                    
                     const tmpCanvas = document.createElement('canvas');
                     tmpCanvas.width = canvas.width;
                     tmpCanvas.height = sh;
@@ -1143,18 +1223,22 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                     tmpCtx.fillStyle = '#ffffff';
                     tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
                     tmpCtx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+                    
                     const imgDataPage = tmpCanvas.toDataURL('image/png');
                     const pageImgHeightMm = (sh * pdfWidth) / canvas.width;
+                    
                     if (pageIndex > 0) pdf.addPage();
                     pdf.addImage(imgDataPage, 'PNG', 0, topMargin, pdfWidth, pageImgHeightMm);
+                    
                     remainingHeightPx -= sh;
                     pageIndex++;
                 }
             } else {
                 const gapMm = 10;
                 const topMargin = gapMm / 2;
-                pdf.addImage(imgData, 'PNG', 0, topMargin, pdfWidth, imgHeight);
+                pdf.addImage(imgData, 'PNG', 0, topMargin, imgWidth, imgHeight);
             }
+            
             pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
             showToast('تم تحميل الفاتورة بصيغة PDF', true);
         } catch (error) {
@@ -1199,10 +1283,17 @@ ${'-'.repeat(50)}
             txtContent += `${index + 1}. ${item.product_name}\n   الكمية: ${item.quantity} × ${parseFloat(item.price).toFixed(2)} ${currency} = ${itemTotal.toFixed(2)} ${currency}\n\n`;
         });
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        
+        const discountAmount = parseFloat(currentInvoiceData.discount_amount) || 0;
+        const discountPercent = parseFloat(currentInvoiceData.discount_percent) || 0;
+                
         txtContent += `${'-'.repeat(50)}\nالمجموع الفرعي: ${subtotal.toFixed(2)} ${currency}\n`;
         if (taxEnabled) txtContent += `${taxLabel} (${(taxRate * 100).toFixed(0)}%): ${tax.toFixed(2)} ${currency}\n`;
-        txtContent += `الإجمالي: ${parseFloat(currentInvoiceData.total).toFixed(2)} ${currency}\n`;
+                
+        // Add discount if applicable
+        if (discountAmount > 0) txtContent += `الخصم (${discountPercent.toFixed(2)}%): -${discountAmount.toFixed(2)} ${currency}\n`;
+                
+        txtContent += `الإجمالي: ${parseFloat(currentInvoiceData.total).toFixed(2)} ${currency}
+`;
 
         if (currentInvoiceData.amount_received > 0) {
             txtContent += `المبلغ المستلم: ${parseFloat(currentInvoiceData.amount_received).toFixed(2)} ${currency}\n`;
