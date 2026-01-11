@@ -661,6 +661,26 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </div>
                         </div>
                     </div>
+
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <span class="material-icons-round text-primary">inventory</span>
+                            تنبيهات حدود المخزون
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="low_quantity_alert" class="block text-sm font-medium text-gray-300 mb-2">حد المخزون المنخفض</label>
+                                <input type="number" id="low_quantity_alert" name="low_quantity_alert" value="<?php echo htmlspecialchars($settings['low_quantity_alert'] ?? '30'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl font-bold text-lg focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
+                                <p class="text-xs text-gray-500 mt-2">عندما تصل كمية المنتج لهذا العدد، سيتم تمييزه باللون <span class="text-orange-400 font-bold">البرتقالي</span> في صفحة إدارة المخزون ونقطة البيع</p>
+                            </div>
+                            <div>
+                                <label for="critical_quantity_alert" class="block text-sm font-medium text-gray-300 mb-2">حد المخزون الحرج</label>
+                                <input type="number" id="critical_quantity_alert" name="critical_quantity_alert" value="<?php echo htmlspecialchars($settings['critical_quantity_alert'] ?? '10'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl font-bold text-lg focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
+                                <p class="text-xs text-gray-500 mt-2">عندما تصل كمية المنتج لهذا العدد، سيتم تمييزه باللون <span class="text-red-500 font-bold">الأحمر</span> في صفحة إدارة المخزون ونقطة البيع</p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel" id="stock-alerts-container">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="material-icons-round text-primary">update</span>فحص المخزون التلقائي</h3>

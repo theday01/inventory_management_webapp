@@ -1,5 +1,5 @@
 <?php
-$page_title = 'إدارة المخزون';
+$page_title = 'إدارة المخزون والمنتجات';
 $current_page = 'products.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
@@ -28,7 +28,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     <!-- Header -->
     <header
         class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-30 shrink-0">
-        <h2 class="text-xl font-bold text-white">إدارة المخزون</h2>
+        <h2 class="text-xl font-bold text-white">إدارة المخزون والمنتجات</h2>
 
         <div class="flex items-center gap-4">
             <button id="add-product-btn"
@@ -583,9 +583,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             const response = await fetch(`api.php?action=getProducts&search=${searchQuery}&category_id=${categoryId}&stock_status=${stockStatus}&page=${currentPage}&limit=${productsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
             const result = await response.json();
             if (result.success) {
-                const lowAlert = <?php echo $low_alert; ?>;
-                const criticalAlert = <?php echo $critical_alert; ?>;
-                displayProducts(result.data, lowAlert, criticalAlert);
+                displayProducts(result.data, <?php echo $low_alert; ?>, <?php echo $critical_alert; ?>);
                 renderPagination(result.total_products);
             }
         } catch (error) {

@@ -44,7 +44,7 @@ if (!isset($shopName)) {
             <a href="products.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'products.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">inventory_2</span>
-                <span class="font-bold">إدارة المخزون</span>
+                <span class="font-bold">إدارة المخزون والمنتجات</span>
             </a>
 
 
