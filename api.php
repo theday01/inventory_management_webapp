@@ -164,6 +164,25 @@ switch ($action) {
     case 'updateShopLogo':
         updateShopLogo($conn);
         break;
+    // Daily Tracking System
+    case 'openBusinessDay':
+        openBusinessDay($conn);
+        break;
+    case 'closeBusinessDay':
+        closeBusinessDay($conn);
+        break;
+    case 'getCurrentDayStatus':
+        getCurrentDayStatus($conn);
+        break;
+    case 'getDailySummaries':
+        getDailySummaries($conn);
+        break;
+    case 'getMonthlyReport':
+        getMonthlyReport($conn);
+        break;
+    case 'getYearlyComparison':
+        getYearlyComparison($conn);
+        break;
     // ----------------------------
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
@@ -1501,6 +1520,19 @@ function getDashboardStats($conn) {
         $result = $conn->query("SELECT COALESCE(SUM(total), 0) as revenue FROM invoices WHERE DATE(created_at) = '$today'");
         $stats['todayRevenue'] = $result ? $result->fetch_assoc()['revenue'] : 0;
         
+        // Calculate Today's Profit
+        $costQuery = "SELECT COALESCE(SUM(ii.quantity * COALESCE(p.cost_price, 0)), 0) as total_cost 
+                      FROM invoice_items ii 
+                      JOIN invoices i ON ii.invoice_id = i.id 
+                      LEFT JOIN products p ON ii.product_id = p.id 
+                      WHERE DATE(i.created_at) = '$today'";
+        $costResult = $conn->query($costQuery);
+        $totalCost = $costResult ? $costResult->fetch_assoc()['total_cost'] : 0;
+        
+        $stats['todayCost'] = $totalCost;
+        $stats['todayProfit'] = $stats['todayRevenue'] - $totalCost;
+        $stats['todayMargin'] = $stats['todayRevenue'] > 0 ? ($stats['todayProfit'] / $stats['todayRevenue'] * 100) : 0;
+        
         $result = $conn->query("SELECT COALESCE(SUM(total), 0) as revenue FROM invoices WHERE DATE(created_at) = '$yesterday'");
         $stats['yesterdayRevenue'] = $result ? $result->fetch_assoc()['revenue'] : 0;
         
@@ -2117,6 +2149,481 @@ function calculateNextPaymentDate($currentDate, $rentalType) {
     
     return $date->format('Y-m-d');
 }
+
+// ========================================
+// Daily Tracking System Functions
+// ========================================
+
+/**
+ * Get the current business date based on business day start hour
+ * Transactions before start hour belong to previous business day
+ */
+function getBusinessDate($conn) {
+    $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'businessDayStartHour'");
+    $startHour = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc()['setting_value'] : 5;
+    
+    $currentHour = (int)date('H');
+    if ($currentHour < $startHour) {
+        // Before start hour, use previous day
+        return date('Y-m-d', strtotime('-1 day'));
+    }
+    return date('Y-m-d');
+}
+
+/**
+ * Create inventory snapshot
+ */
+function createInventorySnapshot($conn, $summaryId, $snapshotType) {
+    try {
+        $snapshotTime = date('Y-m-d H:i:s');
+        $totalValue = 0;
+        
+        // Get all products with their current inventory
+        $result = $conn->query("SELECT id, name, quantity, price, cost_price, category_id FROM products WHERE quantity > 0");
+        
+        if ($result && $result->num_rows > 0) {
+            $stmt = $conn->prepare(
+                "INSERT INTO daily_inventory_snapshots 
+                (daily_summary_id, product_id, product_name, snapshot_type, quantity, unit_price, total_value, category_id, snapshot_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+            
+            while ($row = $result->fetch_assoc()) {
+                $productTotal = $row['quantity'] * $row['cost_price'];
+                $totalValue += $productTotal;
+                
+                $stmt->bind_param(
+                    "iisididis",
+                    $summaryId,
+                    $row['id'],
+                    $row['name'],
+                    $snapshotType,
+                    $row['quantity'],
+                    $row['cost_price'],
+                    $productTotal,
+                    $row['category_id'],
+                    $snapshotTime
+                );
+                $stmt->execute();
+            }
+            $stmt->close();
+        }
+        
+        return $totalValue;
+    } catch (Exception $e) {
+        error_log("Error creating inventory snapshot: " . $e->getMessage());
+        return 0;
+    }
+}
+
+/**
+ * Open a new business day
+ */
+function openBusinessDay($conn) {
+    try {
+        // Check if there's already an open day
+        $statusResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currentDayStatus'");
+        $currentStatus = ($statusResult && $statusResult->num_rows > 0) ? $statusResult->fetch_assoc()['setting_value'] : 'closed';
+        
+        if ($currentStatus === 'open') {
+            echo json_encode(['success' => false, 'message' => 'يوجد يوم عمل مفتوح بالفعل. يجب إغلاقه أولاً']);
+            return;
+        }
+        
+        $businessDate = getBusinessDate($conn);
+        $openTime = date('Y-m-d H:i:s');
+        
+        // Check if a summary already exists for this date
+        $checkStmt = $conn->prepare("SELECT id FROM daily_summaries WHERE business_date = ?");
+        $checkStmt->bind_param("s", $businessDate);
+        $checkStmt->execute();
+        $existing = $checkStmt->get_result();
+        
+        if ($existing->num_rows > 0) {
+            $checkStmt->close();
+            echo json_encode(['success' => false, 'message' => 'يوجد ملخص يومي لهذا التاريخ بالفعل']);
+            return;
+        }
+        $checkStmt->close();
+        
+        $conn->begin_transaction();
+        
+        // Create new daily summary
+        $stmt = $conn->prepare(
+            "INSERT INTO daily_summaries (business_date, day_opened_at, day_status) VALUES (?, ?, 'open')"
+        );
+        $stmt->bind_param("ss", $businessDate, $openTime);
+        $stmt->execute();
+        $summaryId = $stmt->insert_id;
+        $stmt->close();
+        
+        // Create opening inventory snapshot
+        $openingValue = createInventorySnapshot($conn, $summaryId, 'opening');
+        
+        // Update opening inventory value
+        $updateStmt = $conn->prepare("UPDATE daily_summaries SET opening_inventory_value = ? WHERE id = ?");
+        $updateStmt->bind_param("di", $openingValue, $summaryId);
+        $updateStmt->execute();
+        $updateStmt->close();
+        
+        // Update settings
+        $conn->query("UPDATE settings SET setting_value = 'open' WHERE setting_name = 'currentDayStatus'");
+        $conn->query("UPDATE settings SET setting_value = '$summaryId' WHERE setting_name = 'currentDaySummaryId'");
+        
+        $conn->commit();
+        
+        create_notification($conn, "تم فتح يوم العمل: $businessDate", "day_opened");
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'تم فتح يوم العمل بنجاح',
+            'data' => [
+                'summary_id' => $summaryId,
+                'business_date' => $businessDate,
+                'opened_at' => $openTime,
+                'opening_inventory_value' => $openingValue
+            ]
+        ]);
+        
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'خطأ في فتح يوم العمل: ' . $e->getMessage()]);
+    }
+}
+
+/**
+ * Close the current business day
+ */
+function closeBusinessDay($conn) {
+    try {
+        // Get current day status
+        $statusResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currentDayStatus'");
+        $currentStatus = ($statusResult && $statusResult->num_rows > 0) ? $statusResult->fetch_assoc()['setting_value'] : 'closed';
+        
+        if ($currentStatus !== 'open') {
+            echo json_encode(['success' => false, 'message' => 'لا يوجد يوم عمل مفتوح']);
+            return;
+        }
+        
+        // Get current summary ID
+        $summaryIdResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currentDaySummaryId'");
+        $summaryId = ($summaryIdResult && $summaryIdResult->num_rows > 0) ? (int)$summaryIdResult->fetch_assoc()['setting_value'] : 0;
+        
+        if ($summaryId === 0) {
+            echo json_encode(['success' => false, 'message' => 'لم يتم العثور على ملخص اليوم']);
+            return;
+        }
+        
+        $conn->begin_transaction();
+        
+        $closeTime = date('Y-m-d H:i:s');
+        
+        // Get summary info
+        $summaryResult = $conn->query("SELECT business_date, opening_inventory_value FROM daily_summaries WHERE id = $summaryId");
+        $summary = $summaryResult->fetch_assoc();
+        $businessDate = $summary['business_date'];
+        
+        // Calculate sales metrics
+        $salesQuery = "SELECT 
+            COALESCE(SUM(total), 0) as total_sales,
+            COUNT(*) as total_invoices,
+            COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END), 0) as cash_sales,
+            COALESCE(SUM(CASE WHEN payment_method = 'card' THEN total ELSE 0 END), 0) as card_sales
+            FROM invoices 
+            WHERE DATE(created_at) = '$businessDate'";
+        $salesResult = $conn->query($salesQuery);
+        $sales = $salesResult->fetch_assoc();
+        
+        // Calculate cost and profit from invoice items
+        $costQuery = "SELECT 
+            COALESCE(SUM(ii.quantity * p.cost_price), 0) as total_cost,
+            COUNT(DISTINCT ii.product_id) as products_sold
+            FROM invoice_items ii
+            INNER JOIN invoices i ON ii.invoice_id = i.id
+            LEFT JOIN products p ON ii.product_id = p.id
+            WHERE DATE(i.created_at) = '$businessDate'";
+        $costResult = $conn->query($costQuery);
+        $cost = $costResult->fetch_assoc();
+        
+        $totalCost = $cost['total_cost'];
+        $grossProfit = $sales['total_sales'] - $totalCost;
+        $profitMargin = $sales['total_sales'] > 0 ? ($grossProfit / $sales['total_sales']) * 100 : 0;
+        $avgInvoiceValue = $sales['total_invoices'] > 0 ? $sales['total_sales'] / $sales['total_invoices'] : 0;
+        
+        // Get top selling product
+        $topProductQuery = "SELECT 
+            ii.product_id,
+            SUM(ii.quantity * ii.price) as revenue
+            FROM invoice_items ii
+            INNER JOIN invoices i ON ii.invoice_id = i.id
+            WHERE DATE(i.created_at) = '$businessDate'\n            GROUP BY ii.product_id\n            ORDER BY revenue DESC\n            LIMIT 1";
+        $topProductResult = $conn->query($topProductQuery);
+        $topProduct = $topProductResult->num_rows > 0 ? $topProductResult->fetch_assoc() : null;
+        
+        // Get customer metrics
+        $customerQuery = "SELECT 
+            COUNT(DISTINCT CASE WHEN DATE(c.created_at) = '$businessDate' THEN i.customer_id END) as new_customers,
+            COUNT(DISTINCT CASE WHEN DATE(c.created_at) < '$businessDate' THEN i.customer_id END) as returning_customers
+            FROM invoices i
+            LEFT JOIN customers c ON i.customer_id = c.id
+            WHERE DATE(i.created_at) = '$businessDate' AND i.customer_id IS NOT NULL";
+        $customerResult = $conn->query($customerQuery);
+        $customers = $customerResult->fetch_assoc();
+        
+        // Create closing inventory snapshot
+        $closingValue = createInventorySnapshot($conn, $summaryId, 'closing');
+        $inventorySold = $summary['opening_inventory_value'] - $closingValue;
+        
+        // Update daily summary
+        $updateQuery = "UPDATE daily_summaries SET 
+            day_closed_at = ?,
+            day_status = 'closed',
+            total_sales = ?,
+            total_invoices = ?,
+            cash_sales = ?,
+            card_sales = ?,
+            avg_invoice_value = ?,
+            total_cost = ?,
+            gross_profit = ?,
+            profit_margin = ?,
+            closing_inventory_value = ?,
+            inventory_sold = ?,
+            new_customers = ?,
+            returning_customers = ?,
+            products_sold = ?,
+            top_product_id = ?,
+            top_product_revenue = ?
+            WHERE id = ?";
+        
+        $stmt = $conn->prepare($updateQuery);
+        $stmt->bind_param(
+            "sdiidddddddiiidi",
+            $closeTime,
+            $sales['total_sales'],
+            $sales['total_invoices'],
+            $sales['cash_sales'],
+            $sales['card_sales'],
+            $avgInvoiceValue,
+            $totalCost,
+            $grossProfit,
+            $profitMargin,
+            $closingValue,
+            $inventorySold,
+            $customers['new_customers'],
+            $customers['returning_customers'],
+            $cost['products_sold'],
+            $topProduct ? $topProduct['product_id'] : null,
+            $topProduct ? $topProduct['revenue'] : 0,
+            $summaryId
+        );
+        $stmt->execute();
+        $stmt->close();
+        
+        // Update settings
+        $conn->query("UPDATE settings SET setting_value = 'closed' WHERE setting_name = 'currentDayStatus'");
+        $conn->query("UPDATE settings SET setting_value = '$businessDate' WHERE setting_name = 'lastDayClosedDate'");
+        $conn->query("UPDATE settings SET setting_value = '0' WHERE setting_name = 'currentDaySummaryId'");
+        
+        $conn->commit();
+        
+        $profitText = $grossProfit >= 0 ? "ربح: " . number_format($grossProfit, 2) : "خسارة: " . number_format(abs($grossProfit), 2);
+        create_notification($conn, "تم إغلاق يوم العمل: $businessDate - $profitText", "day_closed");
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'تم إغلاق يوم العمل بنجاح',
+            'data' => [
+                'business_date' => $businessDate,
+                'total_sales' => $sales['total_sales'],
+                'total_invoices' => $sales['total_invoices'],
+                'gross_profit' => $grossProfit,
+                'profit_margin' => $profitMargin,
+                'closing_inventory_value' => $closingValue
+            ]
+        ]);
+        
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'خطأ في إغلاق يوم العمل: ' . $e->getMessage()]);
+    }
+}
+
+/**
+ * Get current day status and metrics
+ */
+function getCurrentDayStatus($conn) {
+    try {
+        $statusResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currentDayStatus'");
+        $status = ($statusResult && $statusResult->num_rows > 0) ? $statusResult->fetch_assoc()['setting_value'] : 'closed';
+        
+        $response = ['success' => true, 'status' => $status];
+        
+        if ($status === 'open') {
+            $summaryIdResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currentDaySummaryId'");
+            $summaryId = ($summaryIdResult && $summaryIdResult->num_rows > 0) ? (int)$summaryIdResult->fetch_assoc()['setting_value'] : 0;
+            
+            if ($summaryId > 0) {
+                $summaryResult = $conn->query("SELECT * FROM daily_summaries WHERE id = $summaryId");
+                if ($summaryResult && $summaryResult->num_rows > 0) {
+                    $summary = $summaryResult->fetch_assoc();
+                    
+                    // Get current day sales (live)
+                    $businessDate = $summary['business_date'];
+                    $salesQuery = "SELECT 
+                        COALESCE(SUM(total), 0) as current_sales,
+                        COUNT(*) as current_invoices
+                        FROM invoices 
+                        WHERE DATE(created_at) = '$businessDate'";
+                    $salesResult = $conn->query($salesQuery);
+                    $sales = $salesResult->fetch_assoc();
+                    
+                    $response['data'] = [
+                        'summary_id' => $summaryId,
+                        'business_date' => $summary['business_date'],
+                        'opened_at' => $summary['day_opened_at'],
+                        'opening_inventory_value' => $summary['opening_inventory_value'],
+                        'current_sales' => $sales['current_sales'],
+                        'current_invoices' => $sales['current_invoices']
+                    ];
+                }
+            }
+        }
+        
+        echo json_encode($response);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب حالة اليوم: ' . $e->getMessage()]);
+    }
+}
+
+/**
+ * Get daily summaries with filtering
+ */
+function getDailySummaries($conn) {
+    try {
+        $dateFrom = isset($_GET['date_from']) ? $_GET['date_from'] : date('Y-m-d', strtotime('-30 days'));
+        $dateTo = isset($_GET['date_to']) ? $_GET['date_to'] : date('Y-m-d');
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 30;
+        $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+        
+        $query = "SELECT ds.*, p.name as top_product_name 
+                  FROM daily_summaries ds
+                  LEFT JOIN products p ON ds.top_product_id = p.id
+                  WHERE ds.business_date BETWEEN ? AND ?
+                  ORDER BY ds.business_date DESC
+                  LIMIT ? OFFSET ?";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ssii", $dateFrom, $dateTo, $limit, $offset);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $summaries = [];
+        while ($row = $result->fetch_assoc()) {
+            $summaries[] = $row;
+        }
+        $stmt->close();
+        
+        echo json_encode(['success' => true, 'data' => $summaries]);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب الملخصات اليومية: ' . $e->getMessage()]);
+    }
+}
+
+/**
+ * Get monthly report
+ */
+function getMonthlyReport($conn) {
+    try {
+        $month = isset($_GET['month']) ? $_GET['month'] : date('Y-m');
+        
+        $query = "SELECT 
+            COUNT(*) as total_days,
+            SUM(total_sales) as total_sales,
+            SUM(total_invoices) as total_invoices,
+            SUM(total_cost) as total_cost,
+            SUM(gross_profit) as total_profit,
+            AVG(profit_margin) as avg_profit_margin,
+            SUM(new_customers) as new_customers,
+            SUM(products_sold) as products_sold
+            FROM daily_summaries
+            WHERE DATE_FORMAT(business_date, '%Y-%m') = ? AND day_status = 'closed'";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("s", $month);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $report = $result->fetch_assoc();
+        $stmt->close();
+        
+        // Get daily breakdown
+        $dailyQuery = "SELECT business_date, total_sales, gross_profit, total_invoices
+                       FROM daily_summaries
+                       WHERE DATE_FORMAT(business_date, '%Y-%m') = ? AND day_status = 'closed'
+                       ORDER BY business_date ASC";
+        $dailyStmt = $conn->prepare($dailyQuery);
+        $dailyStmt->bind_param("s", $month);
+        $dailyStmt->execute();
+        $dailyResult = $dailyStmt->get_result();
+        
+        $dailyData = [];
+        while ($row = $dailyResult->fetch_assoc()) {
+            $dailyData[] = $row;
+        }
+        $dailyStmt->close();
+        
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'month' => $month,
+                'summary' => $report,
+                'daily' => $dailyData
+            ]
+        ]);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب التقرير الشهري: ' . $e->getMessage()]);
+    }
+}
+
+/**
+ * Get yearly comparison
+ */
+function getYearlyComparison($conn) {
+    try {
+        $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+        $compareYear = $year - 1;
+        
+        // Get monthly data for both years
+        $query = "SELECT 
+            DATE_FORMAT(business_date, '%Y-%m') as month,
+            SUM(total_sales) as total_sales,
+            SUM(gross_profit) as total_profit,
+            SUM(total_invoices) as total_invoices
+            FROM daily_summaries
+            WHERE YEAR(business_date) IN (?, ?) AND day_status = 'closed'
+            GROUP BY month
+            ORDER BY month";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ii", $compareYear, $year);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        $stmt->close();
+        
+        echo json_encode(['success' => true, 'data' => $data]);
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'خطأ في جلب المقارنة السنوية: ' . $e->getMessage()]);
+    }
+}
+
 
 if (ob_get_length()) ob_end_flush();
 
