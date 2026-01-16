@@ -314,12 +314,10 @@ function getRemovedProducts($conn) {
     $sortOrder = isset($_GET['sortOrder']) ? $_GET['sortOrder'] : 'desc';
 
     // Auto-cleanup: permanently remove entries older than 30 days
-    // This ensures that after 30 days from deletion the product
-    // is no longer recoverable and won't appear in the removed list.
     try {
         $conn->query("DELETE FROM removed_products WHERE removed_at <= (NOW() - INTERVAL 30 DAY)");
     } catch (Exception $e) {
-        // ignore cleanup errors, proceed to return remaining items
+        // ignore cleanup errors
     }
 
     $baseSql = "FROM removed_products rp LEFT JOIN categories c ON rp.category_id = c.id WHERE 1=1";
@@ -631,7 +629,7 @@ function bulkDeleteProducts($conn) {
             'deleted_count' => $deleted_count
         ];
         
-        // معلومات المنتجات المرتبطة بفواتير (لا تتغير)
+        // معلومات المنتجات المرتبطة بفواتير
         if (!empty($linked_products)) {
             $linked_count = count($linked_products);
             $linked_names = array_map(function($p) { 
@@ -727,18 +725,10 @@ function getProducts($conn) {
     $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
 
     $offset = ($page - 1) * $limit;
-    // Modify to show out-of-stock products last
-    if ($sortBy === 'quantity') {
-        // If sorting by quantity, prioritize non-zero quantities first, then sort by quantity
-        $dataSql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name "
-                 . $baseSql 
-                 . " ORDER BY CASE WHEN p.quantity = 0 THEN 1 ELSE 0 END, p.{$sortBy} {$sortOrder} LIMIT ? OFFSET ?";
-    } else {
-        // For other sorts, always put out-of-stock items last, then apply the requested sort
-        $dataSql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name "
-                 . $baseSql 
-                 . " ORDER BY CASE WHEN p.quantity = 0 THEN 1 ELSE 0 END, p.{$sortBy} {$sortOrder} LIMIT ? OFFSET ?";
-    }
+    
+    $dataSql = "SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name "
+             . $baseSql 
+             . " ORDER BY CASE WHEN p.quantity = 0 THEN 1 ELSE 0 END, p.{$sortBy} {$sortOrder} LIMIT ? OFFSET ?";
     
     $dataTypes = $types . 'ii';
     $dataParams = array_merge($params, [$limit, $offset]);
@@ -773,10 +763,11 @@ function addProduct($conn) {
     $conn->begin_transaction();
 
     try {
-        $stmt = $conn->prepare("INSERT INTO products (name, price, quantity, category_id, barcode, image) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO products (name, price, cost_price, quantity, category_id, barcode, image) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $category_id = !empty($data['category_id']) ? (int)$data['category_id'] : null;
         $barcode = !empty($data['barcode']) ? $data['barcode'] : null;
-        $stmt->bind_param("sdiiss", $data['name'], $data['price'], $data['quantity'], $category_id, $barcode, $imagePath);
+        $cost_price = !empty($data['cost_price']) ? $data['cost_price'] : 0;
+        $stmt->bind_param("sddiiss", $data['name'], $data['price'], $cost_price, $data['quantity'], $category_id, $barcode, $imagePath);
         $stmt->execute();
         $productId = $stmt->insert_id;
         $stmt->close();
@@ -823,15 +814,17 @@ function updateProduct($conn) {
     $conn->begin_transaction();
 
     try {
-        $sql = "UPDATE products SET name = ?, price = ?, quantity = ?, category_id = ?, barcode = ?";
+        $sql = "UPDATE products SET name = ?, price = ?, cost_price = ?, quantity = ?, category_id = ?, barcode = ?";
+        $cost_price = !empty($data['cost_price']) ? $data['cost_price'] : 0;
         $params = [
             $data['name'],
             $data['price'],
+            $cost_price,
             $data['quantity'],
             !empty($data['category_id']) ? (int)$data['category_id'] : null,
             !empty($data['barcode']) ? $data['barcode'] : null
         ];
-        $types = "sdiis";
+        $types = "sddiis";
 
         if ($imagePath !== null) {
             $sql .= ", image = ?";
@@ -848,7 +841,7 @@ function updateProduct($conn) {
         $stmt->execute();
         $stmt->close();
 
-        // Clear existing custom fields for simplicity, then re-insert.
+        // Clear existing custom fields
         $stmt = $conn->prepare("DELETE FROM product_field_values WHERE product_id = ?");
         $stmt->bind_param("i", $productId);
         $stmt->execute();
@@ -889,20 +882,22 @@ function bulkAddProducts($conn) {
     $conn->begin_transaction();
 
     try {
-        $stmt = $conn->prepare("INSERT INTO products (name, price, quantity, category_id, barcode, image) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO products (name, price, cost_price, quantity, category_id, barcode, image) VALUES (?, ?, ?, ?, ?, ?, ?)");
         
         $name = '';
         $price = 0.0;
+        $cost_price = 0.0;
         $quantity = 0;
         $category_id = null;
         $barcode = null;
         $image_path = null;
 
-        $stmt->bind_param("sdiiss", $name, $price, $quantity, $category_id, $barcode, $image_path);
+        $stmt->bind_param("sddiiss", $name, $price, $cost_price, $quantity, $category_id, $barcode, $image_path);
 
         foreach ($products as $product) {
             $name = $product['name'];
             $price = $product['price'];
+            $cost_price = !empty($product['cost_price']) ? $product['cost_price'] : 0.0;
             $quantity = $product['quantity'];
             $category_id = !empty($product['category_id']) ? (int)$product['category_id'] : null;
             $barcode = !empty($product['barcode']) ? $product['barcode'] : null;
@@ -1221,15 +1216,11 @@ function checkout($conn) {
         $delivery_cost = isset($data['delivery_cost']) ? (float)$data['delivery_cost'] : 0;
         $delivery_city = isset($data['delivery_city']) ? $data['delivery_city'] : null;
         $payment_method = isset($data['payment_method']) ? $data['payment_method'] : 'cash';
-        
-        // --- NEW CODE START ---
         $amount_received = isset($data['amount_received']) ? (float)$data['amount_received'] : 0;
         $change_due = isset($data['change_due']) ? (float)$data['change_due'] : 0;
-        // --- NEW CODE END ---
 
         $total = (float)$data['total'];
 
-        // Update Query to include amount_received and change_due
         $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $discount_percent = isset($data['discount_percent']) ? (float)$data['discount_percent'] : 0;
         $discount_amount = isset($data['discount_amount']) ? (float)$data['discount_amount'] : 0;
@@ -1246,7 +1237,7 @@ function checkout($conn) {
             $quantity = (int)$item['quantity'];
             $price = (float)$item['price'];
             
-            // التحقق من الكمية المتوفرة قبل البيع
+            // التحقق من الكمية
             $checkStmt = $conn->prepare("SELECT quantity FROM products WHERE id = ?");
             $checkStmt->bind_param("i", $product_id);
             $checkStmt->execute();
@@ -1259,7 +1250,6 @@ function checkout($conn) {
             $currentStock = $result->fetch_assoc()['quantity'];
             $checkStmt->close();
             
-            // منع البيع إذا كانت الكمية غير كافية
             if ($currentStock < $quantity) {
                 throw new Exception("الكمية المتوفرة غير كافية للمنتج (متوفر: " . $currentStock . ")");
             }
@@ -1267,16 +1257,14 @@ function checkout($conn) {
             $stmt->bind_param("iisid", $invoiceId, $product_id, $product_name, $quantity, $price);
             $stmt->execute();
 
-            // تحديث المخزون بطريقة آمنة - منع الكميات السالبة
+            // تحديث المخزون
             $updateStmt = $conn->prepare("UPDATE products SET quantity = GREATEST(0, quantity - ?) WHERE id = ? AND quantity >= ?");
             $updateStmt->bind_param("iii", $quantity, $product_id, $quantity);
             $updateStmt->execute();
             
-            // التحقق من نجاح التحديث
             if ($updateStmt->affected_rows === 0) {
                 throw new Exception("فشل في تحديث المخزون - الكمية غير كافية");
             }
-            
             $updateStmt->close();
         }
         $stmt->close();
@@ -1453,7 +1441,6 @@ function updateDeliverySettings($conn) {
 }
 
 function getLowStockProducts($conn) {
-    // جلب إعدادات تنبيهات الكمية
     $settings_sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('low_quantity_alert', 'critical_quantity_alert', 'last_stock_check_notification')";
     $settings_result = $conn->query($settings_sql);
     $quantity_settings = [];
@@ -1485,13 +1472,11 @@ function getLowStockProducts($conn) {
     $critical = array_filter($products, function($p) use ($critical_alert) { return $p['quantity'] > 0 && $p['quantity'] <= $critical_alert; });
     $low = array_filter($products, function($p) use ($critical_alert, $low_alert) { return $p['quantity'] > $critical_alert && $p['quantity'] <= $low_alert; });
     
-    // فحص إذا تم إرسال إشعار اليوم
     $last_check_time = $quantity_settings['last_stock_check_notification'] ?? 0;
     $last_check_date = date('Y-m-d', $last_check_time);
     $today_date = date('Y-m-d');
     $total_low_stock = count($outOfStock) + count($critical) + count($low);
     
-    // إرسال إشعار فقط إذا لم يتم إرساله اليوم
     if ($last_check_date !== $today_date && $total_low_stock > 0) {
         create_notification($conn, "يوجد {$total_low_stock} منتجًا على وشك النفاد.", "low_stock");
         $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_stock_check_notification', '" . time() . "') ON DUPLICATE KEY UPDATE setting_value = '" . time() . "'");
@@ -1517,27 +1502,24 @@ function getDashboardStats($conn) {
         $today = date('Y-m-d');
         $yesterday = date('Y-m-d', strtotime('-1 day'));
         
-        $result = $conn->query("SELECT COALESCE(SUM(total), 0) as revenue FROM invoices WHERE DATE(created_at) = '$today'");
-        $stats['todayRevenue'] = $result ? $result->fetch_assoc()['revenue'] : 0;
+        $result = $conn->query("
+            SELECT 
+                COUNT(DISTINCT i.id) as total_orders,
+                COALESCE(SUM(i.total), 0) as revenue,
+                COALESCE(SUM(ii.quantity * COALESCE(p.cost_price, 0)), 0) as total_cost
+            FROM invoices i 
+            LEFT JOIN invoice_items ii ON i.id = ii.invoice_id 
+            LEFT JOIN products p ON ii.product_id = p.id 
+            WHERE DATE(i.created_at) = '$today'
+        ");
         
-        // Calculate Today's Profit
-        $costQuery = "SELECT COALESCE(SUM(ii.quantity * COALESCE(p.cost_price, 0)), 0) as total_cost 
-                      FROM invoice_items ii 
-                      JOIN invoices i ON ii.invoice_id = i.id 
-                      LEFT JOIN products p ON ii.product_id = p.id 
-                      WHERE DATE(i.created_at) = '$today'";
-        $costResult = $conn->query($costQuery);
-        $totalCost = $costResult ? $costResult->fetch_assoc()['total_cost'] : 0;
+        $todayData = $result ? $result->fetch_assoc() : ['total_orders' => 0, 'revenue' => 0, 'total_cost' => 0];
         
-        $stats['todayCost'] = $totalCost;
-        $stats['todayProfit'] = $stats['todayRevenue'] - $totalCost;
+        $stats['todayRevenue'] = $todayData['revenue'];
+        $stats['todayCost'] = $todayData['total_cost'];
+        $stats['todayProfit'] = $stats['todayRevenue'] - $stats['todayCost'];
         $stats['todayMargin'] = $stats['todayRevenue'] > 0 ? ($stats['todayProfit'] / $stats['todayRevenue'] * 100) : 0;
-        
-        $result = $conn->query("SELECT COALESCE(SUM(total), 0) as revenue FROM invoices WHERE DATE(created_at) = '$yesterday'");
-        $stats['yesterdayRevenue'] = $result ? $result->fetch_assoc()['revenue'] : 0;
-        
-        $result = $conn->query("SELECT COUNT(*) as count FROM invoices WHERE DATE(created_at) = '$today'");
-        $stats['todayOrders'] = $result ? $result->fetch_assoc()['count'] : 0;
+        $stats['todayOrders'] = $todayData['total_orders'];
         
         $result = $conn->query("SELECT COUNT(*) as count FROM invoices WHERE DATE(created_at) = '$yesterday'");
         $stats['yesterdayOrders'] = $result ? $result->fetch_assoc()['count'] : 0;
@@ -1748,7 +1730,6 @@ function create_notification($conn, $message, $type) {
 }
 
 function getNotifications($conn) {
-    // تنظيف الإشعارات القديمة (أكثر من دقيقة) تلقائياً
     cleanOldNotifications($conn);
     
     $limit = 20; 
@@ -1756,7 +1737,6 @@ function getNotifications($conn) {
     $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
     $offset = ($page - 1) * $limit;
 
-    // بناء شرط الاستعلام بناءً على الفلتر
     $whereClause = "";
     if ($filter === 'unread') {
         $whereClause = "WHERE status = 'unread'";
@@ -1764,17 +1744,14 @@ function getNotifications($conn) {
         $whereClause = "WHERE status = 'read'";
     }
 
-    // جلب العدد الإجمالي للإشعارات (مع الفلتر) لحساب عدد الصفحات
     $countSql = "SELECT COUNT(*) as count FROM notifications $whereClause";
     $total_result = $conn->query($countSql);
     $total_rows = $total_result->fetch_assoc()['count'];
     $total_pages = ceil($total_rows / $limit);
 
-    // جلب عدد الإشعارات غير المقروءة (للعرض في العداد الأحمر دائماً)
     $unread_result = $conn->query("SELECT COUNT(*) as count FROM notifications WHERE status = 'unread'");
     $unread_count = $unread_result->fetch_assoc()['count'];
 
-    // جلب الإشعارات للصفحة الحالية مع الفلتر
     $sql = "SELECT * FROM notifications $whereClause ORDER BY (status = 'unread') DESC, created_at DESC LIMIT ? OFFSET ?";
     
     $stmt = $conn->prepare($sql);
@@ -1802,12 +1779,8 @@ function getNotifications($conn) {
 
 function cleanOldNotifications($conn) {
     try {
-        // حذف الإشعارات التي مضى عليها أكثر من 30 يوم
         $sql = "DELETE FROM notifications WHERE created_at <= (NOW() - INTERVAL 30 DAY)";
         $conn->query($sql);
-        
-        // يمكنك إضافة log للمراقبة (اختياري)
-        error_log("Old notifications cleaned successfully");
     } catch (Exception $e) {
         error_log("Error cleaning old notifications: " . $e->getMessage());
     }
@@ -1850,7 +1823,6 @@ function deleteNotification($conn) {
 }
 
 function markAllNotificationsRead($conn) {
-    // تحديث كل الإشعارات التي حالتها 'unread' لتصبح 'read'
     if ($conn->query("UPDATE notifications SET status = 'read' WHERE status = 'unread'")) {
         echo json_encode(['success' => true]);
     } else {
@@ -1859,7 +1831,6 @@ function markAllNotificationsRead($conn) {
 }
 
 function checkExpiringProducts($conn) {
-    // Get products that will be auto-deleted in less than 24 hours
     $check_sql = "SELECT id, name, removed_at 
                   FROM removed_products 
                   WHERE removed_at <= (NOW() - INTERVAL 29 DAY) 
@@ -1874,7 +1845,6 @@ function checkExpiringProducts($conn) {
         }
         
         if (count($expiring_products) > 0) {
-            // Check if we already sent notification for these products today
             $last_check_query = "SELECT setting_value FROM settings WHERE setting_name = 'last_expiry_notification_date'";
             $last_check_result = $conn->query($last_check_query);
             $last_check_date = $last_check_result->num_rows > 0 ? $last_check_result->fetch_assoc()['setting_value'] : '';
@@ -1893,7 +1863,6 @@ function checkExpiringProducts($conn) {
                     "product_expiry_warning"
                 );
                 
-                // Update last notification date
                 $conn->query("INSERT INTO settings (setting_name, setting_value) 
                              VALUES ('last_expiry_notification_date', '$today') 
                              ON DUPLICATE KEY UPDATE setting_value = '$today'");
@@ -1904,7 +1873,6 @@ function checkExpiringProducts($conn) {
 
 function checkRentalDue($conn) {
     try {
-        // جلب إعدادات الإيجار
         $settings_query = "SELECT setting_name, setting_value FROM settings WHERE setting_name LIKE 'rental%'";
         $result = $conn->query($settings_query);
         
@@ -1913,20 +1881,17 @@ function checkRentalDue($conn) {
             $settings[$row['setting_name']] = $row['setting_value'];
         }
         
-        // التحقق من تفعيل الميزة
         if (!isset($settings['rentalEnabled']) || $settings['rentalEnabled'] != '1') {
             echo json_encode(['success' => true, 'message' => 'Rental feature disabled']);
             return;
         }
         
-        // منع التذكير إذا تم الدفع لهذا الشهر
         $currentMonth = date('Y-m');
         if (isset($settings['rentalPaidMonth']) && $settings['rentalPaidMonth'] === $currentMonth) {
             echo json_encode(['success' => true, 'notification_sent' => false, 'message' => 'تم دفع إيجار هذا الشهر', 'paid_this_month' => true]);
             return;
         }
         
-        // التحقق من وجود تاريخ الدفع ونوعية التأجير
         if (!isset($settings['rentalPaymentDate']) || !isset($settings['rentalType'])) {
             echo json_encode(['success' => false, 'message' => 'إعدادات الإيجار غير مكتملة']);
             return;
@@ -1938,7 +1903,6 @@ function checkRentalDue($conn) {
         $lastNotification = (int)($settings['rentalLastNotification'] ?? 0);
         $currentTime = time();
         
-        // منع إرسال إشعارات متكررة - يجب أن يكون آخر إشعار في يوم مختلف
         $lastNotificationDate = date('Y-m-d', $lastNotification);
         $todayDate = date('Y-m-d');
         
@@ -1947,18 +1911,15 @@ function checkRentalDue($conn) {
             return;
         }
         
-        // تحويل تاريخ الدفع إلى timestamp
         $paymentTimestamp = strtotime($paymentDate);
         $today = strtotime(date('Y-m-d'));
         
-        // حساب الفرق بالأيام
         $daysUntilDue = floor(($paymentTimestamp - $today) / (60 * 60 * 24));
         
         $shouldNotify = false;
         $notificationMessage = '';
         $notificationType = 'rental_reminder';
         
-        // 1. إذا كان موعد الدفع خلال أيام التذكير
         if ($daysUntilDue > 0 && $daysUntilDue <= $reminderDays) {
             $amount = number_format((float)($settings['rentalAmount'] ?? 0), 2);
             $currency = $settings['currency'] ?? 'MAD';
@@ -1971,7 +1932,6 @@ function checkRentalDue($conn) {
             
             $shouldNotify = true;
         }
-        // 2. إذا كان اليوم هو يوم الاستحقاق بالضبط
         elseif ($daysUntilDue == 0) {
             $amount = number_format((float)($settings['rentalAmount'] ?? 0), 2);
             $currency = $settings['currency'] ?? 'MAD';
@@ -1985,7 +1945,6 @@ function checkRentalDue($conn) {
             $shouldNotify = true;
             $notificationType = 'rental_due_today';
         }
-        // 3. إذا تأخر الدفع (بعد الموعد)
         elseif ($daysUntilDue < 0) {
             $daysOverdue = abs($daysUntilDue);
             $amount = number_format((float)($settings['rentalAmount'] ?? 0), 2);
@@ -2000,7 +1959,6 @@ function checkRentalDue($conn) {
             $shouldNotify = true;
             $notificationType = 'rental_overdue';
             
-            // إذا مضى أكثر من 7 أيام على التأخير، حدّث التاريخ للدفع التالي تلقائياً
             if ($daysOverdue >= 7) {
                 $nextPaymentDate = calculateNextPaymentDate($paymentDate, $rentalType);
                 $conn->query("UPDATE settings SET setting_value = '{$nextPaymentDate}' WHERE setting_name = 'rentalPaymentDate'");
@@ -2010,11 +1968,9 @@ function checkRentalDue($conn) {
             }
         }
         
-        // إرسال الإشعار إذا لزم الأمر
         if ($shouldNotify) {
             create_notification($conn, $notificationMessage, $notificationType);
             
-            // تحديث وقت آخر إشعار
             $conn->query("UPDATE settings SET setting_value = '{$currentTime}' WHERE setting_name = 'rentalLastNotification'");
             
             echo json_encode([
@@ -2133,17 +2089,13 @@ function getRentalPayments($conn) {
         echo json_encode(['success' => false, 'message' => 'خطأ في جلب سجل المدفوعات: ' . $e->getMessage()]);
     }
 }
-/**
- * حساب تاريخ الدفع التالي بناءً على نوعية التأجير
- */
+
 function calculateNextPaymentDate($currentDate, $rentalType) {
     $date = new DateTime($currentDate);
     
     if ($rentalType === 'monthly') {
-        // إضافة شهر واحد
         $date->modify('+1 month');
     } elseif ($rentalType === 'yearly') {
-        // إضافة سنة واحدة
         $date->modify('+1 year');
     }
     
@@ -2154,31 +2106,22 @@ function calculateNextPaymentDate($currentDate, $rentalType) {
 // Daily Tracking System Functions
 // ========================================
 
-/**
- * Get the current business date based on business day start hour
- * Transactions before start hour belong to previous business day
- */
 function getBusinessDate($conn) {
     $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'businessDayStartHour'");
     $startHour = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc()['setting_value'] : 5;
     
     $currentHour = (int)date('H');
     if ($currentHour < $startHour) {
-        // Before start hour, use previous day
         return date('Y-m-d', strtotime('-1 day'));
     }
     return date('Y-m-d');
 }
 
-/**
- * Create inventory snapshot
- */
 function createInventorySnapshot($conn, $summaryId, $snapshotType) {
     try {
         $snapshotTime = date('Y-m-d H:i:s');
         $totalValue = 0;
         
-        // Get all products with their current inventory
         $result = $conn->query("SELECT id, name, quantity, price, cost_price, category_id FROM products WHERE quantity > 0");
         
         if ($result && $result->num_rows > 0) {
@@ -2192,8 +2135,18 @@ function createInventorySnapshot($conn, $summaryId, $snapshotType) {
                 $productTotal = $row['quantity'] * $row['cost_price'];
                 $totalValue += $productTotal;
                 
+                // FIX: Updated type string to "issiddiis" to correctly map types
+                // i: summaryId (int)
+                // i: product_id (int)
+                // s: product_name (string)
+                // s: snapshot_type (string - ENUM) - WAS WRONG
+                // i: quantity (int)
+                // d: unit_price (decimal/double) - WAS WRONG
+                // d: total_value (decimal/double)
+                // i: category_id (int)
+                // s: snapshot_at (string)
                 $stmt->bind_param(
-                    "iisididis",
+                    "iissiddis", // Updated correctly to iissiddis
                     $summaryId,
                     $row['id'],
                     $row['name'],
@@ -2216,12 +2169,8 @@ function createInventorySnapshot($conn, $summaryId, $snapshotType) {
     }
 }
 
-/**
- * Open a new business day
- */
 function openBusinessDay($conn) {
     try {
-        // Check if there's already an open day
         $statusResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currentDayStatus'");
         $currentStatus = ($statusResult && $statusResult->num_rows > 0) ? $statusResult->fetch_assoc()['setting_value'] : 'closed';
         
@@ -2233,7 +2182,6 @@ function openBusinessDay($conn) {
         $businessDate = getBusinessDate($conn);
         $openTime = date('Y-m-d H:i:s');
         
-        // Check if a summary already exists for this date
         $checkStmt = $conn->prepare("SELECT id FROM daily_summaries WHERE business_date = ?");
         $checkStmt->bind_param("s", $businessDate);
         $checkStmt->execute();
@@ -2248,7 +2196,6 @@ function openBusinessDay($conn) {
         
         $conn->begin_transaction();
         
-        // Create new daily summary
         $stmt = $conn->prepare(
             "INSERT INTO daily_summaries (business_date, day_opened_at, day_status) VALUES (?, ?, 'open')"
         );
@@ -2257,16 +2204,13 @@ function openBusinessDay($conn) {
         $summaryId = $stmt->insert_id;
         $stmt->close();
         
-        // Create opening inventory snapshot
         $openingValue = createInventorySnapshot($conn, $summaryId, 'opening');
         
-        // Update opening inventory value
         $updateStmt = $conn->prepare("UPDATE daily_summaries SET opening_inventory_value = ? WHERE id = ?");
         $updateStmt->bind_param("di", $openingValue, $summaryId);
         $updateStmt->execute();
         $updateStmt->close();
         
-        // Update settings
         $conn->query("UPDATE settings SET setting_value = 'open' WHERE setting_name = 'currentDayStatus'");
         $conn->query("UPDATE settings SET setting_value = '$summaryId' WHERE setting_name = 'currentDaySummaryId'");
         
@@ -2291,12 +2235,8 @@ function openBusinessDay($conn) {
     }
 }
 
-/**
- * Close the current business day
- */
 function closeBusinessDay($conn) {
     try {
-        // Get current day status
         $statusResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currentDayStatus'");
         $currentStatus = ($statusResult && $statusResult->num_rows > 0) ? $statusResult->fetch_assoc()['setting_value'] : 'closed';
         
@@ -2305,7 +2245,6 @@ function closeBusinessDay($conn) {
             return;
         }
         
-        // Get current summary ID
         $summaryIdResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currentDaySummaryId'");
         $summaryId = ($summaryIdResult && $summaryIdResult->num_rows > 0) ? (int)$summaryIdResult->fetch_assoc()['setting_value'] : 0;
         
@@ -2318,12 +2257,10 @@ function closeBusinessDay($conn) {
         
         $closeTime = date('Y-m-d H:i:s');
         
-        // Get summary info
         $summaryResult = $conn->query("SELECT business_date, opening_inventory_value FROM daily_summaries WHERE id = $summaryId");
         $summary = $summaryResult->fetch_assoc();
         $businessDate = $summary['business_date'];
         
-        // Calculate sales metrics
         $salesQuery = "SELECT 
             COALESCE(SUM(total), 0) as total_sales,
             COUNT(*) as total_invoices,
@@ -2334,7 +2271,6 @@ function closeBusinessDay($conn) {
         $salesResult = $conn->query($salesQuery);
         $sales = $salesResult->fetch_assoc();
         
-        // Calculate cost and profit from invoice items
         $costQuery = "SELECT 
             COALESCE(SUM(ii.quantity * p.cost_price), 0) as total_cost,
             COUNT(DISTINCT ii.product_id) as products_sold
@@ -2350,17 +2286,19 @@ function closeBusinessDay($conn) {
         $profitMargin = $sales['total_sales'] > 0 ? ($grossProfit / $sales['total_sales']) * 100 : 0;
         $avgInvoiceValue = $sales['total_invoices'] > 0 ? $sales['total_sales'] / $sales['total_invoices'] : 0;
         
-        // Get top selling product
+        // Removed literal newlines
         $topProductQuery = "SELECT 
             ii.product_id,
             SUM(ii.quantity * ii.price) as revenue
             FROM invoice_items ii
             INNER JOIN invoices i ON ii.invoice_id = i.id
-            WHERE DATE(i.created_at) = '$businessDate'\n            GROUP BY ii.product_id\n            ORDER BY revenue DESC\n            LIMIT 1";
+            WHERE DATE(i.created_at) = '$businessDate'
+            GROUP BY ii.product_id
+            ORDER BY revenue DESC
+            LIMIT 1";
         $topProductResult = $conn->query($topProductQuery);
         $topProduct = $topProductResult->num_rows > 0 ? $topProductResult->fetch_assoc() : null;
         
-        // Get customer metrics
         $customerQuery = "SELECT 
             COUNT(DISTINCT CASE WHEN DATE(c.created_at) = '$businessDate' THEN i.customer_id END) as new_customers,
             COUNT(DISTINCT CASE WHEN DATE(c.created_at) < '$businessDate' THEN i.customer_id END) as returning_customers
@@ -2370,11 +2308,9 @@ function closeBusinessDay($conn) {
         $customerResult = $conn->query($customerQuery);
         $customers = $customerResult->fetch_assoc();
         
-        // Create closing inventory snapshot
         $closingValue = createInventorySnapshot($conn, $summaryId, 'closing');
         $inventorySold = $summary['opening_inventory_value'] - $closingValue;
         
-        // Update daily summary
         $updateQuery = "UPDATE daily_summaries SET 
             day_closed_at = ?,
             day_status = 'closed',
@@ -2395,9 +2331,12 @@ function closeBusinessDay($conn) {
             top_product_revenue = ?
             WHERE id = ?";
         
+        $topProductId = $topProduct ? $topProduct['product_id'] : null;
+        $topProductRevenue = $topProduct ? $topProduct['revenue'] : 0;
+        
         $stmt = $conn->prepare($updateQuery);
         $stmt->bind_param(
-            "sdiidddddddiiidi",
+            "sdiddddddddiiiidi", // Corrected types string (17 chars)
             $closeTime,
             $sales['total_sales'],
             $sales['total_invoices'],
@@ -2412,14 +2351,13 @@ function closeBusinessDay($conn) {
             $customers['new_customers'],
             $customers['returning_customers'],
             $cost['products_sold'],
-            $topProduct ? $topProduct['product_id'] : null,
-            $topProduct ? $topProduct['revenue'] : 0,
+            $topProductId,
+            $topProductRevenue,
             $summaryId
         );
         $stmt->execute();
         $stmt->close();
         
-        // Update settings
         $conn->query("UPDATE settings SET setting_value = 'closed' WHERE setting_name = 'currentDayStatus'");
         $conn->query("UPDATE settings SET setting_value = '$businessDate' WHERE setting_name = 'lastDayClosedDate'");
         $conn->query("UPDATE settings SET setting_value = '0' WHERE setting_name = 'currentDaySummaryId'");
@@ -2442,15 +2380,12 @@ function closeBusinessDay($conn) {
             ]
         ]);
         
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => 'خطأ في إغلاق يوم العمل: ' . $e->getMessage()]);
     }
 }
 
-/**
- * Get current day status and metrics
- */
 function getCurrentDayStatus($conn) {
     try {
         $statusResult = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currentDayStatus'");
@@ -2467,7 +2402,6 @@ function getCurrentDayStatus($conn) {
                 if ($summaryResult && $summaryResult->num_rows > 0) {
                     $summary = $summaryResult->fetch_assoc();
                     
-                    // Get current day sales (live)
                     $businessDate = $summary['business_date'];
                     $salesQuery = "SELECT 
                         COALESCE(SUM(total), 0) as current_sales,
@@ -2496,9 +2430,6 @@ function getCurrentDayStatus($conn) {
     }
 }
 
-/**
- * Get daily summaries with filtering
- */
 function getDailySummaries($conn) {
     try {
         $dateFrom = isset($_GET['date_from']) ? $_GET['date_from'] : date('Y-m-d', strtotime('-30 days'));
@@ -2531,9 +2462,6 @@ function getDailySummaries($conn) {
     }
 }
 
-/**
- * Get monthly report
- */
 function getMonthlyReport($conn) {
     try {
         $month = isset($_GET['month']) ? $_GET['month'] : date('Y-m');
@@ -2557,7 +2485,6 @@ function getMonthlyReport($conn) {
         $report = $result->fetch_assoc();
         $stmt->close();
         
-        // Get daily breakdown
         $dailyQuery = "SELECT business_date, total_sales, gross_profit, total_invoices
                        FROM daily_summaries
                        WHERE DATE_FORMAT(business_date, '%Y-%m') = ? AND day_status = 'closed'
@@ -2587,15 +2514,11 @@ function getMonthlyReport($conn) {
     }
 }
 
-/**
- * Get yearly comparison
- */
 function getYearlyComparison($conn) {
     try {
         $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
         $compareYear = $year - 1;
         
-        // Get monthly data for both years
         $query = "SELECT 
             DATE_FORMAT(business_date, '%Y-%m') as month,
             SUM(total_sales) as total_sales,

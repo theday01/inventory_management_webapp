@@ -113,7 +113,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="name">المنتج <span class="sort-icon opacity-30">▲</span></th>
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الصورة</th>
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الفئة</th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="price">السعر <span class="sort-icon opacity-30">▲</span></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="price">سعر البيع <span class="sort-icon opacity-30">▲</span></th>
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="quantity">الكمية <span class="sort-icon opacity-30">▲</span></th>
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">تفاصيل</th>
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الإجراءات</th>
@@ -307,7 +307,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                         </select>
                     </div>
                     <div>
-                        <label for="bulk-edit-price" class="block text-sm font-medium text-gray-300 mb-2">السعر</label>
+                        <label for="bulk-edit-price" class="block text-sm font-medium text-gray-300 mb-2">سعر البيع</label>
                         <input type="number" id="bulk-edit-price" name="price" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="اترك فارغاً لعدم التغيير">
                     </div>
                     <div>
@@ -348,8 +348,12 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                         </select>
                     </div>
                     <div class="mb-4">
-                        <label for="product-price" class="block text-sm font-medium text-gray-300 mb-2">السعر</label>
+                        <label for="product-price" class="block text-sm font-medium text-gray-300 mb-2">سعر البيع</label>
                         <input type="number" id="product-price" name="price" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="product-cost-price" class="block text-sm font-medium text-gray-300 mb-2">سعر التكلفة</label>
+                        <input type="number" id="product-cost-price" name="cost_price" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="0.00">
                     </div>
                     <div class="mb-4">
                         <label for="product-quantity" class="block text-sm font-medium text-gray-300 mb-2">الكمية</label>
@@ -419,7 +423,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                             <tr class="text-right border-b border-white/10">
                                 <th class="p-2 text-sm font-medium text-gray-300">اسم المنتج</th>
                                 <th class="p-2 text-sm font-medium text-gray-300">الفئة</th>
-                                <th class="p-2 text-sm font-medium text-gray-300">السعر</th>
+                                <th class="p-2 text-sm font-medium text-gray-300">سعر البيع</th>
+                                <th class="p-2 text-sm font-medium text-gray-300">التكلفة</th>
                                 <th class="p-2 text-sm font-medium text-gray-300">الكمية</th>
                                 <th class="p-2 text-sm font-medium text-gray-300">الباركود</th>
                                 <th class="p-2 text-sm font-medium text-gray-300">الصورة</th>
@@ -1181,7 +1186,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <div class="space-y-2 text-sm">
                 <div class="flex justify-between"><span class="font-medium text-gray-400">الاسم:</span><span class="text-white">${product.name}</span></div>
                 <div class="flex justify-between"><span class="font-medium text-gray-400">الفئة:</span><span class="text-white">${product.category_name}</span></div>
-                <div class="flex justify-between"><span class="font-medium text-gray-400">السعر:</span><span class="text-white">${product.price}</span></div>
+                <div class="flex justify-between"><span class="font-medium text-gray-400">سعر البيع:</span><span class="text-white">${product.price}</span></div>
+                <div class="flex justify-between"><span class="font-medium text-gray-400">سعر التكلفة:</span><span class="text-white">${product.cost_price || '0.00'}</span></div>
                 <div class="flex justify-between"><span class="font-medium text-gray-400">الكمية:</span><span class="text-white">${product.quantity}</span></div>
                 <div class="flex justify-between"><span class="font-medium text-gray-400">الباركود:</span><span class="text-white">${product.barcode || 'N/A'}</span></div>
                 ${fieldsHtml ? '<hr class="border-white/10 my-3"><h4 class="text-md font-bold text-white pt-2 mb-2">حقول مخصصة</h4>' + fieldsHtml : '<hr class="border-white/10 my-3"><p class="text-gray-500">لا توجد حقول مخصصة.</p>'}
@@ -1264,6 +1270,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             document.getElementById('product-name').value = product.name;
             document.getElementById('product-price').value = product.price;
             document.getElementById('product-quantity').value = product.quantity;
+            document.getElementById('product-cost-price').value = product.cost_price || '';
             document.getElementById('product-barcode').value = product.barcode || '';
             
             // Load categories and set the correct one
@@ -1334,6 +1341,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 </select>
             </td>
             <td class="p-2"><input type="number" name="price[]" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required></td>
+            <td class="p-2"><input type="number" name="cost_price[]" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" placeholder="0.00"></td>
             <td class="p-2"><input type="number" name="quantity[]" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required></td>
             <td class="p-2"><input type="text" name="barcode[]" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50"></td>
             <td class="p-2">
@@ -1437,6 +1445,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         const names = formData.getAll('name[]');
         const category_ids = formData.getAll('category_id[]');
         const prices = formData.getAll('price[]');
+        const cost_prices = formData.getAll('cost_price[]');
         const quantities = formData.getAll('quantity[]');
         const barcodes = formData.getAll('barcode[]');
         const image_paths = formData.getAll('image_path[]');
@@ -1446,6 +1455,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 name: names[i],
                 category_id: category_ids[i],
                 price: prices[i],
+                cost_price: cost_prices[i],
                 quantity: quantities[i],
                 barcode: barcodes[i],
                 image_path: image_paths[i]
