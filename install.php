@@ -143,61 +143,6 @@ $sql_media_gallery = "CREATE TABLE IF NOT EXISTS media_gallery (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
 
-$sql_daily_summaries = "CREATE TABLE IF NOT EXISTS daily_summaries (
-    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    business_date DATE NOT NULL UNIQUE,
-    day_opened_at DATETIME NOT NULL,
-    day_closed_at DATETIME NULL,
-    day_status ENUM('open', 'closed') NOT NULL DEFAULT 'open',
-    
-    total_sales DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    total_invoices INT NOT NULL DEFAULT 0,
-    cash_sales DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    card_sales DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    avg_invoice_value DECIMAL(10, 2) NOT NULL DEFAULT 0,
-    
-    total_cost DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    gross_profit DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    profit_margin DECIMAL(5, 2) NOT NULL DEFAULT 0,
-    
-    opening_inventory_value DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    closing_inventory_value DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    inventory_sold DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    
-    new_customers INT NOT NULL DEFAULT 0,
-    returning_customers INT NOT NULL DEFAULT 0,
-    
-    products_sold INT NOT NULL DEFAULT 0,
-    top_product_id INT(6) UNSIGNED NULL,
-    top_product_revenue DECIMAL(10, 2) NOT NULL DEFAULT 0,
-    
-    notes TEXT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    INDEX idx_business_date (business_date),
-    INDEX idx_day_status (day_status),
-    INDEX idx_created_at (created_at)
-)";
-
-$sql_daily_inventory_snapshots = "CREATE TABLE IF NOT EXISTS daily_inventory_snapshots (
-    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    daily_summary_id INT(6) UNSIGNED NOT NULL,
-    product_id INT(6) UNSIGNED NULL,
-    product_name VARCHAR(255) NOT NULL,
-    snapshot_type ENUM('opening', 'closing') NOT NULL,
-    quantity INT(6) NOT NULL,
-    unit_price DECIMAL(10, 2) NOT NULL,
-    total_value DECIMAL(12, 2) NOT NULL,
-    category_id INT(6) UNSIGNED NULL,
-    snapshot_at DATETIME NOT NULL,
-    
-    FOREIGN KEY (daily_summary_id) REFERENCES daily_summaries(id) ON DELETE CASCADE,
-    INDEX idx_daily_summary (daily_summary_id),
-    INDEX idx_product (product_id),
-    INDEX idx_snapshot_type (snapshot_type)
-)";
-
 // Execute table creation queries
 $tables = [
     'users' => $sql_users,
@@ -212,9 +157,7 @@ $tables = [
     'category_fields' => $sql_category_fields,
     'product_field_values' => $sql_product_field_values,
     'notifications' => $sql_notifications,
-    'rental_payments' => $sql_rental_payments,
-    'daily_summaries' => $sql_daily_summaries,
-    'daily_inventory_snapshots' => $sql_daily_inventory_snapshots
+    'rental_payments' => $sql_rental_payments
 ];
 
 foreach ($tables as $name => $sql) {
@@ -246,68 +189,6 @@ if ($check_cost_price->num_rows == 0) {
     }
 }
 
-// ========================================
-// Daily Tracking Settings
-// ========================================
-echo "<h3>Configuring Daily Tracking System...</h3>";
-
-$daily_tracking_inserts = [
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('businessDayStartHour', '5') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('autoDayClose', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('lastDayClosedDate', '') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('currentDayStatus', 'closed') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('currentDaySummaryId', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
-];
-
-foreach ($daily_tracking_inserts as $q) {
-    if ($conn->query($q) === TRUE) {
-        // Success
-    } else {
-        echo "Error applying daily tracking setting: " . $conn->error . "<br>";
-    }
-}
-
-echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>✅ Daily tracking system configured successfully.</div>";
-
-
-$auto_day_settings = [
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('autoDayManagement', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('autoDayOpenTime', '09:00') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('autoDayCloseTime', '18:00') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('lastAutoCheck', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value"
-];
-
-foreach ($auto_day_settings as $q) {
-    if ($conn->query($q) === TRUE) {
-        // Success
-    } else {
-        echo "Error applying auto day management setting: " . $conn->error . "<br>";
-    }
-}
-
-echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>✅ Auto day management settings configured successfully.</div>";
-// ========================================
-// Auto Day Settings
-// ========================================
-echo "<h3>Configuring Auto Day Settings...</h3>";
-
-$auto_day_settings = [
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_day_management', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_open_day', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_close_day', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_open_time', '09:00') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_close_time', '18:00') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
-];
-
-foreach ($auto_day_settings as $q) {
-    if ($conn->query($q) === TRUE) {
-        // Success
-    } else {
-        echo "Error applying auto day setting: " . $conn->error . "<br>";
-    }
-}
-
-echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>✅ Auto day settings configured successfully.</div>";
 // ========================================
 // 1. Virtual Keyboard Settings
 // ========================================

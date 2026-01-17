@@ -45,6 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'virtualKeyboardSize' => $_POST['virtualKeyboardSize'] ?? 'medium',
         'virtualKeyboardVibrate' => isset($_POST['virtualKeyboardVibrate']) ? '1' : '0',
         'virtualKeyboardAutoSearch' => isset($_POST['virtualKeyboardAutoSearch']) ? '1' : '0',
+        'auto_day_management' => isset($_POST['auto_day_management']) ? '1' : '0',
+        'auto_open_time' => $_POST['auto_open_time'] ?? '09:00',
+        'auto_close_time' => $_POST['auto_close_time'] ?? '18:00',
     ];
 
     if (isset($_FILES['shopLogoFile']) && $_FILES['shopLogoFile']['error'] === UPLOAD_ERR_OK) {

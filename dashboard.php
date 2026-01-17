@@ -6,11 +6,6 @@ require_once 'src/sidebar.php';
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
-
-// جلب إعدادات يوم العمل التلقائي
-$auto_day_management = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'auto_day_management'")->fetch_assoc()['setting_value'] ?? '0';
-$auto_open_time = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'auto_open_time'")->fetch_assoc()['setting_value'] ?? '09:00';
-$auto_close_time = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'auto_close_time'")->fetch_assoc()['setting_value'] ?? '18:00';
 ?>
 
 <style>
@@ -81,34 +76,6 @@ $auto_close_time = $conn->query("SELECT setting_value FROM settings WHERE settin
     <!-- Background Blobs -->
     <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
     <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[120px] pointer-events-none animate-pulse" style="animation-delay: 2s;"></div>
-
-    <!-- Business Day Status Bar -->
-    <div id="business-day-bar" class="bg-dark-surface/90 backdrop-blur-xl border-b border-white/5 py-2 px-6 relative z-20 shrink-0 shadow-lg">
-        <div class="flex items-center justify-between max-w-[1920px] mx-auto w-full">
-            <div class="flex items-center gap-6">
-                <div class="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-lg border border-white/5">
-                    <span class="material-icons-round text-lg" id="day-status-icon">schedule</span>
-                    <span class="text-sm font-bold" id="day-status-text">جاري التحميل...</span>
-                </div>
-                <div class="text-sm text-gray-400 font-medium" id="day-date-text"></div>
-            </div>
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-6 px-4 py-1.5 bg-dark/50 rounded-lg border border-white/5" id="day-metrics" style="display: none;">
-                    <span class="text-sm text-gray-300">المبيعات: <span class="text-primary font-bold text-base mr-1" id="current-day-sales">0</span></span>
-                    <div class="w-px h-4 bg-white/10"></div>
-                    <span class="text-sm text-gray-300">الفواتير: <span class="text-accent font-bold text-base mr-1" id="current-day-invoices">0</span></span>
-                </div>
-                <button id="open-day-btn" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-green-500/20" style="display: none;">
-                    <span class="material-icons-round text-lg">lock_open</span>
-                    فتح يوم العمل
-                </button>
-                <button id="close-day-btn" class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-red-500/20" style="display: none;">
-                    <span class="material-icons-round text-lg">lock</span>
-                    إغلاق يوم العمل
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Header -->
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
