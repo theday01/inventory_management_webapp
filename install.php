@@ -58,6 +58,8 @@ $sql_invoices = "CREATE TABLE IF NOT EXISTS invoices (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     customer_id INT(6) UNSIGNED,
     total DECIMAL(10, 2) NOT NULL,
+    discount_percent DECIMAL(5, 2) DEFAULT 0.00,
+    discount_amount DECIMAL(10, 2) DEFAULT 0.00,
     barcode VARCHAR(50),
     payment_method VARCHAR(50) NOT NULL DEFAULT 'cash',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -646,6 +648,19 @@ if ($check_amount_received->num_rows == 0) {
         echo "Columns 'amount_received' and 'change_due' added to invoices table successfully.<br>";
     } else {
         echo "Error adding amount columns to invoices table: " . $conn->error . "<br>";
+    }
+}
+
+// إضافة أعمدة الخصم إلى جدول invoices إذا لم تكن موجودة
+$check_discount_columns = $conn->query("SHOW COLUMNS FROM invoices LIKE 'discount_percent'");
+if ($check_discount_columns->num_rows == 0) {
+    $sql_alter_invoices_discount = "ALTER TABLE invoices 
+                                  ADD COLUMN discount_percent DECIMAL(5, 2) DEFAULT 0.00 AFTER total,
+                                  ADD COLUMN discount_amount DECIMAL(10, 2) DEFAULT 0.00 AFTER discount_percent";
+    if ($conn->query($sql_alter_invoices_discount) === TRUE) {
+        echo "Columns 'discount_percent' and 'discount_amount' added to invoices table successfully.<br>";
+    } else {
+        echo "Error adding discount columns to invoices table: " . $conn->error . "<br>";
     }
 }
 
