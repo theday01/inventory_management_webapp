@@ -65,8 +65,8 @@ $max_order_value = $metrics_result['max_order_value'] ?? 0;
 $total_revenue = $metrics_result['total_revenue'];
 $total_delivery = $metrics_result['total_delivery'];
 $total_cogs = $metrics_result['total_cogs'];
-$gross_profit = $total_revenue - $total_cogs; 
-$avg_order_value = $total_orders > 0 ? $total_revenue / $total_orders : 0;
+$gross_profit = $total_revenue - $total_delivery - $total_cogs;
+$avg_order_value = $total_orders > 0 ? ($total_revenue - $total_delivery) / $total_orders : 0;
 $profit_margin = $total_revenue > 0 ? ($gross_profit / $total_revenue) * 100 : 0;
 
 // 2. Sales Over Time (Chart Data)
@@ -347,11 +347,6 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                     </button>
                 </div>
                 
-                <div class="h-8 w-px bg-white/10"></div>
-                
-                <button type="button" onclick="window.print()" class="bg-white/5 hover:bg-white/10 text-white p-2 rounded-lg transition-colors border border-white/5" title="طباعة التقرير">
-                    <span class="material-icons-round">print</span>
-                </button>
             </form>
         </div>
     </header>
