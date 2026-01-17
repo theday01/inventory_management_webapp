@@ -45,11 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'virtualKeyboardSize' => $_POST['virtualKeyboardSize'] ?? 'medium',
         'virtualKeyboardVibrate' => isset($_POST['virtualKeyboardVibrate']) ? '1' : '0',
         'virtualKeyboardAutoSearch' => isset($_POST['virtualKeyboardAutoSearch']) ? '1' : '0',
-        'auto_day_management' => isset($_POST['auto_day_management']) ? '1' : '0',
-        'auto_open_day' => isset($_POST['auto_day_management']) ? '1' : '0',
-        'auto_close_day' => isset($_POST['auto_day_management']) ? '1' : '0',
-        'auto_open_time' => $_POST['auto_open_time'] ?? '05:00',
-        'auto_close_time' => $_POST['auto_close_time'] ?? '22:00',
     ];
 
     if (isset($_FILES['shopLogoFile']) && $_FILES['shopLogoFile']['error'] === UPLOAD_ERR_OK) {
@@ -117,10 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'virtualKeyboardTheme' => 'سمة لوحة المفاتيح',
         'virtualKeyboardSize' => 'حجم لوحة المفاتيح',
         'virtualKeyboardVibrate' => 'اهتزاز لوحة المفاتيح',
-        'virtualKeyboardAutoSearch' => 'بحث تلقائي بلوحة المفاتيح',
-        'auto_day_management' => 'تفعيل الإدارة التلقائية ليوم العمل',
-        'auto_open_time' => 'وقت فتح يوم العمل',
-        'auto_close_time' => 'وقت إغلاق يوم العمل',
+        'virtualKeyboardAutoSearch' => 'بحث تلقائي بلوحة المفاتيح'
     ];
     $changedLabels = [];
     foreach ($settings_to_save as $name => $value) {
@@ -198,12 +190,6 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <span>غير مسموح بالتعديل</span>
                     </div>
                 <?php endif; ?>
-                <?php if ($isAdmin): ?>
-                <div id="unsaved-changes-warning" class="hidden text-orange-400 text-sm font-bold flex items-center gap-2">
-                    <span class="material-icons-round text-lg">warning</span>
-                    <span>هنالك بيانات غير محفوظة لا تنسى حفظها قبل الخروج</span>
-                </div>
-                <?php endif; ?>
             </div>
         </header>
 
@@ -265,7 +251,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                             class="w-full bg-dark/50 border border-white/10 text-white text-right pr-12 pl-4 py-3.5 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all font-bold text-lg placeholder-gray-600 <?php echo $readonlyClass; ?>"
                                             <?php echo $disabledAttr; ?>>
                                     </div>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
+                                </div>
+
+                               
+                            </div>
+                        </div>
                     </div>
 
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden glass-panel">
@@ -325,7 +315,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     <p class="text-[10px] text-gray-400">
                                         تأكد من صحة هذه البيانات، فهي ستظهر بشكل تلقائي في تذييل الفواتير (Footer) وعلى واجهة الطباعة الحرارية.
                                     </p>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -381,7 +373,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                             <?php echo $disabledAttr; ?>>
                                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold"><?php echo htmlspecialchars($settings['currency'] ?? 'MAD'); ?></span>
                                     </div>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -402,7 +396,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <?php echo $disabledAttr; ?>
                                         onchange="toggleRentalSettings(this)" />
                                     <label for="toggle-rental" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <div id="rental-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['rentalEnabled']) || $settings['rentalEnabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
                             
@@ -501,7 +497,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <span class="material-icons-round text-sm">history</span>
                                         <span>عرض سجل المدفوعات السابق</span>
                                     </button>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -526,7 +524,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                     <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1" class="toggle-checkbox" <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
                                     <label for="toggle-tax" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/5 rounded-2xl border border-white/5">
                             <div><label class="block text-sm font-medium text-gray-400 mb-2">اسم الضريبة</label><input type="text" name="taxLabel" value="<?php echo htmlspecialchars($settings['taxLabel'] ?? 'TVA'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
                             <div><label class="block text-sm font-medium text-gray-400 mb-2">نسبة الضريبة (%)</label><input type="number" name="taxRate" value="<?php echo htmlspecialchars($settings['taxRate'] ?? '20'); ?>" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
@@ -552,7 +552,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <?php echo $disabledAttr; ?>
                                         onchange="toggleKeyboardSettings(this)" />
                                     <label for="toggle-keyboard" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <div id="keyboard-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['virtualKeyboardEnabled']) || $settings['virtualKeyboardEnabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
                             
@@ -618,7 +620,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     <p class="font-bold text-blue-400 mb-1">كيف تعمل؟</p>
                                     <p>ستظهر أيقونة لوحة مفاتيح صغيرة أسفل الشاشة. يمكنك فتحها يدوياً أو ستفتح تلقائياً عند الضغط على حقول البحث إذا تم تفعيل الخيار.</p>
                                     <p class="mt-1">تدعم اللوحة اللغتين العربية والإنجليزية (AZERTY) مع الأرقام.</p>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -653,7 +657,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="relative inline-block w-10 align-middle select-none">
                                     <input type="checkbox" name="soundNotifications" id="toggle-sound" value="1" class="toggle-checkbox" <?php echo (isset($settings['soundNotifications']) && $settings['soundNotifications'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
                                     <label for="toggle-sound" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
@@ -700,27 +706,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 </main>
 
 <style>
-    input[type="time"]::-webkit-datetime-edit-ampm-field {
-        display: none;
-    }
-    input[type="time"] {
-        -webkit-appearance: textfield;
-        -moz-appearance: textfield;
-    }
-
+    /* ... (Same styles) ... */
     .tab-btn.active-tab { background-color: rgba(var(--primary-rgb), 0.1); color: var(--primary-color); border-right: 3px solid var(--primary-color); }
     .tab-btn.active-tab .material-icons-round { color: var(--primary-color); }
-    
-    /* Fix for date/time picker icons in dark mode */
-    input[type="date"]::-webkit-calendar-picker-indicator,
-    input[type="time"]::-webkit-calendar-picker-indicator {
-        filter: invert(1);
-        cursor: pointer;
-    }
-    input[type="date"]::-webkit-calendar-picker-indicator:hover,
-    input[type="time"]::-webkit-calendar-picker-indicator:hover {
-        filter: invert(0.8);
-    }
+    /* ... */
 </style>
 
 <script>
@@ -765,32 +754,6 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 history.replaceState(null, '', `settings.php?tab=${t}`);
             });
         });
-
-        // Unsaved changes warning
-        const form = document.querySelector('form');
-        const warning = document.getElementById('unsaved-changes-warning');
-        if (warning) {
-            let hasChanges = false;
-
-            function showWarning() {
-                if (!hasChanges) {
-                    hasChanges = true;
-                    warning.classList.remove('hidden');
-                }
-            }
-
-            // Listen for changes on all form elements
-            const formElements = form.querySelectorAll('input, select, textarea');
-            formElements.forEach(el => {
-                el.addEventListener('input', showWarning);
-                el.addEventListener('change', showWarning);
-            });
-
-            // Hide warning on form submit
-            form.addEventListener('submit', () => {
-                warning.classList.add('hidden');
-            });
-        }
     });
 
     // ... (Other scripts) ...
@@ -832,15 +795,6 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             }
         } else {
             container.classList.remove('opacity-50', 'pointer-events-none');
-        }
-    }
-
-    function handleAutoDayToggle(checkbox) {
-        const container = document.getElementById('auto-day-settings');
-        if (!checkbox.checked) {
-            container.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
-        } else {
-            container.classList.remove('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
         }
     }
     
