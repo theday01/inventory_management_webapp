@@ -6,6 +6,11 @@ require_once 'src/sidebar.php';
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
+
+// جلب إعدادات يوم العمل التلقائي
+$auto_day_management = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'auto_day_management'")->fetch_assoc()['setting_value'] ?? '0';
+$auto_open_time = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'auto_open_time'")->fetch_assoc()['setting_value'] ?? '09:00';
+$auto_close_time = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'auto_close_time'")->fetch_assoc()['setting_value'] ?? '18:00';
 ?>
 
 <style>
@@ -892,8 +897,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
-    async function openDay() {
-        if (!confirm('هل تريد فتح يوم عمل جديد؟\n\nسيتم تسجيل المخزون الحالي كأساس لليوم.')) {
+    async function openDay(auto = false) {
+        if (!auto && !confirm('هل تريد فتح يوم عمل جديد؟\n\nسيتم تسجيل المخزون الحالي كأساس لليوم.')) {
             return;
         }
         
@@ -916,8 +921,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
-    async function closeDay() {
-        if (!confirm('هل تريد إغلاق يوم العمل؟\n\nسيتم حساب جميع المبيعات والأرباح والمخزون وحفظها في السجل اليومي.\n\nهذا الإجراء لا يمكن التراجع عنه.')) {
+    async function closeDay(auto = false) {
+        if (!auto && !confirm('هل تريد إغلاق يوم العمل؟\n\nسيتم حساب جميع المبيعات والأرباح والمخزون وحفظها في السجل اليومي.\n\nهذا الإجراء لا يمكن التراجع عنه.')) {
             return;
         }
         
@@ -968,6 +973,52 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Initial load
     loadAllData();
+    
+    // Auto open/close day logic
+    const autoDayManagement = '<?php echo $auto_day_management; ?>' === '1';
+    const autoOpenTime = '<?php echo $auto_open_time; ?>';
+    const autoCloseTime = '<?php echo $auto_close_time; ?>';
+    
+    function checkAutoDayActions() {
+        if (!autoDayManagement) return;
+        
+        const now = new Date();
+        const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        
+        // Check auto open
+        if (currentTime === autoOpenTime) {
+            // Check if day is already open
+            fetch('api.php?action=getCurrentDayStatus')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && !result.data.is_open) {
+                        console.log('Auto opening business day at', autoOpenTime);
+                        openDay(true);
+                    }
+                })
+                .catch(error => console.error('Error checking day status for auto open:', error));
+        }
+        
+        // Check auto close
+        if (currentTime === autoCloseTime) {
+            // Check if day is open
+            fetch('api.php?action=getCurrentDayStatus')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && result.data.is_open) {
+                        console.log('Auto closing business day at', autoCloseTime);
+                        closeDay(true);
+                    }
+                })
+                .catch(error => console.error('Error checking day status for auto close:', error));
+        }
+    }
+    
+    // Check every minute
+    setInterval(checkAutoDayActions, 60000);
+    
+    // Check immediately on load
+    checkAutoDayActions();
     
     // Auto refresh every 5 minutes
     setInterval(loadAllData, 300000);

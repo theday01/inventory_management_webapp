@@ -62,6 +62,14 @@ function tabClass($tab, $current_page, $active_tab) {
         </div>
     </a>
 
+    <a href="settings.php?tab=daily" id="tab-btn-daily" class="<?php echo tabClass('daily', $current_page, $active_tab); ?>" data-tab="daily">
+        <span class="material-icons-round text-[20px] transition-colors">schedule</span>
+        <div class="flex-1">
+            <span class="font-bold text-sm block">إدارة يوم العمل</span>
+            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">فتح وإغلاق تلقائي</span>
+        </div>
+    </a>
+
     <div class="my-2 border-t border-white/5"></div>
     <a href="users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page === 'users.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
         <span class="material-icons-round text-[20px]">people</span>

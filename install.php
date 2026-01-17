@@ -269,6 +269,45 @@ foreach ($daily_tracking_inserts as $q) {
 
 echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>✅ Daily tracking system configured successfully.</div>";
 
+
+$auto_day_settings = [
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('autoDayManagement', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('autoDayOpenTime', '09:00') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('autoDayCloseTime', '18:00') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('lastAutoCheck', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value"
+];
+
+foreach ($auto_day_settings as $q) {
+    if ($conn->query($q) === TRUE) {
+        // Success
+    } else {
+        echo "Error applying auto day management setting: " . $conn->error . "<br>";
+    }
+}
+
+echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>✅ Auto day management settings configured successfully.</div>";
+// ========================================
+// Auto Day Settings
+// ========================================
+echo "<h3>Configuring Auto Day Settings...</h3>";
+
+$auto_day_settings = [
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_day_management', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_open_day', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_close_day', '0') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_open_time', '09:00') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('auto_close_time', '18:00') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+];
+
+foreach ($auto_day_settings as $q) {
+    if ($conn->query($q) === TRUE) {
+        // Success
+    } else {
+        echo "Error applying auto day setting: " . $conn->error . "<br>";
+    }
+}
+
+echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>✅ Auto day settings configured successfully.</div>";
 // ========================================
 // 1. Virtual Keyboard Settings
 // ========================================
