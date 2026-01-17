@@ -48,8 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'auto_day_management' => isset($_POST['auto_day_management']) ? '1' : '0',
         'auto_open_day' => isset($_POST['auto_day_management']) ? '1' : '0',
         'auto_close_day' => isset($_POST['auto_day_management']) ? '1' : '0',
-        'auto_open_time' => $_POST['auto_open_time'] ?? '09:00',
-        'auto_close_time' => $_POST['auto_close_time'] ?? '18:00',
+        'auto_open_time' => $_POST['auto_open_time'] ?? '05:00',
+        'auto_close_time' => $_POST['auto_close_time'] ?? '22:00',
     ];
 
     if (isset($_FILES['shopLogoFile']) && $_FILES['shopLogoFile']['error'] === UPLOAD_ERR_OK) {
@@ -694,47 +694,20 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </div>
                      </div>
                 </div>
-
-                <div id="tab-content-daily" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
-                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <span class="material-icons-round text-primary">schedule</span>
-                            إدارة يوم العمل التلقائية
-                        </h3>
-                        <div class="space-y-6">
-                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                <div class="flex items-center gap-3">
-                                    <span class="material-icons-round text-gray-400">schedule</span>
-                                    <div>
-                                        <h4 class="font-bold text-white text-sm">تفعيل الإدارة التلقائية ليوم العمل</h4>
-                                        <p class="text-[10px] text-gray-400">فتح وإغلاق يوم العمل تلقائياً في الأوقات المحددة</p>
-                                    </div>
-                                </div>
-                                <div class="relative inline-block w-10 align-middle select-none">
-                                    <input type="checkbox" name="auto_day_management" id="toggle-auto-day" value="1" class="toggle-checkbox" <?php echo (isset($settings['auto_day_management']) && $settings['auto_day_management'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> onchange="handleAutoDayToggle(this)" />
-                                    <label for="toggle-auto-day" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                </div>
-                            </div>
-                            <div id="auto-day-settings" class="transition-all duration-300 <?php echo (!isset($settings['auto_day_management']) || $settings['auto_day_management'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-300 mb-2">وقت <span style="color:green">فتح</span> يوم العمل</label>
-                                        <input type="time" name="auto_open_time" value="<?php echo htmlspecialchars($settings['auto_open_time'] ?? '09:00'); ?>" placeholder="HH:MM" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl font-bold text-lg focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-300 mb-2">وقت <span style="color:red">إغلاق</span> يوم العمل</label>
-                                        <input type="time" name="auto_close_time" value="<?php echo htmlspecialchars($settings['auto_close_time'] ?? '18:00'); ?>" placeholder="HH:MM" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl font-bold text-lg focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
-                                    </div>
-                                </div>\n                            </div>\n\n                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">\n                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>\n                                <div class="text-sm text-gray-300">\n                                    <p class="font-bold text-blue-400 mb-1">??? ????</p>\n                                    <p>???? ?????? ???? ???? ???? ??? ????? ??? ????? ???????. ???? ????? ??? ?????? ????? ??? ???? ????..</p>\n                                    <p class="mt-1">????? ????? ?????? ?? ? ??? ????? ??? ????????? ????.</p>\n                                </div>\n                            </div>\n\n                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </form>
 </main>
 
 <style>
-    /* ... (Same styles) ... */
+    input[type="time"]::-webkit-datetime-edit-ampm-field {
+        display: none;
+    }
+    input[type="time"] {
+        -webkit-appearance: textfield;
+        -moz-appearance: textfield;
+    }
+
     .tab-btn.active-tab { background-color: rgba(var(--primary-rgb), 0.1); color: var(--primary-color); border-right: 3px solid var(--primary-color); }
     .tab-btn.active-tab .material-icons-round { color: var(--primary-color); }
     
@@ -1130,7 +1103,3 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 <?php endif; ?>
 
 <?php require_once 'src/footer.php'; ?>
-
-
-
-
