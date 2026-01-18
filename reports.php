@@ -327,54 +327,39 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
             margin-bottom: 0 !important;
         }
 
-        /* Full width for all cards in print */
-        .glass-card {
-            width: 100% !important;
-            max-width: none !important;
-            margin-bottom: 0 !important;
-            border: 1px solid #eee !important;
-            box-shadow: none !important;
-        }
+    }
 
-        /* Page Break Utility */
-        .print-break-page {
-            break-after: page !important;
-            page-break-after: always !important;
-            margin-bottom: 0 !important;
+    /* Pulsing animation for Start Day button */
+    @keyframes pulse-glow {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            transform: scale(1);
         }
-
-        /* Add some spacing for the content on new pages */
-        .print-break-page + .glass-card, 
-        .print-break-page + div > .glass-card {
-            margin-top: 20px !important;
-        }
-
-        /* Chart Heights - Adjust for full page/better visibility */
-        canvas {
-            max-height: 400px !important; /* Taller charts for print */
-        }
-
-        /* Header */
-        .print-only-header {
-            display: block !important;
-            text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
+        50% {
+            box-shadow: 0 0 20px 10px rgba(16, 185, 129, 0);
+            transform: scale(1.05);
         }
     }
 
-    .print-only-header { display: none; }
+    .pulse-button {
+        animation: pulse-glow 2s infinite;
+        position: relative;
+    }
+
+    .pulse-button::before {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 0.5rem;
+        background: linear-gradient(45deg, #10b981, #34d399);
+        opacity: 0.5;
+        z-index: -1;
+        animation: pulse-glow 2s infinite;
+    }
 </style>
 
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark transition-all duration-300">
     
-    <div class="print-only-header">
-        <h1 style="font-size: 24px; font-weight: bold;">تقرير المبيعات والتحليلات</h1>
-        <p style="font-size: 14px;">الفترة: <?php echo $start_date; ?> إلى <?php echo $end_date; ?></p>
-        <p style="font-size: 14px;">تاريخ الاستخراج: <?php echo date('Y-m-d H:i'); ?></p>
-    </div>
-
     <header class="bg-dark-surface/50 backdrop-blur-md border-b border-white/5 p-6 sticky top-0 z-20 no-print">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -945,8 +930,11 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                 document.getElementById('end-day-btn').addEventListener('click', handleEndDay);
             } else {
                 businessDayControls.innerHTML = `
-                    <button id="start-day-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
-                        بدء يوم عمل جديد
+                    <button id="start-day-btn" class="pulse-button bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded shadow-lg">
+                        <span class="flex items-center gap-2">
+                            <span class="material-icons-round">play_circle</span>
+                            بدء يوم عمل جديد
+                        </span>
                     </button>`;
                 document.getElementById('start-day-btn').addEventListener('click', () => startDayModal.classList.remove('hidden'));
             }
@@ -981,32 +969,32 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                         title: '!تنبيه - يوم عمل موجود مسبقاً',
                         html: `
                             <div class="text-right space-y-4">
-                                <div class="bg-yellow-50 border-r-4 border-yellow-400 p-4">
+                                <div class="bg-yellow-400 border-r-4 border-yellow-600 p-4 rounded">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0">
-                                            <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <svg class="h-5 w-5 text-yellow-800" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                                             </svg>
                                         </div>
                                         <div class="mr-3">
-                                            <p class="text-sm text-yellow-700">
+                                            <p class="text-sm text-yellow-900 font-bold">
                                                 تم اكتشاف يوم عمل مسجل مسبقاً بتاريخ اليوم
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div class="bg-white/5 p-4 rounded-lg border border-white/10">
-                                    <p class="text-right text-white mb-2">تفاصيل يوم العمل الحالي:</p>
-                                    <ul class="text-right text-sm text-gray-300 space-y-1">
-                                        <li>⏱️ وقت البداية: ${result.start_time || 'غير محدد'}</li>
-                                        <li>🔄 الحالة: ${result.day_status === 'مفتوح' ? '🔵 مفتوح' : '🔴 مغلق'}</li>
+                                <div class="bg-white/90 p-4 rounded-lg border-2 border-white">
+                                    <p class="text-right text-gray-900 font-bold mb-2">تفاصيل يوم العمل الحالي:</p>
+                                    <ul class="text-right text-sm text-gray-800 space-y-1">
+                                        <li class="font-medium">⏱️ وقت البداية: ${result.start_time || 'غير محدد'}</li>
+                                        <li class="font-medium">🔄 الحالة: ${result.day_status === 'مفتوح' ? '🟢 مفتوح' : '🔴 مغلق'}</li>
                                     </ul>
                                 </div>
 
                                 <div class="text-right space-y-2">
-                                    <p class="text-yellow-400 font-medium">الرجاء تحديد الإجراء المناسب:</p>
-                                    <ul class="text-sm text-gray-300 list-disc pr-5 space-y-1">
+                                    <p class="text-white font-bold text-lg">الرجاء تحديد الإجراء المناسب:</p>
+                                    <ul class="text-sm text-white list-disc pr-5 space-y-1 bg-white/10 p-3 rounded">
                                         <li>لإضافة مبيعات جديدة إلى يوم العمل الحالي، اضغط على "إلغاء"</li>
                                         <li>لفتح يوم عمل جديد مع الاحتفاظ بالسجلات السابقة، اضغط على "فتح يوم جديد"</li>
                                     </ul>
@@ -1014,17 +1002,21 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                             </div>
                         `,
                         icon: 'warning',
+                        iconColor: '#ffffff',
+                        background: '#834400',
+                        color: '#ffffff',
                         showCancelButton: true,
-                        confirmButtonText: 'فتح يوم جديد',
-                        cancelButtonText: 'إلغاء',
-                        confirmButtonColor: '#f59e0b',
-                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: '<span style="color: #dc2626; font-weight: bold;">فتح يوم جديد</span>',
+                        cancelButtonText: '<span style="color: #ffffff; font-weight: bold;">إلغاء</span>',
+                        confirmButtonColor: '#ffffff',
+                        cancelButtonColor: '#64748b',
                         reverseButtons: true,
                         focusCancel: true,
                         customClass: {
-                            confirmButton: 'px-6 py-2 rounded-lg',
-                            cancelButton: 'px-6 py-2 rounded-lg',
-                            popup: 'border-2 border-yellow-500/20'
+                            confirmButton: 'px-6 py-2 rounded-lg shadow-lg',
+                            cancelButton: 'px-6 py-2 rounded-lg shadow-lg',
+                            popup: 'border-4 border-white/30',
+                            title: 'text-white font-bold'
                         }
                     });
 
@@ -1083,25 +1075,28 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
 
         async function handleEndDay() {
             const confirmed = await Swal.fire({
-                title: '!تأكيد إغلاق يوم العمل',
+                title: 'تأكيد إغلاق يوم العمل',
                 html: '<div class="text-right">' +
-                      '<p class="text-lg font-bold mb-2 text-red-500">!تحذير هام</p>' +
-                      '<p class="mb-4">هل أنت متأكد من رغبتك في إغلاق يوم العمل؟</p>' +
-                      '<p class="text-sm text-red-400">⚠️ لا يمكن التراجع عن هذه العملية بعد التنفيذ</p>' +
-                      '</div>',
+                    '<p class="text-lg font-bold mb-2 text-white">تحذير هام!</p>' +
+                    '<p class="mb-4 text-white">هل أنت متأكد من رغبتك في إغلاق يوم العمل؟</p>' +
+                    '<p class="text-sm text-yellow-300">⚠️ لا يمكن التراجع عن هذه العملية بعد التنفيذ</p>' +
+                    '</div>',
                 icon: 'warning',
-                iconColor: '#ef4444',
+                iconColor: '#ffffff',
+                background: 'rgb(93 0 0)',
+                color: '#ffffff',
                 showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'نعم، أغلقه',
-                cancelButtonText: 'إلغاء',
+                confirmButtonColor: '#ffffff',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<span style="color: #dc2626; font-weight: bold;">نعم، أغلقه</span>',
+                cancelButtonText: '<span style="color: #ffffff;">إلغاء</span>',
                 reverseButtons: true,
                 focusCancel: true,
                 customClass: {
                     confirmButton: 'px-6 py-2 rounded-lg',
                     cancelButton: 'px-6 py-2 rounded-lg',
-                    popup: 'border-2 border-red-500/20'
+                    popup: 'border-4 border-white/30',
+                    title: 'text-white'
                 }
             });
 
