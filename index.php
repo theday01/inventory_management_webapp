@@ -3,7 +3,7 @@ session_start();
 
 // إذا كان المستخدم مسجل دخول، يذهب للوحة التحكم
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
-    header("Location: dashboard.php");
+    header("Location: reports.php");
     exit();
 }
 

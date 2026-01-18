@@ -23,16 +23,10 @@ if (!isset($shopName)) {
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto py-6 px-4">
         <div class="space-y-2">
-            <a href="dashboard.php"
-                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'dashboard.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
-                <span class="material-icons-round text-xl">dashboard</span>
-                <span class="font-bold">لوحة التحكم</span>
-            </a>
-            
             <a href="reports.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'reports.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">bar_chart</span>
-                <span class="font-bold">التقارير</span>
+                <span class="font-bold">الرئيسية</span>
             </a>
 
             <a href="pos.php"

@@ -179,6 +179,51 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
 ?>
 
 <style>
+    .stat-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-enter {
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+    .delay-100 { animation-delay: 100ms; }
+    .gradient-text {
+        background: linear-gradient(135deg, #3B82F6 0%, #84CC16 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .action-btn {
+        transition: all 0.2s;
+    }
+    .action-btn:active {
+        transform: scale(0.95);
+    }
     /* Screen Styles */
     .glass-card {
         background: rgba(31, 41, 55, 0.6);
@@ -353,6 +398,63 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
 
     <div class="flex-1 overflow-y-auto p-6 scroll-smooth">
         
+        <!-- Welcome & Quick Actions Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Welcome Banner -->
+            <div class="lg:col-span-2 bg-gradient-to-br from-dark-surface/80 to-dark-surface/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative overflow-hidden animate-enter">
+                <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+                <div class="relative z-10">
+                    <h1 class="text-4xl font-bold text-white mb-3 leading-tight">
+                        مرحباً بك في <span class="gradient-text"><?php echo htmlspecialchars($shopName); ?></span> 👋
+                    </h1>
+                    <p class="text-gray-400 text-lg max-w-2xl">إليك نظرة عامة على أداء متجرك. لديك <span class="text-white font-bold" id="today-orders-count-banner">0</span> طلبات جديدة اليوم بقيمة إجمالية <span class="text-primary font-bold" id="today-revenue-banner">0</span>.</p>
+                    
+                    <div class="mt-8 flex gap-4">
+                        <a href="pos.php" class="action-btn group bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/25 flex items-center gap-3 hover:-translate-y-1 transition-all">
+                            <span class="material-icons-round group-hover:rotate-90 transition-transform">add</span>
+                            بيع جديد
+                        </a>
+                        <a href="products.php" class="action-btn group bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-xl font-bold border border-white/10 flex items-center gap-3 hover:-translate-y-1 transition-all">
+                            <span class="material-icons-round text-accent">inventory_2</span>
+                            إدارة المنتجات
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats / Actions Grid -->
+            <div class="grid grid-cols-2 gap-4 animate-enter delay-100">
+                <a href="customers.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-primary/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
+                    <div class="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                        <span class="material-icons-round text-purple-500 text-2xl">people</span>
+                    </div>
+                    <span class="text-white font-bold">العملاء</span>
+                    <span class="text-xs text-gray-500 mt-1">عرض السجل</span>
+                </a>
+                <a href="invoices.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-accent/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
+                    <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                        <span class="material-icons-round text-accent text-2xl">receipt_long</span>
+                    </div>
+                    <span class="text-white font-bold">الفواتير</span>
+                    <span class="text-xs text-gray-500 mt-1">سجل المبيعات</span>
+                </a>
+                <a href="settings.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-orange-500/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
+                    <div class="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                        <span class="material-icons-round text-orange-500 text-2xl">settings</span>
+                    </div>
+                    <span class="text-white font-bold">الإعدادات</span>
+                    <span class="text-xs text-gray-500 mt-1">تخصيص النظام</span>
+                </a>
+                <a href="reports.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-pink-500/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
+                    <div class="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                        <span class="material-icons-round text-pink-500 text-2xl">analytics</span>
+                    </div>
+                    <span class="text-white font-bold">التقارير</span>
+                    <span class="text-xs text-gray-500 mt-1">تحليل شامل</span>
+                </a>
+            </div>
+        </div>
+
         <div id="metrics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="glass-card p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform">
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -603,6 +705,51 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         
+        const currency = '<?php echo $currency; ?>';
+
+        function toEnglishNumbers(str) {
+            if (typeof str === 'undefined' || str === null) {
+                return '';
+            }
+            const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            
+            let result = str.toString();
+            for (let i = 0; i < 10; i++) {
+                result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
+            }
+            return result;
+        }
+
+        function formatNumber(num) {
+            const numValue = parseFloat(num);
+            if (isNaN(numValue)) {
+                return '0.00';
+            }
+            return numValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('api.php?action=getDashboardStats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.data;
+                    
+                    const bannerOrders = document.getElementById('today-orders-count-banner');
+                    const bannerRevenue = document.getElementById('today-revenue-banner');
+                    
+                    if(bannerOrders) bannerOrders.textContent = toEnglishNumbers(stats.todayOrders.toString());
+                    if(bannerRevenue) bannerRevenue.textContent = toEnglishNumbers(formatNumber(stats.todayRevenue)) + ' ' + currency;
+                }
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+            }
+        }
+
+        loadDashboardStats();
+
         // --- Main Sales Chart ---
         const ctxMain = document.getElementById('mainChart').getContext('2d');
         const gradientRevenue = ctxMain.createLinearGradient(0, 0, 0, 300);
