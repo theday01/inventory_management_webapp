@@ -8,38 +8,53 @@ require_once 'src/sidebar.php';
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 
+// --- Check for Active Business Day ---
+$day_stmt = $conn->prepare("SELECT * FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
+$day_stmt->execute();
+$day_result = $day_stmt->get_result();
+$current_day = $day_result->fetch_assoc();
+$day_stmt->close();
+$is_day_active = ($current_day !== null);
+
 // --- Date Filter Logic ---
-$range = $_GET['range'] ?? '30days';
-$start_date = $_GET['start_date'] ?? '';
-$end_date = $_GET['end_date'] ?? '';
-
-if ($range == 'custom' && !empty($start_date) && !empty($end_date)) {
-    // Custom range is set
-} else {
-    // Default ranges
+if ($is_day_active) {
+    $start_date = date('Y-m-d', strtotime($current_day['start_time']));
     $end_date = date('Y-m-d');
-    if ($range == 'today') {
-        $start_date = date('Y-m-d');
-    } elseif ($range == 'yesterday') {
-        $start_date = date('Y-m-d', strtotime('-1 day'));
-        $end_date = date('Y-m-d', strtotime('-1 day'));
-    } elseif ($range == '7days') {
-        $start_date = date('Y-m-d', strtotime('-7 days'));
-    } elseif ($range == 'this_month') {
-        $start_date = date('Y-m-01');
-    } elseif ($range == 'last_month') {
-        $start_date = date('Y-m-d', strtotime('first day of last month'));
-        $end_date = date('Y-m-d', strtotime('last day of last month'));
-    } else {
-        // Default 30 days
-        $range = '30days';
-        $start_date = date('Y-m-d', strtotime('-30 days'));
-    }
-}
+    $sql_start = $current_day['start_time'];
+    $sql_end = date('Y-m-d H:i:s');
+    $range = 'today';
+} else {
+    $range = $_GET['range'] ?? '30days';
+    $start_date = $_GET['start_date'] ?? '';
+    $end_date = $_GET['end_date'] ?? '';
 
-// SQL Time Range
-$sql_start = $start_date . " 00:00:00";
-$sql_end = $end_date . " 23:59:59";
+    if ($range == 'custom' && !empty($start_date) && !empty($end_date)) {
+        // Custom range is set
+    } else {
+        // Default ranges
+        $end_date = date('Y-m-d');
+        if ($range == 'today') {
+            $start_date = date('Y-m-d');
+        } elseif ($range == 'yesterday') {
+            $start_date = date('Y-m-d', strtotime('-1 day'));
+            $end_date = date('Y-m-d', strtotime('-1 day'));
+        } elseif ($range == '7days') {
+            $start_date = date('Y-m-d', strtotime('-7 days'));
+        } elseif ($range == 'this_month') {
+            $start_date = date('Y-m-01');
+        } elseif ($range == 'last_month') {
+            $start_date = date('Y-m-d', strtotime('first day of last month'));
+            $end_date = date('Y-m-d', strtotime('last day of last month'));
+        } else {
+            // Default 30 days
+            $range = '30days';
+            $start_date = date('Y-m-d', strtotime('-30 days'));
+        }
+    }
+    // SQL Time Range
+    $sql_start = $start_date . " 00:00:00";
+    $sql_end = $end_date . " 23:59:59";
+}
 
 // --- Data Fetching ---
 
@@ -372,27 +387,35 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                 </p>
             </div>
 
-            <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg">
-                <div class="flex gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
-                    <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>">اليوم</button>
-                    <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>">أمس</button>
-                    <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>">7 أيام</button>
-                    <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '30days' ? 'active' : ''; ?>">30 يوم</button>
-                    <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>">شهر</button>
+            <div class="flex items-center gap-4">
+            <?php if ($is_day_active): ?>
+                <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm">
+                    يتم عرض بيانات يوم العمل الحالي.
                 </div>
-                
-                <div class="h-8 w-px bg-white/10"></div>
+            <?php else: ?>
+                <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg">
+                    <div class="flex gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
+                        <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>">اليوم</button>
+                        <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>">أمس</button>
+                        <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>">7 أيام</button>
+                        <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '30days' ? 'active' : ''; ?>">30 يوم</button>
+                        <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>">شهر</button>
+                    </div>
+                    
+                    <div class="h-8 w-px bg-white/10"></div>
 
-                <div class="flex items-center gap-2">
-                    <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
-                    <span class="text-gray-500">-</span>
-                    <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
-                    <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
-                        <span class="material-icons-round text-sm block">filter_alt</span>
-                    </button>
-                </div>
-                
-            </form>
+                    <div class="flex items-center gap-2">
+                        <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                        <span class="text-gray-500">-</span>
+                        <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                        <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
+                            <span class="material-icons-round text-sm block">filter_alt</span>
+                        </button>
+                    </div>
+                </form>
+            <?php endif; ?>
+            <div id="business-day-controls"></div>
+            </div>
         </div>
     </header>
 
@@ -700,6 +723,33 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
     </div>
 </main>
 
+<!-- Start Day Modal -->
+<div id="start-day-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+    <div class="bg-dark-surface rounded-xl p-8 max-w-sm w-full">
+        <h2 class="text-xl font-bold text-white mb-4">بدء يوم عمل جديد</h2>
+        <div class="mb-4">
+            <label for="opening-balance" class="block text-sm font-medium text-gray-400 mb-2">الرصيد الافتتاحي</label>
+            <input type="number" id="opening-balance" class="w-full bg-dark border border-white/10 text-white rounded-lg px-3 py-2" placeholder="أدخل المبلغ">
+        </div>
+        <div class="flex justify-end gap-2">
+            <button id="cancel-start-day" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">إلغاء</button>
+            <button id="confirm-start-day" class="bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded">بدء اليوم</button>
+        </div>
+    </div>
+</div>
+
+<!-- End Day Modal -->
+<div id="end-day-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+    <div class="bg-dark-surface rounded-xl p-8 max-w-md w-full">
+        <h2 class="text-xl font-bold text-white mb-4">ملخص يوم العمل</h2>
+        <div id="day-summary" class="text-white"></div>
+        <div class="flex justify-end mt-4">
+            <button id="close-summary" class="bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
@@ -867,6 +917,246 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
         window.addEventListener('beforeprint', () => {
             mainChart.resize();
         });
+
+        const businessDayControls = document.getElementById('business-day-controls');
+        const startDayModal = document.getElementById('start-day-modal');
+        const endDayModal = document.getElementById('end-day-modal');
+        const confirmStartDay = document.getElementById('confirm-start-day');
+        const cancelStartDay = document.getElementById('cancel-start-day');
+        const closeSummary = document.getElementById('close-summary');
+        const openingBalanceInput = document.getElementById('opening-balance');
+        const daySummaryContainer = document.getElementById('day-summary');
+
+        async function checkBusinessDayStatus() {
+            const response = await fetch('api.php?action=get_business_day_status');
+            const result = await response.json();
+
+            if (result.success) {
+                updateBusinessDayUI(result.data);
+            }
+        }
+
+        function updateBusinessDayUI(data) {
+            if (data.status === 'open') {
+                businessDayControls.innerHTML = `
+                    <button id="end-day-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                        إنهاء اليوم
+                    </button>`;
+                document.getElementById('end-day-btn').addEventListener('click', handleEndDay);
+            } else {
+                businessDayControls.innerHTML = `
+                    <button id="start-day-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                        بدء يوم عمل جديد
+                    </button>`;
+                document.getElementById('start-day-btn').addEventListener('click', () => startDayModal.classList.remove('hidden'));
+            }
+        }
+
+        async function handleStartDay() {
+            const opening_balance = openingBalanceInput.value;
+            console.log('Starting day with balance:', opening_balance);
+            
+            try {
+                const response = await fetch('api.php?action=start_day', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ opening_balance })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    Swal.fire({
+                        title: 'تم بنجاح',
+                        text: 'تم بدء يوم عمل جديد بنجاح',
+                        icon: 'success',
+                        confirmButtonText: 'حسناً',
+                        confirmButtonColor: '#10b981'
+                    });
+                    startDayModal.classList.add('hidden');
+                    checkBusinessDayStatus();
+                    location.reload();
+                } else if (result.code === 'business_day_already_open' || result.code === 'business_day_exists') {
+                    const confirmed = await Swal.fire({
+                        title: '!تنبيه - يوم عمل موجود مسبقاً',
+                        html: `
+                            <div class="text-right space-y-4">
+                                <div class="bg-yellow-50 border-r-4 border-yellow-400 p-4">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="mr-3">
+                                            <p class="text-sm text-yellow-700">
+                                                تم اكتشاف يوم عمل مسجل مسبقاً بتاريخ اليوم
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white/5 p-4 rounded-lg border border-white/10">
+                                    <p class="text-right text-white mb-2">تفاصيل يوم العمل الحالي:</p>
+                                    <ul class="text-right text-sm text-gray-300 space-y-1">
+                                        <li>⏱️ وقت البداية: ${result.start_time || 'غير محدد'}</li>
+                                        <li>🔄 الحالة: ${result.day_status === 'مفتوح' ? '🔵 مفتوح' : '🔴 مغلق'}</li>
+                                    </ul>
+                                </div>
+
+                                <div class="text-right space-y-2">
+                                    <p class="text-yellow-400 font-medium">الرجاء تحديد الإجراء المناسب:</p>
+                                    <ul class="text-sm text-gray-300 list-disc pr-5 space-y-1">
+                                        <li>لإضافة مبيعات جديدة إلى يوم العمل الحالي، اضغط على "إلغاء"</li>
+                                        <li>لفتح يوم عمل جديد مع الاحتفاظ بالسجلات السابقة، اضغط على "فتح يوم جديد"</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'فتح يوم جديد',
+                        cancelButtonText: 'إلغاء',
+                        confirmButtonColor: '#f59e0b',
+                        cancelButtonColor: '#6b7280',
+                        reverseButtons: true,
+                        focusCancel: true,
+                        customClass: {
+                            confirmButton: 'px-6 py-2 rounded-lg',
+                            cancelButton: 'px-6 py-2 rounded-lg',
+                            popup: 'border-2 border-yellow-500/20'
+                        }
+                    });
+
+                    if (confirmed.isConfirmed) {
+                        // If user confirms, force create a new day
+                        const forceResponse = await fetch('api.php?action=start_day', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                opening_balance,
+                                force: true
+                            })
+                        });
+                        
+                        const forceResult = await forceResponse.json();
+                        
+                        if (forceResult.success) {
+                            Swal.fire({
+                                title: 'تم بنجاح',
+                                text: 'تم بدء يوم عمل جديد بنجاح',
+                                icon: 'success',
+                                confirmButtonText: 'حسناً',
+                                confirmButtonColor: '#10b981'
+                            });
+                            startDayModal.classList.add('hidden');
+                            checkBusinessDayStatus();
+                            location.reload();
+                        } else {
+                            throw new Error(forceResult.message || 'فشل في بدء يوم العمل');
+                        }
+                    } else {
+                        // User chose to cancel - just close the modal
+                        startDayModal.classList.add('hidden');
+                    }
+                } else {
+                    // Other errors
+                    Swal.fire({
+                        title: 'خطأ',
+                        text: result.message || 'حدث خطأ غير متوقع',
+                        icon: 'error',
+                        confirmButtonText: 'حسناً',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            } catch (error) {
+                console.error('Error details:', error);
+                Swal.fire({
+                    title: 'خطأ في الاتصال',
+                    text: 'حدث خطأ أثناء محاولة بدء يوم عمل جديد',
+                    icon: 'error',
+                    confirmButtonText: 'حسناً',
+                    confirmButtonColor: '#ef4444'
+                });
+            }
+        }
+
+        async function handleEndDay() {
+            const confirmed = await Swal.fire({
+                title: '!تأكيد إغلاق يوم العمل',
+                html: '<div class="text-right">' +
+                      '<p class="text-lg font-bold mb-2 text-red-500">!تحذير هام</p>' +
+                      '<p class="mb-4">هل أنت متأكد من رغبتك في إغلاق يوم العمل؟</p>' +
+                      '<p class="text-sm text-red-400">⚠️ لا يمكن التراجع عن هذه العملية بعد التنفيذ</p>' +
+                      '</div>',
+                icon: 'warning',
+                iconColor: '#ef4444',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'نعم، أغلقه',
+                cancelButtonText: 'إلغاء',
+                reverseButtons: true,
+                focusCancel: true,
+                customClass: {
+                    confirmButton: 'px-6 py-2 rounded-lg',
+                    cancelButton: 'px-6 py-2 rounded-lg',
+                    popup: 'border-2 border-red-500/20'
+                }
+            });
+
+            // If user confirms, proceed with ending the day
+            if (confirmed.isConfirmed) {
+                try {
+                    const response = await fetch('api.php?action=end_day', { method: 'POST' });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const summary = result.data.summary;
+                        daySummaryContainer.innerHTML = `
+                            <div class="space-y-3">
+                                <p class="text-right"><strong class="text-green-400">إجمالي المبيعات:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
+                                <p class="text-right"><strong class="text-blue-400">الرصيد الافتتاحي:</strong> ${formatNumber(summary.opening_balance)} ${currency}</p>
+                                <p class="text-right"><strong class="text-yellow-400">الرصيد الختامي:</strong> ${formatNumber(summary.closing_balance)} ${currency}</p>
+                                <p class="text-right"><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
+                                <p class="text-right text-xl font-bold mt-4 text-green-400">صافي الربح: ${formatNumber(summary.total_profit)} ${currency}</p>
+                            </div>
+                        `;
+                        endDayModal.classList.remove('hidden');
+                        checkBusinessDayStatus();
+                        
+                        // Show success message
+                        Swal.fire({
+                            title: '!تمت العملية بنجاح',
+                            text: 'تم إغلاق يوم العمل بنجاح',
+                            icon: 'success',
+                            confirmButtonColor: '#10b981',
+                            confirmButtonText: 'تم'
+                        });
+                    } else {
+                        throw new Error(result.message || 'حدث خطأ أثناء محاولة إغلاق يوم العمل');
+                    }
+                } catch (error) {
+                    console.error('Error details:', error);
+                    Swal.fire({
+                        title: '!حدث خطأ',
+                        text: error.message || 'حدث خطأ غير متوقع',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444',
+                        confirmButtonText: 'حسناً'
+                    });
+                }
+            }
+        }
+        
+        confirmStartDay.addEventListener('click', handleStartDay);
+        cancelStartDay.addEventListener('click', () => startDayModal.classList.add('hidden'));
+        closeSummary.addEventListener('click', () => {
+            endDayModal.classList.add('hidden');
+            location.reload();
+        });
+
+        checkBusinessDayStatus();
     });
 </script>
 

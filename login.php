@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $notif_stmt->close();
 
             $stmt->close();
-            header("location: dashboard.php");
+            header("location: reports.php");
             exit;
         } else {
             $login_err = "كلمة المرور غير صحيحة";

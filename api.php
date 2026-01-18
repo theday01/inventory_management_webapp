@@ -161,12 +161,209 @@ switch ($action) {
     case 'uploadImage':
         uploadImage($conn);
         break;
+    case 'get_business_day_status':
+        get_business_day_status($conn);
+        break;
+    case 'start_day':
+        start_day($conn);
+        break;
+    case 'end_day':
+        end_day($conn);
+        break;
     case 'updateShopLogo':
         updateShopLogo($conn);
         break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
+}
+
+function get_business_day_status($conn) {
+    $stmt = $conn->prepare("SELECT * FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $day = $result->fetch_assoc();
+    $stmt->close();
+
+    if ($day) {
+        echo json_encode(['success' => true, 'data' => ['status' => 'open', 'day' => $day]]);
+    } else {
+        echo json_encode(['success' => true, 'data' => ['status' => 'closed']]);
+    }
+}
+
+function sendJsonResponse($data) {
+    // Clear any previous output
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data);
+    exit;
+}
+
+
+function start_day($conn) {
+    try {
+        // Check if user is logged in and has admin role
+        if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+            sendJsonResponse(['success' => false, 'message' => 'يجب تسجيل الدخول أولاً']);
+            return;
+        }
+        
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            sendJsonResponse(['success' => false, 'message' => 'غير مصرح لك']);
+            return;
+        }
+
+        // Get and validate input
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            sendJsonResponse(['success' => false, 'message' => 'بيانات غير صالحة']);
+            return;
+        }
+        
+        $opening_balance = isset($data['opening_balance']) ? floatval($data['opening_balance']) : 0;
+        $force = isset($data['force']) ? (bool)$data['force'] : false;
+        $user_id = intval($_SESSION['id']);
+
+        // Check if there's already a business day for today (only if not forcing)
+        if (!$force) {
+            $today = date('Y-m-d');
+            $stmt = $conn->prepare("SELECT id, start_time, end_time FROM business_days WHERE DATE(start_time) = ? ORDER BY start_time DESC LIMIT 1");
+            if (!$stmt) {
+                sendJsonResponse(['success' => false, 'message' => 'خطأ في قاعدة البيانات: ' . $conn->error]);
+                return;
+            }
+            
+            $stmt->bind_param("s", $today);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                $day = $result->fetch_assoc();
+                $stmt->close();
+                
+                $status = $day['end_time'] === null ? 'مفتوح' : 'مغلق';
+                $start_time = date('Y-m-d H:i', strtotime($day['start_time']));
+                
+                sendJsonResponse([
+                    'success' => false, 
+                    'message' => 'يوجد يوم عمل مسجل مسبقاً',
+                    'details' => "تم العثور على يوم عمل مسجل مسبقاً في: $start_time (الحالة: $status).",
+                    'code' => 'business_day_exists',
+                    'day_status' => $status,
+                    'start_time' => $start_time
+                ]);
+                return;
+            }
+            $stmt->close();
+        }
+
+        // Insert new business day
+        $stmt = $conn->prepare("INSERT INTO business_days (start_time, opening_balance, user_id) VALUES (NOW(), ?, ?)");
+        if (!$stmt) {
+            sendJsonResponse(['success' => false, 'message' => 'خطأ في إعداد الاستعلام: ' . $conn->error]);
+            return;
+        }
+        
+        $stmt->bind_param("di", $opening_balance, $user_id);
+        
+        if ($stmt->execute()) {
+            $stmt->close();
+            create_notification($conn, "تم بدء يوم عمل جديد برصيد افتتاحي: " . $opening_balance, "business_day_start");
+            sendJsonResponse(['success' => true, 'message' => 'تم بدء يوم العمل بنجاح']);
+        } else {
+            $error = $stmt->error;
+            $stmt->close();
+            sendJsonResponse(['success' => false, 'message' => 'فشل في بدء يوم العمل: ' . $error]);
+        }
+        
+    } catch (Exception $e) {
+        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+    }
+}
+
+// Also update the end_day function for consistency:
+function end_day($conn) {
+    try {
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            sendJsonResponse(['success' => false, 'message' => 'غير مصرح لك']);
+            return;
+        }
+
+        $stmt = $conn->prepare("SELECT * FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
+        if (!$stmt) {
+            sendJsonResponse(['success' => false, 'message' => 'خطأ في قاعدة البيانات']);
+            return;
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $day = $result->fetch_assoc();
+        $stmt->close();
+
+        if (!$day) {
+            sendJsonResponse(['success' => false, 'message' => 'لا يوجد يوم عمل مفتوح لإنهائه']);
+            return;
+        }
+
+        $day_id = intval($day['id']);
+        $start_time = $day['start_time'];
+
+        // Calculate sales during the business day
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales FROM invoices WHERE created_at >= ?");
+        $stmt->bind_param("s", $start_time);
+        $stmt->execute();
+        $total_sales = floatval($stmt->get_result()->fetch_assoc()['total_sales']);
+        $stmt->close();
+        
+        // Calculate total cost of goods sold
+        $stmt = $conn->prepare("
+            SELECT COALESCE(SUM(ii.quantity * p.cost_price), 0) as total_cogs
+            FROM invoice_items ii
+            JOIN invoices i ON ii.invoice_id = i.id
+            JOIN products p ON ii.product_id = p.id
+            WHERE i.created_at >= ?
+        ");
+        $stmt->bind_param("s", $start_time);
+        $stmt->execute();
+        $total_cogs = floatval($stmt->get_result()->fetch_assoc()['total_cogs']);
+        $stmt->close();
+
+        $closing_balance = floatval($day['opening_balance']) + $total_sales;
+        $total_profit = $total_sales - $total_cogs;
+
+        $stmt = $conn->prepare("UPDATE business_days SET end_time = NOW(), closing_balance = ? WHERE id = ?");
+        $stmt->bind_param("di", $closing_balance, $day_id);
+        
+        if ($stmt->execute()) {
+            $stmt->close();
+            $summary = [
+                'total_sales' => $total_sales,
+                'opening_balance' => floatval($day['opening_balance']),
+                'closing_balance' => $closing_balance,
+                'total_cogs' => $total_cogs,
+                'total_profit' => $total_profit
+            ];
+            create_notification($conn, "تم إنهاء يوم العمل. إجمالي المبيعات: " . $total_sales, "business_day_end");
+            sendJsonResponse([
+                'success' => true, 
+                'message' => 'تم إنهاء يوم العمل بنجاح', 
+                'data' => ['summary' => $summary]
+            ]);
+        } else {
+            $error = $stmt->error;
+            $stmt->close();
+            sendJsonResponse(['success' => false, 'message' => 'فشل في إنهاء يوم العمل: ' . $error]);
+        }
+        
+    } catch (Exception $e) {
+        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+    }
 }
 
 function updateShopLogo($conn) {
@@ -1182,6 +1379,14 @@ function updateCustomer($conn) {
 }
 
 function checkout($conn) {
+    $day_stmt = $conn->prepare("SELECT id FROM business_days WHERE end_time IS NULL");
+    $day_stmt->execute();
+    if ($day_stmt->get_result()->num_rows == 0) {
+        echo json_encode(['success' => false, 'message' => 'يجب بدء يوم عمل جديد أولاً']);
+        return;
+    }
+    $day_stmt->close();
+
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['items']) || !is_array($data['items'])) {
@@ -1478,7 +1683,15 @@ function getLowStockProducts($conn) {
 function getDashboardStats($conn) {
     try {
         $stats = [];
-        
+
+        // Get current business day
+        $day_stmt = $conn->prepare("SELECT start_time FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
+        $day_stmt->execute();
+        $day_result = $day_stmt->get_result();
+        $current_day = $day_result->fetch_assoc();
+        $day_stmt->close();
+        $start_time_filter = $current_day ? "i.created_at >= '" . $current_day['start_time'] . "'" : "1=0";
+
         $today = date('Y-m-d');
         $yesterday = date('Y-m-d', strtotime('-1 day'));
         
@@ -1490,7 +1703,7 @@ function getDashboardStats($conn) {
             FROM invoices i 
             LEFT JOIN invoice_items ii ON i.id = ii.invoice_id 
             LEFT JOIN products p ON ii.product_id = p.id 
-            WHERE DATE(i.created_at) = '$today'
+            WHERE {$start_time_filter}
         ");
         
         $todayData = $result ? $result->fetch_assoc() : ['total_orders' => 0, 'revenue' => 0, 'total_cost' => 0];
@@ -1539,17 +1752,30 @@ function getDashboardStats($conn) {
 function getSalesChart($conn) {
     try {
         $days = isset($_GET['days']) ? (int)$_GET['days'] : 7;
+
+        $day_stmt = $conn->prepare("SELECT start_time FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
+        $day_stmt->execute();
+        $day_result = $day_stmt->get_result();
+        $current_day = $day_result->fetch_assoc();
+        $day_stmt->close();
+
+        $where_clause = "created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
+        if ($current_day) {
+            $where_clause = "created_at >= '" . $current_day['start_time'] . "'";
+        }
         
         $sql = "SELECT DATE(created_at) as date, 
                        COUNT(*) as orders, 
                        COALESCE(SUM(total), 0) as revenue
                 FROM invoices
-                WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                WHERE {$where_clause}
                 GROUP BY DATE(created_at)
                 ORDER BY date ASC";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $days);
+        if (!$current_day) {
+            $stmt->bind_param("i", $days);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
         $data = [];
@@ -1570,6 +1796,17 @@ function getSalesChart($conn) {
 function getTopProducts($conn) {
     try {
         $days = isset($_GET['days']) ? (int)$_GET['days'] : 7;
+
+        $day_stmt = $conn->prepare("SELECT start_time FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
+        $day_stmt->execute();
+        $day_result = $day_stmt->get_result();
+        $current_day = $day_result->fetch_assoc();
+        $day_stmt->close();
+
+        $where_clause = "i.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
+        if ($current_day) {
+            $where_clause = "i.created_at >= '" . $current_day['start_time'] . "'";
+        }
         
         $sql = "SELECT p.id, p.name, p.quantity as stock,
                        COALESCE(SUM(ii.quantity), 0) as units_sold,
@@ -1577,14 +1814,16 @@ function getTopProducts($conn) {
                 FROM products p
                 LEFT JOIN invoice_items ii ON p.id = ii.product_id
                 LEFT JOIN invoices i ON ii.invoice_id = i.id
-                WHERE i.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) OR i.created_at IS NULL
+                WHERE {$where_clause} OR i.created_at IS NULL
                 GROUP BY p.id
                 HAVING units_sold > 0
                 ORDER BY units_sold DESC
                 LIMIT 10";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $days);
+        if (!$current_day) {
+            $stmt->bind_param("i", $days);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
         $products = [];
@@ -1605,6 +1844,17 @@ function getTopProducts($conn) {
 function getCategorySales($conn) {
     try {
         $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+
+        $day_stmt = $conn->prepare("SELECT start_time FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
+        $day_stmt->execute();
+        $day_result = $day_stmt->get_result();
+        $current_day = $day_result->fetch_assoc();
+        $day_stmt->close();
+
+        $where_clause = "i.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
+        if ($current_day) {
+            $where_clause = "i.created_at >= '" . $current_day['start_time'] . "'";
+        }
         
         $sql = "SELECT c.name as category,
                        COALESCE(SUM(ii.quantity * ii.price), 0) as revenue,
@@ -1613,13 +1863,15 @@ function getCategorySales($conn) {
                 LEFT JOIN products p ON c.id = p.category_id
                 LEFT JOIN invoice_items ii ON p.id = ii.product_id
                 LEFT JOIN invoices i ON ii.invoice_id = i.id
-                WHERE i.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) OR i.created_at IS NULL
+                WHERE {$where_clause} OR i.created_at IS NULL
                 GROUP BY c.id
                 HAVING revenue > 0
                 ORDER BY revenue DESC";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $days);
+        if (!$current_day) {
+            $stmt->bind_param("i", $days);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
         $categories = [];
@@ -1640,11 +1892,19 @@ function getCategorySales($conn) {
 function getRecentInvoices($conn) {
     try {
         $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+
+        $day_stmt = $conn->prepare("SELECT start_time FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
+        $day_stmt->execute();
+        $day_result = $day_stmt->get_result();
+        $current_day = $day_result->fetch_assoc();
+        $day_stmt->close();
+        $start_time_filter = $current_day ? "i.created_at >= '" . $current_day['start_time'] . "'" : "1=1";
         
         $sql = "SELECT i.id, i.total, i.created_at,
                        c.name as customer_name
                 FROM invoices i
                 LEFT JOIN customers c ON i.customer_id = c.id
+                WHERE {$start_time_filter}
                 ORDER BY i.created_at DESC
                 LIMIT ?";
         
@@ -1670,6 +1930,17 @@ function getRecentInvoices($conn) {
 function getTopCustomers($conn) {
     try {
         $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+
+        $day_stmt = $conn->prepare("SELECT start_time FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
+        $day_stmt->execute();
+        $day_result = $day_stmt->get_result();
+        $current_day = $day_result->fetch_assoc();
+        $day_stmt->close();
+
+        $where_clause = "i.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
+        if ($current_day) {
+            $where_clause = "i.created_at >= '" . $current_day['start_time'] . "'";
+        }
         
         $sql = "SELECT c.id, c.name, c.phone,
                        COUNT(i.id) as order_count,
@@ -1677,14 +1948,16 @@ function getTopCustomers($conn) {
                        MAX(i.created_at) as last_purchase
                 FROM customers c
                 LEFT JOIN invoices i ON c.id = i.customer_id
-                WHERE i.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                WHERE {$where_clause}
                 GROUP BY c.id
                 HAVING order_count > 0
                 ORDER BY total_spent DESC
                 LIMIT 5";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $days);
+        if (!$current_day) {
+            $stmt->bind_param("i", $days);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
         $customers = [];

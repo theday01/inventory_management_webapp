@@ -650,7 +650,11 @@ html:not(.dark) .text-red-500 {
 </style>
 
 <!-- Main Content -->
-<main class="flex-1 flex flex-row-reverse relative overflow-hidden">
+<main class="flex-1 flex flex-col relative overflow-hidden">
+    <div id="business-day-notification" class="hidden bg-yellow-500/10 text-yellow-400 p-4 text-center">
+        يجب بدء يوم عمل جديد لتتمكن من تسجيل المبيعات. <a href="reports.php" class="font-bold underline">اذهب إلى صفحة التقارير لبدء اليوم</a>.
+    </div>
+    <div class="flex-1 flex flex-row-reverse relative overflow-hidden">
     <!-- Cart Sidebar (Left) -->
     <aside class="w-96 bg-dark-surface border-r border-white/5 flex flex-col z-20 shadow-2xl">
         <div class="p-6 border-b border-white/5">
@@ -2808,6 +2812,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
     loadCategories();
     loadProducts();
+
+    async function checkBusinessDayStatusForPOS() {
+        try {
+            const response = await fetch('api.php?action=get_business_day_status');
+            const result = await response.json();
+            if (result.success && result.data.status === 'closed') {
+                document.getElementById('business-day-notification').classList.remove('hidden');
+                document.getElementById('checkout-btn').disabled = true;
+                document.getElementById('checkout-btn').classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        } catch (error) {
+            console.error('Error checking business day status:', error);
+        }
+    }
+
+    checkBusinessDayStatusForPOS();
 });
 </script>
 
