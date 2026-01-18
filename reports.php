@@ -84,6 +84,19 @@ $gross_profit = $total_revenue - $total_delivery - $total_cogs;
 $avg_order_value = $total_orders > 0 ? ($total_revenue - $total_delivery) / $total_orders : 0;
 $profit_margin = $total_revenue > 0 ? ($gross_profit / $total_revenue) * 100 : 0;
 
+// Total cost including COGS and delivery
+$total_cost = $total_cogs + $total_delivery;
+$profit_markup = $total_cost > 0 ? ($gross_profit / $total_cost) * 100 : 0;
+
+// Additional metrics for quick summary
+$sql_unique_customers = "SELECT COUNT(DISTINCT customer_id) as unique_customers FROM invoices WHERE created_at BETWEEN '$sql_start' AND '$sql_end'";
+$unique_result = $conn->query($sql_unique_customers);
+$unique_customers = $unique_result ? $unique_result->fetch_assoc()['unique_customers'] : 0;
+
+$days_diff = (strtotime($end_date) - strtotime($start_date)) / (60*60*24) + 1;
+$avg_daily_revenue = $days_diff > 0 ? $total_revenue / $days_diff : 0;
+$avg_daily_orders = $days_diff > 0 ? $total_orders / $days_diff : 0;
+
 // 2. Sales Over Time (Chart Data)
 $sql_chart = "
     SELECT 
@@ -173,7 +186,37 @@ $sql_payments = "
 ";
 $payment_result = $conn->query($sql_payments);
 
-// 6. Slowest Selling Day
+// 6. Top Customers
+$sql_top_customers = "
+    SELECT 
+        c.name,
+        COUNT(i.id) as order_count,
+        SUM(i.total) as total_sales
+    FROM invoices i
+    JOIN customers c ON i.customer_id = c.id
+    WHERE i.created_at BETWEEN '$sql_start' AND '$sql_end'
+    GROUP BY c.id
+    ORDER BY total_sales DESC
+    LIMIT 5
+";
+$top_customers = $conn->query($sql_top_customers);
+
+// 7. Latest Invoices
+$sql_latest_invoices = "
+    SELECT 
+        i.id,
+        c.name as customer_name,
+        i.total,
+        i.created_at
+    FROM invoices i
+    LEFT JOIN customers c ON i.customer_id = c.id
+    WHERE i.created_at BETWEEN '$sql_start' AND '$sql_end'
+    ORDER BY i.created_at DESC
+    LIMIT 5
+";
+$latest_invoices = $conn->query($sql_latest_invoices);
+
+// 8. Slowest Selling Day
 $sql_slowest_day = "
     SELECT 
         DATE(created_at) as sale_date,
@@ -483,8 +526,8 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                 <p class="text-sm text-gray-400 font-medium mb-1">صافي الربح التقديري</p>
                 <h3 class="text-3xl font-bold text-green-500 stat-value"><?php echo number_format($gross_profit, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
                 <div class="mt-4 flex items-center gap-3">
-                    <div class="text-xs text-gray-400">التكلفة: <span class="text-white"><?php echo number_format($total_cogs, 2); ?></span></div>
-                    <div class="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/10">هامش: <?php echo number_format($profit_margin, 1); ?>%</div>
+                    <div class="text-xs text-gray-400">التكلفة الإجمالية: <span class="text-white"><?php echo number_format($total_cost, 2); ?></span></div>
+                    <div class="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/10">هامش الربح: <?php echo number_format($profit_markup, 1); ?>%</div>
                 </div>
             </div>
 
@@ -537,7 +580,7 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
             </div>
         </div>
 
-        <div id="tables-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div id="tables-grid" class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             
             <div class="glass-card p-6 print-break-page">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
@@ -622,45 +665,90 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                 </div>
             </div>
 
-            <div class="glass-card p-6 lg:col-span-2">
+            <div class="glass-card p-6 print-break-page">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                    <span class="material-icons-round text-teal-500">payment</span>
-                    طرق الدفع
+                    <span class="material-icons-round text-purple-500">people</span>
+                    كبار العملاء
                 </h3>
-                <div class="space-y-4">
-                    <?php 
-                    if ($payment_result->num_rows > 0) {
-                        while($pay = $payment_result->fetch_assoc()) {
-                            $methodName = $pay['payment_method'] === 'cash' ? 'نقد' : ($pay['payment_method'] === 'card' ? 'بطاقة' : $pay['payment_method']);
-                            $icon = $pay['payment_method'] === 'cash' ? 'payments' : 'credit_card';
-                            $color = $pay['payment_method'] === 'cash' ? 'text-green-500' : 'text-blue-500';
-                            $bg = $pay['payment_method'] === 'cash' ? 'bg-green-500/10' : 'bg-blue-500/10';
-                    ?>
-                    <div class="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-full <?php echo $bg; ?> flex items-center justify-center">
-                                <span class="material-icons-round <?php echo $color; ?>"><?php echo $icon; ?></span>
-                            </div>
-                            <div>
-                                <p class="font-bold text-white"><?php echo htmlspecialchars($methodName); ?></p>
-                                <p class="text-xs text-gray-400"><?php echo $pay['count']; ?> عملية</p>
-                            </div>
-                        </div>
-                        <div class="text-left">
-                            <p class="font-bold text-white text-lg"><?php echo number_format($pay['total'], 2); ?> <span class="text-xs text-gray-500"><?php echo $currency; ?></span></p>
-                        </div>
-                    </div>
-                    <?php 
-                        }
-                    } else {
-                        echo '<p class="text-center text-gray-500 py-4">لا توجد عمليات دفع</p>';
-                    }
-                    ?>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-right border-b border-white/10 text-gray-400 text-xs uppercase">
+                                <th class="pb-3 w-1/2">العميل</th>
+                                <th class="pb-3 text-center">عدد الطلبات</th>
+                                <th class="pb-3 text-left">إجمالي المبيعات</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 text-sm">
+                            <?php 
+                            if ($top_customers->num_rows > 0) {
+                                while($cust = $top_customers->fetch_assoc()) {
+                                    $percentage = $total_revenue > 0 ? ($cust['total_sales'] / $total_revenue) * 100 : 0;
+                            ?>
+                            <tr class="group hover:bg-white/5 transition-colors">
+                                <td class="py-3 text-white font-medium">
+                                    <div class="truncate max-w-[200px]"><?php echo htmlspecialchars($cust['name']); ?></div>
+                                    <div class="w-24 h-1 bg-gray-700 rounded-full mt-1 overflow-hidden no-print">
+                                        <div class="h-full bg-purple-500" style="width: <?php echo $percentage > 0 ? $percentage : 5; ?>%"></div>
+                                    </div>
+                                </td>
+                                <td class="py-3 text-center text-gray-300 font-bold"><?php echo number_format($cust['order_count']); ?></td>
+                                <td class="py-3 text-left text-primary font-bold"><?php echo number_format($cust['total_sales'], 2); ?> <span class="text-xs text-gray-500 font-normal"><?php echo $currency; ?></span></td>
+                            </tr>
+                            <?php 
+                                }
+                            } else {
+                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">لا توجد بيانات</td></tr>';
+                            }
+                            ?>
+                        </tbody>
+                    </table>
                 </div>
+            </div>
+
+            <div class="glass-card p-6 print-break-page">
+                <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <span class="material-icons-round text-blue-500">receipt_long</span>
+                    آخر الفواتير
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-right border-b border-white/10 text-gray-400 text-xs uppercase">
+                                <th class="pb-3 w-1/3">رقم الفاتورة</th>
+                                <th class="pb-3 w-1/3">العميل</th>
+                                <th class="pb-3 text-left">المبلغ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 text-sm">
+                            <?php 
+                            if ($latest_invoices->num_rows > 0) {
+                                while($inv = $latest_invoices->fetch_assoc()) {
+                            ?>
+                            <tr class="group hover:bg-white/5 transition-colors">
+                                <td class="py-3 text-white font-medium">#<?php echo htmlspecialchars($inv['id']); ?></td>
+                                <td class="py-3 text-gray-300"><?php echo htmlspecialchars($inv['customer_name'] ?: 'عميل غير محدد'); ?></td>
+                                <td class="py-3 text-left text-primary font-bold"><?php echo number_format($inv['total'], 2); ?> <span class="text-xs text-gray-500 font-normal"><?php echo $currency; ?></span></td>
+                            </tr>
+                            <?php 
+                                }
+                            } else {
+                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">لا توجد بيانات</td></tr>';
+                            }
+                            ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 lg:col-span-4">
+                <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <span class="material-icons-round text-teal-500">dashboard</span>
+                    ملخص سريع
+                </h3>
                 
                 <div class="mt-6 pt-6 border-t border-white/10 page-break-avoid">
-                    <h4 class="text-sm font-bold text-gray-400 mb-3">ملخص سريع</h4>
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                          <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
                              <p class="text-xs text-gray-500">أعلى يوم مبيعاً</p>
                              <?php 
@@ -699,6 +787,21 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                                 $avgItems = $total_orders > 0 ? $total_items_sold / $total_orders : 0;
                              ?>
                              <p class="text-white font-bold mt-1"><?php echo number_format($avgItems, 1); ?></p>
+                         </div>
+                         <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
+                             <p class="text-xs text-gray-500">عدد العملاء الفريدين</p>
+                             <p class="text-[10px] text-gray-600 mb-1 leading-tight">إجمالي العملاء الذين قاموا بشراء</p>
+                             <p class="text-white font-bold mt-1"><?php echo number_format($unique_customers); ?></p>
+                         </div>
+                         <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
+                             <p class="text-xs text-gray-500">متوسط الإيرادات اليومية</p>
+                             <p class="text-[10px] text-gray-600 mb-1 leading-tight">متوسط المبيعات يومياً</p>
+                             <p class="text-white font-bold mt-1"><?php echo number_format($avg_daily_revenue, 2); ?> <span class="text-xs text-gray-500"><?php echo $currency; ?></span></p>
+                         </div>
+                         <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
+                             <p class="text-xs text-gray-500">متوسط الطلبات اليومية</p>
+                             <p class="text-[10px] text-gray-600 mb-1 leading-tight">متوسط عدد الطلبات يومياً</p>
+                             <p class="text-white font-bold mt-1"><?php echo number_format($avg_daily_orders, 1); ?></p>
                          </div>
                     </div>
                 </div>
@@ -788,11 +891,13 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
         // --- Main Sales Chart ---
         const ctxMain = document.getElementById('mainChart').getContext('2d');
         const gradientRevenue = ctxMain.createLinearGradient(0, 0, 0, 300);
-        gradientRevenue.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+        gradientRevenue.addColorStop(0, 'rgba(59, 130, 246, 0.6)');
+        gradientRevenue.addColorStop(0.5, 'rgba(59, 130, 246, 0.3)');
         gradientRevenue.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
 
         const gradientOrders = ctxMain.createLinearGradient(0, 0, 0, 300);
-        gradientOrders.addColorStop(0, 'rgba(16, 185, 129, 0.5)');
+        gradientOrders.addColorStop(0, 'rgba(16, 185, 129, 0.6)');
+        gradientOrders.addColorStop(0.5, 'rgba(16, 185, 129, 0.3)');
         gradientOrders.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
         const mainChart = new Chart(ctxMain, {
@@ -805,9 +910,14 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                         data: <?php echo json_encode($chart_revenue); ?>,
                         borderColor: '#3B82F6',
                         backgroundColor: gradientRevenue,
-                        borderWidth: 2,
+                        borderWidth: 3,
                         tension: 0.4,
                         fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#3B82F6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
                         yAxisID: 'y'
                     },
                     {
@@ -815,9 +925,14 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                         data: <?php echo json_encode($chart_orders); ?>,
                         borderColor: '#10B981',
                         backgroundColor: gradientOrders,
-                        borderWidth: 2,
+                        borderWidth: 3,
                         tension: 0.4,
                         fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#10B981',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
                         yAxisID: 'y1'
                     }
                 ]
@@ -825,6 +940,10 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
                 interaction: {
                     mode: 'index',
                     intersect: false,
@@ -832,40 +951,79 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                 plugins: {
                     legend: {
                         labels: { 
-                            // Color is set to gray for screen, printing CSS handles contrast usually, 
-                            // but ensuring it's dark enough for both is good practice.
                             color: '#9CA3AF', 
-                            font: { family: 'Tajawal' } 
+                            font: { family: 'Tajawal', size: 12 },
+                            usePointStyle: true,
+                            padding: 20
                         }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
                         titleColor: '#fff',
                         bodyColor: '#fff',
-                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderColor: 'rgba(255,255,255,0.2)',
                         borderWidth: 1,
-                        titleFont: { family: 'Tajawal' },
-                        bodyFont: { family: 'Tajawal' }
+                        titleFont: { family: 'Tajawal', size: 14, weight: 'bold' },
+                        bodyFont: { family: 'Tajawal', size: 12 },
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            title: function(context) {
+                                const rawDates = <?php echo json_encode($chart_raw_dates); ?>;
+                                const index = context[0].dataIndex;
+                                return rawDates[index] || context[0].label;
+                            },
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.datasetIndex === 0) {
+                                    label += formatNumber(context.parsed.y) + ' <?php echo $currency; ?>';
+                                } else {
+                                    label += context.parsed.y + ' طلب';
+                                }
+                                return label;
+                            }
+                        }
                     }
                 },
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#9CA3AF', font: { family: 'Tajawal' } }
+                        ticks: { color: '#9CA3AF', font: { family: 'Tajawal', size: 11 } },
+                        title: {
+                            display: true,
+                            text: 'التاريخ',
+                            color: '#9CA3AF',
+                            font: { family: 'Tajawal', size: 12, weight: 'bold' }
+                        }
                     },
                     y: {
                         type: 'linear',
                         display: true,
                         position: 'left',
                         grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                        ticks: { color: '#9CA3AF' }
+                        ticks: { color: '#9CA3AF', font: { family: 'Tajawal', size: 11 } },
+                        title: {
+                            display: true,
+                            text: 'الإيرادات (<?php echo $currency; ?>)',
+                            color: '#3B82F6',
+                            font: { family: 'Tajawal', size: 12, weight: 'bold' }
+                        }
                     },
                     y1: {
                         type: 'linear',
                         display: true,
                         position: 'right',
                         grid: { display: false },
-                        ticks: { color: '#10B981' }
+                        ticks: { color: '#10B981', font: { family: 'Tajawal', size: 11 } },
+                        title: {
+                            display: true,
+                            text: 'عدد الطلبات',
+                            color: '#10B981',
+                            font: { family: 'Tajawal', size: 12, weight: 'bold' }
+                        }
                     }
                 }
             }
@@ -880,19 +1038,49 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                 datasets: [{
                     data: <?php echo json_encode($cat_data); ?>,
                     backgroundColor: [
-                        '#3B82F6', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6', '#6366F1'
+                        '#3B82F6', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6', '#6366F1', '#EF4444', '#06B6D4'
                     ],
-                    borderWidth: 0,
-                    hoverOffset: 4
+                    borderWidth: 2,
+                    borderColor: '#1F2937',
+                    hoverOffset: 8,
+                    hoverBorderWidth: 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    animateScale: true,
+                    animateRotate: true,
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
                 plugins: {
                     legend: {
                         position: 'right',
-                        labels: { color: '#9CA3AF', font: { family: 'Tajawal', size: 11 }, padding: 15 }
+                        labels: { 
+                            color: '#9CA3AF', 
+                            font: { family: 'Tajawal', size: 11 }, 
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(255,255,255,0.2)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return label + ': ' + formatNumber(value) + ' <?php echo $currency; ?> (' + percentage + '%)';
+                            }
+                        }
                     }
                 },
                 cutout: '70%'
