@@ -942,7 +942,10 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
 
         async function handleStartDay() {
             const opening_balance = openingBalanceInput.value;
-            console.log('Starting day with balance:', opening_balance);
+            if (!opening_balance) {
+                Swal.fire('خطأ', 'الرجاء إدخال الرصيد الافتتاحي', 'error');
+                return;
+            }
             
             try {
                 const response = await fetch('api.php?action=start_day', {
@@ -954,105 +957,81 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                 const result = await response.json();
                 
                 if (result.success) {
-                    Swal.fire({
-                        title: 'تم بنجاح',
-                        text: 'تم بدء يوم عمل جديد بنجاح',
-                        icon: 'success',
-                        confirmButtonText: 'حسناً',
-                        confirmButtonColor: '#10b981'
-                    });
                     startDayModal.classList.add('hidden');
-                    checkBusinessDayStatus();
-                    location.reload();
-                } else if (result.code === 'business_day_already_open' || result.code === 'business_day_exists') {
-                    const confirmed = await Swal.fire({
-                        title: '!تنبيه - يوم عمل موجود مسبقاً',
+                    Swal.fire('تم بنجاح', 'تم بدء يوم عمل جديد بنجاح', 'success').then(() => {
+                        location.reload();
+                    });
+                } else if (result.code === 'business_day_open_exists') {
+                    startDayModal.classList.add('hidden');
+                    const { isConfirmed } = await Swal.fire({
+                        title: 'يوم عمل مفتوح بالفعل',
                         html: `
-                            <div class="text-right space-y-4">
-                                <div class="bg-yellow-400 border-r-4 border-yellow-600 p-4 rounded">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0">
-                                            <svg class="h-5 w-5 text-yellow-800" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <div class="mr-3">
-                                            <p class="text-sm text-yellow-900 font-bold">
-                                                تم اكتشاف يوم عمل مسجل مسبقاً بتاريخ اليوم
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="bg-white/90 p-4 rounded-lg border-2 border-white">
-                                    <p class="text-right text-gray-900 font-bold mb-2">تفاصيل يوم العمل الحالي:</p>
-                                    <ul class="text-right text-sm text-gray-800 space-y-1">
-                                        <li class="font-medium">⏱️ وقت البداية: ${result.start_time || 'غير محدد'}</li>
-                                        <li class="font-medium">🔄 الحالة: ${result.day_status === 'مفتوح' ? '🟢 مفتوح' : '🔴 مغلق'}</li>
-                                    </ul>
-                                </div>
-
-                                <div class="text-right space-y-2">
-                                    <p class="text-white font-bold text-lg">الرجاء تحديد الإجراء المناسب:</p>
-                                    <ul class="text-sm text-white list-disc pr-5 space-y-1 bg-white/10 p-3 rounded">
-                                        <li>لإضافة مبيعات جديدة إلى يوم العمل الحالي، اضغط على "إلغاء"</li>
-                                        <li>لفتح يوم عمل جديد مع الاحتفاظ بالسجلات السابقة، اضغط على "فتح يوم جديد"</li>
-                                    </ul>
-                                </div>
-                            </div>
+                            <p class="mb-4">تم العثور على يوم عمل مفتوح بالفعل.</p>
+                            <p>هل تريد تمديد يوم العمل الحالي بإضافة مبلغ <strong class="text-lg">${opening_balance} ${currency}</strong> إلى الرصيد الافتتاحي؟</p>
                         `,
-                        icon: 'warning',
-                        iconColor: '#ffffff',
-                        background: '#834400',
-                        color: '#ffffff',
+                        icon: 'question',
                         showCancelButton: true,
-                        confirmButtonText: '<span style="color: #dc2626; font-weight: bold;">فتح يوم جديد</span>',
-                        cancelButtonText: '<span style="color: #ffffff; font-weight: bold;">إلغاء</span>',
-                        confirmButtonColor: '#ffffff',
-                        cancelButtonColor: '#64748b',
-                        reverseButtons: true,
-                        focusCancel: true,
-                        customClass: {
-                            confirmButton: 'px-6 py-2 rounded-lg shadow-lg',
-                            cancelButton: 'px-6 py-2 rounded-lg shadow-lg',
-                            popup: 'border-4 border-white/30',
-                            title: 'text-white font-bold'
-                        }
+                        confirmButtonColor: '#10B981',
+                        cancelButtonColor: '#6B7280',
+                        confirmButtonText: 'نعم، تمديد',
+                        cancelButtonText: 'إلغاء'
                     });
 
-                    if (confirmed.isConfirmed) {
-                        // If user confirms, force create a new day
-                        const forceResponse = await fetch('api.php?action=start_day', {
+                    if (isConfirmed) {
+                        // User wants to extend the day
+                        const extendResponse = await fetch('api.php?action=extend_day', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                                opening_balance,
-                                force: true
+                            body: JSON.stringify({
+                                day_id: result.day_id,
+                                opening_balance: opening_balance
                             })
                         });
-                        
-                        const forceResult = await forceResponse.json();
-                        
-                        if (forceResult.success) {
-                            Swal.fire({
-                                title: 'تم بنجاح',
-                                text: 'تم بدء يوم عمل جديد بنجاح',
-                                icon: 'success',
-                                confirmButtonText: 'حسناً',
-                                confirmButtonColor: '#10b981'
+                        const extendResult = await extendResponse.json();
+                        if (extendResult.success) {
+                            Swal.fire('تم التمديد', 'تم تمديد يوم العمل بنجاح.', 'success').then(() => {
+                                location.reload();
                             });
-                            startDayModal.classList.add('hidden');
-                            checkBusinessDayStatus();
-                            location.reload();
                         } else {
-                            throw new Error(forceResult.message || 'فشل في بدء يوم العمل');
+                            Swal.fire('خطأ', extendResult.message || 'فشل في تمديد يوم العمل', 'error');
                         }
-                    } else {
-                        // User chose to cancel - just close the modal
-                        startDayModal.classList.add('hidden');
+                    }
+                } else if (result.code === 'business_day_closed_exists') {
+                    startDayModal.classList.add('hidden');
+                    const { isConfirmed } = await Swal.fire({
+                        title: 'يوم عمل مغلق',
+                        html: `
+                            <p class="mb-4">تم العثور على يوم عمل مغلق لهذا اليوم.</p>
+                            <p>هل تريد إعادة فتح اليوم وتمديده بمبلغ <strong class="text-lg">${opening_balance} ${currency}</strong>؟</p>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#F59E0B',
+                        cancelButtonColor: '#6B7280',
+                        confirmButtonText: 'نعم، إعادة فتح',
+                        cancelButtonText: 'إلغاء'
+                    });
+
+                    if (isConfirmed) {
+                        const reopenResponse = await fetch('api.php?action=reopen_day', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                day_id: result.day_id,
+                                opening_balance: opening_balance
+                            })
+                        });
+                        const reopenResult = await reopenResponse.json();
+                        if (reopenResult.success) {
+                            Swal.fire('تمت إعادة الفتح', 'تم إعادة فتح يوم العمل بنجاح.', 'success').then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('خطأ', reopenResult.message || 'فشل في إعادة فتح يوم العمل', 'error');
+                        }
                     }
                 } else {
-                    // Other errors
+                    // Handle other errors
                     Swal.fire({
                         title: 'خطأ',
                         text: result.message || 'حدث خطأ غير متوقع',

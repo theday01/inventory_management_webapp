@@ -167,6 +167,12 @@ switch ($action) {
     case 'start_day':
         start_day($conn);
         break;
+    case 'reopen_day':
+        reopen_day($conn);
+        break;
+    case 'extend_day':
+        extend_day($conn);
+        break;
     case 'end_day':
         end_day($conn);
         break;
@@ -247,18 +253,27 @@ function start_day($conn) {
                 $day = $result->fetch_assoc();
                 $stmt->close();
                 
-                $status = $day['end_time'] === null ? 'مفتوح' : 'مغلق';
-                $start_time = date('Y-m-d H:i', strtotime($day['start_time']));
-                
-                sendJsonResponse([
-                    'success' => false, 
-                    'message' => 'يوجد يوم عمل مسجل مسبقاً',
-                    'details' => "تم العثور على يوم عمل مسجل مسبقاً في: $start_time (الحالة: $status).",
-                    'code' => 'business_day_exists',
-                    'day_status' => $status,
-                    'start_time' => $start_time
-                ]);
-                return;
+                if ($day['end_time'] === null) {
+                    // Business day is open, allow extension
+                    sendJsonResponse([
+                        'success' => false,
+                        'message' => 'يوجد يوم عمل مفتوح بالفعل.',
+                        'details' => "تم العثور على يوم عمل مفتوح بدأ في: " . date('Y-m-d H:i', strtotime($day['start_time'])),
+                        'code' => 'business_day_open_exists',
+                        'day_id' => $day['id']
+                    ]);
+                    return;
+                } else {
+                    // Business day is closed, allow reopening
+                    sendJsonResponse([
+                        'success' => false,
+                        'message' => 'يوجد يوم عمل مغلق لهذا اليوم.',
+                        'details' => 'يمكنك إعادة فتح اليوم وتمديده.',
+                        'code' => 'business_day_closed_exists',
+                        'day_id' => $day['id']
+                    ]);
+                    return;
+                }
             }
             $stmt->close();
         }
@@ -282,6 +297,105 @@ function start_day($conn) {
             sendJsonResponse(['success' => false, 'message' => 'فشل في بدء يوم العمل: ' . $error]);
         }
         
+    } catch (Exception $e) {
+        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+    }
+}
+
+function reopen_day($conn) {
+    try {
+        if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            sendJsonResponse(['success' => false, 'message' => 'غير مصرح لك']);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            sendJsonResponse(['success' => false, 'message' => 'بيانات غير صالحة']);
+            return;
+        }
+
+        $day_id = isset($data['day_id']) ? intval($data['day_id']) : 0;
+        $additional_balance = isset($data['opening_balance']) ? floatval($data['opening_balance']) : 0;
+
+        if ($day_id <= 0) {
+            sendJsonResponse(['success' => false, 'message' => 'معرف يوم العمل غير صالح']);
+            return;
+        }
+
+        $stmt = $conn->prepare("UPDATE business_days SET end_time = NULL, closing_balance = NULL, opening_balance = opening_balance + ? WHERE id = ?");
+        if (!$stmt) {
+            sendJsonResponse(['success' => false, 'message' => 'خطأ في إعداد الاستعلام: ' . $conn->error]);
+            return;
+        }
+
+        $stmt->bind_param("di", $additional_balance, $day_id);
+
+        if ($stmt->execute()) {
+            if ($stmt->affected_rows > 0) {
+                create_notification($conn, "تم إعادة فتح يوم العمل وتمديده بمبلغ: " . $additional_balance, "business_day_reopen");
+                sendJsonResponse(['success' => true, 'message' => 'تم إعادة فتح يوم العمل بنجاح']);
+            } else {
+                sendJsonResponse(['success' => false, 'message' => 'لم يتم العثور على يوم عمل لإعادة فتحه']);
+            }
+        } else {
+            $error = $stmt->error;
+            sendJsonResponse(['success' => false, 'message' => 'فشل في إعادة فتح يوم العمل: ' . $error]);
+        }
+        $stmt->close();
+
+    } catch (Exception $e) {
+        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+    }
+}
+
+function extend_day($conn) {
+    try {
+        if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            sendJsonResponse(['success' => false, 'message' => 'غير مصرح لك']);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            sendJsonResponse(['success' => false, 'message' => 'بيانات غير صالحة']);
+            return;
+        }
+
+        $day_id = isset($data['day_id']) ? intval($data['day_id']) : 0;
+        $additional_balance = isset($data['opening_balance']) ? floatval($data['opening_balance']) : 0;
+
+        if ($day_id <= 0) {
+            sendJsonResponse(['success' => false, 'message' => 'معرف يوم العمل غير صالح']);
+            return;
+        }
+
+        // Add the additional balance to the existing opening_balance
+        $stmt = $conn->prepare("UPDATE business_days SET opening_balance = opening_balance + ? WHERE id = ? AND end_time IS NULL");
+        if (!$stmt) {
+            sendJsonResponse(['success' => false, 'message' => 'خطأ في إعداد الاستعلام: ' . $conn->error]);
+            return;
+        }
+
+        $stmt->bind_param("di", $additional_balance, $day_id);
+
+        if ($stmt->execute()) {
+            if ($stmt->affected_rows > 0) {
+                 create_notification($conn, "تم تمديد يوم العمل وإضافة مبلغ: " . $additional_balance, "business_day_extend");
+                sendJsonResponse(['success' => true, 'message' => 'تم تمديد يوم العمل بنجاح']);
+            } else {
+                sendJsonResponse(['success' => false, 'message' => 'لم يتم العثور على يوم عمل مفتوح لتمديده']);
+            }
+        } else {
+            $error = $stmt->error;
+            sendJsonResponse(['success' => false, 'message' => 'فشل في تمديد يوم العمل: ' . $error]);
+        }
+        $stmt->close();
+
     } catch (Exception $e) {
         sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
     }
