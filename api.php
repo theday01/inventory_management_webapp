@@ -22,6 +22,9 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
 header('Content-Type: application/json');
 require_once 'db.php';
+require_once 'vendor/autoload.php';
+
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
@@ -41,6 +44,9 @@ switch ($action) {
     case 'getProducts':
         getProducts($conn);
         break;
+    case 'exportProductsExcel':
+        exportProductsExcel($conn);
+        break;
     case 'addProduct':
         addProduct($conn);
         break;
@@ -49,6 +55,9 @@ switch ($action) {
         break;
     case 'bulkAddProducts':
         bulkAddProducts($conn);
+        break;
+    case 'importProducts':
+        importProducts($conn);
         break;
     case 'getProductDetails':
         getProductDetails($conn);
@@ -1037,6 +1046,161 @@ function getProducts($conn) {
     echo json_encode(['success' => true, 'data' => $products, 'total_products' => $total_products]);
 }
 
+function exportProductsExcel($conn) {
+    require_once 'vendor/autoload.php';
+
+    // جلب جميع المنتجات بدون حدود
+    $search = isset($_GET['search']) ? $_GET['search'] : '';
+    $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
+    $stock_status = isset($_GET['stock_status']) ? $_GET['stock_status'] : '';
+
+    $settings_sql = "SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('low_quantity_alert', 'critical_quantity_alert', 'currency')";
+    $settings_result = $conn->query($settings_sql);
+    $quantity_settings = [];
+    while ($row = $settings_result->fetch_assoc()) {
+        $quantity_settings[$row['setting_name']] = $row['setting_value'];
+    }
+    $low_alert = (int)($quantity_settings['low_quantity_alert'] ?? 10);
+    $critical_alert = (int)($quantity_settings['critical_quantity_alert'] ?? 5);
+    $currency = $quantity_settings['currency'] ?? 'MAD';
+
+    $baseSql = "FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1";
+    $params = [];
+    $types = '';
+
+    if (!empty($search)) {
+        $baseSql .= " AND (p.name LIKE ? OR p.barcode LIKE ?)";
+        $searchTerm = "%{$search}%";
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $types .= 'ss';
+    }
+    if ($category_id > 0) {
+        $baseSql .= " AND p.category_id = ?";
+        $params[] = $category_id;
+        $types .= 'i';
+    }
+    if ($stock_status === 'out_of_stock') {
+        $baseSql .= " AND p.quantity = 0";
+    } elseif ($stock_status === 'low_stock') {
+        $baseSql .= " AND p.quantity > ? AND p.quantity <= ?";
+        $params[] = $critical_alert;
+        $params[] = $low_alert;
+        $types .= 'ii';
+    } elseif ($stock_status === 'critical_stock') {
+        $baseSql .= " AND p.quantity > 0 AND p.quantity <= ?";
+        $params[] = $critical_alert;
+        $types .= 'i';
+    }
+
+    $dataSql = "SELECT p.id, p.name, p.price, p.cost_price, p.quantity, p.barcode, c.name as category_name, p.created_at "
+             . $baseSql 
+             . " ORDER BY p.name ASC";
+
+    $stmt = $conn->prepare($dataSql);
+    if (!empty($types)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $products = [];
+    while ($row = $result->fetch_assoc()) {
+        $products[] = $row;
+    }
+    $stmt->close();
+
+    // إنشاء ملف Excel
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    // إعدادات الورقة
+    $sheet->setTitle('قائمة المنتجات');
+
+    // العناوين
+    $headers = ['الرقم', 'اسم المنتج', 'السعر', 'سعر الشراء', 'الكمية', 'الباركود', 'الفئة', 'تاريخ الإضافة'];
+    $col = 'A';
+    foreach ($headers as $header) {
+        $sheet->setCellValue($col . '1', $header);
+        $sheet->getStyle($col . '1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 12],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
+            'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+        ]);
+        $col++;
+    }
+
+    // البيانات
+    $row = 2;
+    foreach ($products as $product) {
+        $sheet->setCellValue('A' . $row, $product['id']);
+        $sheet->setCellValue('B' . $row, $product['name']);
+        $sheet->setCellValue('C' . $row, number_format($product['price'], 2) . ' ' . $currency);
+        $sheet->setCellValue('D' . $row, $product['cost_price'] ? number_format($product['cost_price'], 2) . ' ' . $currency : '');
+        $sheet->setCellValue('E' . $row, $product['quantity']);
+        $sheet->setCellValue('F' . $row, $product['barcode'] ?: '');
+        $sheet->setCellValue('G' . $row, $product['category_name'] ?: 'غير مصنف');
+        $sheet->setCellValue('H' . $row, date('Y-m-d', strtotime($product['created_at'])));
+
+        // تنسيق الصف
+        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT]
+        ]);
+
+        // تنسيق الأرقام
+        $sheet->getStyle('C' . $row)->getNumberFormat()->setFormatCode('#,##0.00 "' . $currency . '"');
+        if ($product['cost_price']) {
+            $sheet->getStyle('D' . $row)->getNumberFormat()->setFormatCode('#,##0.00 "' . $currency . '"');
+        }
+        $sheet->getStyle('E' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $row++;
+    }
+
+    // تعديل عرض الأعمدة
+    $sheet->getColumnDimension('A')->setWidth(25);
+    $sheet->getColumnDimension('B')->setWidth(30);
+    $sheet->getColumnDimension('C')->setWidth(15);
+    $sheet->getColumnDimension('D')->setWidth(15);
+    $sheet->getColumnDimension('E')->setWidth(10);
+    $sheet->getColumnDimension('F')->setWidth(15);
+    $sheet->getColumnDimension('G')->setWidth(20);
+    $sheet->getColumnDimension('H')->setWidth(15);
+
+    // إضافة معلومات إضافية في الأسفل
+    $row += 2;
+    $sheet->setCellValue('A' . $row, 'إجمالي المنتجات:');
+    $sheet->setCellValue('B' . $row, count($products));
+    $sheet->getStyle('A' . $row . ':B' . $row)->applyFromArray([
+        'font' => ['bold' => true, 'size' => 12],
+        'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT]
+    ]);
+    $sheet->getStyle('B' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+    $totalValue = array_sum(array_map(function($p) { return $p['price'] * $p['quantity']; }, $products));
+    $row++;
+    $sheet->setCellValue('A' . $row, 'إجمالي قيمة المخزون:');
+    $sheet->setCellValue('B' . $row, number_format($totalValue, 2) . ' ' . $currency);
+    $sheet->getStyle('A' . $row . ':B' . $row)->applyFromArray([
+        'font' => ['bold' => true, 'size' => 12],
+        'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT]
+    ]);
+    $sheet->getStyle('B' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+    // إعداد headers للتحميل
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment;filename="products_' . date('Y-m-d_H-i-s') . '.xlsx"');
+    header('Cache-Control: max-age=0');
+
+    $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+    $writer->save('php://output');
+    exit;
+}
+
 function addProduct($conn) {
     $data = $_POST;
     $imagePath = null;
@@ -1209,6 +1373,210 @@ function bulkAddProducts($conn) {
     } catch (Exception $e) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => 'فشل في إضافة المنتجات: ' . $e->getMessage()]);
+    }
+}
+
+function importProducts($conn) {
+    if (!isset($_FILES['excel_file']) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['success' => false, 'message' => 'لم يتم رفع ملف Excel صالح']);
+        return;
+    }
+
+    $file = $_FILES['excel_file']['tmp_name'];
+    $skipDuplicates = isset($_POST['skip_duplicates']) && $_POST['skip_duplicates'] === 'on';
+    $isPreview = isset($_POST['preview']) && $_POST['preview'] === 'true';
+
+    try {
+        $spreadsheet = IOFactory::load($file);
+        $worksheet = $spreadsheet->getActiveSheet();
+        $rows = $worksheet->toArray();
+
+        if (empty($rows)) {
+            echo json_encode(['success' => false, 'message' => 'الملف لا يحتوي على أي بيانات']);
+            return;
+        }
+
+        if (count($rows) < 2) {
+            echo json_encode(['success' => false, 'message' => 'الملف يحتوي على عناوين فقط، أضف بعض البيانات']);
+            return;
+        }
+
+        // Get headers from first row
+        $headers = array_map('strtolower', array_map('trim', $rows[0]));
+        $dataRows = array_slice($rows, 1);
+
+        // Function to find column index with multiple possible names
+        function findColumn($possibleNames, $headers) {
+            foreach ($possibleNames as $name) {
+                $index = array_search(strtolower(trim($name)), $headers);
+                if ($index !== false) {
+                    return $index;
+                }
+            }
+            return false;
+        }
+
+        // Map expected columns with multiple possible names
+        $columnMap = [
+            'name' => findColumn(['name', 'Name', 'اسم', 'اسم المنتج', 'product name', 'Product Name', 'منتج'], $headers),
+            'price' => findColumn(['price', 'Price', 'سعر', 'سعر البيع', 'selling price', 'Selling Price', 'السعر'], $headers),
+            'quantity' => findColumn(['quantity', 'Quantity', 'كمية', 'الكمية', 'qty', 'Qty', 'الكمية'], $headers),
+            'barcode' => findColumn(['barcode', 'Barcode', 'باركود', 'الباركود', 'code', 'Code', 'الباركود'], $headers),
+            'category' => findColumn(['category', 'Category', 'فئة', 'الفئة', 'type', 'Type', 'الفئة'], $headers),
+            'cost_price' => findColumn(['cost price', 'Cost Price', 'سعر التكلفة', 'تكلفة', 'cost', 'Cost', 'سعر التكلفة'], $headers),
+            'image' => findColumn(['image', 'Image', 'صورة', 'الصورة', 'photo', 'Photo', 'الصورة'], $headers),
+        ];
+
+        // Check required columns
+        if ($columnMap['name'] === false || $columnMap['price'] === false || $columnMap['quantity'] === false) {
+            echo json_encode(['success' => false, 'message' => 'الملف يفتقر إلى الأعمدة المطلوبة: Name/اسم, Price/سعر, Quantity/كمية. العناوين الموجودة: ' . implode(', ', $headers)]);
+            return;
+        }
+
+        $errors = [];
+        $validProducts = [];
+        $categoriesToCreate = [];
+
+        foreach ($dataRows as $rowIndex => $row) {
+            $rowNum = $rowIndex + 2; // +2 because array is 0-based and we skipped header
+
+            $name = isset($row[$columnMap['name']]) ? trim($row[$columnMap['name']]) : '';
+            $price = isset($row[$columnMap['price']]) ? trim($row[$columnMap['price']]) : '';
+            $quantity = isset($row[$columnMap['quantity']]) ? trim($row[$columnMap['quantity']]) : '';
+            $barcode = ($columnMap['barcode'] !== false && isset($row[$columnMap['barcode']])) ? trim($row[$columnMap['barcode']]) : '';
+            $categoryName = ($columnMap['category'] !== false && isset($row[$columnMap['category']])) ? trim($row[$columnMap['category']]) : '';
+            $costPrice = ($columnMap['cost_price'] !== false && isset($row[$columnMap['cost_price']])) ? trim($row[$columnMap['cost_price']]) : '';
+            $image = ($columnMap['image'] !== false && isset($row[$columnMap['image']])) ? trim($row[$columnMap['image']]) : '';
+
+            // Validate required fields
+            if (empty($name)) {
+                $errors[] = "الصف $rowNum: اسم المنتج مطلوب";
+                continue;
+            }
+            if (!is_numeric($price) || $price < 0) {
+                $errors[] = "الصف $rowNum: سعر البيع غير صالح";
+                continue;
+            }
+            if (!is_numeric($quantity) || $quantity < 0) {
+                $errors[] = "الصف $rowNum: الكمية غير صالحة";
+                continue;
+            }
+
+            // Check for duplicates if requested
+            if ($skipDuplicates) {
+                $stmt = $conn->prepare("SELECT id FROM products WHERE name = ? AND (barcode = ? OR barcode IS NULL)");
+                $stmt->bind_param("ss", $name, $barcode);
+                $stmt->execute();
+                if ($stmt->get_result()->num_rows > 0) {
+                    continue; // Skip duplicate
+                }
+                $stmt->close();
+            }
+
+            // Handle category
+            $categoryId = null;
+            if (!empty($categoryName)) {
+                $stmt = $conn->prepare("SELECT id FROM categories WHERE name = ?");
+                $stmt->bind_param("s", $categoryName);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                if ($result->num_rows > 0) {
+                    $categoryId = $result->fetch_assoc()['id'];
+                } else {
+                    // Mark for creation
+                    if (!in_array($categoryName, $categoriesToCreate)) {
+                        $categoriesToCreate[] = $categoryName;
+                    }
+                }
+                $stmt->close();
+            }
+
+            $validProducts[] = [
+                'name' => $name,
+                'price' => (float)$price,
+                'cost_price' => !empty($costPrice) && is_numeric($costPrice) ? (float)$costPrice : 0.0,
+                'quantity' => (int)$quantity,
+                'barcode' => $barcode,
+                'category_name' => $categoryName,
+                'category_id' => $categoryId,
+                'image' => $image,
+            ];
+        }
+
+        if ($isPreview) {
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'total_rows' => count($dataRows),
+                    'valid_products' => count($validProducts),
+                    'errors' => $errors,
+                    'categories_to_create' => $categoriesToCreate,
+                ]
+            ]);
+            return;
+        }
+
+        // If not preview, proceed with import
+        $conn->begin_transaction();
+
+        // Create categories if needed
+        foreach ($categoriesToCreate as $catName) {
+            $stmt = $conn->prepare("INSERT INTO categories (name) VALUES (?)");
+            $stmt->bind_param("s", $catName);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        // Insert products
+        $insertedCount = 0;
+        $stmt = $conn->prepare("INSERT INTO products (name, price, cost_price, quantity, category_id, barcode, image) VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+        foreach ($validProducts as $product) {
+            // Get category ID if it was created
+            if (!empty($product['category_name']) && !$product['category_id']) {
+                $stmtCat = $conn->prepare("SELECT id FROM categories WHERE name = ?");
+                $stmtCat->bind_param("s", $product['category_name']);
+                $stmtCat->execute();
+                $result = $stmtCat->get_result();
+                if ($result->num_rows > 0) {
+                    $product['category_id'] = $result->fetch_assoc()['id'];
+                }
+                $stmtCat->close();
+            }
+
+            $stmt->bind_param("sddiiss", 
+                $product['name'], 
+                $product['price'], 
+                $product['cost_price'], 
+                $product['quantity'], 
+                $product['category_id'], 
+                $product['barcode'], 
+                $product['image']
+            );
+            $stmt->execute();
+            $insertedCount++;
+        }
+
+        $stmt->close();
+        $conn->commit();
+
+        create_notification($conn, "تم استيراد $insertedCount منتج من ملف Excel بنجاح.", "product_add");
+
+        echo json_encode([
+            'success' => true, 
+            'message' => "تم استيراد $insertedCount منتج بنجاح" . (count($errors) > 0 ? ". تم تجاهل " . count($errors) . " صف بسبب أخطاء" : ""),
+            'data' => [
+                'inserted' => $insertedCount,
+                'errors' => count($errors),
+                'categories_created' => count($categoriesToCreate)
+            ]
+        ]);
+
+    } catch (Exception $e) {
+        if ($conn->connect_errno === 0) {
+            $conn->rollback();
+        }
+        echo json_encode(['success' => false, 'message' => 'فشل في استيراد المنتجات: ' . $e->getMessage()]);
     }
 }
 

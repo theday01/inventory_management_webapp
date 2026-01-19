@@ -49,7 +49,12 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <button id="export-csv-btn"
                 class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">download</span>
-                <span>تصدير CSV</span>
+                <span>تصدير Excel</span>
+            </button>
+            <button id="import-excel-btn"
+                class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                <span class="material-icons-round text-sm">upload_file</span>
+                <span>استيراد من Excel</span>
             </button>
         </div>
     </header>
@@ -272,6 +277,45 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     html:not(.dark) #delete-success-modal .bg-white\/5 {
         background-color: rgba(0, 0, 0, 0.05) !important;
     }
+
+    /* Light mode adjustments for import modal */
+    html:not(.dark) #import-excel-modal .bg-dark-surface {
+        background-color: #FFFFFF !important;
+    }
+
+    html:not(.dark) #import-excel-modal .text-white {
+        color: #111827 !important;
+    }
+
+    html:not(.dark) #import-excel-modal .text-gray-300 {
+        color: #6B7280 !important;
+    }
+
+    html:not(.dark) #import-excel-modal .text-gray-400 {
+        color: #9CA3AF !important;
+    }
+
+    html:not(.dark) #import-excel-modal .border-white\/5,
+    html:not(.dark) #import-excel-modal .border-white\/10 {
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+
+    html:not(.dark) #import-excel-modal .bg-dark\/50 {
+        background-color: rgba(0, 0, 0, 0.05) !important;
+    }
+
+    html:not(.dark) #import-excel-modal .bg-blue-500\/10 {
+        background-color: rgba(59, 130, 246, 0.1) !important;
+    }
+
+    html:not(.dark) #import-excel-modal .border-blue-500\/30 {
+        border-color: rgba(59, 130, 246, 0.3) !important;
+    }
+
+    html:not(.dark) #import-excel-modal .text-blue-400 {
+        color: #3B82F6 !important;
+    }
+
     #pagination-container{
         background-color: rgb(13 16 22);
     }
@@ -451,6 +495,54 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 </div>
 
 
+<!-- Import Excel Modal -->
+<div id="import-excel-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-2xl border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">استيراد المنتجات من ملف Excel</h3>
+            <button id="close-import-excel-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <form id="import-excel-form" enctype="multipart/form-data">
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">اختر ملف Excel (.xlsx أو .xls)</label>
+                        <input type="file" id="excel-file" name="excel_file" accept=".xlsx,.xls" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required>
+                    </div>
+                    <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                        <h4 class="text-sm font-bold text-blue-400 mb-2">تنسيق الملف المطلوب:</h4>
+                        <p class="text-xs text-gray-300 mb-2">يجب أن يحتوي الملف على الأعمدة التالية (الصف الأول هو العناوين):</p>
+                        <ul class="text-xs text-gray-400 space-y-1">
+                            <li>• <strong>Name</strong> - اسم المنتج (مطلوب)</li>
+                            <li>• <strong>Price</strong> - سعر البيع (مطلوب)</li>
+                            <li>• <strong>Quantity</strong> - الكمية (مطلوب)</li>
+                            <li>• <strong>Barcode</strong> - الباركود (اختياري)</li>
+                            <li>• <strong>Category</strong> - اسم الفئة (اختياري، سيتم إنشاؤها إذا لم تكن موجودة)</li>
+                            <li>• <strong>Cost Price</strong> - سعر التكلفة (اختياري)</li>
+                            <li>• <strong>Image</strong> - مسار الصورة (اختياري)</li>
+                        </ul>
+                        <div class="mt-3 pt-3 border-t border-blue-500/20">
+                            <p class="text-xs text-gray-300 mb-2">💡 <strong>نصيحة:</strong> للحصول على نموذج جاهز للتعديل، اضغط على زر "تحميل نموذج Excel" في الأعلى.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="skip-duplicates" name="skip_duplicates" class="rounded border-white/10 bg-dark/50">
+                        <label for="skip-duplicates" class="text-sm text-gray-300">تجاهل المنتجات المكررة (بناءً على الاسم والباركود)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-white/5 flex justify-end gap-4">
+                <button type="button" id="download-template-in-modal-btn" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-xl font-bold transition-all">تحميل نموذج Excel</button>
+                <button type="button" id="preview-import-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2 rounded-xl font-bold transition-all">معاينة البيانات</button>
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">استيراد المنتجات</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <!-- Barcode Scanner Modal -->
 <div id="barcode-scanner-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
@@ -542,6 +634,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+    window.loadProducts = loadProducts;
+    window.loadStats = loadStats;
     const manageCategoriesBtn = document.getElementById('manage-categories-btn');
     const categoryModal = document.getElementById('category-modal');
     const closeCategoryModalBtn = document.getElementById('close-category-modal');
@@ -571,9 +665,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     let sortOrder = 'asc';
     const productsPerPage = 300;
 
-    loadProducts();
+    window.reloadProductsAndStats = async function() {
+        await loadProducts();
+        await loadStats();
+    };  
+
+    window.reloadProductsAndStats();
     loadCategoriesIntoFilter();
-    loadStats();
     searchInput.addEventListener('input', () => { currentPage = 1; loadProducts(); });
     categoryFilter.addEventListener('change', () => { currentPage = 1; loadProducts(); });
     stockStatusFilter.addEventListener('change', () => { currentPage = 1; loadProducts(); });
@@ -787,29 +885,24 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     exportCsvBtn.addEventListener('click', async () => {
         try {
             showLoading('جاري تصدير البيانات...');
-            const response = await fetch('api.php?action=getProducts&limit=9999');
-            const result = await response.json();
-            if (result.success) {
-                const products = result.data;
-                let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-                csvContent += "ID,Name,Category,Price,Quantity,Barcode\n";
-                products.forEach(p => {
-                    csvContent += `${p.id},"${p.name}","${p.category_name || ''}",${p.price},${p.quantity},"${p.barcode || ''}"\n`;
-                });
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "products.csv");
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showToast('تم تصدير المنتجات بنجاح', true);
-            } else {
-                showToast('فشل في تصدير المنتجات', false);
-            }
+            // إنشاء رابط لتحميل ملف Excel
+            const searchQuery = searchInput.value;
+            const categoryId = categoryFilter.value;
+            const stockStatus = stockStatusFilter.value;
+            const url = `api.php?action=exportProductsExcel&search=${encodeURIComponent(searchQuery)}&category_id=${categoryId}&stock_status=${stockStatus}`;
+            
+            // إنشاء رابط مؤقت وتحميله
+            const link = document.createElement('a');
+            link.href = url;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('تم تصدير المنتجات بنجاح', true);
         } catch (error) {
-            console.error('خطأ في تصدير CSV:', error);
-            showToast('حدث خطأ في تصدير CSV', false);
+            console.error('خطأ في تصدير Excel:', error);
+            showToast('حدث خطأ في تصدير Excel', false);
         } finally {
             hideLoading();
         }
@@ -2184,6 +2277,111 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     stockModal?.addEventListener('click', (e) => {
         if (e.target === stockModal) {
             stockModal.classList.add('hidden');
+        }
+    });
+
+    // Import Excel functionality
+    const importExcelBtn = document.getElementById('import-excel-btn');
+    const importExcelModal = document.getElementById('import-excel-modal');
+    const closeImportExcelModalBtn = document.getElementById('close-import-excel-modal');
+    const importExcelForm = document.getElementById('import-excel-form');
+    const previewImportBtn = document.getElementById('preview-import-btn');
+
+    importExcelBtn.addEventListener('click', () => {
+        importExcelModal.classList.remove('hidden');
+    });
+
+    closeImportExcelModalBtn.addEventListener('click', () => {
+        importExcelModal.classList.add('hidden');
+    });
+
+    // Close modal when clicking outside
+    importExcelModal.addEventListener('click', (e) => {
+        if (e.target === importExcelModal) {
+            importExcelModal.classList.add('hidden');
+        }
+    });
+
+    previewImportBtn.addEventListener('click', async () => {
+        const fileInput = document.getElementById('excel-file');
+        if (!fileInput.files[0]) {
+            showToast('الرجاء اختيار ملف Excel أولاً', false);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('excel_file', fileInput.files[0]);
+        formData.append('preview', 'true');
+
+        try {
+            showLoading('جاري معاينة البيانات...');
+            const response = await fetch('api.php?action=importProducts', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success) {
+                // Show preview modal or alert with data summary
+                let previewText = `تم العثور على ${result.data.total_rows} صف في الملف.\n\n`;
+                if (result.data.valid_products > 0) {
+                    previewText += `✅ منتجات صالحة: ${result.data.valid_products}\n`;
+                }
+                if (result.data.errors.length > 0) {
+                    previewText += `❌ أخطاء: ${result.data.errors.length}\n`;
+                    result.data.errors.slice(0, 5).forEach((error, i) => {
+                        previewText += `  ${i + 1}. ${error}\n`;
+                    });
+                    if (result.data.errors.length > 5) {
+                        previewText += `  ... و ${result.data.errors.length - 5} أخطاء أخرى\n`;
+                    }
+                }
+                alert(previewText);
+            } else {
+                showToast(result.message || 'فشل في معاينة الملف', false);
+            }
+        } catch (error) {
+            console.error('Error previewing import:', error);
+            showToast('حدث خطأ في معاينة الملف', false);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    document.getElementById('download-template-in-modal-btn').addEventListener('click', () => {
+        window.open('generate_excel_template.php', '_blank');
+    });
+
+    importExcelForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('excel-file');
+        if (!fileInput.files[0]) {
+            showToast('الرجاء اختيار ملف Excel', false);
+            return;
+        }
+
+        const formData = new FormData(importExcelForm);
+
+        try {
+            showLoading('جاري استيراد المنتجات...');
+            const response = await fetch('api.php?action=importProducts', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast(result.message || 'تم استيراد المنتجات بنجاح', true);
+                importExcelModal.classList.add('hidden');
+                importExcelForm.reset();
+                // Reload the page to refresh all data
+                window.location.reload();
+            } else {
+                showToast(result.message || 'فشل في استيراد المنتجات', false);
+            }
+        } catch (error) {
+            console.error('Error importing products:', error);
+            showToast('حدث خطأ في استيراد المنتجات', false);
+        } finally {
+            hideLoading();
         }
     });
 </script>
