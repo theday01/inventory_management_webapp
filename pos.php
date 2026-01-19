@@ -798,7 +798,7 @@ html:not(.dark) .text-red-500 {
 
         <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-10 shrink-0">
             <div class="flex items-center gap-4 flex-1">
-                <a href="dashboard.php" class="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+                <a href="reports.php" class="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
                     <span class="material-icons-round">arrow_forward</span>
                 </a>
                 <div class="relative flex-1 max-w-md">

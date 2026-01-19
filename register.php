@@ -14,7 +14,7 @@ if ($result && $result->num_rows > 0) {
     }
     // التحقق من أن المستخدم admin
     if ($_SESSION['role'] !== 'admin') {
-        header("Location: dashboard.php?error=" . urlencode("ليس لديك صلاحية الوصول"));
+        header("Location: login.php?error=" . urlencode("ليس لديك صلاحية الوصول"));
         exit();
     }
 }

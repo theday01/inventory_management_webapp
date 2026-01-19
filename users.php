@@ -3,9 +3,19 @@ require_once 'session.php';
 require_once 'db.php';
 $current_page = 'users.php';
 
-if ($_SESSION['role'] !== 'admin') {
-    header("Location: dashboard.php");
+if (!in_array($_SESSION['role'], ['admin', 'manager'])) {
+    header("Location: reports.php");
     exit();
+}
+
+function getRoleName($role) {
+    switch ($role) {
+        case 'admin': return 'مدير عام';
+        case 'manager': return 'مدير';
+        case 'cashier': return 'موظف المبيعات';
+        case 'user': return 'مستخدم';
+        default: return $role;
+    }
 }
 
 // معالجة إضافة مستخدم
@@ -22,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_user'])) {
     if ($stmt->execute()) {
         // إنشاء إشعار بإضافة المستخدم الجديد
         $created_by = $_SESSION['username'];
-        $notification_message = "قام المدير '{$created_by}' بإنشاء حساب جديد باسم '{$username}' بصلاحيات '{$role}'";
+        $notification_message = "قام المدير '{$created_by}' بإنشاء حساب جديد باسم '{$username}' بصلاحيات '" . getRoleName($role) . "'";
         $notification_type = "user_registration";
         
         $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
@@ -44,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_user'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_user'])) {
     $user_id = $_POST['user_id'];
     $username = $_POST['username'];
-    $role = $_POST['role'];
+    $role = $_POST['role'] ?? null; // قد يكون فارغاً إذا كان disabled
     
     // التحقق من أن المستخدم ليس آخر admin
     $check_admin = $conn->query("SELECT COUNT(*) as admin_count FROM users WHERE role = 'admin'");
@@ -57,8 +67,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_user'])) {
     $current_role = $stmt_check->get_result()->fetch_assoc()['role'];
     $stmt_check->close();
     
+    // إذا لم يتم إرسال الدور (بسبب disabled)، استخدم الدور الحالي
+    if ($role === null) {
+        $role = $current_role;
+    }
+    
     if ($current_role === 'admin' && $role !== 'admin') {
-        header("Location: users.php?error=" . urlencode("لا يمكن تغيير دور المدير في النظام"));
+        header("Location: users.php?error=" . urlencode("لا يمكن تغيير دور المدير العام نهائياً"));
         exit();
     }
     
@@ -78,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_user'])) {
     if ($stmt->execute()) {
         // إنشاء إشعار تحديث المستخدم
         $updated_by = $_SESSION['username'];
-        $notification_message = "قام المدير '{$updated_by}' بتحديث حساب المستخدم '{$username}' إلى دور '{$role}'";
+        $notification_message = "قام المدير '{$updated_by}' بتحديث حساب المستخدم '{$username}' إلى دور '" . getRoleName($role) . "'";
         $notification_type = "user_update";
         
         $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
@@ -167,6 +182,94 @@ require_once 'src/sidebar.php';
         <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
             <div class="max-w-4xl mx-auto space-y-6">
                 
+                <!-- دليل الأدوار -->
+                <section class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <span class="material-icons-round text-blue-500">info</span>
+                            دليل إختيار الأدوار والصلاحيات
+                        </h3>
+                        <button id="toggleGuideBtn" class="text-gray-400 hover:text-white transition-colors">
+                            <span class="material-icons-round">expand_more</span>
+                        </button>
+                    </div>
+                    
+                    <div id="rolesGuide" class="space-y-4 hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- مدير عام -->
+                            <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="material-icons-round text-red-500">admin_panel_settings</span>
+                                    <h4 class="text-white font-bold">مدير عام</h4>
+                                </div>
+                                <p class="text-sm text-gray-300 mb-2">الصلاحيات الكاملة في النظام</p>
+                                <ul class="text-xs text-gray-400 space-y-1">
+                                    <li>• إدارة المستخدمين والأدوار</li>
+                                    <li>• الوصول إلى جميع التقارير والإحصائيات</li>
+                                    <li>• تعديل الإعدادات العامة</li>
+                                    <li>• فتح وإغلاق أيام العمل</li>
+                                    <li>• إدارة المنتجات والعملاء</li>
+                                </ul>
+                            </div>
+                            
+                            <!-- مدير -->
+                            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="material-icons-round text-blue-500">manage_accounts</span>
+                                    <h4 class="text-white font-bold">مدير تاني</h4>
+                                </div>
+                                <p class="text-sm text-gray-300 mb-2">إدارة العمليات اليومية</p>
+                                <ul class="text-xs text-gray-400 space-y-1">
+                                    <li>• إدارة المستخدمين والأدوار</li>
+                                    <li>• الوصول إلى التقارير والإحصائيات</li>
+                                    <li>• فتح وإغلاق أيام العمل</li>
+                                    <li>• إدارة المنتجات والعملاء</li>
+                                    <li>• لا يمكنه تعديل الإعدادات العامة</li>
+                                </ul>
+                            </div>
+                            
+                            <!-- موظف المبيعات -->
+                            <div class="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="material-icons-round text-green-500">point_of_sale</span>
+                                    <h4 class="text-white font-bold">موظف المبيعات</h4>
+                                </div>
+                                <p class="text-sm text-gray-300 mb-2">التعامل المباشر مع العملاء</p>
+                                <ul class="text-xs text-gray-400 space-y-1">
+                                    <li>• فتح وإغلاق أيام العمل</li>
+                                    <li>• إنشاء وإدارة الفواتير</li>
+                                    <li>• الوصول إلى التقارير اليومية</li>
+                                    <li>• إدارة العملاء والمنتجات</li>
+                                    <li>• لا يمكنه إدارة المستخدمين</li>
+                                </ul>
+                            </div>
+                            
+                            <!-- مستخدم -->
+                            <div class="bg-gray-500/10 border border-gray-500/20 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="material-icons-round text-gray-500">person</span>
+                                    <h4 class="text-white font-bold">مستخدم</h4>
+                                </div>
+                                <p class="text-sm text-gray-300 mb-2">صلاحيات محدودة</p>
+                                <ul class="text-xs text-gray-400 space-y-1">
+                                    <li>• الوصول المحدود للنظام</li>
+                                    <li>• لا يمكنه تعديل أي شيء</li>
+                                    <li>• مناسب للمراجعة فقط</li>
+                                    <li>• لا يمكنه فتح/إغلاق الأيام</li>
+                                    <li>• لا يمكنه إدارة المستخدمين</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                            <p class="text-sm text-yellow-300 flex items-center gap-2">
+                                <span class="material-icons-round text-sm">warning</span>
+                                <strong>ملاحظة:</strong> دور المدير العام لا يمكن تغييره نهائياً. يمكن تعديل الاسم وكلمة المرور فقط. تأكد من تعيين الأدوار بحذر للحفاظ على نظام وأمان النظام.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+                
                 <section class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -198,8 +301,18 @@ require_once 'src/sidebar.php';
                                             <?php endif; ?>
                                         </td>
                                         <td class="p-4 text-sm">
-                                            <span class="px-3 py-1 rounded-full text-xs font-bold <?php echo $user['role'] == 'admin' ? 'bg-primary/20 text-primary' : 'bg-gray-500/20 text-gray-400'; ?>">
-                                                <?php echo htmlspecialchars($user['role']); ?>
+                                            <span class="px-3 py-1 rounded-full text-xs font-bold <?php 
+                                                if ($user['role'] == 'admin') echo 'bg-red-500/20 text-red-400';
+                                                elseif ($user['role'] == 'manager') echo 'bg-blue-500/20 text-blue-400';
+                                                elseif ($user['role'] == 'cashier') echo 'bg-green-500/20 text-green-400';
+                                                else echo 'bg-gray-500/20 text-gray-400';
+                                            ?>">
+                                                <?php 
+                                                if ($user['role'] == 'admin') echo 'مدير عام';
+                                                elseif ($user['role'] == 'manager') echo 'مدير تاني';
+                                                elseif ($user['role'] == 'cashier') echo 'موظف المبيعات';
+                                                else echo 'مستخدم';
+                                                ?>
                                             </span>
                                         </td>
                                         <td class="p-4 text-sm text-center">
@@ -255,7 +368,9 @@ require_once 'src/sidebar.php';
                     <select id="role" name="role" 
                         class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
                         <option value="user">مستخدم</option>
-                        <option value="admin">مدير</option>
+                        <option value="cashier">موظف المبيعات</option>
+                        <option value="manager">مدير تاني</option>
+                        <option value="admin">مدير عام</option>
                     </select>
                 </div>
             </div>
@@ -305,7 +420,9 @@ require_once 'src/sidebar.php';
                     <select id="edit_role" name="role" 
                         class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
                         <option value="user">مستخدم</option>
-                        <option value="admin">مدير</option>
+                        <option value="cashier">موظف المبيعات</option>
+                        <option value="manager">مدير</option>
+                        <option value="admin">مدير عام</option>
                     </select>
                     <p id="admin_warning" class="text-xs text-yellow-500 mt-2 hidden flex items-center gap-1">
                         <span class="material-icons-round text-sm">warning</span>
@@ -362,6 +479,16 @@ require_once 'src/sidebar.php';
 </div>
 
 <script>
+    // Toggle Roles Guide
+    const toggleGuideBtn = document.getElementById('toggleGuideBtn');
+    const rolesGuide = document.getElementById('rolesGuide');
+    const toggleIcon = toggleGuideBtn.querySelector('.material-icons-round');
+
+    toggleGuideBtn.addEventListener('click', () => {
+        rolesGuide.classList.toggle('hidden');
+        toggleIcon.textContent = rolesGuide.classList.contains('hidden') ? 'expand_more' : 'expand_less';
+    });
+
     // Add User Modal
     const addUserBtn = document.getElementById('addUserBtn');
     const addUserModal = document.getElementById('addUserModal');
@@ -393,6 +520,7 @@ require_once 'src/sidebar.php';
             editRoleSelect.disabled = true;
             editRoleSelect.classList.add('opacity-50', 'cursor-not-allowed');
             adminWarning.classList.remove('hidden');
+            adminWarning.textContent = 'لا يمكن تغيير دور المدير العام نهائياً';
         } else {
             editRoleSelect.disabled = false;
             editRoleSelect.classList.remove('opacity-50', 'cursor-not-allowed');

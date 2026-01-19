@@ -195,41 +195,6 @@ foreach ($tables as $name => $sql) {
 }
 
 // ======================================
-// CREATE DEFAULT ADMIN USER
-// ======================================
-echo "<h3>Creating Default Admin User...</h3>";
-
-// Check if any users exist
-$check_users = $conn->query("SELECT COUNT(*) as count FROM users");
-$user_count = $check_users->fetch_assoc()['count'];
-
-if ($user_count == 0) {
-    // Default password: admin123
-    // You MUST change this after first login!
-    $default_username = 'admin';
-    $default_password = password_hash('admin123', PASSWORD_DEFAULT);
-    
-    $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, 'admin')");
-    $stmt->bind_param("ss", $default_username, $default_password);
-    
-    if ($stmt->execute()) {
-        echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>";
-        echo "✅ <strong>Default admin user created successfully!</strong><br>";
-        echo "Username: <strong>admin</strong><br>";
-        echo "Password: <strong>admin123</strong><br>";
-        echo "<span style='color: red;'>⚠️ IMPORTANT: Please change this password after first login!</span>";
-        echo "</div>";
-    } else {
-        echo "<div style='color: red;'>Error creating admin user: " . $stmt->error . "</div>";
-    }
-    $stmt->close();
-} else {
-    echo "<div style='background: #fff3cd; padding: 15px; border: 1px solid #ffeeba; border-radius: 5px; margin: 10px 0;'>";
-    echo "ℹ️ Users already exist in the system ($user_count users). Skipping default user creation.";
-    echo "</div>";
-}
-
-// ======================================
 // INSERT DEFAULT SETTINGS
 // ======================================
 echo "<h3>Configuring Default Settings...</h3>";
@@ -390,15 +355,9 @@ if ($category_count == 0) {
 echo "<br><div style='background: #d1ecf1; padding: 20px; border: 2px solid #bee5eb; border-radius: 5px; margin: 20px 0;'>";
 echo "<h2 style='color: #0c5460; margin-top: 0;'>✅ Installation Complete!</h2>";
 echo "<hr>";
-echo "<h3>Login Credentials:</h3>";
-echo "<p><strong>Username:</strong> admin<br>";
-echo "<strong>Password:</strong> admin123</p>";
-echo "<p style='color: red; font-weight: bold;'>⚠️ IMPORTANT: Please change the default password immediately after logging in!</p>";
-echo "<hr>";
 echo "<h3>What's Next?</h3>";
 echo "<ul>";
 echo "<li>✓ Database and tables created successfully</li>";
-echo "<li>✓ Default admin user created</li>";
 echo "<li>✓ System settings configured</li>";
 echo "<li>✓ Default categories added</li>";
 echo "<li>✓ Business days system ready (supports nullable user_id)</li>";

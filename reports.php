@@ -1,6 +1,10 @@
 <?php
+require_once 'session.php';
+require_once 'db.php';
+
 $page_title = 'التقارير والتحليلات';
 $current_page = 'reports.php';
+
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
@@ -1110,6 +1114,14 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
         }
 
         function updateBusinessDayUI(data) {
+            const userRole = '<?php echo $_SESSION['role']; ?>';
+            const allowedRoles = ['admin', 'manager', 'cashier'];
+            
+            if (!allowedRoles.includes(userRole)) {
+                businessDayControls.innerHTML = '';
+                return;
+            }
+            
             if (data.status === 'open') {
                 businessDayControls.innerHTML = `
                     <button id="end-day-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
