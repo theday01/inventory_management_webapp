@@ -1566,8 +1566,8 @@ function importProducts($conn) {
             'success' => true, 
             'message' => "تم استيراد $insertedCount منتج بنجاح" . (count($errors) > 0 ? ". تم تجاهل " . count($errors) . " صف بسبب أخطاء" : ""),
             'data' => [
-                'inserted' => $insertedCount,
-                'errors' => count($errors),
+                'imported_count' => $insertedCount,
+                'skipped_count' => count($errors),
                 'categories_created' => count($categoriesToCreate)
             ]
         ]);

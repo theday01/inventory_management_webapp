@@ -437,8 +437,9 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                     <div class="h-8 w-px bg-white/10"></div>
 
                     <div class="flex items-center gap-2">
+                        <span class="text-gray-400 text-xs">من</span>
                         <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
-                        <span class="text-gray-500">-</span>
+                        <span class="text-gray-400 text-xs">إلى</span>
                         <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
                         <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
                             <span class="material-icons-round text-sm block">filter_alt</span>

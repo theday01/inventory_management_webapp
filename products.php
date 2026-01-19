@@ -19,6 +19,7 @@ $low_alert = $quantity_settings['low_quantity_alert'] ?? 10;
 $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 ?>
 
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <!-- Main Content -->
 <main class="flex-1 flex flex-col relative overflow-auto">
     <div
@@ -138,6 +139,15 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         <div class="bg-dark-surface rounded-2xl p-8 flex flex-col items-center gap-4 border border-white/10">
             <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             <p class="text-white font-bold text-lg">جاري فحص المخزون...</p>
+        </div>
+    </div>
+
+    <!-- Export Loading Screen -->
+    <div id="export-loading" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+        <div class="bg-dark-surface rounded-2xl p-8 flex flex-col items-center gap-4 border border-white/10">
+            <div class="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-white font-bold text-lg">جاري تصدير ملف Excel...</p>
+            <p class="text-gray-400 text-sm">قد يستغرق هذا بضع ثوانٍ حسب حجم البيانات</p>
         </div>
     </div>
 
@@ -534,9 +544,18 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 </div>
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end gap-4">
-                <button type="button" id="download-template-in-modal-btn" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-xl font-bold transition-all">تحميل نموذج Excel</button>
-                <button type="button" id="preview-import-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2 rounded-xl font-bold transition-all">معاينة البيانات</button>
-                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">استيراد المنتجات</button>
+                <button type="button" id="download-template-in-modal-btn" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2">
+                    <span class="material-icons-round text-sm">download</span>
+                    تحميل نموذج Excel
+                </button>
+                <button type="button" id="preview-import-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2">
+                    <span class="material-icons-round text-sm">visibility</span>
+                    معاينة البيانات
+                </button>
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
+                    <span class="material-icons-round text-sm">upload</span>
+                    استيراد المنتجات
+                </button>
             </div>
         </form>
     </div>
@@ -628,12 +647,57 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+<!-- Export Options Modal -->
+<div id="export-options-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <span class="material-icons-round text-green-500">download</span>
+                خيارات التصدير
+            </h3>
+            <button id="close-export-options-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-300 mb-6">اختر نوع البيانات التي تريد تصديرها إلى ملف Excel:</p>
+            <div class="space-y-3">
+                <button id="export-current-page" class="w-full bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary p-4 rounded-xl transition-all flex items-center gap-3">
+                    <span class="material-icons-round text-primary">table_view</span>
+                    <div class="text-right">
+                        <div class="font-bold">تصدير الصفحة الحالية</div>
+                        <div class="text-sm text-gray-400">تصدير المنتجات المعروضة حالياً فقط (مع الفلاتر المطبقة)</div>
+                    </div>
+                </button>
+                <button id="export-all-products" class="w-full bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 p-4 rounded-xl transition-all flex items-center gap-3">
+                    <span class="material-icons-round text-green-500">inventory_2</span>
+                    <div class="text-right">
+                        <div class="font-bold">تصدير كل المنتجات</div>
+                        <div class="text-sm text-gray-400">تصدير جميع المنتجات بدون استثناء (تجاهل الفلاتر)</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // التحقق من وجود رسالة محفوظة في sessionStorage وعرضها
+        const savedMessage = sessionStorage.getItem('toastMessage');
+        const savedType = sessionStorage.getItem('toastType');
+        if (savedMessage && window.showToast) {
+            // انتظار قليل للتأكد من تحميل الصفحة بالكامل
+            setTimeout(() => {
+                showToast(savedMessage, savedType === 'success');
+                // حذف الرسالة بعد عرضها
+                sessionStorage.removeItem('toastMessage');
+                sessionStorage.removeItem('toastType');
+            }, 500);
+        }
+
     window.loadProducts = loadProducts;
     window.loadStats = loadStats;
     const manageCategoriesBtn = document.getElementById('manage-categories-btn');
@@ -646,6 +710,11 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     const categoryDescriptionInput = document.getElementById('category-description');
     const categoryFieldsInput = document.getElementById('category-fields');
     const cancelCategoryEditBtn = document.getElementById('cancel-category-edit');
+
+    const exportOptionsModal = document.getElementById('export-options-modal');
+    const closeExportOptionsModalBtn = document.getElementById('close-export-options-modal');
+    const exportCurrentPageBtn = document.getElementById('export-current-page');
+    const exportAllProductsBtn = document.getElementById('export-all-products');
 
     const addProductBtn = document.getElementById('add-product-btn');
     const productModal = document.getElementById('product-modal');
@@ -882,14 +951,38 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     }
 
     const exportCsvBtn = document.getElementById('export-csv-btn');
-    exportCsvBtn.addEventListener('click', async () => {
+    exportCsvBtn.addEventListener('click', () => {
+        exportOptionsModal.classList.remove('hidden');
+    });
+
+    closeExportOptionsModalBtn.addEventListener('click', () => {
+        exportOptionsModal.classList.add('hidden');
+    });
+
+    exportCurrentPageBtn.addEventListener('click', () => {
+        performExport(true);
+    });
+
+    exportAllProductsBtn.addEventListener('click', () => {
+        performExport(false);
+    });
+
+    async function performExport(isCurrentPage) {
         try {
-            showLoading('جاري تصدير البيانات...');
-            // إنشاء رابط لتحميل ملف Excel
-            const searchQuery = searchInput.value;
-            const categoryId = categoryFilter.value;
-            const stockStatus = stockStatusFilter.value;
-            const url = `api.php?action=exportProductsExcel&search=${encodeURIComponent(searchQuery)}&category_id=${categoryId}&stock_status=${stockStatus}`;
+            // إظهار شاشة التحميل المخصصة للتصدير
+            document.getElementById('export-loading').classList.remove('hidden');
+            exportOptionsModal.classList.add('hidden');
+            
+            let url = 'api.php?action=exportProductsExcel';
+            
+            if (isCurrentPage) {
+                // تصدير الصفحة الحالية مع الفلاتر
+                const searchQuery = searchInput.value;
+                const categoryId = categoryFilter.value;
+                const stockStatus = stockStatusFilter.value;
+                url += `&search=${encodeURIComponent(searchQuery)}&category_id=${categoryId}&stock_status=${stockStatus}&page=${currentPage}&limit=${productsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
+            }
+            // لكل المنتجات، لا نضيف أي فلاتر
             
             // إنشاء رابط مؤقت وتحميله
             const link = document.createElement('a');
@@ -900,13 +993,17 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             document.body.removeChild(link);
             
             showToast('تم تصدير المنتجات بنجاح', true);
+            
+            // إضافة تأخير قصير قبل إخفاء التحميل لتجنب الإغلاق الفوري
+            setTimeout(() => {
+                document.getElementById('export-loading').classList.add('hidden');
+            }, 1500);
         } catch (error) {
             console.error('خطأ في تصدير Excel:', error);
             showToast('حدث خطأ في تصدير Excel', false);
-        } finally {
-            hideLoading();
+            document.getElementById('export-loading').classList.add('hidden');
         }
-    });
+    }
 
     const printLabelsBtn = document.getElementById('print-labels-btn');
     printLabelsBtn.addEventListener('click', async () => {
@@ -2369,7 +2466,17 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             });
             const result = await response.json();
             if (result.success) {
-                showToast(result.message || 'تم استيراد المنتجات بنجاح', true);
+                // إنشاء رسالة نجاح مخصصة مع عدد المنتجات المضافة
+                let successMessage = 'تم استيراد المنتجات بنجاح';
+                if (result.data && result.data.imported_count !== undefined) {
+                    successMessage += ` - تم إضافة ${result.data.imported_count} منتج`;
+                    if (result.data.skipped_count && result.data.skipped_count > 0) {
+                        successMessage += `، تم تجاهل ${result.data.skipped_count} منتج مكرر`;
+                    }
+                }
+                // حفظ الرسالة في sessionStorage بدلاً من عرضها مباشرة
+                sessionStorage.setItem('toastMessage', successMessage);
+                sessionStorage.setItem('toastType', 'success');
                 importExcelModal.classList.add('hidden');
                 importExcelForm.reset();
                 // Reload the page to refresh all data

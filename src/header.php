@@ -629,7 +629,7 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
     </div>
 
     <script>
-        function showToast(message, isSuccess = true) {
+        window.showToast = function(message, isSuccess = true) {
             const toast = document.getElementById('toast-notification');
             const toastContent = document.getElementById('toast-content');
             const toastMessage = document.getElementById('toast-message');
@@ -656,7 +656,7 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
                 setTimeout(() => {
                     toast.classList.add('pointer-events-none');
                 }, 300);
-            }, 3000);
+            }, 5000);
         }
 
         // Global Loading Functions
