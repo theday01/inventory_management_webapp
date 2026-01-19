@@ -21,44 +21,36 @@ $day_stmt->close();
 $is_day_active = ($current_day !== null);
 
 // --- Date Filter Logic ---
-if ($is_day_active) {
-    $start_date = date('Y-m-d', strtotime($current_day['start_time']));
-    $end_date = date('Y-m-d');
-    $sql_start = $current_day['start_time'];
-    $sql_end = date('Y-m-d H:i:s');
-    $range = 'today';
-} else {
-    $range = $_GET['range'] ?? '30days';
-    $start_date = $_GET['start_date'] ?? '';
-    $end_date = $_GET['end_date'] ?? '';
+$range = $_GET['range'] ?? '30days';
+$start_date = $_GET['start_date'] ?? '';
+$end_date = $_GET['end_date'] ?? '';
 
-    if ($range == 'custom' && !empty($start_date) && !empty($end_date)) {
-        // Custom range is set
+if ($range == 'custom' && !empty($start_date) && !empty($end_date)) {
+    // Custom range is set
+} else {
+    // Default ranges
+    $end_date = date('Y-m-d');
+    if ($range == 'today') {
+        $start_date = date('Y-m-d');
+    } elseif ($range == 'yesterday') {
+        $start_date = date('Y-m-d', strtotime('-1 day'));
+        $end_date = date('Y-m-d', strtotime('-1 day'));
+    } elseif ($range == '7days') {
+        $start_date = date('Y-m-d', strtotime('-7 days'));
+    } elseif ($range == 'this_month') {
+        $start_date = date('Y-m-01');
+    } elseif ($range == 'last_month') {
+        $start_date = date('Y-m-d', strtotime('first day of last month'));
+        $end_date = date('Y-m-d', strtotime('last day of last month'));
     } else {
-        // Default ranges
-        $end_date = date('Y-m-d');
-        if ($range == 'today') {
-            $start_date = date('Y-m-d');
-        } elseif ($range == 'yesterday') {
-            $start_date = date('Y-m-d', strtotime('-1 day'));
-            $end_date = date('Y-m-d', strtotime('-1 day'));
-        } elseif ($range == '7days') {
-            $start_date = date('Y-m-d', strtotime('-7 days'));
-        } elseif ($range == 'this_month') {
-            $start_date = date('Y-m-01');
-        } elseif ($range == 'last_month') {
-            $start_date = date('Y-m-d', strtotime('first day of last month'));
-            $end_date = date('Y-m-d', strtotime('last day of last month'));
-        } else {
-            // Default 30 days
-            $range = '30days';
-            $start_date = date('Y-m-d', strtotime('-30 days'));
-        }
+        // Default 30 days
+        $range = '30days';
+        $start_date = date('Y-m-d', strtotime('-30 days'));
     }
-    // SQL Time Range
-    $sql_start = $start_date . " 00:00:00";
-    $sql_end = $end_date . " 23:59:59";
 }
+// SQL Time Range
+$sql_start = $start_date . " 00:00:00";
+$sql_end = $end_date . " 23:59:59";
 
 // --- Data Fetching ---
 
@@ -422,31 +414,33 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
             <div class="flex items-center gap-4">
             <?php if ($is_day_active): ?>
                 <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm">
-                    يتم عرض بيانات يوم العمل الحالي.
+                    يوم عمل نشط حاليا.
                 </div>
-            <?php else: ?>
-                <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg">
-                    <div class="flex gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
-                        <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>">اليوم</button>
-                        <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>">أمس</button>
-                        <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>">7 أيام</button>
-                        <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '30days' ? 'active' : ''; ?>">30 يوم</button>
-                        <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>">شهر</button>
-                    </div>
-                    
-                    <div class="h-8 w-px bg-white/10"></div>
-
-                    <div class="flex items-center gap-2">
-                        <span class="text-gray-400 text-xs">من</span>
-                        <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
-                        <span class="text-gray-400 text-xs">إلى</span>
-                        <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
-                        <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
-                            <span class="material-icons-round text-sm block">filter_alt</span>
-                        </button>
-                    </div>
-                </form>
             <?php endif; ?>
+            <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg">
+                <div class="flex gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
+                    <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>">اليوم</button>
+                    <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>">أمس</button>
+                    <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>">7 أيام</button>
+                    <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '30days' ? 'active' : ''; ?>">30 يوم</button>
+                    <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>">شهر</button>
+                </div>
+                
+                <div class="h-8 w-px bg-white/10"></div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs">من</span>
+                    <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                    <span class="text-gray-400 text-xs">إلى</span>
+                    <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                    <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
+                        <span class="material-icons-round text-sm block">filter_alt</span>
+                    </button>
+                </div>
+            </form>
+            <button id="view-summary-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                عرض ملخص الفترة
+            </button>
             <div id="business-day-controls"></div>
             </div>
         </div>
@@ -891,6 +885,43 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
             }
         }
 
+        async function handleViewSummary() {
+            try {
+                const startDate = document.querySelector('input[name="start_date"]').value;
+                const endDate = document.querySelector('input[name="end_date"]').value;
+                const url = `api.php?action=get_period_summary&start_date=${startDate}&end_date=${endDate}`;
+
+                const response = await fetch(url, { method: 'GET' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    const summary = result.data.summary;
+                    const summaryTitle = document.querySelector('#end-day-modal h2');
+                    summaryTitle.textContent = `ملخص الفترة من ${summary.start_date} إلى ${summary.end_date}`;
+                    daySummaryContainer.innerHTML = `
+                        <div class="space-y-3">
+                            <p class="text-right"><strong class="text-green-400">إجمالي المبيعات:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
+                            <hr class="border-gray-600 my-3">
+                            <p class="text-right"><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
+                            <p class="text-right text-xl font-bold mt-4 text-green-400">صافي الربح: ${formatNumber(summary.total_profit)} ${currency}</p>
+                        </div>
+                    `;
+                    endDayModal.classList.remove('hidden');
+                } else {
+                    throw new Error(result.message || 'حدث خطأ أثناء جلب ملخص اليوم');
+                }
+            } catch (error) {
+                console.error('Error details:', error);
+                Swal.fire({
+                    title: '!حدث خطأ',
+                    text: error.message || 'حدث خطأ غير متوقع',
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'حسناً'
+                });
+            }
+        }
+
         loadDashboardStats();
 
         // --- Main Sales Chart ---
@@ -1105,6 +1136,8 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
         const openingBalanceInput = document.getElementById('opening-balance');
         const daySummaryContainer = document.getElementById('day-summary');
 
+        document.getElementById('view-summary-btn').addEventListener('click', handleViewSummary);
+        
         async function checkBusinessDayStatus() {
             const response = await fetch('api.php?action=get_business_day_status');
             const result = await response.json();
@@ -1125,9 +1158,11 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
             
             if (data.status === 'open') {
                 businessDayControls.innerHTML = `
-                    <button id="end-day-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
-                        إنهاء اليوم
-                    </button>`;
+                    <div class="flex items-center gap-2">
+                        <button id="end-day-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                            إنهاء اليوم
+                        </button>
+                    </div>`;
                 document.getElementById('end-day-btn').addEventListener('click', handleEndDay);
             } else {
                 businessDayControls.innerHTML = `

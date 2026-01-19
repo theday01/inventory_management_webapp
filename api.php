@@ -185,6 +185,9 @@ switch ($action) {
     case 'end_day':
         end_day($conn);
         break;
+    case 'get_period_summary':
+        get_period_summary($conn);
+        break;
     case 'updateShopLogo':
         updateShopLogo($conn);
         break;
@@ -409,6 +412,55 @@ function extend_day($conn) {
         sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
     }
 }
+
+function get_period_summary($conn) {
+    try {
+        $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-d');
+        $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
+        
+        $sql_start = $start_date . " 00:00:00";
+        $sql_end = $end_date . " 23:59:59";
+
+        // Calculate sales during the period
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales FROM invoices WHERE created_at BETWEEN ? AND ?");
+        $stmt->bind_param("ss", $sql_start, $sql_end);
+        $stmt->execute();
+        $total_sales = floatval($stmt->get_result()->fetch_assoc()['total_sales']);
+        $stmt->close();
+        
+        // Calculate total cost of goods sold
+        $stmt = $conn->prepare("
+            SELECT COALESCE(SUM(ii.cost * ii.quantity), 0) as total_cogs
+            FROM invoice_items ii
+            JOIN invoices i ON ii.invoice_id = i.id
+            WHERE i.created_at BETWEEN ? AND ?
+        ");
+        $stmt->bind_param("ss", $sql_start, $sql_end);
+        $stmt->execute();
+        $total_cogs = floatval($stmt->get_result()->fetch_assoc()['total_cogs']);
+        $stmt->close();
+
+        $total_profit = $total_sales - $total_cogs;
+
+        $summary = [
+            'total_sales' => $total_sales,
+            'total_cogs' => $total_cogs,
+            'total_profit' => $total_profit,
+            'start_date' => $start_date,
+            'end_date' => $end_date
+        ];
+        
+        sendJsonResponse([
+            'success' => true, 
+            'message' => 'تم جلب ملخص الفترة بنجاح', 
+            'data' => ['summary' => $summary]
+        ]);
+        
+    } catch (Exception $e) {
+        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+    }
+}
+
 
 // Also update the end_day function for consistency:
 function end_day($conn) {
