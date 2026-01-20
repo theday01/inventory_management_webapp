@@ -806,6 +806,92 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                 </div>
             </div>
         </div>
+
+        <!-- New Sections: Period Summary and Tips -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+            <!-- Period Summary Section -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <span class="material-icons-round text-blue-500">summarize</span>
+                    عرض ملخص الفترة
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
+                        <span class="text-gray-400">إجمالي المبيعات</span>
+                        <span class="text-green-400 font-bold text-lg"><?php echo number_format($total_revenue, 2); ?> <?php echo $currency; ?></span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
+                        <span class="text-gray-400">إجمالي تكلفة البضاعة</span>
+                        <span class="text-red-400 font-bold text-lg"><?php echo number_format($total_cogs, 2); ?> <?php echo $currency; ?></span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
+                        <span class="text-gray-400">صافي الربح</span>
+                        <span class="text-primary font-bold text-xl"><?php echo number_format($gross_profit, 2); ?> <?php echo $currency; ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips Section -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <span class="material-icons-round text-yellow-500">lightbulb</span>
+                    نصائح
+                </h3>
+                <div class="space-y-4">
+                    <?php
+                    $tips = [];
+
+                    // Tip 1: Based on profit margin
+                    if ($profit_margin < 10) {
+                        $tips[] = "هامش الربح منخفض (% " . number_format($profit_margin, 1) . "). ركز على زيادة الأسعار أو تقليل التكاليف لتحسين الربحية.";
+                    } elseif ($profit_margin > 30) {
+                        $tips[] = "هامش الربح جيد (% " . number_format($profit_margin, 1) . "). استمر في الحفاظ على هذا المستوى من خلال مراقبة التكاليف.";
+                    } else {
+                        $tips[] = "هامش الربح متوسط (% " . number_format($profit_margin, 1) . "). يمكن تحسينه من خلال تحسين هيكل التسعير.";
+                    }
+
+                    // Tip 2: Based on average order value
+                    if ($avg_order_value < 50) {
+                        $tips[] = "متوسط قيمة الطلب منخفض (" . number_format($avg_order_value, 2) . " " . $currency . "). شجع العملاء على شراء المزيد من خلال عروض البيع بالجملة.";
+                    } elseif ($avg_order_value > 200) {
+                        $tips[] = "متوسط قيمة الطلب ممتاز (" . number_format($avg_order_value, 2) . " " . $currency . "). ركز على جذب المزيد من هؤلاء العملاء.";
+                    }
+
+                    // Tip 3: Based on unique customers
+                    if ($unique_customers < 10) {
+                        $tips[] = "عدد العملاء الفريدين قليل (" . $unique_customers . "). ركز على حملات التسويق لجذب عملاء جدد.";
+                    } elseif ($unique_customers > 50) {
+                        $tips[] = "لديك قاعدة عملاء جيدة (" . $unique_customers . " عميل فريد). ركز على الاحتفاظ بالعملاء الحاليين.";
+                    }
+
+                    // Tip 4: Based on daily averages
+                    if ($avg_daily_orders < 5) {
+                        $tips[] = "متوسط الطلبات اليومية منخفض (" . number_format($avg_daily_orders, 1) . "). فكر في زيادة الترويج أو توسيع ساعات العمل.";
+                    }
+
+                    // Tip 5: Based on top products
+                    if (isset($top_products) && $top_products->num_rows > 0) {
+                        $top_products->data_seek(0);
+                        $top_prod = $top_products->fetch_assoc();
+                        $tips[] = "المنتج الأكثر مبيعاً: '" . htmlspecialchars($top_prod['name']) . "'. ركز على التسويق لهذا المنتج.";
+                    }
+
+                    // If no specific tips, add a general one
+                    if (empty($tips)) {
+                        $tips[] = "استمر في مراقبة أداء متجرك بانتظام. البيانات الحالية تبدو جيدة.";
+                    }
+
+                    // Display up to 3 tips
+                    $display_tips = array_slice($tips, 0, 3);
+                    foreach ($display_tips as $tip) {
+                        echo '<div class="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                                <p class="text-yellow-200 text-sm leading-relaxed">' . $tip . '</p>
+                              </div>';
+                    }
+                    ?>
+                </div>
+            </div>
+        </div>
         
     </div>
 </main>

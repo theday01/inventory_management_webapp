@@ -430,9 +430,10 @@ function get_period_summary($conn) {
         
         // Calculate total cost of goods sold
         $stmt = $conn->prepare("
-            SELECT COALESCE(SUM(ii.cost * ii.quantity), 0) as total_cogs
+            SELECT COALESCE(SUM(ii.quantity * COALESCE(p.cost_price, 0)), 0) as total_cogs
             FROM invoice_items ii
             JOIN invoices i ON ii.invoice_id = i.id
+            LEFT JOIN products p ON ii.product_id = p.id
             WHERE i.created_at BETWEEN ? AND ?
         ");
         $stmt->bind_param("ss", $sql_start, $sql_end);
