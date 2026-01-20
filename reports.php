@@ -12,6 +12,10 @@ require_once 'src/sidebar.php';
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 
+// Fetch Home City
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'deliveryHomeCity'");
+$home_city = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
 // --- Check for Active Business Day ---
 $day_stmt = $conn->prepare("SELECT * FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
 $day_stmt->execute();
@@ -229,6 +233,44 @@ $slowest_day = $slowest_day_result->fetch_assoc();
 $slowest_day_formatted = $slowest_day ? date('Y-m-d', strtotime($slowest_day['sale_date'])) : 'لا توجد بيانات';
 $slowest_day_orders = $slowest_day ? $slowest_day['order_count'] : 0;
 $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
+
+// 9. Orders Outside Home City
+$outside_city_orders = 0;
+if (!empty($home_city)) {
+    $sql_outside_city_orders = "
+        SELECT COUNT(DISTINCT i.id) as outside_city_orders
+        FROM invoices i
+        LEFT JOIN customers c ON i.customer_id = c.id
+        WHERE i.created_at BETWEEN ? AND ?
+        AND c.city != ?
+    ";
+    $stmt = $conn->prepare($sql_outside_city_orders);
+    $stmt->bind_param("sss", $sql_start, $sql_end, $home_city);
+    $stmt->execute();
+    $outside_city_result = $stmt->get_result();
+    $outside_city_orders = $outside_city_result ? $outside_city_result->fetch_assoc()['outside_city_orders'] : 0;
+    $stmt->close();
+}
+
+// 10. Top City by Orders
+$sql_top_city = "
+    SELECT c.city, COUNT(DISTINCT i.id) as order_count
+    FROM invoices i
+    LEFT JOIN customers c ON i.customer_id = c.id
+    WHERE i.created_at BETWEEN ? AND ?
+    AND c.city IS NOT NULL AND c.city != ''
+    GROUP BY c.city
+    ORDER BY order_count DESC
+    LIMIT 1
+";
+$stmt = $conn->prepare($sql_top_city);
+$stmt->bind_param("ss", $sql_start, $sql_end);
+$stmt->execute();
+$top_city_result = $stmt->get_result();
+$top_city = $top_city_result ? $top_city_result->fetch_assoc() : null;
+$top_city_name = $top_city ? $top_city['city'] : 'لا توجد بيانات';
+$top_city_orders = $top_city ? $top_city['order_count'] : 0;
+$stmt->close();
 
 ?>
 
@@ -549,6 +591,33 @@ $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
                 <p class="text-sm text-gray-400 font-medium mb-1">تكاليف التوصيل المحصلة</p>
                 <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($total_delivery, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
                 <p class="text-xs text-gray-500 mt-4">إجمالي رسوم التوصيل</p>
+            </div>
+        </div>
+
+        <!-- Additional Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="glass-card p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <span class="material-icons-round text-6xl text-red-500">location_off</span>
+                </div>
+                <p class="text-sm text-gray-400 font-medium mb-1">عدد الطلبات خارج المدينة</p>
+                <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($outside_city_orders); ?></h3>
+                <div class="mt-4 flex items-center text-xs text-red-400 bg-red-500/10 w-fit px-2 py-1 rounded-full border border-red-500/10">
+                    <span class="material-icons-round text-sm mr-1">location_on</span>
+                    <span>المدينة الرئيسية: <?php echo htmlspecialchars($home_city ?: 'غير محددة'); ?></span>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <span class="material-icons-round text-6xl text-cyan-500">location_city</span>
+                </div>
+                <p class="text-sm text-gray-400 font-medium mb-1">المدينة الأكثر طلباً</p>
+                <h3 class="text-3xl font-bold text-white stat-value"><?php echo htmlspecialchars($top_city_name); ?></h3>
+                <div class="mt-4 flex items-center text-xs text-cyan-400 bg-cyan-500/10 w-fit px-2 py-1 rounded-full border border-cyan-500/10">
+                    <span class="material-icons-round text-sm mr-1">shopping_cart</span>
+                    <span><?php echo number_format($top_city_orders); ?> طلب</span>
+                </div>
             </div>
         </div>
 

@@ -35,8 +35,7 @@
         margin-left: auto;
         margin-right: auto;
         
-        /* هذا هو السطر المهم جداً للإصلاح */
-        direction: ltr !important; 
+        /* اتجاه يُحدد ديناميكياً */
     }
     .vk-row { display: flex; justify-content: center; gap: 6px; width: 100%; }
     
@@ -211,11 +210,25 @@ document.addEventListener('DOMContentLoaded', function() {
         ['q','s','d','f','g','h','j','k','l','m'],
         ['w','x','c','v','b','n']
     ];
+    // Numeric Layout
+    const layoutNum = [
+        ['1','2','3'],
+        ['4','5','6'],
+        ['7','8','9'],
+        ['0','.','-']
+    ];
 
     // --- 3. Render Function ---
     function renderKeyboard() {
         keysContainer.innerHTML = '';
-        const layout = currentLayout === 'ar' ? layoutAr : layoutEn;
+        let layout;
+        if (activeInput && activeInput.type === 'number') {
+            layout = layoutNum;
+            keysContainer.style.direction = 'ltr'; // Numbers left to right
+        } else {
+            layout = currentLayout === 'ar' ? layoutAr : layoutEn;
+            keysContainer.style.direction = 'rtl'; // Arabic right to left
+        }
         
         // Theme Application
         container.className = `fixed bottom-0 left-0 w-full z-[9999] transform translate-y-full transition-transform duration-300 ease-in-out hidden vk-size-${vkSettings.size}`;
@@ -230,12 +243,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const rowDiv = document.createElement('div');
             rowDiv.className = 'vk-row';
             
-            // Add Row Specific Special Keys (Shift, Tab)
-            if(rowIndex === 1) { // Tab
-                 // Simplified: No Tab for mobile/touch optimization, just letters
-            }
-            if(rowIndex === 2 && currentLayout === 'en') { // Caps
-                // Check layout specifics
+            // Add Row Specific Special Keys (Shift, Tab) - only for text layouts
+            if (layout !== layoutNum) {
+                if(rowIndex === 1) { // Tab
+                     // Simplified: No Tab for mobile/touch optimization, just letters
+                }
+                if(rowIndex === 2 && currentLayout === 'en') { // Caps
+                    // Check layout specifics
+                }
             }
             
             row.forEach(char => {
@@ -251,13 +266,19 @@ document.addEventListener('DOMContentLoaded', function() {
             keysContainer.appendChild(rowDiv);
         });
 
-        // Bottom Row (Space, Shift, etc)
+        // Bottom Row (Space, Shift, etc) - only for text layouts
         const bottomRow = document.createElement('div');
         bottomRow.className = 'vk-row';
         
-        bottomRow.appendChild(createSpecialKey('arrow_upward', 'shift'));
-        bottomRow.appendChild(createSpecialKey('space_bar', 'space'));
-        bottomRow.appendChild(createSpecialKey('language', 'lang'));
+        if (layout === layoutNum) {
+            // For numeric, just space and backspace or something simple
+            bottomRow.appendChild(createSpecialKey('space_bar', 'space'));
+            bottomRow.appendChild(createSpecialKey('keyboard_return', 'enter'));
+        } else {
+            bottomRow.appendChild(createSpecialKey('arrow_upward', 'shift'));
+            bottomRow.appendChild(createSpecialKey('space_bar', 'space'));
+            bottomRow.appendChild(createSpecialKey('language', 'lang'));
+        }
         
         keysContainer.appendChild(bottomRow);
     }
@@ -265,9 +286,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function createKey(char) {
         const btn = document.createElement('div');
         btn.className = 'vk-key';
-        // Handle Shift Case
+        // Handle Shift Case - only for text layouts
         let displayChar = char;
-        if(currentLayout === 'en' && isShift) displayChar = char.toUpperCase();
+        if (activeInput && activeInput.type !== 'number' && currentLayout === 'en' && isShift) displayChar = char.toUpperCase();
         
         btn.textContent = displayChar;
         btn.onclick = (e) => handleKeyPress(e, displayChar);
@@ -349,11 +370,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if(type === 'shift') {
+            if (activeInput && activeInput.type === 'number') return; // No shift for numbers
             isShift = !isShift;
             renderKeyboard();
         }
         
         if(type === 'lang') {
+            if (activeInput && activeInput.type === 'number') return; // No lang switch for numbers
             currentLayout = currentLayout === 'ar' ? 'en' : 'ar';
             langBtn.textContent = currentLayout.toUpperCase();
             renderKeyboard();
@@ -399,6 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'search' || target.type === 'email' || target.type === 'number')) {
             // Only auto-show if configured, otherwise user must click toggle
             activeInput = target;
+            renderKeyboard(); // Re-render to match input type
             
             // Specific check for search inputs or general Inputs
             if(vkSettings.autoSearch) {
@@ -406,6 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else if (target.tagName === 'TEXTAREA') {
             activeInput = target;
+            renderKeyboard(); // Re-render for text
             if(vkSettings.autoSearch) showKeyboard();
         }
     });
