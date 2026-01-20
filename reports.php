@@ -12,6 +12,16 @@ require_once 'src/sidebar.php';
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 
+// Check first login
+$user_id = $_SESSION['id'];
+$stmt = $conn->prepare("SELECT first_login FROM users WHERE id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+$show_welcome = !$user['first_login'];
+$stmt->close();
+
 // Fetch Home City
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'deliveryHomeCity'");
 $home_city = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
@@ -1524,5 +1534,110 @@ $stmt->close();
         checkBusinessDayStatus();
     });
 </script>
+
+<?php if ($show_welcome): ?>
+<!-- Welcome Modal -->
+<div id="welcome-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-dark-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-8">
+            <!-- Header -->
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-icons-round text-3xl text-accent">celebration</span>
+                </div>
+                <h2 class="text-3xl font-bold text-white mb-2">🎉 مرحباً بك في Smart Shop!</h2>
+                <p class="text-gray-400">نحن سعداء بانضمامك إلى عائلتنا</p>
+            </div>
+
+            <!-- Content -->
+            <div class="space-y-6 text-right">
+                <div class="bg-primary/10 border border-primary/20 rounded-xl p-6">
+                    <h3 class="text-xl font-semibold text-primary mb-3">شكراً لاختيارك Smart Shop</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        نظام Smart Shop هو حل شامل لإدارة متجرك بكفاءة واحترافية. يساعدك في إدارة المنتجات، تتبع المخزون، إدارة العملاء، إنشاء الفواتير، وتحليل الأداء المالي.
+                    </p>
+                </div>
+
+                <div class="bg-accent/10 border border-accent/20 rounded-xl p-6">
+                    <h3 class="text-xl font-semibold text-accent mb-3">ما يمكنك فعله مع النظام</h3>
+                    <ul class="text-gray-300 space-y-2">
+                        <li class="flex items-center gap-3">
+                            <span class="material-icons-round text-accent text-lg">check_circle</span>
+                            إدارة شاملة للمنتجات والمخزون
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="material-icons-round text-accent text-lg">check_circle</span>
+                            تتبع العملاء وتاريخ المشتريات
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="material-icons-round text-accent text-lg">check_circle</span>
+                            إنشاء فواتير احترافية وتتبع المبيعات
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="material-icons-round text-accent text-lg">check_circle</span>
+                            تقارير مفصلة وتحليلات مالية
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="material-icons-round text-accent text-lg">check_circle</span>
+                            نظام نقاط البيع المتطور
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-6">
+                    <h3 class="text-xl font-semibold text-yellow-400 mb-3">⚠️ خطوة مهمة قبل البدء</h3>
+                    <p class="text-gray-300 leading-relaxed mb-4">
+                        للحصول على أفضل أداء وتخصيص النظام حسب احتياجات متجرك، يرجى الذهاب إلى صفحة الإعدادات وتعديل البيانات التالية:
+                    </p>
+                    <ul class="text-gray-300 space-y-1 text-sm">
+                        <li>• العملة المستخدمة في المتجر</li>
+                        <li>• إعدادات الضرائب والرسوم</li>
+                        <li>• معلومات التوصيل والمدن</li>
+                        <li>• إعدادات الإشعارات والتنبيهات</li>
+                        <li>• شعار المتجر والبيانات الأساسية</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-4 mt-8">
+                <button id="welcome-close" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5">
+                    فهمت، سأذهب لاحقاً
+                </button>
+                <a href="settings.php" class="flex-1 bg-primary hover:bg-primary-hover text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5 text-center">
+                    اذهب إلى الإعدادات الآن
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const welcomeModal = document.getElementById('welcome-modal');
+    const welcomeClose = document.getElementById('welcome-close');
+
+    // Close modal and update first_login
+    welcomeClose.addEventListener('click', function() {
+        fetch('api.php?action=update_first_login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                welcomeModal.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            welcomeModal.style.display = 'none';
+        });
+    });
+});
+</script>
+<?php endif; ?>
 
 <?php require_once 'src/footer.php'; ?>

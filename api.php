@@ -191,6 +191,9 @@ switch ($action) {
     case 'updateShopLogo':
         updateShopLogo($conn);
         break;
+    case 'update_first_login':
+        updateFirstLogin($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -2906,6 +2909,18 @@ function calculateNextPaymentDate($currentDate, $rentalType) {
     }
     
     return $date->format('Y-m-d');
+}
+
+function updateFirstLogin($conn) {
+    $user_id = $_SESSION['id'];
+    $stmt = $conn->prepare("UPDATE users SET first_login = TRUE WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'فشل في التحديث']);
+    }
+    $stmt->close();
 }
 
 if (ob_get_length()) ob_end_flush();

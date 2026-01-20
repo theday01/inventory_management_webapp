@@ -35,6 +35,7 @@ $sql_users = "CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(30) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role ENUM('admin', 'cashier') NOT NULL DEFAULT 'cashier',
+    first_login BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
@@ -192,6 +193,14 @@ foreach ($tables as $name => $sql) {
     } else {
         echo "<div style='color: red;'>✗ Error creating table '$name': " . $conn->error . "</div>";
     }
+}
+
+// Add first_login column if not exists
+$alter_users = "ALTER TABLE users ADD COLUMN IF NOT EXISTS first_login BOOLEAN DEFAULT FALSE";
+if ($conn->query($alter_users) === TRUE) {
+    echo "<div style='color: green;'>✓ Column 'first_login' added to users table.</div>";
+} else {
+    echo "<div style='color: orange;'>⚠ Warning: " . $conn->error . "</div>";
 }
 
 // ======================================
