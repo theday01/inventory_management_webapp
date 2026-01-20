@@ -57,6 +57,9 @@ $lowAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc()['se
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'critical_quantity_alert'");
 $criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc()['setting_value'] : 5;
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'printMode'");
+$printMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'normal';
 ?>
 
 <style>
@@ -647,6 +650,112 @@ html:not(.dark) .text-red-500 {
     header{
         background-color: #171d27;
     }
+
+/* CSS for Thermal Invoice Modal */
+#thermal-invoice-print-area {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #000;
+    background: white;
+    padding: 10px;
+    max-width: 80mm;
+    margin: 0 auto;
+}
+
+#thermal-invoice-print-area .header {
+    text-align: center;
+    margin-bottom: 5mm;
+    border-bottom: 2px dashed #000;
+    padding-bottom: 3mm;
+}
+
+#thermal-invoice-print-area .shop-name {
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 1mm;
+}
+
+#thermal-invoice-print-area .shop-info {
+    font-size: 9pt;
+    color: #333;
+    margin: 1mm 0;
+}
+
+#thermal-invoice-print-area .invoice-info {
+    margin: 3mm 0;
+    border-bottom: 1px dashed #000;
+    padding-bottom: 2mm;
+}
+
+#thermal-invoice-print-area .info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10pt;
+    margin: 1mm 0;
+}
+
+#thermal-invoice-print-area .customer-section {
+    margin: 3mm 0;
+    padding: 2mm;
+    background: #f5f5f5;
+    border-radius: 2mm;
+    font-size: 10pt;
+}
+
+#thermal-invoice-print-area .items-table {
+    width: 100%;
+    margin: 3mm 0;
+}
+
+#thermal-invoice-print-area .items-header {
+    border-top: 2px solid #000;
+    border-bottom: 1px solid #000;
+    padding: 1mm 0;
+    font-weight: bold;
+    font-size: 10pt;
+}
+
+#thermal-invoice-print-area .item-row {
+    border-bottom: 1px dashed #ccc;
+    padding: 2mm 0;
+    font-size: 10pt;
+}
+
+#thermal-invoice-print-area .item-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+}
+
+#thermal-invoice-print-area .totals-section {
+    margin: 3mm 0;
+    border-top: 2px solid #000;
+    padding-top: 2mm;
+}
+
+#thermal-invoice-print-area .total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11pt;
+    margin: 1mm 0;
+}
+
+#thermal-invoice-print-area .grand-total {
+    font-size: 14pt;
+    font-weight: bold;
+    border-top: 2px solid #000;
+    padding-top: 2mm;
+    margin-top: 2mm;
+}
+
+#thermal-invoice-print-area .footer {
+    text-align: center;
+    margin-top: 5mm;
+    border-top: 2px dashed #000;
+    padding-top: 3mm;
+    font-size: 10pt;
+}
 </style>
 
 <!-- Main Content -->
@@ -972,6 +1081,32 @@ html:not(.dark) .text-red-500 {
     </div>
 </div>
 
+<!-- Thermal Invoice Modal -->
+<div id="thermal-invoice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs mx-auto overflow-hidden flex flex-col" style="max-height: 90vh;">
+        <div class="bg-dark-surface border-b border-white/5 p-4 flex items-center justify-between shrink-0">
+            <h2 class="text-lg font-bold text-white">طباعة حرارية</h2>
+            <button id="close-thermal-invoice-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 bg-white">
+            <div id="thermal-invoice-print-area" class="text-black text-xs leading-tight font-mono" dir="rtl">
+                <!-- Thermal invoice content will be populated here -->
+            </div>
+        </div>
+        <div class="bg-dark-surface border-t border-white/5 p-4 flex gap-2 shrink-0">
+            <button id="print-thermal-btn" class="flex-1 bg-primary hover:bg-primary-hover text-white py-2 px-4 rounded-lg font-bold transition-all flex items-center justify-center gap-2">
+                <span class="material-icons-round text-sm">print</span>
+                طباعة
+            </button>
+            <button id="close-thermal-modal-btn" class="bg-gray-600 hover:bg-gray-500 text-white py-2 px-4 rounded-lg font-bold transition-all">
+                إغلاق
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Quantity Modal -->
 <div id="quantity-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-sm border border-white/10 m-4">
@@ -1114,6 +1249,7 @@ html:not(.dark) .text-red-500 {
 
 <script>
     const soundNotificationsEnabled = <?php echo ($soundEnabled == '1') ? 'true' : 'false'; ?>;
+    const printMode = '<?php echo $printMode; ?>';
     
     // Custom Confirmation Modal Function
     function showConfirm(message) {
@@ -1269,6 +1405,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const invoiceModal = document.getElementById('invoice-modal');
     const closeInvoiceModal = document.getElementById('close-invoice-modal');
+    const thermalInvoiceModal = document.getElementById('thermal-invoice-modal');
+    const closeThermalInvoiceModal = document.getElementById('close-thermal-invoice-modal');
     const printInvoiceBtn = document.getElementById('print-invoice-btn');
     const thermalPrintBtn = document.getElementById('thermal-print-btn');
     const downloadPdfBtn = document.getElementById('download-pdf-btn');
@@ -2080,7 +2218,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 // تحديث المنتجات فوراً بعد البيع الناجح
                 loadProducts();
                 
-                invoiceModal.classList.remove('hidden');
+                if (printMode === 'thermal') {
+                    thermalInvoiceModal.classList.remove('hidden');
+                    displayThermalInvoice(currentInvoiceData);
+                } else {
+                    invoiceModal.classList.remove('hidden');
+                }
             } else {
                 showToast(result.message || 'فشل في إنشاء الفاتورة', false);
             }
@@ -2328,11 +2471,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // --- NEW CODE END ---
     }
 
-    // دالة الطباعة الحرارية
-    function printThermal() {
-        if (!currentInvoiceData) return;
-
-        const invoiceDate = currentInvoiceData.date;
+    function generateThermalContent(data) {
+        const invoiceDate = data.date;
         const formattedDate = formatDualDate(invoiceDate);
         const formattedTime = toEnglishNumbers(invoiceDate.toLocaleTimeString('ar-SA', { 
             hour: '2-digit', 
@@ -2340,14 +2480,128 @@ document.addEventListener('DOMContentLoaded', function () {
             hour12: false 
         }));
 
-        // --- تصحيح: معالجة النص قبل فتح القالب النصي ---
         let locationText = '';
         if(shopCity) locationText += shopCity;
         if(shopCity && shopAddress) locationText += '، ';
         if(shopAddress) locationText += shopAddress;
-        // ---------------------------------------------
 
-        let thermalContent = `<!DOCTYPE html>
+        let thermalContent = `
+    <div class="header">
+        <div class="shop-name">${shopName}</div>
+        ${shopPhone ? `<div class="shop-info">📞 ${shopPhone}</div>` : ''}
+        ${locationText ? `<div class="shop-info">📍 ${locationText}</div>` : ''}
+    </div>
+
+    <div class="invoice-info">
+        <div class="info-row"><span>رقم الفاتورة:</span><span>#${String(data.id).padStart(6, '0')}</span></div>
+        <div class="info-row"><span>التاريخ:</span><span>${formattedDate}</span></div>
+        <div class="info-row"><span>الوقت:</span><span>${formattedTime}</span></div>
+    </div>
+
+    ${data.customer ? `
+    <div class="customer-section">
+        <div style="font-weight: bold;">العميل: ${data.customer.name}</div>
+        ${data.customer.phone ? `<div>${data.customer.phone}</div>` : ''}
+    </div>
+    ` : `
+    <div class="customer-section">
+        <div>💵 عميل نقدي</div>
+    </div>
+    `}
+
+    <div class="items-table">
+        <div class="items-header">المنتجات (${data.items.length})</div>`;
+
+        data.items.forEach((item, index) => {
+            const itemTotal = item.price * item.quantity;
+            thermalContent += `
+        <div class="item-row">
+            <div style="font-weight:bold">${index + 1}. ${item.name}</div>
+            <div class="item-details">
+                <span>${item.quantity} × ${parseFloat(item.price).toFixed(2)}</span>
+                <span style="font-weight: bold;">${itemTotal.toFixed(2)} ${currency}</span>
+            </div>
+        </div>`;
+        });
+
+        thermalContent += `</div>
+            <div class="totals-section">
+                <div class="total-row"><span>المجموع:</span><span>${data.subtotal.toFixed(2)} ${currency}</span></div>`;
+
+        if (taxEnabled) {
+            thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${data.tax.toFixed(2)} ${currency}</span></div>`;
+        }
+        if (data.delivery > 0) {
+            thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${data.delivery.toFixed(2)} ${currency}</span></div>`;
+            if (data.deliveryCity) {
+            thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${data.deliveryCity}</span></div>`;
+        }
+    }
+    
+    if (data.discount_amount && data.discount_amount > 0) {
+        thermalContent += `<div class="total-row"><span>الخصم:</span><span>-${data.discount_amount.toFixed(2)} ${currency}</span></div>`;
+    }
+
+    thermalContent += `
+        <div class="total-row grand-total"><span>الإجمالي:</span><span>${data.total.toFixed(2)} ${currency}</span></div>`;
+
+    const recVal = data.amount_received || data.amountReceived || 0;
+    const chgVal = data.change_due || data.changeDue || 0;
+
+    if (recVal > 0) {
+        thermalContent += `
+        <div class="total-row" style="border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm;">
+            <span>المبلغ المستلم:</span>
+            <span>${parseFloat(recVal).toFixed(2)} ${currency}</span>
+        </div>
+        <div class="total-row">
+            <span>المبلغ الذي تم رده:</span>
+            <span>${parseFloat(chgVal).toFixed(2)} ${currency}</span>
+        </div>`;
+    }
+
+    thermalContent += `
+    </div>
+
+    <div style="text-align: center; margin: 5mm 0;">
+        <svg id="barcode-thermal-display"></svg>
+    </div>
+
+    <div class="footer">
+        <div style="font-weight: bold; margin-bottom: 2mm;">🌟 شكراً لثقتكم بنا 🌟</div>
+        ${shopName ? `<div>${shopName}</div>` : ''}
+    </div>`;
+
+        return thermalContent;
+    }
+
+    function displayThermalInvoice(data) {
+        const thermalPrintArea = document.getElementById('thermal-invoice-print-area');
+        thermalPrintArea.innerHTML = generateThermalContent(data);
+        
+        // توليد الباركود للعرض
+        setTimeout(() => {
+            try {
+                JsBarcode("#barcode-thermal-display", String(data.id).padStart(6, '0'), {
+                    format: "CODE128",
+                    width: 1,
+                    height: 30,
+                    displayValue: false,
+                    margin: 0
+                });
+            } catch (e) {
+                console.error('Error generating thermal barcode:', e);
+            }
+        }, 100);
+    }
+
+    // دالة الطباعة الحرارية
+    function printThermal() {
+        if (!currentInvoiceData) return;
+
+        const thermalContent = generateThermalContent(currentInvoiceData);
+
+        const fullContent = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
@@ -2378,101 +2632,12 @@ document.addEventListener('DOMContentLoaded', function () {
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="shop-name">${shopName}</div>
-        ${shopPhone ? `<div class="shop-info">📞 ${shopPhone}</div>` : ''}
-        ${locationText ? `<div class="shop-info">📍 ${locationText}</div>` : ''}
-    </div>
-
-    <div class="invoice-info">
-        <div class="info-row"><span>رقم الفاتورة:</span><span>#${String(currentInvoiceData.id).padStart(6, '0')}</span></div>
-        <div class="info-row"><span>التاريخ:</span><span>${formattedDate}</span></div>
-        <div class="info-row"><span>الوقت:</span><span>${formattedTime}</span></div>
-    </div>
-
-    ${currentInvoiceData.customer ? `
-    <div class="customer-section">
-        <div style="font-weight: bold;">العميل: ${currentInvoiceData.customer.name}</div>
-        ${currentInvoiceData.customer.phone ? `<div>${currentInvoiceData.customer.phone}</div>` : ''}
-    </div>
-    ` : `
-    <div class="customer-section">
-        <div>💵 عميل نقدي</div>
-    </div>
-    `}
-
-    <div class="items-table">
-        <div class="items-header">المنتجات (${currentInvoiceData.items.length})</div>
-`;
-
-        currentInvoiceData.items.forEach((item, index) => {
-            const itemTotal = item.price * item.quantity;
-            thermalContent += `
-        <div class="item-row">
-            <div style="font-weight:bold">${index + 1}. ${item.name}</div>
-            <div class="item-details">
-                <span>${item.quantity} × ${parseFloat(item.price).toFixed(2)}</span>
-                <span style="font-weight: bold;">${itemTotal.toFixed(2)} ${currency}</span>
-            </div>
-        </div>`;
-        });
-
-        thermalContent += `</div>
-            <div class="totals-section">
-                <div class="total-row"><span>المجموع:</span><span>${currentInvoiceData.subtotal.toFixed(2)} ${currency}</span></div>`;
-
-        if (taxEnabled) {
-            thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${currentInvoiceData.tax.toFixed(2)} ${currency}</span></div>`;
-        }
-        if (currentInvoiceData.delivery > 0) {
-            thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${currentInvoiceData.delivery.toFixed(2)} ${currency}</span></div>`;
-            if (currentInvoiceData.deliveryCity) {
-            thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${currentInvoiceData.deliveryCity}</span></div>`;
-        }
-    }
-    
-    // إضافة الخصم إذا كان موجودًا
-    if (currentInvoiceData.discount_amount && currentInvoiceData.discount_amount > 0) {
-        thermalContent += `<div class="total-row"><span>الخصم:</span><span>-${currentInvoiceData.discount_amount.toFixed(2)} ${currency}</span></div>`;
-    }
-
-    thermalContent += `
-        <div class="total-row grand-total"><span>الإجمالي:</span><span>${currentInvoiceData.total.toFixed(2)} ${currency}</span></div>`;
-
-    // --- NEW CODE START ---
-    const recVal = currentInvoiceData.amount_received || currentInvoiceData.amountReceived || 0;
-    const chgVal = currentInvoiceData.change_due || currentInvoiceData.changeDue || 0;
-
-    if (recVal > 0) {
-        thermalContent += `
-        <div class="total-row" style="border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm;">
-            <span>المبلغ المستلم:</span>
-            <span>${parseFloat(recVal).toFixed(2)} ${currency}</span>
-        </div>
-        <div class="total-row">
-            <span>المبلغ الذي تم رده:</span>
-            <span>${parseFloat(chgVal).toFixed(2)} ${currency}</span>
-        </div>`;
-    }
-    // --- NEW CODE END ---
-
-    thermalContent += `
-    </div>
-
-    <div style="text-align: center; margin: 5mm 0;">
-        <svg id="barcode-thermal"></svg>
-    </div>
-
-    <div class="footer">
-        <div style="font-weight: bold; margin-bottom: 2mm;">🌟 شكراً لثقتكم بنا 🌟</div>
-        ${shopName ? `<div>${shopName}</div>` : ''}
-        ${!shopName ? '<div>نظام Smart Shop</div>' : ''}
-    </div>
+    ${thermalContent}
 </body>
 </html>`;
 
         const printWindow = window.open('', '_blank', 'width=302,height=600');
-        printWindow.document.write(thermalContent);
+        printWindow.document.write(fullContent);
         printWindow.document.close();
         
         // إصلاح الباركود في الطباعة الحرارية
@@ -2826,6 +2991,20 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error checking business day status:', error);
         }
     }
+
+    // Event listeners for thermal invoice modal
+    closeThermalInvoiceModal.addEventListener('click', () => {
+        thermalInvoiceModal.classList.add('hidden');
+    });
+
+    document.getElementById('close-thermal-modal-btn').addEventListener('click', () => {
+        thermalInvoiceModal.classList.add('hidden');
+    });
+
+    document.getElementById('print-thermal-btn').addEventListener('click', () => {
+        printThermal();
+        thermalInvoiceModal.classList.add('hidden');
+    });
 
     checkBusinessDayStatusForPOS();
 });

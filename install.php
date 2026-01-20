@@ -232,16 +232,13 @@ $default_settings = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('shopLogoUrl', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('invoiceShowLogo', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     
-    // Rental Settings (NEW SYSTEM)
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalEnabled', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalAmount', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalPaymentDate', '" . date('Y-m-01') . "') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalType', 'monthly') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalReminderDays', '7') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalLastNotification', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalLandlordName', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalLandlordPhone', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('rentalNotes', '') ON DUPLICATE KEY UPDATE setting_value = setting_value"
+    // Print Settings
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('printMode', 'normal') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('thermalPrinterWidth', '58mm') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('thermalPrinterCopies', '1') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    
+    // Rental Settings (NEW SYSTEM) - Only added when user saves
+    // No default values forced during installation
 ];
 
 $settings_success = 0;

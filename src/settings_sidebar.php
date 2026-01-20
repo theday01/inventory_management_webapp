@@ -54,6 +54,14 @@ function tabClass($tab, $current_page, $active_tab) {
         </div>
     </a>
 
+    <a href="settings.php?tab=print" id="tab-btn-print" class="<?php echo tabClass('print', $current_page, $active_tab); ?>" data-tab="print">
+        <span class="material-icons-round text-[20px] transition-colors">print</span>
+        <div class="flex-1">
+            <span class="font-bold text-sm block">إعدادات الطباعة</span>
+            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">الطابعات والفواتير</span>
+        </div>
+    </a>
+
     <a href="settings.php?tab=system" id="tab-btn-system" class="<?php echo tabClass('system', $current_page, $active_tab); ?>" data-tab="system">
         <span class="material-icons-round text-[20px] transition-colors">tune</span>
         <div class="flex-1">

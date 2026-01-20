@@ -45,9 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'virtualKeyboardSize' => $_POST['virtualKeyboardSize'] ?? 'medium',
         'virtualKeyboardVibrate' => isset($_POST['virtualKeyboardVibrate']) ? '1' : '0',
         'virtualKeyboardAutoSearch' => isset($_POST['virtualKeyboardAutoSearch']) ? '1' : '0',
-        'auto_day_management' => isset($_POST['auto_day_management']) ? '1' : '0',
-        'auto_open_time' => $_POST['auto_open_time'] ?? '09:00',
-        'auto_close_time' => $_POST['auto_close_time'] ?? '18:00',
+        'printMode' => $_POST['printMode'] ?? 'normal',
     ];
 
     if (isset($_FILES['shopLogoFile']) && $_FILES['shopLogoFile']['error'] === UPLOAD_ERR_OK) {
@@ -171,6 +169,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 <div>
                     <h2 class="text-xl font-bold text-white">إعدادات النظام</h2>
                     <p class="text-xs text-gray-400">تحكم كامل وسهل في إعدادات المتجر والعلامة التجارية</p>
+                    <div id="unsaved-changes-alert" class="hidden mt-2 text-xs bg-orange-500/10 text-orange-500 border border-orange-500/20 px-3 py-1 rounded-full font-bold flex items-center gap-1">
+                        <span class="material-icons-round text-xs">warning</span>
+                        <span>لديك تغييرات غير محفوظة - احفظ التغييرات لتطبيقها</span>
+                    </div>
                 </div>
                 
                 <?php if (!$isAdmin): ?>
@@ -183,7 +185,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
             <div class="flex items-center gap-4">
                 <?php if ($isAdmin): ?>
-                    <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                    <button type="submit" id="save-settings-btn" disabled class="bg-gray-500/50 text-gray-400 px-8 py-2.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 cursor-not-allowed">
                         <span class="material-icons-round text-sm">save</span>
                         <span>حفظ التغييرات</span>
                     </button>
@@ -436,6 +438,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <input type="date" name="rentalPaymentDate"
                                             value="<?php echo htmlspecialchars($settings['rentalPaymentDate'] ?? date('Y-m-01')); ?>"
                                             class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
+                                            style="color-scheme: dark;"
                                             <?php echo $disabledAttr; ?>>
                                     </div>
                                 </div>
@@ -629,6 +632,25 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     </div>
                 </div>
 
+                <div id="tab-content-print" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <span class="material-icons-round text-primary">print</span>
+                            إعدادات الطباعة
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="printMode" class="block text-sm font-medium text-gray-300 mb-2">نوع الطباعة الافتراضي</label>
+                                <select id="printMode" name="printMode" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
+                                    <option value="normal" <?php echo ($settings['printMode'] ?? 'normal') == 'normal' ? 'selected' : ''; ?>>طباعة عادية (A4)</option>
+                                    <option value="thermal" <?php echo ($settings['printMode'] ?? 'normal') == 'thermal' ? 'selected' : ''; ?>>طباعة حرارية (Thermal)</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-2">اختر نوع الطباعة الذي سيظهر تلقائياً بعد إتمام عملية البيع. الطباعة الحرارية مخصصة للطابعات الحرارية الصغيرة.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="tab-content-system" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                         <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
@@ -702,6 +724,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                              <button type="button" id="enable-windows-notifications" onclick="enableStockNotifications()" class="w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/50 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"><span class="material-icons-round text-sm">notifications_active</span><span>تفعيل إشعارات سطح المكتب (Windows)</span></button>
                         </div>
                      </div>
+
                 </div>
             </div>
         </div>
@@ -1057,6 +1080,51 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         }
     }
 </script>
+
+<script>
+    // Unsaved Changes Detection
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const saveBtn = document.getElementById('save-settings-btn');
+        const alertDiv = document.getElementById('unsaved-changes-alert');
+        let hasChanges = false;
+
+        // Function to enable save button and show alert
+        function enableSave() {
+            if (!hasChanges) {
+                hasChanges = true;
+                saveBtn.disabled = false;
+                saveBtn.className = "bg-primary hover:bg-primary-hover text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer";
+                alertDiv.classList.remove('hidden');
+            }
+        }
+
+        // Function to disable save button and hide alert
+        function disableSave() {
+            hasChanges = false;
+            saveBtn.disabled = true;
+            saveBtn.className = "bg-gray-500/50 text-gray-400 px-8 py-2.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 cursor-not-allowed";
+            alertDiv.classList.add('hidden');
+        }
+
+        // Add event listeners to all form elements
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('input', enableSave);
+            input.addEventListener('change', enableSave);
+        });
+
+        // On form submit, disable after save (assuming success)
+        form.addEventListener('submit', function() {
+            // After successful save, disable (this would be handled by page reload or AJAX)
+            // For now, assume reload disables it
+        });
+
+        // Initially disable
+        disableSave();
+    });
+</script>
+
 <?php endif; ?>
 
 <?php require_once 'src/footer.php'; ?>

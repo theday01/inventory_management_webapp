@@ -248,6 +248,24 @@ function start_day($conn) {
         $force = isset($data['force']) ? (bool)$data['force'] : false;
         $user_id = intval($_SESSION['id']);
 
+        // Validate user_id
+        if ($user_id <= 0) {
+            sendJsonResponse(['success' => false, 'message' => 'معرف المستخدم غير صالح']);
+            return;
+        }
+
+        // Check if user exists
+        $user_check = $conn->prepare("SELECT id FROM users WHERE id = ?");
+        $user_check->bind_param("i", $user_id);
+        $user_check->execute();
+        $user_result = $user_check->get_result();
+        if ($user_result->num_rows === 0) {
+            $user_check->close();
+            sendJsonResponse(['success' => false, 'message' => 'المستخدم غير موجود في قاعدة البيانات']);
+            return;
+        }
+        $user_check->close();
+
         // Check if there's already a business day for today (only if not forcing)
         if (!$force) {
             $today = date('Y-m-d');
