@@ -1545,7 +1545,7 @@ $stmt->close();
                 <div class="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span class="material-icons-round text-3xl text-accent">celebration</span>
                 </div>
-                <h2 class="text-3xl font-bold text-white mb-2">🎉 مرحباً بك في Smart Shop!</h2>
+                <h2 class="text-3xl font-bold text-white mb-2">مرحباً بك في Smart Shop</h2>
                 <p class="text-gray-400">نحن سعداء بانضمامك إلى عائلتنا</p>
             </div>
 
@@ -1596,6 +1596,20 @@ $stmt->close();
                         <li>• إعدادات الإشعارات والتنبيهات</li>
                         <li>• شعار المتجر والبيانات الأساسية</li>
                     </ul>
+                </div>
+            </div>
+
+            <div class="bg-green-500/10 border border-green-500/20 rounded-xl p-6 mt-6">
+                <h3 class="text-xl font-semibold text-green-400 mb-3">تخصيص مخصص لك</h3>
+                <p class="text-gray-300 leading-relaxed">
+                    يمكننا تعديل أي شيء في النظام بشكل مخصص لك ولمشروعك — فقط تواصل معنا وسنساعدك.
+                </p>
+
+                <div class="mt-4 bg-dark-surface/80 border border-white/5 rounded-lg p-4">
+                    <h4 class="text-lg font-semibold text-white mb-2">للتواصل معنا</h4>
+                    <p class="text-gray-300 text-sm mb-1">البريد الإلكتروني: <a href="mailto:support@yourdomain.com" class="text-primary underline">support@yourdomain.com</a></p>
+                    <p class="text-gray-300 text-sm mb-1">واتساب: <a href="https://wa.me/0123456789" target="_blank" class="text-primary underline">+01 234 567 89</a></p>
+                    <p class="text-gray-300 text-sm">صفحة الدعم: <a href="contact.php" class="text-primary underline">اذهب إلى صفحة التواصل</a></p>
                 </div>
             </div>
 
