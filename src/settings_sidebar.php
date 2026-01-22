@@ -80,6 +80,15 @@ function tabClass($tab, $current_page, $active_tab) {
     <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
         النظام
     </div>
+
+    <a href="settings.php?tab=reset" id="tab-btn-reset" class="<?php echo tabClass('reset', $current_page, $active_tab); ?>" data-tab="reset">
+        <span class="material-icons-round text-[20px] transition-colors">restart_alt</span>
+        <div class="flex-1">
+            <span class="font-bold text-sm block">إعادة التهيئة</span>
+            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">إعادة ضبط الإعدادات</span>
+        </div>
+    </a>
+    
     <a href="version.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page === 'version.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
         <span class="material-icons-round text-[20px]">info</span>
         <span class="font-<?php echo ($current_page === 'version.php') ? 'bold' : 'medium'; ?> text-sm">إصدار النظام</span>
@@ -88,5 +97,10 @@ function tabClass($tab, $current_page, $active_tab) {
     <a href="license.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page === 'license.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
         <span class="material-icons-round text-[20px]">verified_user</span>
         <span class="font-<?php echo ($current_page === 'license.php') ? 'bold' : 'medium'; ?> text-sm">الترخيص</span>
+    </a>
+
+    <a href="contact.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page === 'contact.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
+        <span class="material-icons-round text-[20px]">support_agent</span>
+        <span class="font-<?php echo ($current_page === 'contact.php') ? 'bold' : 'medium'; ?> text-sm">تواصل معنا</span>
     </a>
 </aside>

@@ -6,6 +6,67 @@ require_once 'session.php';
 // التحقق من أن المستخدم admin فقط يمكنه التعديل
 $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
 
+// معالجة إعادة التهيئة - فقط للمدراء
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_POST['reset_settings'])) {
+    // حذف جميع الإعدادات الحالية
+    $conn->query("DELETE FROM settings");
+
+    // القيم الافتراضية مع تعطيل الوحدة المفاتيح الوهمية
+    $default_settings = [
+        'shopName' => '',
+        'shopPhone' => '',
+        'shopCity' => '',
+        'shopAddress' => '',
+        'shopLogoUrl' => '',
+        'invoiceShowLogo' => '0',
+        'darkMode' => '0',
+        'soundNotifications' => '0',
+        'currency' => 'MAD',
+        'taxEnabled' => '0',
+        'taxRate' => '20',
+        'taxLabel' => 'TVA',
+        'low_quantity_alert' => '30',
+        'critical_quantity_alert' => '10',
+        'deliveryHomeCity' => '',
+        'deliveryInsideCity' => '20',
+        'deliveryOutsideCity' => '40',
+        'stockAlertsEnabled' => '0',
+        'stockAlertInterval' => '20',
+        'rentalEnabled' => '0',
+        'rentalAmount' => '0',
+        'rentalPaymentDate' => date('Y-m-01'),
+        'rentalType' => 'monthly',
+        'rentalReminderDays' => '7',
+        'rentalLandlordName' => '',
+        'rentalLandlordPhone' => '',
+        'rentalNotes' => '',
+        'virtualKeyboardEnabled' => '0', // تعطيل الوحدة المفاتيح الوهمية
+        'virtualKeyboardTheme' => 'system',
+        'virtualKeyboardSize' => 'medium',
+        'virtualKeyboardVibrate' => '0',
+        'virtualKeyboardAutoSearch' => '0',
+        'printMode' => 'normal',
+    ];
+
+    $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?)");
+    foreach ($default_settings as $name => $value) {
+        $stmt->bind_param("ss", $name, $value);
+        $stmt->execute();
+    }
+    $stmt->close();
+
+    // إضافة إشعار
+    $msg = "تم إعادة تهيئة النظام بنجاح. جميع الإعدادات تم إرجاعها إلى الحالة الأولية.";
+    $notifStmt = $conn->prepare("INSERT INTO notifications (message, type) VALUES (?, ?)");
+    $type = "system_reset";
+    $notifStmt->bind_param("ss", $msg, $type);
+    $notifStmt->execute();
+    $notifStmt->close();
+
+    header("Location: settings.php?tab=reset&success=" . urlencode($msg));
+    exit();
+}
+
 // معالجة حفظ البيانات - فقط للمدراء
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     $currentLogo = '';
@@ -663,7 +724,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="flex items-center gap-3">
                                     <span class="material-icons-round text-gray-400">dark_mode</span>
                                     <div>
-                                        <h4 class="font-bold text-white text-sm">الوضع الليلي</h4>
+                                        <h4 class="font-bold text-white text-sm">الوضع الليلي (ننصح به)</h4>
                                         <p class="text-[10px] text-gray-400">تعتيم الواجهة لراحة العين</p>
                                     </div>
                                 </div>
@@ -726,6 +787,72 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </div>
                      </div>
 
+                </div>
+
+                <div id="tab-content-reset" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                        <div class="text-center mb-8">
+                            <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span class="material-icons-round text-red-500 text-3xl">warning</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-2">إعادة تهيئة النظام</h3>
+                            <p class="text-gray-400">هذه العملية ستعيد ضبط جميع إعدادات النظام إلى الحالة الأولية</p>
+                        </div>
+
+                        <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-6 mb-6">
+                            <h4 class="text-lg font-bold text-red-400 mb-4 flex items-center gap-2">
+                                <span class="material-icons-round">error_outline</span>
+                                تحذير هام
+                            </h4>
+                            <ul class="text-sm text-gray-300 space-y-2">
+                                <li class="flex items-start gap-2">
+                                    <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                                    سيتم حذف جميع الإعدادات المخصصة (الاسم، العنوان، الشعار، إلخ)
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                                    سيتم تعطيل الوحدة المفاتيح الوهمية نهائياً
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                                    سيتم إعادة تعيين أسعار التوصيل والإيجار والضرائب إلى القيم الافتراضية
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                                    لا يمكن التراجع عن هذه العملية
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-6 mb-6">
+                            <h4 class="text-lg font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                                <span class="material-icons-round">info</span>
+                                ما سيحدث بعد إعادة التهيئة
+                            </h4>
+                            <ul class="text-sm text-gray-300 space-y-2">
+                                <li class="flex items-start gap-2">
+                                    <span class="material-icons-round text-yellow-500 text-sm mt-0.5">check_circle</span>
+                                    سيتم إرجاع جميع الإعدادات إلى القيم الافتراضية
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="material-icons-round text-yellow-500 text-sm mt-0.5">check_circle</span>
+                                    الوحدة المفاتيح الوهمية ستكون معطلة
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="material-icons-round text-yellow-500 text-sm mt-0.5">check_circle</span>
+                                    سيتم تسجيل إشعار في سجل النظام
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="button" onclick="openResetModal()" class="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-3 mx-auto">
+                                <span class="material-icons-round">restart_alt</span>
+                                إعادة تهيئة النظام
+                            </button>
+                            <p class="text-xs text-gray-500 mt-4">هذه العملية تتطلب تأكيد إضافي</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1124,6 +1251,66 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         // Initially disable
         disableSave();
     });
+</script>
+
+<div id="resetModal" class="fixed inset-0 z-[100] hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="resetBackdrop" onclick="closeResetModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-[#1e1e2e] border border-white/10 rounded-2xl w-full max-w-md transform scale-95 opacity-0 transition-all duration-300 relative shadow-2xl overflow-hidden flex flex-col" id="resetContent">
+            <div class="px-6 py-4 bg-red-500/10 border-b border-red-500/20 flex items-center justify-between shrink-0">
+                <h3 class="text-lg font-bold text-red-400 flex items-center gap-2">
+                    <span class="material-icons-round">warning</span>
+                    تأكيد إعادة التهيئة
+                </h3>
+                <button onclick="closeResetModal()" class="text-gray-400 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"><span class="material-icons-round">close</span></button>
+            </div>
+            <div class="p-6 text-center">
+                <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-icons-round text-red-500 text-2xl">restart_alt</span>
+                </div>
+                <p class="text-white text-lg font-bold mb-2">هل أنت متأكد تماماً؟</p>
+                <p class="text-gray-400 text-sm mb-6">سيتم حذف جميع الإعدادات المخصصة وإرجاع النظام إلى الحالة الأولية. هذه العملية لا يمكن التراجع عنها.</p>
+                <div class="flex gap-3">
+                    <button onclick="closeResetModal()" class="flex-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-300 border border-gray-500/30 px-4 py-3 rounded-xl font-bold transition-all">إلغاء</button>
+                    <button onclick="confirmReset()" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg shadow-red-500/20">تأكيد الإعادة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openResetModal() {
+        const modal = document.getElementById('resetModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            document.getElementById('resetBackdrop').classList.remove('opacity-0');
+            const content = document.getElementById('resetContent');
+            content.classList.remove('opacity-0', 'scale-95');
+            content.classList.add('opacity-100', 'scale-100');
+        }, 10);
+    }
+
+    function closeResetModal() {
+        document.getElementById('resetBackdrop').classList.add('opacity-0');
+        const content = document.getElementById('resetContent');
+        content.classList.remove('opacity-100', 'scale-100');
+        content.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => document.getElementById('resetModal').classList.add('hidden'), 300);
+    }
+
+    function confirmReset() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'settings.php';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'reset_settings';
+        input.value = '1';
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
 </script>
 
 <?php endif; ?>

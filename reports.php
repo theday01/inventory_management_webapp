@@ -1620,8 +1620,14 @@ $stmt->close();
                     هل جهازك يدعم شاشة اللمس؟ <span style="color: #ffcc00; font-size: 12px; font-weight: bold;">هذا سيؤثر على بعض الميزات مثل لوحة المفاتيح الافتراضية</span>
                 </p>
                 <div class="flex gap-4">
-                    <button id="device-touch" class="flex-1 bg-accent hover:bg-accent-hover text-white font-semibold py-2 px-4 rounded-lg transition-all">حاسوب بشاشة لمس</button>
-                    <button id="device-desktop" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-all">حاسوب عادي</button>
+                    <button id="device-touch" class="flex-1 bg-accent hover:bg-accent-hover text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
+                        <span class="material-icons-round">touch_app</span>
+                        حاسوب بشاشة لمس
+                    </button>
+                    <button id="device-desktop" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
+                        <span class="material-icons-round">computer</span>
+                        حاسوب عادي
+                    </button>
                 </div>
                 <p id="device-feedback" class="text-sm text-gray-400 mt-2 hidden">تم حفظ الإعداد بنجاح!</p>
             </div>

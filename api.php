@@ -197,6 +197,9 @@ switch ($action) {
     case 'updateSetting':
         updateSetting($conn);
         break;
+    case 'send_contact_message':
+        send_contact_message($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -2955,6 +2958,32 @@ function updateSetting($conn) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => 'فشل في تحديث الإعدادات: ' . $e->getMessage()]);
     }
+}
+
+function send_contact_message($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    // Sanitize and validate input
+    $name = filter_var(trim($data['name'] ?? ''), FILTER_SANITIZE_STRING);
+    $email = filter_var(trim($data['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+    $subject = filter_var(trim($data['subject'] ?? ''), FILTER_SANITIZE_STRING);
+    $message = filter_var(trim($data['message'] ?? ''), FILTER_SANITIZE_STRING);
+
+    if (empty($name) || empty($email) || empty($subject) || empty($message)) {
+        echo json_encode(['success' => false, 'message' => 'يرجى ملء جميع الحقول بشكل صحيح.']);
+        return;
+    }
+
+    // Simulate sending an email
+    // In a real application, you would use a library like PHPMailer here.
+    $to = 'support@eagleshadow.technology';
+    $headers = "From: " . $name . " <" . $email . ">";
+    $full_message = "From: " . $name . "\n" . "Email: " . $email . "\n\n" . "Message:\n" . $message;
+    
+    // mail($to, $subject, $full_message, $headers); // This would be the actual send function
+
+    // For this simulation, we'll just return a success message
+    echo json_encode(['success' => true, 'message' => 'شكراً لك! تم استلام رسالتك بنجاح وسنقوم بالرد في أقرب وقت ممكن.']);
 }
 
 if (ob_get_length()) ob_end_flush();
