@@ -21,10 +21,29 @@
 
 <style>
     /* Virtual Keyboard Styles */
-    #virtual-keyboard-container { font-family: 'Tajawal', sans-serif; }
-    #virtual-keyboard-container.visible { transform: translateY(0); }
+    #virtual-keyboard-container { 
+        font-family: 'Tajawal', sans-serif; 
+        /* Ensure keyboard stays above all content */
+        z-index: 9999;
+    }
+    #virtual-keyboard-container.visible { 
+        transform: translateY(0); 
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    }
     
-    /* ================================================= */
+    /* Add smooth transition for content padding */
+    body, main, #settings-content-area {
+        transition: padding-bottom 0.3s ease-out;
+    }
+    
+    /* Highlight active input when keyboard is visible */
+    input.vk-active-input, textarea.vk-active-input {
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.3) !important;
+        border-color: var(--primary-color) !important;
+    }
+    
+    
+        /* ================================================= */
     /* بداية التعديل: إصلاح اتجاه اللوحة */
     /* ================================================= */
     #vk-keys {
@@ -384,12 +403,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- 5. Visibility Logic ---
+// --- 5. Visibility Logic ---
     function showKeyboard() {
         container.classList.remove('hidden');
         // Small delay to allow display block to apply before transition
         setTimeout(() => {
             container.classList.add('visible');
             toggleBtn.style.opacity = '0';
+            
+            // Add bottom padding to body/main content to prevent overlap
+            addKeyboardPadding();
         }, 10);
     }
 
@@ -398,9 +421,85 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             container.classList.add('hidden');
             toggleBtn.style.opacity = '1';
+            
+            // Remove bottom padding
+            removeKeyboardPadding();
         }, 300);
     }
 
+    // Add dynamic padding to prevent content being hidden
+    function addKeyboardPadding() {
+        const keyboardHeight = body.offsetHeight;
+        const mainContent = document.getElementById('settings-content-area') || 
+                          document.querySelector('main') || 
+                          document.body;
+        
+        if (mainContent) {
+            mainContent.style.paddingBottom = (keyboardHeight + 20) + 'px';
+            mainContent.style.transition = 'padding-bottom 0.3s ease-out';
+        }
+    }
+
+    function removeKeyboardPadding() {
+        const mainContent = document.getElementById('settings-content-area') || 
+                          document.querySelector('main') || 
+                          document.body;
+        
+        if (mainContent) {
+            mainContent.style.paddingBottom = '';
+        }
+    }
+
+    // Smart scroll to keep input visible above keyboard
+    function scrollToInput(input) {
+        if (!input) return;
+        
+        setTimeout(() => {
+            const keyboardHeight = body.offsetHeight;
+            const inputRect = input.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            
+            // Calculate if input is hidden behind keyboard
+            const inputBottom = inputRect.bottom;
+            const keyboardTop = viewportHeight - keyboardHeight;
+            
+            if (inputBottom > keyboardTop - 20) {
+                // Input is hidden, scroll it into view
+                const scrollTarget = inputRect.top + window.scrollY - 20;
+                
+                // Smooth scroll to position
+                const scrollableParent = findScrollableParent(input);
+                if (scrollableParent && scrollableParent !== document.body && scrollableParent !== document.documentElement) {
+                    // Scroll within parent container
+                    scrollableParent.scrollTo({
+                        top: scrollableParent.scrollTop + (inputBottom - keyboardTop + 40),
+                        behavior: 'smooth'
+                    });
+                } else {
+                    // Scroll entire window
+                    window.scrollTo({
+                        top: scrollTarget,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        }, 350); // Wait for keyboard animation
+    }
+
+    // Helper: Find scrollable parent
+    function findScrollableParent(element) {
+        let parent = element.parentElement;
+        while (parent) {
+            const overflow = window.getComputedStyle(parent).overflow;
+            const overflowY = window.getComputedStyle(parent).overflowY;
+            if ((overflow === 'auto' || overflow === 'scroll' || overflowY === 'auto' || overflowY === 'scroll') 
+                && parent.scrollHeight > parent.clientHeight) {
+                return parent;
+            }
+            parent = parent.parentElement;
+        }
+        return null;
+    }
     // Toggle Button
     toggleBtn.addEventListener('click', () => {
         // الاعتماد على حالة الظهور الفعلية بدلاً من وجود/عدم وجود hidden
@@ -443,11 +542,45 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Initial Render
+// Initial Render
     renderKeyboard();
     container.classList.remove('hidden'); // Initially loaded in DOM but translated down
     setTimeout(() => { container.classList.remove('hidden'); }, 100);
 
+    // Re-adjust scroll on window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            if (container.classList.contains('visible') && activeInput) {
+                addKeyboardPadding();
+                scrollToInput(activeInput);
+            }
+        }, 200);
+    });
+
+    // Keep input visible when scrolling (optional - can be removed if too aggressive)
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+        if (!container.classList.contains('visible') || !activeInput) return;
+        
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            const keyboardHeight = body.offsetHeight;
+            const inputRect = activeInput.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const keyboardTop = viewportHeight - keyboardHeight;
+            
+            // If input scrolled behind keyboard, blur it
+            if (inputRect.bottom > keyboardTop + 50) {
+                // Input is way behind keyboard - might want to hide keyboard
+                // (optional behavior)
+            }
+        }, 100);
+    }, { passive: true });
+
 });
+
 </script>
 </body>
 </html>

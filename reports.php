@@ -1607,10 +1607,23 @@ $stmt->close();
 
                 <div class="mt-4 bg-dark-surface/80 border border-white/5 rounded-lg p-4">
                     <h4 class="text-lg font-semibold text-white mb-2">للتواصل معنا</h4>
-                    <p class="text-gray-300 text-sm mb-1">البريد الإلكتروني: <a href="mailto:support@yourdomain.com" class="text-primary underline">support@yourdomain.com</a></p>
-                    <p class="text-gray-300 text-sm mb-1">واتساب: <a href="https://wa.me/0123456789" target="_blank" class="text-primary underline">+01 234 567 89</a></p>
+                    <p class="text-gray-300 text-sm">الموقع الإلكتروني: <a href="https://eagleshadow.technology" class="text-primary underline">https://eagleshadow.technology</a></p>
+                    <p class="text-gray-300 text-sm mb-1">البريد الإلكتروني: <a href="mailto:support@eagleshadow.technology" class="text-primary underline">support@eagleshadow.technology</a></p>
+                    <p class="text-gray-300 text-sm mb-1">واتساب: <a href="https://wa.me/212700979284?text=مرحباً، انا قادم من نظام سمارتشوب واريد تخصيص بعض المميزات لأجل متجري فقط ...." target="_blank" class="text-primary underline">+01 234 567 89</a></p>
                     <p class="text-gray-300 text-sm">صفحة الدعم: <a href="contact.php" class="text-primary underline">اذهب إلى صفحة التواصل</a></p>
                 </div>
+            </div>
+
+            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6 mt-6">
+                <h3 class="text-xl font-semibold text-blue-400 mb-3">تخصيص سريع للنظام</h3>
+                <p class="text-gray-300 leading-relaxed mb-4">
+                    هل جهازك يدعم شاشة اللمس؟ <span style="color: #ffcc00; font-size: 12px; font-weight: bold;">هذا سيؤثر على بعض الميزات مثل لوحة المفاتيح الافتراضية</span>
+                </p>
+                <div class="flex gap-4">
+                    <button id="device-touch" class="flex-1 bg-accent hover:bg-accent-hover text-white font-semibold py-2 px-4 rounded-lg transition-all">حاسوب بشاشة لمس</button>
+                    <button id="device-desktop" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-all">حاسوب عادي</button>
+                </div>
+                <p id="device-feedback" class="text-sm text-gray-400 mt-2 hidden">تم حفظ الإعداد بنجاح!</p>
             </div>
 
             <!-- Actions -->
@@ -1630,6 +1643,9 @@ $stmt->close();
 document.addEventListener('DOMContentLoaded', function() {
     const welcomeModal = document.getElementById('welcome-modal');
     const welcomeClose = document.getElementById('welcome-close');
+    const deviceTouchBtn = document.getElementById('device-touch');
+    const deviceDesktopBtn = document.getElementById('device-desktop');
+    const deviceFeedback = document.getElementById('device-feedback');
 
     // Close modal and update first_login
     welcomeClose.addEventListener('click', function() {
@@ -1650,6 +1666,56 @@ document.addEventListener('DOMContentLoaded', function() {
             welcomeModal.style.display = 'none';
         });
     });
+
+    // Device type selection
+    deviceTouchBtn.addEventListener('click', () => {
+        updateDeviceSetting('touch');
+    });
+
+    deviceDesktopBtn.addEventListener('click', () => {
+        updateDeviceSetting('desktop');
+    });
+
+    function updateDeviceSetting(type) {
+        const settings = [
+            { name: 'deviceType', value: type }
+        ];
+        
+        if (type === 'touch') {
+            settings.push({ name: 'virtualKeyboardEnabled', value: '1' });
+        }
+        
+        fetch('api.php?action=updateSetting', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ settings: settings })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                deviceFeedback.textContent = 'تم حفظ الإعدادات بنجاح!';
+                deviceFeedback.classList.remove('hidden', 'text-red-400');
+                deviceFeedback.classList.add('text-green-400');
+                // Disable buttons
+                deviceTouchBtn.disabled = true;
+                deviceDesktopBtn.disabled = true;
+                deviceTouchBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                deviceDesktopBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                deviceFeedback.textContent = 'فشل في حفظ الإعدادات.';
+                deviceFeedback.classList.remove('hidden', 'text-green-400');
+                deviceFeedback.classList.add('text-red-400');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            deviceFeedback.textContent = 'حدث خطأ.';
+            deviceFeedback.classList.remove('hidden', 'text-green-400');
+            deviceFeedback.classList.add('text-red-400');
+        });
+    }
 });
 </script>
 <?php endif; ?>

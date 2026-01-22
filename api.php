@@ -194,6 +194,9 @@ switch ($action) {
     case 'update_first_login':
         updateFirstLogin($conn);
         break;
+    case 'updateSetting':
+        updateSetting($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -2921,6 +2924,37 @@ function updateFirstLogin($conn) {
         echo json_encode(['success' => false, 'message' => 'فشل في التحديث']);
     }
     $stmt->close();
+}
+
+function updateSetting($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!isset($data['settings']) || !is_array($data['settings'])) {
+        echo json_encode(['success' => false, 'message' => 'القيم مطلوبة']);
+        return;
+    }
+    
+    $conn->begin_transaction();
+    
+    try {
+        $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        
+        foreach ($data['settings'] as $setting) {
+            if (!isset($setting['name']) || !isset($setting['value'])) {
+                throw new Exception('إعداد غير صالح');
+            }
+            $stmt->bind_param("ss", $setting['name'], $setting['value']);
+            $stmt->execute();
+        }
+        
+        $stmt->close();
+        $conn->commit();
+        
+        echo json_encode(['success' => true, 'message' => 'تم تحديث الإعدادات بنجاح']);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'فشل في تحديث الإعدادات: ' . $e->getMessage()]);
+    }
 }
 
 if (ob_get_length()) ob_end_flush();
