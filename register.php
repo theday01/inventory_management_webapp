@@ -5,6 +5,94 @@ require_once 'db.php';
 $sql = "SELECT id FROM users LIMIT 1";
 $result = $conn->query($sql);
 
+// تعطيل الصفحة بعد تسجيل الحساب الأول
+if ($result && $result->num_rows > 0) {
+    header("HTTP/1.0 403 Forbidden");
+    ?>
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl" class="dark">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>الصفحة معطلة</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            dark: {
+                                DEFAULT: '#0E1116',
+                                surface: '#1F2937',
+                                glass: 'rgba(14, 17, 22, 0.7)',
+                            },
+                            primary: {
+                                DEFAULT: '#3B82F6',
+                                hover: '#2563EB',
+                            },
+                            accent: {
+                                DEFAULT: '#84CC16',
+                            }
+                        },
+                        fontFamily: {
+                            sans: ['Tajawal', 'sans-serif'],
+                        },
+                    },
+                },
+            }
+        </script>
+        <style>
+            .glass-panel {
+                background-color: rgba(31, 41, 55, 0.6);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+        </style>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    </head>
+    <body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <!-- خلفية متحركة -->
+        <div class="absolute inset-0 bg-gradient-to-br from-dark via-dark-surface to-dark opacity-80"></div>
+        <div class="absolute inset-0">
+            <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+
+        <div class="relative z-10 w-full max-w-md">
+            <div class="glass-panel rounded-2xl p-8 text-center shadow-2xl">
+                <div class="mb-6">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-red-500/20 rounded-full mb-4">
+                        <span class="material-icons-round text-4xl text-red-400">lock</span>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white mb-2">الصفحة معطلة</h1>
+                    <p class="text-gray-300 leading-relaxed">
+                        هذه الصفحة لم تعد قابلة للوصول. تواصل مع صاحب المتجر ليضيفك إلى المستخدمين الجدد.
+                    </p>
+                </div>
+
+                <div class="flex gap-3">
+                    <a href="login.php" class="flex-1 bg-primary hover:bg-primary-hover text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg shadow-primary/25">
+                        <span class="material-icons-round text-lg mr-2">login</span>
+                        تسجيل الدخول
+                    </a>
+                    <a href="index.php" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5">
+                        <span class="material-icons-round text-lg mr-2">home</span>
+                        الرئيسية
+                    </a>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
 // إذا كان هناك مستخدم واحد على الأقل، يجب تسجيل الدخول أولاً للوصول لهذه الصفحة
 if ($result && $result->num_rows > 0) {
     session_start();

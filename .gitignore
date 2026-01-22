@@ -14,10 +14,20 @@ node_modules/
 add_test_data.php
 add_test_invoices.php
 add_test_customers.php
-notif_test.php
-sound_test.php
+a_notif_test.php
+a_sound_test.php
 settings copy.php
+add_test_reports_data.php
+
+
 src/img/uploads/
 vendor
 composer.json
 composer.lock
+package-lock.json
+package.json
+
+tailwind.config.js
+
+
+dashboard_backup.php

@@ -1,6 +1,7 @@
 <?php
 $page_title = 'إصدار النظام';
 $current_page = 'version.php';
+require_once 'session.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 

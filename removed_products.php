@@ -1,6 +1,7 @@
 <?php
 $page_title = 'المنتجات المحذوفة';
 $current_page = 'removed_products.php';
+require_once 'session.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
