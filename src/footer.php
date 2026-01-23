@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Standard Arabic Layout (Reversed for RTL display)
     const layoutAr = [
-        ['=','-','0','9','8','7','6','5','4','3','2','1'],
+        ['1','2','3','4','5','6','7','8','9','0','-','='], // الأرقام بالترتيب الطبيعي
         ['\\','د','ج','ح','خ','ه','ع','غ','ف','ق','ث','ص','ض'],
         ['ط','ك','م','ن','ت','ا','ل','ب','ي','س','ش'],
         ['ظ','ز','و','ة','ى','لا','ر','ؤ','أ','ء','ئ','ذ']
@@ -246,7 +246,9 @@ document.addEventListener('DOMContentLoaded', function() {
             keysContainer.style.direction = 'ltr'; // Numbers left to right
         } else {
             layout = currentLayout === 'ar' ? layoutAr : layoutEn;
-            keysContainer.style.direction = 'rtl'; // Arabic right to left
+            // اللوحة العربية تعرض من اليمين لليسار فقط للعرض
+            // لكن الإدخال يكون حسب نوع الحقل
+            keysContainer.style.direction = currentLayout === 'ar' ? 'rtl' : 'ltr';
         }
         
         // Theme Application
@@ -277,9 +279,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 rowDiv.appendChild(keyBtn);
             });
             
-            // Append Backspace to first row
+            // Append Backspace to first row for all layouts
             if(rowIndex === 0) rowDiv.appendChild(createSpecialKey('backspace', 'backspace'));
-            // Append Enter to second row
+            // Append Enter to second row for all layouts
             if(rowIndex === 1) rowDiv.appendChild(createSpecialKey('keyboard_return', 'enter'));
             
             keysContainer.appendChild(rowDiv);
@@ -290,9 +292,9 @@ document.addEventListener('DOMContentLoaded', function() {
         bottomRow.className = 'vk-row';
         
         if (layout === layoutNum) {
-            // For numeric, just space and backspace or something simple
+            // For numeric: space and backspace
             bottomRow.appendChild(createSpecialKey('space_bar', 'space'));
-            bottomRow.appendChild(createSpecialKey('keyboard_return', 'enter'));
+            bottomRow.appendChild(createSpecialKey('backspace', 'backspace'));
         } else {
             bottomRow.appendChild(createSpecialKey('arrow_upward', 'shift'));
             bottomRow.appendChild(createSpecialKey('space_bar', 'space'));
@@ -513,23 +515,36 @@ document.addEventListener('DOMContentLoaded', function() {
     closeBtn.addEventListener('click', hideKeyboard);
 
     // Auto-Attach to Inputs
+    // Auto-Attach to Inputs
     document.addEventListener('focusin', function(e) {
         if (!vkSettings.autoSearch) return;
 
         const target = e.target;
         // Check if it's a text input
         if (target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'search' || target.type === 'email' || target.type === 'number')) {
-            // Only auto-show if configured, otherwise user must click toggle
             activeInput = target;
+            
+            // تحديد الاتجاه بناءً على نوع الحقل بشكل صحيح
+            if (target.type === 'number' || target.type === 'email') {
+                // الأرقام والإيميل دائماً من اليسار لليمين
+                target.setAttribute('dir', 'ltr');
+                target.style.textAlign = 'left';
+            } else if (target.type === 'text' || target.type === 'search') {
+                // النصوص العربية من اليمين لليسار
+                target.setAttribute('dir', 'rtl');
+                target.style.textAlign = 'right';
+            }
+            
             renderKeyboard(); // Re-render to match input type
             
-            // Specific check for search inputs or general Inputs
             if(vkSettings.autoSearch) {
                 showKeyboard();
             }
         } else if (target.tagName === 'TEXTAREA') {
             activeInput = target;
-            renderKeyboard(); // Re-render for text
+            activeInput.setAttribute('dir', 'rtl');
+            activeInput.style.textAlign = 'right';
+            renderKeyboard();
             if(vkSettings.autoSearch) showKeyboard();
         }
     });

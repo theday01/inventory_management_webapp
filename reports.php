@@ -1609,8 +1609,8 @@ $stmt->close();
                     <h4 class="text-lg font-semibold text-white mb-2">للتواصل معنا</h4>
                     <p class="text-gray-300 text-sm">الموقع الإلكتروني: <a href="https://eagleshadow.technology" class="text-primary underline">https://eagleshadow.technology</a></p>
                     <p class="text-gray-300 text-sm mb-1">البريد الإلكتروني: <a href="mailto:support@eagleshadow.technology" class="text-primary underline">support@eagleshadow.technology</a></p>
-                    <p class="text-gray-300 text-sm mb-1">واتساب: <a href="https://wa.me/212700979284?text=مرحباً، انا قادم من نظام سمارتشوب واريد تخصيص بعض المميزات لأجل متجري فقط ...." target="_blank" class="text-primary underline">+01 234 567 89</a></p>
-                    <p class="text-gray-300 text-sm">صفحة الدعم: <a href="contact.php" class="text-primary underline">اذهب إلى صفحة التواصل</a></p>
+                    <p class="text-gray-300 text-sm mb-1">واتساب: <a href="https://wa.me/212700979284?text=مرحباً، انا قادم من نظام سمارتشوب واريد تخصيص بعض المميزات لأجل متجري فقط ...." target="_blank" class="text-primary underline">0700979284</a></p>
+                    <p class="text-gray-300 text-sm">صفحة الدعم: <a href="contact.php" class="text-primary underline">اذهب إلى صفحة التواصل</a> <span style="font-size: 10px;">(يمكنك الوصول إلى هذه الصفحة في أي وقت عبر الإعدادات)</span></p>
                 </div>
             </div>
 
