@@ -981,7 +981,7 @@ $stmt->close();
         <h2 class="text-xl font-bold text-white mb-4">بدء يوم عمل جديد</h2>
         <div class="mb-4">
             <label for="opening-balance" class="block text-sm font-medium text-gray-400 mb-2">الرصيد الافتتاحي</label>
-            <input type="number" id="opening-balance" class="w-full bg-dark border border-white/10 text-white rounded-lg px-3 py-2" placeholder="أدخل المبلغ">
+            <input type="text" id="opening-balance" class="w-full bg-dark border border-white/10 text-white rounded-lg px-3 py-2" placeholder="أدخل المبلغ">
         </div>
         <div class="flex justify-end gap-2">
             <button id="cancel-start-day" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">إلغاء</button>
@@ -1300,6 +1300,16 @@ $stmt->close();
         const closeSummary = document.getElementById('close-summary');
         const openingBalanceInput = document.getElementById('opening-balance');
         const daySummaryContainer = document.getElementById('day-summary');
+
+        // Add input validation for opening balance
+        openingBalanceInput.addEventListener('input', function() {
+            let value = this.value;
+            // Convert Arabic numbers to English
+            value = toEnglishNumbers(value);
+            // Remove non-numeric characters except decimal point
+            value = value.replace(/[^0-9.]/g, '');
+            this.value = value;
+        });
 
         document.getElementById('view-summary-btn').addEventListener('click', handleViewSummary);
         

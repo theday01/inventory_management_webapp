@@ -846,7 +846,7 @@ html:not(.dark) .text-red-500 {
                 </div>
                 <div id="discount-options" class="hidden mt-3 space-y-3">
                     <div class="flex items-center gap-3">
-                        <input type="number" id="discount-percent" min="0" max="100" step="0.1" 
+                        <input type="text" id="discount-percent" min="0" max="100" step="0.1" 
                             placeholder="نسبة الخصم %"
                             class="flex-1 bg-dark/50 border border-white/10 text-white text-right px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
                         <button id="apply-discount-btn" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-bold transition-colors">
@@ -1391,6 +1391,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const cartDiscountRow = document.getElementById('cart-discount-row');
     const cartDiscountAmount = document.getElementById('cart-discount-amount');
     
+    // Add input validation for discount percent
+    discountPercentInput.addEventListener('input', function() {
+        let value = this.value;
+        // Convert Arabic numbers to English
+        value = toEnglishNumbers(value);
+        // Remove non-numeric characters except decimal point
+        value = value.replace(/[^0-9.]/g, '');
+        this.value = value;
+    });
+    
     // Global variables for discount
     let discountPercent = 0;
     let discountAmount = 0;    
@@ -1851,7 +1861,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (type === 'inside') {
             // داخل المدينة
             if (!homeCity) {
-                showToast('⚠️ لم يتم تحديد مدينة المحل في الإعدادات', false);
+                showToast('لم يتم تحديد مدينة المحل في الإعدادات', false);
                 deliveryCityInput.value = '';
                 deliveryCityInput.readOnly = true;
                 deliveryCost = 0;
@@ -2128,7 +2138,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // التحقق من اختيار نوع التوصيل
             const selectedType = document.querySelector('input[name="delivery-type"]:checked');
             if (!selectedType) {
-                showToast('⚠️ الرجاء اختيار نوع التوصيل (داخل/خارج المدينة)', false);
+                showToast('الرجاء اختيار نوع التوصيل (داخل/خارج المدينة)', false);
                 return;
             }
             
@@ -2137,9 +2147,9 @@ document.addEventListener('DOMContentLoaded', function () {
             // التحقق من إدخال اسم المدينة
             if (!cityInput || !cityInput.value.trim()) {
                 if (selectedType.value === 'inside') {
-                    showToast('⚠️ لم يتم تحديد مدينة المحل في الإعدادات', false);
+                    showToast('لم يتم تحديد مدينة المحل في الإعدادات', false);
                 } else {
-                    showToast('⚠️ الرجاء إدخال اسم المدينة للتوصيل', false);
+                    showToast('الرجاء إدخال اسم المدينة للتوصيل', false);
                     cityInput.focus();
                 }
                 return;

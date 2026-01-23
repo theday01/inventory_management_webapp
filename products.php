@@ -363,11 +363,11 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     </div>
                     <div>
                         <label for="bulk-edit-price" class="block text-sm font-medium text-gray-300 mb-2">سعر البيع</label>
-                        <input type="number" id="bulk-edit-price" name="price" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="اترك فارغاً لعدم التغيير">
+                        <input type="text" id="bulk-edit-price" name="price" step="0.01" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="اترك فارغاً لعدم التغيير">
                     </div>
                     <div>
                         <label for="bulk-edit-quantity" class="block text-sm font-medium text-gray-300 mb-2">الكمية</label>
-                        <input type="number" id="bulk-edit-quantity" name="quantity" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="اترك فارغاً لعدم التغيير">
+                        <input type="text" id="bulk-edit-quantity" name="quantity" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="اترك فارغاً لعدم التغيير">
                     </div>
                 </div>
             </div>
@@ -404,15 +404,15 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     </div>
                     <div class="mb-4">
                         <label for="product-price" class="block text-sm font-medium text-gray-300 mb-2">سعر البيع</label>
-                        <input type="number" id="product-price" name="price" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
+                        <input type="text" id="product-price" name="price" step="0.01" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
                     </div>
                     <div class="mb-4">
                         <label for="product-cost-price" class="block text-sm font-medium text-gray-300 mb-2">سعر التكلفة</label>
-                        <input type="number" id="product-cost-price" name="cost_price" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="0.00">
+                        <input type="text" id="product-cost-price" name="cost_price" step="0.01" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="0.00">
                     </div>
                     <div class="mb-4">
                         <label for="product-quantity" class="block text-sm font-medium text-gray-300 mb-2">الكمية</label>
-                        <input type="number" id="product-quantity" name="quantity" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
+                        <input type="text" id="product-quantity" name="quantity" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
                     </div>
                     <div class="mb-4 col-span-2">
                         <label for="product-barcode" class="block text-sm font-medium text-gray-300 mb-2">الباركود</label>
@@ -711,6 +711,31 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     const categoryDescriptionInput = document.getElementById('category-description');
     const categoryFieldsInput = document.getElementById('category-fields');
     const cancelCategoryEditBtn = document.getElementById('cancel-category-edit');
+
+    // Numeric input validation
+    const bulkEditPriceInput = document.getElementById('bulk-edit-price');
+    const bulkEditQuantityInput = document.getElementById('bulk-edit-quantity');
+    const productPriceInput = document.getElementById('product-price');
+    const productCostPriceInput = document.getElementById('product-cost-price');
+    const productQuantityInput = document.getElementById('product-quantity');
+
+    [bulkEditPriceInput, bulkEditQuantityInput, productPriceInput, productCostPriceInput, productQuantityInput].forEach(input => {
+        if (input) {
+            input.addEventListener('keydown', function(e) {
+                const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+                if (allowedKeys.includes(e.key)) return;
+                if (!/[0-9٠-٩.]/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            input.addEventListener('input', function() {
+                let value = this.value;
+                value = toEnglishNumbers(value);
+                value = value.replace(/[^0-9.]/g, '');
+                this.value = value;
+            });
+        }
+    });
 
     const exportOptionsModal = document.getElementById('export-options-modal');
     const closeExportOptionsModalBtn = document.getElementById('close-export-options-modal');
@@ -1531,9 +1556,9 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     ${categoryOptions}
                 </select>
             </td>
-            <td class="p-2"><input type="number" name="price[]" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required></td>
-            <td class="p-2"><input type="number" name="cost_price[]" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" placeholder="0.00"></td>
-            <td class="p-2"><input type="number" name="quantity[]" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required></td>
+            <td class="p-2"><input type="text" name="price[]" step="0.01" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required></td>
+            <td class="p-2"><input type="text" name="cost_price[]" step="0.01" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" placeholder="0.00"></td>
+            <td class="p-2"><input type="text" name="quantity[]" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required></td>
             <td class="p-2"><input type="text" name="barcode[]" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50"></td>
             <td class="p-2">
                 <input type="hidden" name="image_path[]" class="bulk-image-path">
@@ -1551,6 +1576,24 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             </td>
         `;
         bulkAddTableBody.appendChild(row);
+
+        // Add validation to numeric inputs in the new row
+        const numericInputs = row.querySelectorAll('input[name="price[]"], input[name="cost_price[]"], input[name="quantity[]"]');
+        numericInputs.forEach(input => {
+            input.addEventListener('keydown', function(e) {
+                const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+                if (allowedKeys.includes(e.key)) return;
+                if (!/[0-9٠-٩.]/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            input.addEventListener('input', function() {
+                let value = this.value;
+                value = toEnglishNumbers(value);
+                value = value.replace(/[^0-9.]/g, '');
+                this.value = value;
+            });
+        });
     }
 
     bulkAddBtn.addEventListener('click', () => {

@@ -343,7 +343,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors">
                                         <span class="material-icons-round text-lg">phone</span>
                                     </div>
-                                    <input type="number" name="shopPhone" value="<?php echo htmlspecialchars($settings['shopPhone'] ?? ''); ?>"
+                                    <input type="text" name="shopPhone" value="<?php echo htmlspecialchars($settings['shopPhone'] ?? ''); ?>"
                                         placeholder="05 XX XX XX XX"
                                         class="w-full bg-dark/50 border border-white/10 text-white text-right pr-12 pl-4 py-3 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all font-mono text-left <?php echo $readonlyClass; ?> dir-ltr"
                                         <?php echo $disabledAttr; ?>>

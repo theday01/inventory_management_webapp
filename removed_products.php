@@ -20,7 +20,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <span class="material-icons-round text-red-500">delete_sweep</span>
             <span>المنتجات المحذوفة</span>
         </h2>
-        <p class="text-sm text-gray-400">ملاحظة: بعد مرور تلاثين يومًا (30 يوم) على حذف المنتج سيتم حذفه نهائيًا من قاعدة البيانات ولا يمكن استعادته. سيتم عرض تنبيه قبل يوم واحد من الحذف النهائي</p>
+        <p class="text-sm text-gray-400 justify-center">ملاحظة: بعد مرور تلاثين يومًا -شهر- على حذف المنتج سيتم حذفه نهائيًا من قاعدة البيانات ولا يمكن استعادته <br> سيتم عرض تنبيه قبل يوم واحد من الحذف النهائي</p>
     </header>
 
     <!-- Filters & Actions -->
