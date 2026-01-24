@@ -19,7 +19,6 @@ a_sound_test.php
 settings copy.php
 add_test_reports_data.php
 
-
 src/img/uploads/
 vendor
 composer.json

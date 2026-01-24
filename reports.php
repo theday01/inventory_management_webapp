@@ -917,6 +917,7 @@ $stmt->close();
                     نصائح
                 </h3>
                 <div class="space-y-4">
+                    <?php if ($total_orders > 0 && $days_diff <= 30): ?>    
                     <?php
                     $tips = [];
 
@@ -968,10 +969,15 @@ $stmt->close();
                               </div>';
                     }
                     ?>
+                    
+                    <?php else: ?>
+                    <div class="p-4 bg-gray-500/10 border border-gray-500/20 rounded-lg">
+                        <p class="text-gray-300 text-sm leading-relaxed">لا توجد توصيات محددة متاحة حالياً بناءً على البيانات المحددة. يرجى التأكد من وجود بيانات كافية أو اختيار فترة زمنية أقصر للحصول على تحليل أكثر دقة.</p>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
-        </div>
-        
+        </div>  
     </div>
 </main>
 
