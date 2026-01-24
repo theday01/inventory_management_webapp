@@ -1547,113 +1547,251 @@ $stmt->close();
 
 <?php if ($show_welcome): ?>
 <!-- Welcome Modal -->
-<div id="welcome-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-dark-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-8">
+<div id="welcome-modal" class="fixed inset-0 bg-gradient-to-br from-black/80 via-dark/90 to-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-gradient-to-br from-dark-surface via-dark-surface/95 to-dark-surface/90 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden animate-scaleIn">
+        <!-- Progress Bar -->
+        <div class="w-full bg-dark/50 h-1">
+            <div class="bg-gradient-to-r from-primary to-accent h-full w-full animate-pulse"></div>
+        </div>
+
+        <div class="p-8 overflow-y-auto max-h-[calc(95vh-4px)] custom-scrollbar">
             <!-- Header -->
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span class="material-icons-round text-3xl text-accent">celebration</span>
+            <div class="text-center mb-8">
+                <div class="relative mx-auto mb-6">
+                    <div class="w-20 h-20 bg-gradient-to-br from-accent to-primary rounded-full flex items-center justify-center mx-auto shadow-2xl animate-bounceIn">
+                        <span class="material-icons-round text-4xl text-white animate-pulse">celebration</span>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full animate-ping"></div>
                 </div>
-                <h2 class="text-3xl font-bold text-white mb-2">مرحباً بك في Smart Shop</h2>
-                <p class="text-gray-400">نحن سعداء بانضمامك إلى عائلتنا</p>
-            </div>
-
-            <!-- Content -->
-            <div class="space-y-6 text-right">
-                <div class="bg-primary/10 border border-primary/20 rounded-xl p-6">
-                    <h3 class="text-xl font-semibold text-primary mb-3">شكراً لاختيارك Smart Shop</h3>
-                    <p class="text-gray-300 leading-relaxed">
-                        نظام Smart Shop هو حل شامل لإدارة متجرك بكفاءة واحترافية. يساعدك في إدارة المنتجات، تتبع المخزون، إدارة العملاء، إنشاء الفواتير، وتحليل الأداء المالي.
-                    </p>
-                </div>
-
-                <div class="bg-accent/10 border border-accent/20 rounded-xl p-6">
-                    <h3 class="text-xl font-semibold text-accent mb-3">ما يمكنك فعله مع النظام</h3>
-                    <ul class="text-gray-300 space-y-2">
-                        <li class="flex items-center gap-3">
-                            <span class="material-icons-round text-accent text-lg">check_circle</span>
-                            إدارة شاملة للمنتجات والمخزون
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="material-icons-round text-accent text-lg">check_circle</span>
-                            تتبع العملاء وتاريخ المشتريات
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="material-icons-round text-accent text-lg">check_circle</span>
-                            إنشاء فواتير احترافية وتتبع المبيعات
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="material-icons-round text-accent text-lg">check_circle</span>
-                            تقارير مفصلة وتحليلات مالية
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="material-icons-round text-accent text-lg">check_circle</span>
-                            نظام نقاط البيع المتطور
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-6">
-                    <h3 class="text-xl font-semibold text-yellow-400 mb-3">⚠️ خطوة مهمة قبل البدء</h3>
-                    <p class="text-gray-300 leading-relaxed mb-4">
-                        للحصول على أفضل أداء وتخصيص النظام حسب احتياجات متجرك، يرجى الذهاب إلى صفحة الإعدادات وتعديل البيانات التالية:
-                    </p>
-                    <ul class="text-gray-300 space-y-1 text-sm">
-                        <li>• العملة المستخدمة في المتجر</li>
-                        <li>• إعدادات الضرائب والرسوم</li>
-                        <li>• معلومات التوصيل والمدن</li>
-                        <li>• إعدادات الإشعارات والتنبيهات</li>
-                        <li>• شعار المتجر والبيانات الأساسية</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="bg-green-500/10 border border-green-500/20 rounded-xl p-6 mt-6">
-                <h3 class="text-xl font-semibold text-green-400 mb-3">تخصيص مخصص لك</h3>
-                <p class="text-gray-300 leading-relaxed">
-                    يمكننا تعديل أي شيء في النظام بشكل مخصص لك ولمشروعك — فقط تواصل معنا وسنساعدك.
+                <h2 class="text-4xl font-bold bg-gradient-to-r from-white via-accent to-primary bg-clip-text text-transparent mb-3 animate-slideUp">
+                    مرحباً بك في Smart Shop
+                </h2>
+                <p class="text-gray-300 text-lg animate-slideUp animation-delay-200">
+                    نحن سعداء بانضمامك إلى عائلتنا المتخصصة في إدارة المتاجر
                 </p>
-
-                <div class="mt-4 bg-dark-surface/80 border border-white/5 rounded-lg p-4">
-                    <h4 class="text-lg font-semibold text-white mb-2">للتواصل معنا</h4>
-                    <p class="text-gray-300 text-sm">الموقع الإلكتروني: <a href="https://eagleshadow.technology" class="text-primary underline">https://eagleshadow.technology</a></p>
-                    <p class="text-gray-300 text-sm mb-1">البريد الإلكتروني: <a href="mailto:support@eagleshadow.technology" class="text-primary underline">support@eagleshadow.technology</a></p>
-                    <p class="text-gray-300 text-sm mb-1">واتساب: <a href="https://wa.me/212700979284?text=مرحباً، انا قادم من نظام سمارتشوب واريد تخصيص بعض المميزات لأجل متجري فقط ...." target="_blank" class="text-primary underline">0700979284</a></p>
-                    <p class="text-gray-300 text-sm">صفحة الدعم: <a href="contact.php" class="text-primary underline">اذهب إلى صفحة التواصل</a> <span style="font-size: 10px;">(يمكنك الوصول إلى هذه الصفحة في أي وقت عبر الإعدادات)</span></p>
-                </div>
             </div>
 
-            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6 mt-6">
-                <h3 class="text-xl font-semibold text-blue-400 mb-3">تخصيص سريع للنظام</h3>
-                <p class="text-gray-300 leading-relaxed mb-4">
-                    هل جهازك يدعم شاشة اللمس؟ <span style="color: #ffcc00; font-size: 12px; font-weight: bold;">هذا سيؤثر على بعض الميزات مثل لوحة المفاتيح الافتراضية</span>
-                </p>
-                <div class="flex gap-4">
-                    <button id="device-touch" class="flex-1 bg-accent hover:bg-accent-hover text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
-                        <span class="material-icons-round">touch_app</span>
-                        حاسوب بشاشة لمس
-                    </button>
-                    <button id="device-desktop" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
-                        <span class="material-icons-round">computer</span>
-                        حاسوب عادي
-                    </button>
+            <!-- Content Steps -->
+            <div class="space-y-6">
+                <!-- Step 1: Introduction -->
+                <div class="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-6 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 animate-slideUp animation-delay-400">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="material-icons-round text-2xl text-primary">store</span>
+                        </div>
+                        <div class="flex-1 text-right">
+                            <h3 class="text-xl font-bold text-primary mb-3">شكراً لاختيارك Smart Shop</h3>
+                            <p class="text-gray-300 leading-relaxed">
+                                نظام Smart Shop هو حل شامل ومتطور لإدارة متجرك بكفاءة واحترافية عالية. يساعدك في إدارة المنتجات، تتبع المخزون، إدارة العملاء، إنشاء الفواتير الاحترافية، وتحليل الأداء المالي بشكل دقيق.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <p id="device-feedback" class="text-sm text-gray-400 mt-2 hidden">تم حفظ الإعداد بنجاح!</p>
+
+                <!-- Step 2: Features -->
+                <div class="bg-gradient-to-r from-accent/10 to-accent/5 border border-accent/20 rounded-2xl p-6 hover:shadow-xl hover:shadow-accent/10 transition-all duration-500 animate-slideUp animation-delay-600">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="material-icons-round text-2xl text-accent">rocket_launch</span>
+                        </div>
+                        <div class="flex-1 text-right">
+                            <h3 class="text-xl font-bold text-accent mb-4">ما يمكنك فعله مع النظام</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
+                                    <span class="material-icons-round text-accent text-lg">inventory_2</span>
+                                    <span class="text-gray-300">إدارة شاملة للمنتجات والمخزون</span>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
+                                    <span class="material-icons-round text-accent text-lg">people</span>
+                                    <span class="text-gray-300">تتبع العملاء وتاريخ المشتريات</span>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
+                                    <span class="material-icons-round text-accent text-lg">receipt_long</span>
+                                    <span class="text-gray-300">إنشاء فواتير احترافية وتتبع المبيعات</span>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
+                                    <span class="material-icons-round text-accent text-lg">analytics</span>
+                                    <span class="text-gray-300">تقارير مفصلة وتحليلات مالية</span>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
+                                    <span class="material-icons-round text-accent text-lg">point_of_sale</span>
+                                    <span class="text-gray-300">نظام نقاط البيع المتطور</span>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
+                                    <span class="material-icons-round text-accent text-lg">settings</span>
+                                    <span class="text-gray-300">تخصيص النظام حسب احتياجاتك</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Important Setup -->
+                <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/5 border border-yellow-500/20 rounded-2xl p-6 hover:shadow-xl hover:shadow-yellow-500/10 transition-all duration-500 animate-slideUp animation-delay-800">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="material-icons-round text-2xl text-yellow-400">warning</span>
+                        </div>
+                        <div class="flex-1 text-right">
+                            <h3 class="text-xl font-bold text-yellow-400 mb-3">⚠️ خطوة مهمة قبل البدء</h3>
+                            <p class="text-gray-300 leading-relaxed mb-4">
+                                للحصول على أفضل أداء وتخصيص النظام حسب احتياجات متجرك، يرجى الذهاب إلى صفحة الإعدادات وتعديل البيانات التالية:
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div class="flex items-center gap-2 text-sm text-gray-300">
+                                    <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                                    العملة المستخدمة في المتجر
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-gray-300">
+                                    <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                                    إعدادات الضرائب والرسوم
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-gray-300">
+                                    <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                                    معلومات التوصيل والمدن
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-gray-300">
+                                    <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                                    إعدادات الإشعارات والتنبيهات
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-gray-300">
+                                    <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                                    شعار المتجر والبيانات الأساسية
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Customization -->
+                <div class="bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 rounded-2xl p-6 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-500 animate-slideUp animation-delay-1000">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="material-icons-round text-2xl text-green-400">build</span>
+                        </div>
+                        <div class="flex-1 text-right">
+                            <h3 class="text-xl font-bold text-green-400 mb-3">تخصيص مخصص لك</h3>
+                            <p class="text-gray-300 leading-relaxed mb-4">
+                                يمكننا تعديل أي شيء في النظام بشكل مخصص لك ولمشروعك — فقط تواصل معنا وسنساعدك في تطوير النظام حسب رؤيتك.
+                            </p>
+                            <div class="bg-gradient-to-r from-dark-surface/80 to-dark/50 border border-white/10 rounded-xl p-4">
+                                <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                                    <span class="material-icons-round text-green-400">contact_support</span>
+                                    للتواصل معنا
+                                </h4>
+                                <div class="space-y-2 text-sm">
+                                    <p class="text-gray-300">
+                                        <span class="text-green-400">🌐</span> الموقع الإلكتروني:
+                                        <a href="https://eagleshadow.technology" class="text-primary hover:text-primary-hover underline transition-colors">eagleshadow.technology</a>
+                                    </p>
+                                    <p class="text-gray-300">
+                                        <span class="text-green-400">✉️</span> البريد الإلكتروني:
+                                        <a href="mailto:support@eagleshadow.technology" class="text-primary hover:text-primary-hover underline transition-colors">support@eagleshadow.technology</a>
+                                    </p>
+                                    <p class="text-gray-300">
+                                        <span class="text-green-400">📱</span> واتساب:
+                                        <a href="https://wa.me/212700979284?text=مرحباً، انا قادم من نظام سمارتشوب واريد تخصيص بعض المميزات لأجل متجري فقط ...." target="_blank" class="text-primary hover:text-primary-hover underline transition-colors">0700979284</a>
+                                    </p>
+                                    <p class="text-gray-300">
+                                        <span class="text-green-400">💬</span> صفحة الدعم:
+                                        <a href="contact.php" class="text-primary hover:text-primary-hover underline transition-colors">اذهب إلى صفحة التواصل</a>
+                                        <span class="text-xs text-gray-400">(يمكنك الوصول إلى هذه الصفحة في أي وقت عبر الإعدادات)</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Quick Setup -->
+                <div class="bg-gradient-to-r from-blue-500/10 to-cyan-500/5 border border-blue-500/20 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-500 animate-slideUp animation-delay-1200">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="material-icons-round text-2xl text-blue-400">devices</span>
+                        </div>
+                        <div class="flex-1 text-right">
+                            <h3 class="text-xl font-bold text-blue-400 mb-3">تخصيص سريع للنظام</h3>
+                            <p class="text-gray-300 leading-relaxed mb-4">
+                                هل جهازك يدعم شاشة اللمس؟
+                                <span class="text-yellow-400 text-sm font-bold block mt-1">هذا سيؤثر على بعض الميزات مثل لوحة المفاتيح الافتراضية</span>
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <button id="device-touch" class="flex-1 bg-gradient-to-r from-accent to-accent-hover hover:from-accent-hover hover:to-accent text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-accent/30 flex items-center justify-center gap-3">
+                                    <span class="material-icons-round">touch_app</span>
+                                    <span>حاسوب بشاشة لمس</span>
+                                </button>
+                                <button id="device-desktop" class="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-gray-600/30 flex items-center justify-center gap-3">
+                                    <span class="material-icons-round">computer</span>
+                                    <span>حاسوب عادي</span>
+                                </button>
+                            </div>
+                            <p id="device-feedback" class="text-sm text-center mt-3 text-gray-400 opacity-0 transition-opacity">تم حفظ الإعداد بنجاح!</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Actions -->
-            <div class="flex gap-4 mt-8">
-                <button id="welcome-close" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5">
+            <div class="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-white/10">
+                <button id="welcome-close" class="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-gray-600/30 flex items-center justify-center gap-2">
+                    <span class="material-icons-round">check_circle</span>
                     فهمت، سأذهب لاحقاً
                 </button>
-                <a href="settings.php" class="flex-1 bg-primary hover:bg-primary-hover text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5 text-center">
+                <a href="settings.php" class="flex-1 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-primary/30 text-center flex items-center justify-center gap-2">
+                    <span class="material-icons-round">settings</span>
                     اذهب إلى الإعدادات الآن
                 </a>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+}
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+.animate-scaleIn { animation: scaleIn 0.5s ease-out; }
+.animate-bounceIn { animation: bounceIn 1s ease-out; }
+.animate-slideUp { animation: slideUp 0.6s ease-out forwards; opacity: 0; }
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-600 { animation-delay: 0.6s; }
+.animation-delay-800 { animation-delay: 0.8s; }
+.animation-delay-1000 { animation-delay: 1s; }
+.animation-delay-1200 { animation-delay: 1.2s; }
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -1712,8 +1850,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 deviceFeedback.textContent = 'تم حفظ الإعدادات بنجاح!';
-                deviceFeedback.classList.remove('hidden', 'text-red-400');
+                deviceFeedback.classList.remove('text-red-400');
                 deviceFeedback.classList.add('text-green-400');
+                deviceFeedback.style.opacity = '1';
                 // Disable buttons
                 deviceTouchBtn.disabled = true;
                 deviceDesktopBtn.disabled = true;
@@ -1721,15 +1860,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 deviceDesktopBtn.classList.add('opacity-50', 'cursor-not-allowed');
             } else {
                 deviceFeedback.textContent = 'فشل في حفظ الإعدادات.';
-                deviceFeedback.classList.remove('hidden', 'text-green-400');
+                deviceFeedback.classList.remove('text-green-400');
                 deviceFeedback.classList.add('text-red-400');
+                deviceFeedback.style.opacity = '1';
             }
         })
         .catch(error => {
             console.error('Error:', error);
             deviceFeedback.textContent = 'حدث خطأ.';
-            deviceFeedback.classList.remove('hidden', 'text-green-400');
+            deviceFeedback.classList.remove('text-green-400');
             deviceFeedback.classList.add('text-red-400');
+            deviceFeedback.style.opacity = '1';
         });
     }
 });

@@ -101,6 +101,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </div>
 
 <script>
+    function togglePassword(inputId, iconId) {
+        const passwordInput = document.getElementById(inputId);
+        const toggleIcon = document.getElementById(iconId);
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.textContent = 'visibility_off';
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.textContent = 'visibility';
+        }
+    }
+</script>
+
+<script>
     function showToast(message, isSuccess = true) {
         const toast = document.getElementById('toast-notification');
         const toastContent = document.getElementById('toast-content');
@@ -173,9 +188,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-300 mb-2">كلمة المرور</label>
-                <input type="password" id="password" name="password"
-                    class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
-                    placeholder="••••••••">
+                <div class="relative">
+                    <input type="password" id="password" name="password"
+                        class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
+                        placeholder="••••••••">
+                    <button type="button" onclick="togglePassword('password', 'togglePasswordIcon')" 
+                        class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                        <span id="togglePasswordIcon" class="material-icons-round">visibility</span>
+                    </button>
+                </div>
             </div>
 
             <div class="flex items-center justify-between">
@@ -186,7 +207,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         class="mr-2 block text-sm text-gray-400 cursor-pointer select-none">تذكرني</label>
                 </div>
                 <div class="text-sm">
-                    <a href="#" class="font-medium text-primary hover:text-primary-hover transition-colors">نسيت كلمة
+                    <a href="password_reset.php" class="font-medium text-primary hover:text-primary-hover transition-colors">نسيت كلمة
                         المرور؟</a>
                 </div>
             </div>

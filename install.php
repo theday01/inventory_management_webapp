@@ -39,6 +39,15 @@ $sql_users = "CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
+$sql_security_questions = "CREATE TABLE IF NOT EXISTS security_questions (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT(6) UNSIGNED NOT NULL,
+    question TEXT NOT NULL,
+    answer VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
 $sql_categories = "CREATE TABLE IF NOT EXISTS categories (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -172,6 +181,7 @@ $sql_business_days = "CREATE TABLE IF NOT EXISTS business_days (
 // Execute table creation queries in proper order
 $tables = [
     'users' => $sql_users,
+    'security_questions' => $sql_security_questions,
     'categories' => $sql_categories,
     'products' => $sql_products,
     'customers' => $sql_customers,

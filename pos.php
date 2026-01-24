@@ -1399,11 +1399,18 @@ document.addEventListener('DOMContentLoaded', function () {
         // Remove non-numeric characters except decimal point
         value = value.replace(/[^0-9.]/g, '');
         this.value = value;
+        
+        // إعادة تعيين حالة التطبيق عند تغيير القيمة
+        if (parseFloat(value) !== discountPercent) {
+            discountApplied = false;
+            checkDiscountStatus();
+        }
     });
     
     // Global variables for discount
     let discountPercent = 0;
-    let discountAmount = 0;    
+    let discountAmount = 0;
+    let discountApplied = false; // متغير لتتبع ما إذا تم تطبيق الخصم   
     const customerModal = document.getElementById('customer-modal');
     const closeCustomerModalBtn = document.getElementById('close-customer-modal');
     const customerSelection = document.getElementById('customer-selection');
@@ -1789,6 +1796,40 @@ document.addEventListener('DOMContentLoaded', function () {
         updateCart();
     }
 
+    function checkDiscountStatus() {
+        // فحص إذا كان الخصم مفعل
+        if (discountToggle.checked) {
+            const inputPercent = parseFloat(discountPercentInput.value) || 0;
+            
+            // إذا كان هناك قيمة في حقل الخصم ولم يتم تطبيقها
+            if (inputPercent > 0 && !discountApplied) {
+                checkoutBtn.disabled = true;
+                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                showToast('⚠️ يرجى الضغط على "تطبيق" لتفعيل الخصم قبل الدفع', false);
+                return false;
+            }
+            
+            // حساب المجموع الحالي
+            const currentSubtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            const appliedDiscountAmount = discountAmount;
+            const expectedDiscountAmount = currentSubtotal * (discountPercent / 100);
+            
+            // إذا تغير المجموع بعد تطبيق الخصم (تم إضافة منتج جديد مثلاً)
+            if (discountApplied && Math.abs(appliedDiscountAmount - expectedDiscountAmount) > 0.01) {
+                checkoutBtn.disabled = true;
+                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                showToast('⚠️ تم تعديل السلة، يرجى إعادة تطبيق الخصم', false);
+                discountApplied = false;
+                return false;
+            }
+        }
+        
+        // تفعيل زر الدفع إذا كان كل شيء صحيح
+        checkoutBtn.disabled = false;
+        checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        return true;
+    }
+
     function updateCart() {
         cartItemsContainer.innerHTML = '';
         if (cart.length === 0) {
@@ -1806,7 +1847,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <button class="quantity-btn w-8 h-8 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors" data-id="${item.id}" data-action="decrease">-</button>
                         <span class="text-white font-bold min-w-[30px] text-center cursor-pointer hover:text-primary transition-colors" data-id="${item.id}" data-action="edit">${item.quantity}</span>
                         <button class="quantity-btn w-8 h-8 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors" data-id="${item.id}" data-action="increase">+</button>
-                        <button class="w-8 h-8 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors flex items-center justify-center ml-2" data-id="${item.id}" data-action="delete" title="حذف المنتج">
+                        <button class="w-8 h-8 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-all flex items-center justify-center ml-2" data-id="${item.id}" data-action="delete" title="حذف المنتج">
                             <span class="material-icons-round text-sm">delete</span>
                         </button>
                     </div>
@@ -1815,6 +1856,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
         updateTotals();
+        
+        // فحص حالة الخصم بعد تحديث السلة
+        checkDiscountStatus();
     }
 
     function updateDeliveryState() {
@@ -1859,7 +1903,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const type = selectedType.value;
         
         if (type === 'inside') {
-            // داخل المدينة
             if (!homeCity) {
                 showToast('لم يتم تحديد مدينة المحل في الإعدادات', false);
                 deliveryCityInput.value = '';
@@ -1876,7 +1919,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 deliveryCostInfo.className = 'text-xs text-green-500 mt-1 flex items-center gap-1';
             }
         } else if (type === 'outside') {
-            // خارج المدينة
             deliveryCityInput.value = '';
             deliveryCityInput.readOnly = false;
             deliveryCityInput.placeholder = 'أدخل اسم المدينة...';
@@ -1890,6 +1932,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         updateTotals();
+        
+        // فحص حالة الخصم بعد تغيير التوصيل
+        if (discountToggle.checked && discountApplied) {
+            discountApplied = false;
+            checkDiscountStatus();
+        }
     }
 
     function calculateDeliveryCost() {
@@ -1903,7 +1951,6 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
             deliveryCostInfo.className = 'text-xs text-gray-500 mt-1 flex items-center gap-1';
         } else {
-            // التحقق من وجود مدينة المحل
             if (!homeCity) {
                 deliveryCost = deliveryOutsideCost;
                 deliveryCostInfo.innerHTML = `
@@ -1912,12 +1959,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 `;
                 deliveryCostInfo.className = 'text-xs text-yellow-500 mt-1 flex items-center gap-1';
             } else {
-                // تنظيف وتوحيد اسم المدينة للمقارنة
                 const normalizedInput = cityName.toLowerCase().trim();
                 const normalizedHome = homeCity.toLowerCase().trim();
                 
                 if (normalizedInput === normalizedHome) {
-                    // داخل المدينة
                     deliveryCost = deliveryInsideCost;
                     deliveryCostInfo.innerHTML = `
                         <span class="material-icons-round text-xs">check_circle</span>
@@ -1925,7 +1970,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     `;
                     deliveryCostInfo.className = 'text-xs text-green-500 mt-1 flex items-center gap-1';
                 } else {
-                    // خارج المدينة
                     deliveryCost = deliveryOutsideCost;
                     deliveryCostInfo.innerHTML = `
                         <span class="material-icons-round text-xs">location_on</span>
@@ -1937,8 +1981,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         updateTotals();
+        
+        // فحص حالة الخصم بعد تغيير المدينة
+        if (discountToggle.checked && discountApplied) {
+            discountApplied = false;
+            checkDiscountStatus();
+        }
     }
-
     deliveryToggle.addEventListener('change', updateDeliveryState);
 
     // Discount Toggle
@@ -2004,6 +2053,11 @@ document.addEventListener('DOMContentLoaded', function () {
             discountPercentInput.value = '';
             discountAmount = 0;
             discountAmountDisplay.textContent = `0.00 ${currency}`;
+            discountApplied = false; // إعادة تعيين حالة التطبيق
+            
+            // تفعيل زر الدفع عند إلغاء الخصم
+            checkoutBtn.disabled = false;
+            checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
         updateTotals();
     }
@@ -2025,6 +2079,13 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Update display
         discountAmountDisplay.textContent = `-${discountAmount.toFixed(2)} ${currency}`;
+        
+        // تحديث حالة التطبيق
+        discountApplied = true;
+        
+        // تفعيل زر الدفع
+        checkoutBtn.disabled = false;
+        checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         
         updateTotals();
         
