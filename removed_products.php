@@ -10,6 +10,54 @@ $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 ?>
 
+<style>
+    #pagination-container {
+        background-color: rgb(13 16 22);
+        backdrop-filter: blur(12px);
+        border-color: rgba(255, 255, 255, 0.05);
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+    }
+
+    .pagination-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0.5rem 0.75rem;
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgb(209, 213, 219);
+        border-radius: 0.625rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .pagination-btn:hover:not(:disabled):not(.opacity-50) {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .pagination-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    .pagination-btn.bg-primary {
+        background-color: var(--color-primary, #059669);
+        border-color: var(--color-primary, #059669);
+        color: white;
+    }
+
+    .pagination-btn.bg-primary:hover {
+        background-color: var(--color-primary-hover, #047857);
+    }
+</style>
+
 <!-- Main Content -->
 <main class="flex-1 flex flex-col relative overflow-hidden">
     <div class="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-red-500/5 rounded-full blur-[120px] pointer-events-none"></div>
@@ -45,26 +93,28 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     </div>
 
     <!-- Products Table -->
-    <div class="flex-1 overflow-auto p-6 pt-0 relative z-10">
-        <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
-            <table class="w-full">
-                <thead>
-                    <tr class="bg-white/5 text-right">
-                        <th class="p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
-                        <th class="p-4 text-sm font-medium text-gray-300">المنتج</th>
-                        <th class="p-4 text-sm font-medium text-gray-300">الصورة</th>
-                        <th class="p-4 text-sm font-medium text-gray-300">الفئة</th>
-                        <th class="p-4 text-sm font-medium text-gray-300">السعر</th>
-                        <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="removed_at">تاريخ الحذف <span class="sort-icon opacity-30">▼</span></th>
-                        <th class="p-4 text-sm font-medium text-gray-300">تاريخ الحذف النهائي</th>
-                        <th class="p-4 text-sm font-medium text-gray-300">الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="products-table-body" class="divide-y divide-white/5">
-                    <!-- Products will be loaded here -->
-                </tbody>
-            </table>
-            <div id="pagination-container" class="p-4 bg-dark-surface/60 border-t border-white/5 flex items-center justify-between text-sm text-gray-400"></div>
+    <div class="flex-1 flex flex-col overflow-hidden p-6 pt-0 relative z-10">
+        <div class="flex-1 flex flex-col bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
+            <div class="flex-1 overflow-y-auto">
+                <table class="w-full">
+                    <thead class="sticky top-0 bg-white/5 z-10">
+                        <tr class="text-right">
+                            <th class="p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
+                            <th class="p-4 text-sm font-medium text-gray-300">المنتج</th>
+                            <th class="p-4 text-sm font-medium text-gray-300">الصورة</th>
+                            <th class="p-4 text-sm font-medium text-gray-300">الفئة</th>
+                            <th class="p-4 text-sm font-medium text-gray-300">السعر</th>
+                            <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="removed_at">تاريخ الحذف <span class="sort-icon opacity-30">▼</span></th>
+                            <th class="p-4 text-sm font-medium text-gray-300">تاريخ الحذف النهائي</th>
+                            <th class="p-4 text-sm font-medium text-gray-300">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body" class="divide-y divide-white/5">
+                        <!-- Products will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="pagination-container" class="p-4 bg-dark-surface/60 border-t border-white/5 flex items-center justify-center text-sm text-gray-400 shrink-0"></div>
         </div>
     </div>
 </main>
@@ -79,7 +129,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         let currentPage = 1;
         let sortBy = 'removed_at';
         let sortOrder = 'desc';
-        const productsPerPage = 300;
+        const productsPerPage = 200;
 
         // Show the global loading screen immediately when the page opens
         if (typeof showLoading === 'function') showLoading('جاري تحميل المنتجات المحذوفة...');
@@ -174,28 +224,54 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
             let paginationHTML = `
                 <div class="flex items-center gap-2">
-                    <span class="text-sm">صفحة ${currentPage} من ${totalPages}</span>
-                </div>
-                <div class="flex items-center gap-1">`;
+            `;
             
-            // Previous Button
             paginationHTML += `<button class="pagination-btn ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-icons-round">chevron_right</span></button>`;
 
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === currentPage) {
-                    paginationHTML += `<button class="pagination-btn bg-primary text-white" data-page="${i}">${i}</button>`;
+            const pagesToShow = [];
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+            } else {
+                if (currentPage <= 4) {
+                    for (let i = 1; i <= 5; i++) pagesToShow.push(i);
+                    pagesToShow.push('...');
+                    pagesToShow.push(totalPages);
+                } else if (currentPage >= totalPages - 3) {
+                    pagesToShow.push(1);
+                    pagesToShow.push('...');
+                    for (let i = totalPages - 4; i <= totalPages; i++) pagesToShow.push(i);
                 } else {
-                    paginationHTML += `<button class="pagination-btn" data-page="${i}">${i}</button>`;
+                    pagesToShow.push(1);
+                    pagesToShow.push('...');
+                    for (let i = currentPage - 2; i <= currentPage + 2; i++) pagesToShow.push(i);
+                    pagesToShow.push('...');
+                    pagesToShow.push(totalPages);
                 }
             }
-            
-            // Next Button
-            paginationHTML += `<button class="pagination-btn ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}><span class="material-icons-round">chevron_left</span></button>`;
 
+            pagesToShow.forEach(page => {
+                if (page === '...') {
+                    paginationHTML += `<span class="px-2 py-1">...</span>`;
+                } else {
+                    paginationHTML += `<button class="pagination-btn ${page === currentPage ? 'bg-primary text-white' : 'hover:bg-white/10'}" data-page="${page}">${page}</button>`;
+                }
+            });
+            
+            paginationHTML += `<button class="pagination-btn ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}><span class="material-icons-round">chevron_left</span></button>`;
             paginationHTML += `</div>`;
             paginationContainer.innerHTML = paginationHTML;
         }
+
+        paginationContainer.addEventListener('click', e => {
+            if (e.target.closest('.pagination-btn')) {
+                const btn = e.target.closest('.pagination-btn');
+                const page = parseInt(btn.dataset.page);
+                if (!isNaN(page) && page > 0) {
+                    currentPage = page;
+                    loadProducts();
+                }
+            }
+        });
 
         // Event listeners for single-product actions
         productsTableBody.addEventListener('click', e => {

@@ -5,16 +5,63 @@ require_once 'session.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 require_once 'db.php';
-
 ?>
 
-<main class="flex-1 flex flex-col relative bg-dark">
-    <div
-        class="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none">
-    </div>
-    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-30 shrink-0">
-        <h2 class="text-xl font-bold text-white">إدارة العملاء</h2>
-        <div class="flex items-center gap-4">
+<style>
+    /* Pagination Styles Matching removed_products.php */
+    .pagination-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0.5rem 0.75rem;
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgb(209, 213, 219);
+        border-radius: 0.625rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .pagination-btn:hover:not(:disabled):not(.opacity-50) {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .pagination-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    .pagination-btn.bg-primary {
+        background-color: var(--color-primary, #059669);
+        border-color: var(--color-primary, #059669);
+        color: white;
+    }
+
+    .pagination-btn.bg-primary:hover {
+        background-color: var(--color-primary-hover, #047857);
+    }
+</style>
+
+<main class="flex-1 flex flex-col relative overflow-hidden bg-dark">
+    <div class="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-icons-round text-primary">groups</span>
+            <span>إدارة العملاء</span>
+        </h2>
+        
+        <div class="flex items-center gap-3">
+            <button id="export-excel-btn"
+                class="bg-dark/50 hover:bg-white/5 text-gray-300 hover:text-white border border-white/10 px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all">
+                <span class="material-icons-round text-sm">download</span>
+                <span>تصدير Excel</span>
+            </button>
             <button id="add-customer-btn"
                 class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">add</span>
@@ -22,43 +69,44 @@ require_once 'db.php';
             </button>
         </div>
     </header>
-    <div class="p-6 flex items-center justify-between">
-        <div class="relative w-full max-w-md">
+
+    <div class="p-6 flex flex-col md:flex-row gap-4 items-center justify-between relative z-10 shrink-0">
+        <div class="relative w-full md:w-96">
             <span class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
-            <input type="text" id="customer-search-input" placeholder="بحث عن اسم العميل، رقم الهاتف..."
-                class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+            <input type="text" id="customer-search-input" placeholder="بحث عن اسم، هاتف، أو باركود..."
+                class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-10 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+            <button type="button" id="camera-scan-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white transition-colors" title="مسح الباركود بالكاميرا">
+                <span class="material-icons-round">qr_code_scanner</span>
+            </button>
         </div>
-    </div>
-    <div class="flex-1 flex flex-col p-6 pt-0">
+        </div>
+
+    <div class="flex-1 flex flex-col overflow-hidden p-6 pt-0 relative z-10">
         <div class="flex-1 flex flex-col bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
             <div class="flex-1 overflow-y-auto">
-                <table class="w-full min-w-full table-auto">
-                    <thead>
+                <table class="w-full">
+                    <thead class="sticky top-0 bg-dark-surface/95 backdrop-blur-sm z-10 border-b border-white/5">
                         <tr class="text-right">
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الاسم</th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الهاتف</th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">البريد الإلكتروني</th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">العنوان</th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الإجراءات</th>
+                            <th class="p-4 text-sm font-medium text-gray-300">الاسم</th>
+                            <th class="p-4 text-sm font-medium text-gray-300">رقم الهاتف</th>
+                            <th class="p-4 text-sm font-medium text-gray-300">البريد الإلكتروني</th>
+                            <th class="p-4 text-sm font-medium text-gray-300 w-1/4">العنوان</th> 
+                            <th class="p-4 text-sm font-medium text-gray-300 text-center w-40">الإجراءات</th> 
                         </tr>
                     </thead>
                     <tbody id="customers-table-body" class="divide-y divide-white/5">
-                        <!-- TODO: Implement JavaScript logic to fetch and display customers here -->
-                        <tr>
-                            <td colspan="5" class="text-center py-4 text-gray-500">
-                                لم يتم إضافة أي عملاء بعد.
-                            </td>
-                        </tr>
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
-            <div id="pagination-container" class="sticky bottom-0 p-4 flex justify-center items-center z-20">
+            
+            <div id="pagination-container" class="p-4 bg-dark-surface/60 border-t border-white/5 flex items-center justify-center shrink-0">
             </div>
         </div>
     </div>
 </main>
-<div id="customer-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-lg border border-white/10 m-4">
+
+<div id="customer-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 m-4 transform transition-all scale-100">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
             <h3 id="customer-modal-title" class="text-lg font-bold text-white">إضافة عميل جديد</h3>
             <button id="close-customer-modal" class="text-gray-400 hover:text-white transition-colors">
@@ -69,42 +117,102 @@ require_once 'db.php';
             <div class="p-6 max-h-[70vh] overflow-y-auto">
                 <input type="hidden" id="customer-id" name="id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="mb-4">
-                        <label for="customer-name" class="block text-sm font-medium text-gray-300 mb-2">اسم العميل</label>
-                        <input type="text" id="customer-name" name="name" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-sm font-medium text-gray-400 mb-2">اسم العميل <span class="text-red-500">*</span></label>
+                        <input type="text" id="customer-name" name="name" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-colors" required>
                     </div>
-                    <div class="mb-4">
-                        <label for="customer-phone" class="block text-sm font-medium text-gray-300 mb-2">الهاتف</label>
-                        <input type="text" id="customer-phone" name="phone" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-sm font-medium text-gray-400 mb-2">رقم الهاتف</label>
+                        <input type="text" id="customer-phone" name="phone" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-colors">
                     </div>
-                    <div class="mb-4 col-span-2">
-                        <label for="customer-email" class="block text-sm font-medium text-gray-300 mb-2">البريد الإلكتروني</label>
-                        <input type="email" id="customer-email" name="email" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-400 mb-2">البريد الإلكتروني</label>
+                        <input type="email" id="customer-email" name="email" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-colors">
                     </div>
-                    <div class="mb-4 col-span-2">
-                        <label for="customer-address" class="block text-sm font-medium text-gray-300 mb-2">العنوان</label>
-                        <textarea id="customer-address" name="address" rows="3" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50"></textarea>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-400 mb-2">العنوان</label>
+                        <textarea id="customer-address" name="address" rows="3" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-colors"></textarea>
                     </div>
                 </div>
             </div>
-            <div class="p-6 border-t border-white/5 flex justify-end gap-4">
-                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ العميل</button>
+            <div class="p-6 border-t border-white/5 flex justify-end gap-3">
+                <button type="button" class="px-6 py-2 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-colors" onclick="document.getElementById('close-customer-modal').click()">إلغاء</button>
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ</button>
             </div>
         </form>
     </div>
 </div>
-<div id="customer-details-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
+
+<div id="customer-details-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-md border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
             <h3 class="text-lg font-bold text-white">تفاصيل العميل</h3>
             <button id="close-customer-details-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
-        <div id="customer-details-content" class="p-6 max-h-[70vh] overflow-y-auto">
+        <div id="customer-details-content" class="p-6">
+            </div>
+    </div>
+</div>
+
+<div id="barcode-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-md border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">بطاقة العميل (Barcode)</h3>
+            <button id="close-barcode-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="p-6 flex flex-col items-center gap-6">
+            <div class="bg-white rounded-xl p-6 w-full flex justify-center shadow-inner">
+                <svg id="barcode" style="max-width: 100%; height: auto;"></svg>
+            </div>
+            <div class="text-center w-full">
+                <p id="barcode-text" class="text-lg font-mono text-white tracking-widest"></p>
+                <p class="text-sm text-gray-400 mt-1">امسح الكود للبحث عن العميل بسرعة</p>
+            </div>
+            <div class="flex gap-3 w-full">
+                <button id="print-barcode-btn" class="bg-dark/50 hover:bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl font-medium flex-1 flex items-center justify-center gap-2 transition-all">
+                    <span class="material-icons-round text-sm">print</span>
+                    <span>طباعة</span>
+                </button>
+                <button id="download-barcode-btn" class="bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 flex-1 flex items-center justify-center gap-2 transition-all">
+                    <span class="material-icons-round text-sm">download</span>
+                    <span>تحميل صورة</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>
+
+<div id="camera-scan-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">مسح الباركود</h3>
+            <button id="close-camera-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="p-6 flex flex-col items-center gap-4">
+            <div class="relative w-full rounded-xl overflow-hidden border border-white/10 bg-black aspect-video">
+                <video id="camera-video" class="w-full h-full object-cover"></video>
+                <canvas id="camera-canvas" class="hidden"></canvas>
+                <div class="absolute inset-0 border-2 border-primary/50 m-10 rounded-lg animate-pulse pointer-events-none"></div>
+            </div>
+            <div class="w-full text-center">
+                <p id="scan-status" class="text-sm text-gray-400">وجه الكاميرا نحو الباركود...</p>
+            </div>
+            <button id="stop-camera-btn" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-6 py-2 rounded-xl font-medium transition-all w-full flex items-center gap-2 justify-center">
+                <span class="material-icons-round text-sm">stop_circle</span>
+                <span>إيقاف الكاميرا</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const addCustomerBtn = document.getElementById('add-customer-btn');
@@ -116,9 +224,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const paginationContainer = document.getElementById('pagination-container');
     const customerDetailsModal = document.getElementById('customer-details-modal');
     const closeCustomerDetailsModalBtn = document.getElementById('close-customer-details-modal');
+    const barcodeModal = document.getElementById('barcode-modal');
+    const closeBarcodeModalBtn = document.getElementById('close-barcode-modal');
+    const downloadBarcodeBtn = document.getElementById('download-barcode-btn');
+    const cameraScanBtn = document.getElementById('camera-scan-btn');
+    const cameraModal = document.getElementById('camera-scan-modal');
+    const closeCameraModalBtn = document.getElementById('close-camera-modal');
+    const stopCameraBtn = document.getElementById('stop-camera-btn');
+    const cameraVideo = document.getElementById('camera-video');
+    const cameraCanvas = document.getElementById('camera-canvas');
+    const scanStatus = document.getElementById('scan-status');
 
     let currentPage = 1;
-    const customersPerPage = 10;
+    const customersPerPage = 150;
+    let currentBarcodeData = null;
+    let cameraStream = null;
+    let cameraActive = false;
+    let scanningIntervalId = null;
 
     async function loadCustomers() {
         const searchQuery = searchInput.value;
@@ -131,31 +253,47 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } catch (error) {
             console.error('Error loading customers:', error);
+            customersTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-400">حدث خطأ في تحميل البيانات</td></tr>';
         }
     }
 
     function displayCustomers(customers) {
         customersTableBody.innerHTML = '';
         if (customers.length === 0) {
-            customersTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">لا يوجد عملاء لعرضهم.</td></tr>';
+            customersTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-gray-500">لا يوجد عملاء مطابقين للبحث.</td></tr>';
             return;
         }
-
         customers.forEach(customer => {
             const customerRow = document.createElement('tr');
-            customerRow.className = 'hover:bg-white/5 transition-colors';
+            customerRow.className = 'hover:bg-white/5 transition-colors group border-b border-white/5 last:border-0';
+            
             customerRow.innerHTML = `
-                <td class="p-4 text-sm text-white font-medium">${customer.name}</td>
-                <td class="p-4 text-sm text-gray-300">${customer.phone || '-'}</td>
-                <td class="p-4 text-sm text-gray-300">${customer.email || '-'}</td>
-                <td class="p-4 text-sm text-gray-300">${customer.address || '-'}</td>
-                <td class="p-4 text-sm">
-                    <div class="flex items-center gap-2">
-                        <button class="view-details-btn p-1.5 text-gray-400 hover:text-primary transition-colors" data-id="${customer.id}" title="عرض التفاصيل">
-                            <span class="material-icons-round text-lg">visibility</span>
+                <td class="p-4">
+                    <div class="font-bold text-white text-sm">${customer.name}</div>
+                </td>
+                
+                <td class="p-4 text-sm text-gray-300 font-mono dir-ltr text-right">${customer.phone || '-'}</td>
+                
+                <td class="p-4 text-sm text-gray-400">${customer.email || '-'}</td>
+                
+                <td class="p-4 text-sm text-gray-400">
+                    <div class="truncate max-w-[250px]" title="${customer.address || ''}">
+                        ${customer.address || '-'}
+                    </div>
+                </td>
+
+                <td class="p-4">
+                    <div class="flex items-center justify-center gap-2 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <button class="view-barcode-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all" data-id="${customer.id}" data-name="${customer.name}" data-phone="${customer.phone}" title="عرض الباركود">
+                            <span class="material-icons-round text-[18px]">qr_code_2</span>
                         </button>
-                        <button class="edit-customer-btn p-1.5 text-gray-400 hover:text-yellow-500 transition-colors" data-id="${customer.id}" title="تعديل">
-                            <span class="material-icons-round text-lg">edit</span>
+                        
+                        <button class="view-details-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-all" data-id="${customer.id}" title="عرض التفاصيل">
+                            <span class="material-icons-round text-[18px]">visibility</span>
+                        </button>
+                        
+                        <button class="edit-customer-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all" data-id="${customer.id}" title="تعديل">
+                            <span class="material-icons-round text-[18px]">edit</span>
                         </button>
                     </div>
                 </td>
@@ -170,18 +308,52 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (totalPages <= 1) return;
 
-        let paginationHTML = '<div class="flex items-center gap-2">';
-        for (let i = 1; i <= totalPages; i++) {
-            paginationHTML += `<button class="pagination-btn ${i === currentPage ? 'bg-primary text-white' : ''}" data-page="${i}">${i}</button>`;
+        let paginationHTML = `<div class="flex items-center gap-2">`;
+        
+        paginationHTML += `<button class="pagination-btn ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-icons-round">chevron_right</span></button>`;
+
+        const pagesToShow = [];
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+        } else {
+            if (currentPage <= 4) {
+                for (let i = 1; i <= 5; i++) pagesToShow.push(i);
+                pagesToShow.push('...');
+                pagesToShow.push(totalPages);
+            } else if (currentPage >= totalPages - 3) {
+                pagesToShow.push(1);
+                pagesToShow.push('...');
+                for (let i = totalPages - 4; i <= totalPages; i++) pagesToShow.push(i);
+            } else {
+                pagesToShow.push(1);
+                pagesToShow.push('...');
+                for (let i = currentPage - 2; i <= currentPage + 2; i++) pagesToShow.push(i);
+                pagesToShow.push('...');
+                pagesToShow.push(totalPages);
+            }
         }
-        paginationHTML += '</div>';
+
+        pagesToShow.forEach(page => {
+            if (page === '...') {
+                paginationHTML += `<span class="px-2 py-1 text-gray-500">...</span>`;
+            } else {
+                paginationHTML += `<button class="pagination-btn ${page === currentPage ? 'bg-primary text-white' : 'hover:bg-white/10'}" data-page="${page}">${page}</button>`;
+            }
+        });
+        
+        paginationHTML += `<button class="pagination-btn ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}><span class="material-icons-round">chevron_left</span></button>`;
+        paginationHTML += `</div>`;
         paginationContainer.innerHTML = paginationHTML;
     }
 
     paginationContainer.addEventListener('click', e => {
-        if (e.target.classList.contains('pagination-btn')) {
-            currentPage = parseInt(e.target.dataset.page);
-            loadCustomers();
+        if (e.target.closest('.pagination-btn')) {
+            const btn = e.target.closest('.pagination-btn');
+            const page = parseInt(btn.dataset.page);
+            if (!isNaN(page) && page > 0) {
+                currentPage = page;
+                loadCustomers();
+            }
         }
     });
 
@@ -213,6 +385,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const result = await response.json();
             if (result.success) {
                 customerModal.classList.add('hidden');
+                if (!customerId) {
+                    const newCustomerId = result.id || result.data?.id;
+                    generateBarcode(newCustomerId, customerData.name, customerData.phone);
+                } else {
+                     // If update, show simple toast or alert
+                     // alert('تم تحديث البيانات بنجاح');
+                }
                 loadCustomers();
             } else {
                 alert(result.message);
@@ -223,8 +402,17 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     customersTableBody.addEventListener('click', async (e) => {
-        if (e.target.closest('.edit-customer-btn')) {
-            const btn = e.target.closest('.edit-customer-btn');
+        const btn = e.target.closest('button');
+        if (!btn) return;
+
+        if (btn.classList.contains('view-barcode-btn')) {
+            const customerId = btn.dataset.id;
+            const customerName = btn.dataset.name;
+            const customerPhone = btn.dataset.phone;
+            generateBarcode(customerId, customerName, customerPhone);
+        }
+
+        if (btn.classList.contains('edit-customer-btn')) {
             const customerId = btn.dataset.id;
             const customer = await getCustomerDetails(customerId);
             if (customer) {
@@ -238,8 +426,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        if (e.target.closest('.view-details-btn')) {
-            const btn = e.target.closest('.view-details-btn');
+        if (btn.classList.contains('view-details-btn')) {
             const customerId = btn.dataset.id;
             const customer = await getCustomerDetails(customerId);
             if (customer) {
@@ -252,6 +439,96 @@ document.addEventListener('DOMContentLoaded', function () {
     closeCustomerDetailsModalBtn.addEventListener('click', () => {
         customerDetailsModal.classList.add('hidden');
     });
+
+    closeBarcodeModalBtn.addEventListener('click', () => {
+        barcodeModal.classList.add('hidden');
+    });
+
+    downloadBarcodeBtn.addEventListener('click', () => {
+        if (currentBarcodeData) {
+            const svg = document.getElementById('barcode');
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = function() {
+                const paddingBottom = 15;
+                canvas.width = img.width;
+                canvas.height = img.height + paddingBottom;
+                
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                
+                ctx.fillStyle = '#000000';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(currentBarcodeData.data, canvas.width / 2, img.height + 10);
+                
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = `barcode-${currentBarcodeData.id}-${currentBarcodeData.name}.png`;
+                link.click();
+            };
+            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+        }
+    });
+
+    const printBarcodeBtn = document.getElementById('print-barcode-btn');
+    printBarcodeBtn.addEventListener('click', () => {
+        if (currentBarcodeData) {
+            const svg = document.getElementById('barcode');
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const printWindow = window.open('', '', 'height=400,width=600');
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>طباعة الباركود</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+                        .barcode-container { text-align: center; }
+                        .barcode-svg { max-width: 100%; margin-bottom: 5px; }
+                        .barcode-text { font-size: 14px; color: #000; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="barcode-container">
+                        <div class="barcode-svg">${svgData}</div>
+                        <div class="barcode-text">${currentBarcodeData.data}</div>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.onload = function() { printWindow.print(); };
+        }
+    });
+
+    function generateBarcode(customerId, customerName, customerPhone) {
+        if (!customerPhone) {
+            alert('الرجاء إدخال رقم الهاتف لإنشاء الباركود');
+            return;
+        }
+        const barcodeData = `${customerName}-${customerPhone}`;
+        try {
+            JsBarcode("#barcode", barcodeData, {
+                format: "CODE128",
+                width: 2,
+                height: 80,
+                displayValue: false,
+                margin: 0
+            });
+            document.getElementById('barcode-text').textContent = barcodeData;
+            currentBarcodeData = { id: customerId, name: customerName, data: barcodeData };
+            barcodeModal.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error generating barcode:', error);
+            alert('حدث خطأ في إنشاء الباركود');
+        }
+    }
 
     async function getCustomerDetails(id) {
         try {
@@ -267,11 +544,25 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayCustomerDetails(customer) {
         const content = document.getElementById('customer-details-content');
         content.innerHTML = `
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between"><span class="font-medium text-gray-400">الاسم:</span><span class="text-white">${customer.name}</span></div>
-                <div class="flex justify-between"><span class="font-medium text-gray-400">الهاتف:</span><span class="text-white">${customer.phone || '-'}</span></div>
-                <div class="flex justify-between"><span class="font-medium text-gray-400">البريد الإلكتروني:</span><span class="text-white">${customer.email || '-'}</span></div>
-                <div class="flex justify-between"><span class="font-medium text-gray-400">العنوان:</span><span class="text-white">${customer.address || '-'}</span></div>
+            <div class="space-y-4">
+                <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                    <div class="text-xs text-gray-400 mb-1">الاسم الكامل</div>
+                    <div class="text-lg font-bold text-white">${customer.name}</div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                     <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                        <div class="text-xs text-gray-400 mb-1">الهاتف</div>
+                        <div class="text-white font-mono dir-ltr">${customer.phone || '-'}</div>
+                    </div>
+                    <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                        <div class="text-xs text-gray-400 mb-1">البريد الإلكتروني</div>
+                        <div class="text-white truncate">${customer.email || '-'}</div>
+                    </div>
+                </div>
+                 <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                    <div class="text-xs text-gray-400 mb-1">العنوان</div>
+                    <div class="text-white leading-relaxed">${customer.address || '-'}</div>
+                </div>
             </div>
         `;
     }
@@ -279,6 +570,86 @@ document.addEventListener('DOMContentLoaded', function () {
     searchInput.addEventListener('input', () => {
         currentPage = 1;
         loadCustomers();
+    });
+
+    // Camera logic
+    cameraScanBtn.addEventListener('click', async () => {
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+            });
+            cameraVideo.srcObject = cameraStream;
+            cameraVideo.play();
+            cameraModal.classList.remove('hidden');
+            cameraActive = true;
+            scanStatus.textContent = 'جاري البحث عن الباركود...';
+            startBarcodeScanning();
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            alert('لم يتمكن من الوصول إلى الكاميرا.');
+        }
+    });
+
+    closeCameraModalBtn.addEventListener('click', stopCamera);
+    stopCameraBtn.addEventListener('click', stopCamera);
+
+    function stopCamera() {
+        cameraActive = false;
+        if (scanningIntervalId) clearInterval(scanningIntervalId);
+        if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
+        cameraModal.classList.add('hidden');
+    }
+
+    function startBarcodeScanning() {
+        const ctx = cameraCanvas.getContext('2d');
+        const canvasWidth = 640;
+        const canvasHeight = 480;
+        cameraCanvas.width = canvasWidth;
+        cameraCanvas.height = canvasHeight;
+
+        scanningIntervalId = setInterval(() => {
+            if (!cameraActive) return;
+            try {
+                ctx.drawImage(cameraVideo, 0, 0, canvasWidth, canvasHeight);
+                const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+
+                if (code) {
+                    const parts = code.data.split('-');
+                    let query = parts.length > 1 ? parts[parts.length - 1] : code.data;
+                    
+                    stopCamera();
+                    searchInput.value = query.trim();
+                    currentPage = 1;
+                    loadCustomers();
+                }
+            } catch (error) { console.error(error); }
+        }, 100);
+    }
+
+    // Export Logic
+    const exportExcelBtn = document.getElementById('export-excel-btn');
+    exportExcelBtn.addEventListener('click', () => {
+        const rows = Array.from(document.querySelectorAll('#customers-table-body tr'));
+        if (rows.length === 0) { alert('لا يوجد عملاء للتصدير'); return; }
+
+        let csvContent = 'الاسم,الهاتف,البريد الإلكتروني,العنوان\n';
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 5) { // Adjusted index because of added Avatar column
+                const name = cells[1].textContent.trim();
+                const phone = cells[2].textContent.trim();
+                const email = cells[3].textContent.trim();
+                const address = cells[4].textContent.trim();
+                csvContent += `"${name}","${phone}","${email}","${address}"\n`;
+            }
+        });
+
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `العملاء_${new Date().getTime()}.csv`;
+        link.click();
     });
 
     loadCustomers();

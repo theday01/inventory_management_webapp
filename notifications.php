@@ -6,6 +6,54 @@ require_once 'src/header.php';
 require_once 'src/sidebar.php';
 ?>
 
+<style>
+    #pagination-container {
+        background-color: rgb(13 16 22);
+        backdrop-filter: blur(12px);
+        border-color: rgba(255, 255, 255, 0.05);
+        position: sticky;
+        bottom: -50px;
+        z-index: 20;
+    }
+
+    .pagination-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0.5rem 0.75rem;
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgb(209, 213, 219);
+        border-radius: 0.625rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .pagination-btn:hover:not(:disabled):not(.opacity-50) {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .pagination-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    .pagination-btn.bg-primary {
+        background-color: var(--color-primary, #059669);
+        border-color: var(--color-primary, #059669);
+        color: white;
+    }
+
+    .pagination-btn.bg-primary:hover {
+        background-color: var(--color-primary-hover, #047857);
+    }
+</style>
+
 <main class="flex-1 flex flex-col relative overflow-hidden">
     <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
     <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[100px] pointer-events-none"></div>
@@ -13,7 +61,10 @@ require_once 'src/sidebar.php';
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
         <div class="flex items-center gap-4">
             <h2 class="text-xl font-bold text-white">الإشعارات</h2>
-            
+            <div class="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-lg">
+                <span class="material-icons-round text-yellow-400 text-sm">info</span>
+                <span class="text-yellow-400 text-xs">يتم حذف الإشعارات تلقائياً بعد 30 يوماً</span>
+            </div>
             <div class="flex bg-white/5 p-1 rounded-xl border border-white/5 ml-4">
                 <button onclick="setFilter('all')" id="filter-all" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-primary text-white">الكل</button>
                 <button onclick="setFilter('unread')" id="filter-unread" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white">غير مقروء</button>
@@ -178,7 +229,7 @@ function loadNotifications(isBackgroundUpdate = false, page = 1) {
                 const markAllBtn = document.getElementById('main-notification-btn');
 
                 if (sidebarBadge) {
-                    sidebarBadge.textContent = totalUnread;
+                    sidebarBadge.textContent = totalUnread > 50 ? '*50' : totalUnread;
                     if (totalUnread > 0) {
                         sidebarBadge.classList.remove('bg-green-500');
                         sidebarBadge.classList.add('bg-red-500');
@@ -278,20 +329,56 @@ function renderPagination(info) {
         return; 
     }
     
-    let html = `<button onclick="loadNotifications(false, ${info.current_page - 1})" ${info.current_page === 1 ? 'disabled' : ''} class="p-2 rounded-lg bg-white/5 text-white disabled:opacity-20 hover:bg-white/10 transition-colors"><span class="material-icons-round">chevron_right</span></button>`;
+    let paginationHTML = `
+        <div class="flex items-center gap-2">
+    `;
     
-    for (let i = 1; i <= info.total_pages; i++) {
-        if (i === 1 || i === info.total_pages || (i >= info.current_page - 1 && i <= info.current_page + 1)) {
-            const isActive = i === info.current_page;
-            html += `<button onclick="loadNotifications(false, ${i})" class="w-10 h-10 rounded-lg border transition-all ${isActive ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-110' : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'}">${i}</button>`;
-        } else if (i === info.current_page - 2 || i === info.current_page + 2) {
-            html += `<span class="text-gray-600 px-1">...</span>`;
+    paginationHTML += `<button class="pagination-btn ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-icons-round">chevron_right</span></button>`;
+
+    const pagesToShow = [];
+    if (info.total_pages <= 7) {
+        for (let i = 1; i <= info.total_pages; i++) pagesToShow.push(i);
+    } else {
+        if (info.current_page <= 4) {
+            for (let i = 1; i <= 5; i++) pagesToShow.push(i);
+            pagesToShow.push('...');
+            pagesToShow.push(info.total_pages);
+        } else if (info.current_page >= info.total_pages - 3) {
+            pagesToShow.push(1);
+            pagesToShow.push('...');
+            for (let i = info.total_pages - 4; i <= info.total_pages; i++) pagesToShow.push(i);
+        } else {
+            pagesToShow.push(1);
+            pagesToShow.push('...');
+            for (let i = info.current_page - 2; i <= info.current_page + 2; i++) pagesToShow.push(i);
+            pagesToShow.push('...');
+            pagesToShow.push(info.total_pages);
         }
     }
+
+    pagesToShow.forEach(page => {
+        if (page === '...') {
+            paginationHTML += `<span class="px-2 py-1">...</span>`;
+        } else {
+            paginationHTML += `<button class="pagination-btn ${page === currentPage ? 'bg-primary text-white' : 'hover:bg-white/10'}" data-page="${page}">${page}</button>`;
+        }
+    });
     
-    html += `<button onclick="loadNotifications(false, ${info.current_page + 1})" ${info.current_page === info.total_pages ? 'disabled' : ''} class="p-2 rounded-lg bg-white/5 text-white disabled:opacity-20 hover:bg-white/10 transition-colors"><span class="material-icons-round">chevron_left</span></button>`;
+    paginationHTML += `<button class="pagination-btn ${currentPage === info.total_pages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage + 1}" ${currentPage === info.total_pages ? 'disabled' : ''}><span class="material-icons-round">chevron_left</span></button>`;
+    paginationHTML += `</div>`;
+    container.innerHTML = paginationHTML;
     
-    container.innerHTML = html;
+    // Add event listeners for pagination buttons
+    container.addEventListener('click', (e) => {
+        if (e.target.closest('.pagination-btn')) {
+            const btn = e.target.closest('.pagination-btn');
+            const page = parseInt(btn.dataset.page);
+            if (!isNaN(page) && page > 0) {
+                currentPage = page;
+                loadNotifications(false, page);
+            }
+        }
+    });
 }
 
 // Modal Logic

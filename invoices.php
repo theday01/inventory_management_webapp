@@ -431,6 +431,49 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 .invoice-items-scrollable::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+#pagination-container {
+    background-color: rgb(13 16 22);
+    backdrop-filter: blur(12px);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgb(209, 213, 219);
+    border-radius: 0.625rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled):not(.opacity-50) {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.pagination-btn.bg-primary {
+    background-color: var(--color-primary, #059669);
+    border-color: var(--color-primary, #059669);
+    color: white;
+}
+
+.pagination-btn.bg-primary:hover {
+    background-color: var(--color-primary-hover, #047857);
+}
 </style>
 
 <!-- Main Content -->
@@ -687,7 +730,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     const paginationContainer = document.getElementById('pagination-container');
 
     let currentPage = 1;
-    const invoicesPerPage = 500;
+    const invoicesPerPage = 200;
     let currentInvoiceData = null;
     const currency = '<?php echo $currency; ?>';
     const taxEnabled = <?php echo $taxEnabled; ?> == 1;
@@ -767,9 +810,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
         let paginationHTML = `
             <div class="flex items-center gap-2">
-                <span class="text-sm">صفحة ${currentPage} من ${totalPages}</span>
-            </div>
-            <div class="flex items-center gap-1">`;
+        `;
         
         paginationHTML += `<button class="pagination-btn ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-icons-round">chevron_right</span></button>`;
 
@@ -777,22 +818,28 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         if (totalPages <= 7) {
             for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
         } else {
-            pagesToShow.push(1);
-            if (currentPage > 3) pagesToShow.push('...');
-            let start = Math.max(2, currentPage - 1);
-            let end = Math.min(totalPages - 1, currentPage + 1);
-            for (let i = start; i <= end; i++) pagesToShow.push(i);
-            if (currentPage < totalPages - 2) pagesToShow.push('...');
-            pagesToShow.push(totalPages);
+            if (currentPage <= 4) {
+                for (let i = 1; i <= 5; i++) pagesToShow.push(i);
+                pagesToShow.push('...');
+                pagesToShow.push(totalPages);
+            } else if (currentPage >= totalPages - 3) {
+                pagesToShow.push(1);
+                pagesToShow.push('...');
+                for (let i = totalPages - 4; i <= totalPages; i++) pagesToShow.push(i);
+            } else {
+                pagesToShow.push(1);
+                pagesToShow.push('...');
+                for (let i = currentPage - 2; i <= currentPage + 2; i++) pagesToShow.push(i);
+                pagesToShow.push('...');
+                pagesToShow.push(totalPages);
+            }
         }
 
         pagesToShow.forEach(page => {
             if (page === '...') {
-                paginationHTML += `<span class="pagination-dots">...</span>`;
-            } else if (page === currentPage) {
-                paginationHTML += `<button class="pagination-btn bg-primary text-white" data-page="${page}">${page}</button>`;
+                paginationHTML += `<span class="px-2 py-1">...</span>`;
             } else {
-                paginationHTML += `<button class="pagination-btn" data-page="${page}">${page}</button>`;
+                paginationHTML += `<button class="pagination-btn ${page === currentPage ? 'bg-primary text-white' : 'hover:bg-white/10'}" data-page="${page}">${page}</button>`;
             }
         });
         

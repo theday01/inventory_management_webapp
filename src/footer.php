@@ -11,7 +11,10 @@
                 <div class="h-4 w-[1px] bg-white/10"></div>
                 <span id="vk-drag-handle" class="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300 material-icons-round text-sm">drag_handle</span>
             </div>
-            <button id="vk-close-btn" class="text-gray-500 hover:text-red-400 transition-colors"><span class="material-icons-round">keyboard_hide</span></button>
+            <div class="flex items-center gap-2">
+                <button id="vk-pin-btn" class="text-gray-500 hover:text-yellow-400 transition-colors p-1 rounded hover:bg-white/5" title="تثبيت لوحة المفاتيح"><span class="material-icons-round text-sm">push_pin</span></button>
+                <button id="vk-close-btn" class="text-gray-500 hover:text-red-400 transition-colors p-1 rounded hover:bg-white/5"><span class="material-icons-round text-sm">keyboard_hide</span></button>
+            </div>
         </div>
         
         <div id="vk-keys" class="flex flex-col gap-1.5 max-w-5xl mx-auto direction-ltr">
@@ -40,6 +43,33 @@
     input.vk-active-input, textarea.vk-active-input {
         box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.3) !important;
         border-color: var(--primary-color) !important;
+    }
+    
+    /* Toast Animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
     }
     
     
@@ -100,6 +130,19 @@
     .vk-key-backspace { flex: 1.5; }
     .vk-key-shift { flex: 1.5; }
     .vk-key-tab { flex: 1.2; }
+    
+    /* Pin Button Style */
+    #vk-pin-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+    }
+    
+    #vk-pin-btn.text-yellow-400 span {
+        color: #facc15;
+    }
 </style>
 
 <script>
@@ -210,10 +253,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleBtn = document.getElementById('vk-toggle-btn');
     const closeBtn = document.getElementById('vk-close-btn');
     const langBtn = document.getElementById('vk-lang-toggle');
+    const pinBtn = document.getElementById('vk-pin-btn');
 
     let currentLayout = 'ar';
     let isShift = false;
     let activeInput = null;
+    let isPinned = false;
 
     // Standard Arabic Layout (Reversed for RTL display)
     const layoutAr = [
@@ -395,6 +440,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function hideKeyboard() {
+        if (isPinned) {
+            // إذا كانت اللوحة مثبتة، لا تغلقها
+            return;
+        }
+        
         container.classList.remove('visible');
         setTimeout(() => {
             container.classList.add('hidden');
@@ -490,6 +540,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
     closeBtn.addEventListener('click', hideKeyboard);
 
+    // دالة showToast لعرض الرسائل
+    function showToast(type, message) {
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-24 left-4 px-4 py-3 rounded-lg font-bold text-white text-sm z-[10000] animate-fade-in flex items-center gap-2 shadow-lg`;
+        
+        // تحديد النمط بناءً على النوع
+        if (type === 'success') {
+            toast.classList.add('bg-green-500/90', 'border', 'border-green-400/30');
+        } else if (type === 'info') {
+            toast.classList.add('bg-blue-500/90', 'border', 'border-blue-400/30');
+        } else if (type === 'error') {
+            toast.classList.add('bg-red-500/90', 'border', 'border-red-400/30');
+        }
+        
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        // إزالة الرسالة بعد 3 ثوانٍ
+        setTimeout(() => {
+            toast.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
     // Auto-Attach to Inputs
     // Auto-Attach to Inputs
     document.addEventListener('focusin', function(e) {
@@ -532,11 +606,43 @@ document.addEventListener('DOMContentLoaded', function() {
         renderKeyboard();
     });
 
+    // Pin Button Logic
+    pinBtn.addEventListener('click', () => {
+        isPinned = !isPinned;
+        
+        if (isPinned) {
+            // حفظ حالة التثبيت في localStorage
+            localStorage.setItem('vk-pinned', 'true');
+            pinBtn.classList.add('text-yellow-400');
+            pinBtn.innerHTML = '<span class="material-icons-round text-sm">push_pin</span>';
+            
+            // عرض رسالة نجاح
+            showToast('success', '📌 تم تثبيت لوحة المفاتيح');
+            
+            // التأكد من أن اللوحة مرئية عند التثبيت
+            showKeyboard();
+        } else {
+            // إزالة حالة التثبيت
+            localStorage.removeItem('vk-pinned');
+            pinBtn.classList.remove('text-yellow-400');
+            pinBtn.innerHTML = '<span class="material-icons-round text-sm">push_pin</span>';
+            
+            // عرض رسالة
+            showToast('info', 'تم إلغاء تثبيت لوحة المفاتيح');
+        }
+    });
+
     // Initial Render
-// Initial Render
     renderKeyboard();
     container.classList.remove('hidden'); // Initially loaded in DOM but translated down
     setTimeout(() => { container.classList.remove('hidden'); }, 100);
+
+    // استعادة حالة التثبيت عند تحميل الصفحة
+    if (localStorage.getItem('vk-pinned') === 'true') {
+        isPinned = true;
+        pinBtn.classList.add('text-yellow-400');
+        showKeyboard();
+    }
 
     // Re-adjust scroll on window resize
     let resizeTimeout;

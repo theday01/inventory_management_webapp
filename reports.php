@@ -615,15 +615,15 @@ $stmt->close();
                     <h1 class="text-4xl font-bold text-white mb-3 leading-tight">
                         مرحباً بك في <span class="gradient-text"><?php echo htmlspecialchars($shopName); ?></span> 👋
                     </h1>
-                    <p class="text-gray-400 text-lg max-w-2xl">إليك نظرة عامة على أداء متجرك. لديك <span class="text-white font-bold" id="today-orders-count-banner">0</span> طلبات جديدة اليوم بقيمة إجمالية <span class="text-primary font-bold" id="today-revenue-banner">0</span>.</p>
+                    <p class="text-gray-400 text-lg max-w-2xl">إليك نظرة عامة على أداء متجرك. لديك <span class="text-white font-bold" id="today-orders-count-banner">0</span> طلبات جديدة اليوم بقيمة إجمالية <span class="text-primary font-bold" id="today-revenue-banner">0</span></p>
                     
                     <div class="mt-8 flex gap-4">
                         <a href="pos.php" class="action-btn group bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/25 flex items-center gap-3 hover:-translate-y-1 transition-all">
-                            <span class="material-icons-round group-hover:rotate-90 transition-transform">add</span>
+                            <span class="material-icons-round transition-transform">add_shopping_cart</span>
                             بيع جديد
                         </a>
                         <a href="products.php" class="action-btn group bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-xl font-bold border border-white/10 flex items-center gap-3 hover:-translate-y-1 transition-all">
-                            <span class="material-icons-round text-accent">inventory_2</span>
+                            <span class="material-icons-round text-accent">inventory</span>
                             إدارة المنتجات
                         </a>
                     </div>
@@ -714,7 +714,7 @@ $stmt->close();
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div class="glass-card p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform">
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <span class="material-icons-round text-6xl text-red-500">location_off</span>
+                    <span class="material-icons-round text-6xl text-red-500">map</span>
                 </div>
                 <p class="text-sm text-gray-400 font-medium mb-1">عدد الطلبات خارج المدينة</p>
                 <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($outside_city_orders); ?></h3>
@@ -1072,7 +1072,7 @@ $stmt->close();
                     
                     <?php else: ?>
                     <div class="p-4 bg-gray-500/10 border border-gray-500/20 rounded-lg">
-                        <p class="text-gray-300 text-sm leading-relaxed">لا توجد توصيات محددة متاحة حالياً بناءً على البيانات المحددة. يرجى التأكد من وجود بيانات كافية أو اختيار فترة زمنية أقصر للحصول على تحليل أكثر دقة.</p>
+                        <p class="text-gray-300 text-sm leading-relaxed">لا توجد توصيات محددة متاحة حالياً بناءً على البيانات المحددة. يرجى التأكد من وجود بيانات كافية أو اختيار فترة زمنية أقصر للحصول على تحليل أكثر دقة (لا تتجاوز 30 يوم)</p>
                     </div>
                     <?php endif; ?>
                 </div>

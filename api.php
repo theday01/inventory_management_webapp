@@ -2378,6 +2378,7 @@ function getDashboardStats($conn) {
         $today = date('Y-m-d');
         $yesterday = date('Y-m-d', strtotime('-1 day'));
         
+        // Use calendar day for today stats, not business day
         $result = $conn->query("
             SELECT 
                 COUNT(DISTINCT i.id) as total_orders,
@@ -2386,7 +2387,7 @@ function getDashboardStats($conn) {
             FROM invoices i 
             LEFT JOIN invoice_items ii ON i.id = ii.invoice_id 
             LEFT JOIN products p ON ii.product_id = p.id 
-            WHERE {$start_time_filter}
+            WHERE DATE(i.created_at) = '$today'
         ");
         
         $todayData = $result ? $result->fetch_assoc() : ['total_orders' => 0, 'revenue' => 0, 'total_cost' => 0];
