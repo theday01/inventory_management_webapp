@@ -188,6 +188,9 @@ switch ($action) {
     case 'get_period_summary':
         get_period_summary($conn);
         break;
+    case 'get_invoice_details':
+        get_invoice_details($conn);
+        break;
     case 'updateShopLogo':
         updateShopLogo($conn);
         break;
@@ -448,11 +451,14 @@ function get_period_summary($conn) {
         $sql_start = $start_date . " 00:00:00";
         $sql_end = $end_date . " 23:59:59";
 
-        // Calculate sales during the period
-        $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales FROM invoices WHERE created_at BETWEEN ? AND ?");
+        // Calculate sales AND delivery costs during the period
+        // تم التعديل لجلب إجمالي التوصيل أيضاً
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales, COALESCE(SUM(delivery_cost), 0) as total_delivery FROM invoices WHERE created_at BETWEEN ? AND ?");
         $stmt->bind_param("ss", $sql_start, $sql_end);
         $stmt->execute();
-        $total_sales = floatval($stmt->get_result()->fetch_assoc()['total_sales']);
+        $res = $stmt->get_result()->fetch_assoc();
+        $total_sales = floatval($res['total_sales']);
+        $total_delivery = floatval($res['total_delivery']);
         $stmt->close();
         
         // Calculate total cost of goods sold
@@ -468,14 +474,50 @@ function get_period_summary($conn) {
         $total_cogs = floatval($stmt->get_result()->fetch_assoc()['total_cogs']);
         $stmt->close();
 
-        $total_profit = $total_sales - $total_cogs;
+        // Get opening balance from the first business day in the period
+        $stmt = $conn->prepare("SELECT COALESCE(opening_balance, 0) as opening_balance FROM business_days WHERE start_time BETWEEN ? AND ? ORDER BY start_time ASC LIMIT 1");
+        $stmt->bind_param("ss", $sql_start, $sql_end);
+        $stmt->execute();
+        $opening_balance = floatval($stmt->get_result()->fetch_assoc()['opening_balance']);
+        $stmt->close();
+
+        // Closing balance = opening balance + total sales
+        $closing_balance = $opening_balance + $total_sales;
+
+        // تحديث معادلة الربح: الربح = المبيعات - تكلفة البضاعة - تكلفة التوصيل
+        $total_profit = $total_sales - $total_cogs - $total_delivery;
+
+        // Get list of invoices in the period
+        $stmt = $conn->prepare("
+            SELECT i.id, i.total, i.delivery_cost, i.created_at, c.name as customer_name, c.phone as customer_phone,
+                   GROUP_CONCAT(CONCAT(p.name, ' (', ii.quantity, 'x ', ii.price, ')') SEPARATOR ', ') as items
+            FROM invoices i
+            LEFT JOIN customers c ON i.customer_id = c.id
+            LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
+            LEFT JOIN products p ON ii.product_id = p.id
+            WHERE i.created_at BETWEEN ? AND ?
+            GROUP BY i.id
+            ORDER BY i.created_at DESC
+        ");
+        $stmt->bind_param("ss", $sql_start, $sql_end);
+        $stmt->execute();
+        $invoices_result = $stmt->get_result();
+        $invoices = [];
+        while ($row = $invoices_result->fetch_assoc()) {
+            $invoices[] = $row;
+        }
+        $stmt->close();
 
         $summary = [
             'total_sales' => $total_sales,
+            'total_delivery' => $total_delivery, // إضافة قيمة التوصيل
+            'opening_balance' => $opening_balance,
+            'closing_balance' => $closing_balance,
             'total_cogs' => $total_cogs,
             'total_profit' => $total_profit,
             'start_date' => $start_date,
-            'end_date' => $end_date
+            'end_date' => $end_date,
+            'invoices' => $invoices
         ];
         
         sendJsonResponse([
@@ -489,7 +531,81 @@ function get_period_summary($conn) {
     }
 }
 
+function get_invoice_details($conn) {
+    try {
+        $invoice_id = isset($_GET['invoice_id']) ? intval($_GET['invoice_id']) : 0;
+        if (!$invoice_id) {
+            sendJsonResponse(['success' => false, 'message' => 'رقم الفاتورة مطلوب']);
+            return;
+        }
 
+        // Get invoice basic info
+        $stmt = $conn->prepare("
+            SELECT i.*, c.name as customer_name, c.phone as customer_phone
+            FROM invoices i
+            LEFT JOIN customers c ON i.customer_id = c.id
+            WHERE i.id = ?
+        ");
+        $stmt->bind_param("i", $invoice_id);
+        $stmt->execute();
+        $invoice = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$invoice) {
+            sendJsonResponse(['success' => false, 'message' => 'الفاتورة غير موجودة']);
+            return;
+        }
+
+        // Get invoice items
+        $stmt = $conn->prepare("
+            SELECT ii.*, p.name as product_name
+            FROM invoice_items ii
+            LEFT JOIN products p ON ii.product_id = p.id
+            WHERE ii.invoice_id = ?
+        ");
+        $stmt->bind_param("i", $invoice_id);
+        $stmt->execute();
+        $items_result = $stmt->get_result();
+        $items = [];
+        while ($row = $items_result->fetch_assoc()) {
+            $items[] = $row;
+        }
+        $stmt->close();
+
+        // Prepare data similar to POS
+        $invoice_data = [
+            'id' => $invoice['id'],
+            'date' => $invoice['created_at'],
+            'total' => floatval($invoice['total']),
+            'delivery' => floatval($invoice['delivery_cost']),
+            'deliveryCity' => $invoice['delivery_city'],
+            'discount_amount' => floatval($invoice['discount_amount']),
+            'amount_received' => floatval($invoice['amount_received']),
+            'change_due' => floatval($invoice['change_due']),
+            'subtotal' => floatval($invoice['total']) - floatval($invoice['delivery_cost']) + floatval($invoice['discount_amount']),
+            'customer' => $invoice['customer_id'] ? [
+                'name' => $invoice['customer_name'],
+                'phone' => $invoice['customer_phone']
+            ] : null,
+            'items' => array_map(function($item) {
+                return [
+                    'name' => $item['product_name'] ?: $item['product_name'],
+                    'quantity' => intval($item['quantity']),
+                    'price' => floatval($item['price'])
+                ];
+            }, $items)
+        ];
+
+        sendJsonResponse([
+            'success' => true,
+            'message' => 'تم جلب بيانات الفاتورة بنجاح',
+            'data' => $invoice_data
+        ]);
+
+    } catch (Exception $e) {
+        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+    }
+}
 // Also update the end_day function for consistency:
 function end_day($conn) {
     try {
@@ -517,11 +633,14 @@ function end_day($conn) {
         $day_id = intval($day['id']);
         $start_time = $day['start_time'];
 
-        // Calculate sales during the business day
-        $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales FROM invoices WHERE created_at >= ?");
+        // Calculate sales AND delivery costs during the business day
+        // تم التعديل لجلب إجمالي التوصيل
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales, COALESCE(SUM(delivery_cost), 0) as total_delivery FROM invoices WHERE created_at >= ?");
         $stmt->bind_param("s", $start_time);
         $stmt->execute();
-        $total_sales = floatval($stmt->get_result()->fetch_assoc()['total_sales']);
+        $res = $stmt->get_result()->fetch_assoc();
+        $total_sales = floatval($res['total_sales']);
+        $total_delivery = floatval($res['total_delivery']);
         $stmt->close();
         
         // Calculate total cost of goods sold
@@ -538,7 +657,8 @@ function end_day($conn) {
         $stmt->close();
 
         $closing_balance = floatval($day['opening_balance']) + $total_sales;
-        $total_profit = $total_sales - $total_cogs;
+        // تحديث معادلة الربح
+        $total_profit = $total_sales - $total_cogs - $total_delivery;
 
         $stmt = $conn->prepare("UPDATE business_days SET end_time = NOW(), closing_balance = ? WHERE id = ?");
         $stmt->bind_param("di", $closing_balance, $day_id);
@@ -547,6 +667,7 @@ function end_day($conn) {
             $stmt->close();
             $summary = [
                 'total_sales' => $total_sales,
+                'total_delivery' => $total_delivery, // إضافة قيمة التوصيل
                 'opening_balance' => floatval($day['opening_balance']),
                 'closing_balance' => $closing_balance,
                 'total_cogs' => $total_cogs,

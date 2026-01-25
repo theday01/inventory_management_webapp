@@ -7,10 +7,116 @@ $current_page = 'reports.php';
 
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
+?>
 
+<style>
+/* CSS for Thermal Invoice Modal */
+#thermal-invoice-print-area {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    width: 80mm;
+    padding: 5mm;
+    font-size: 11pt;
+    line-height: 1.4;
+    background: white;
+    color: #000;
+    margin: 0 auto;
+}
+#thermal-invoice-print-area .header {
+    text-align: center;
+    margin-bottom: 5mm;
+    border-bottom: 2px dashed #000;
+    padding-bottom: 3mm;
+}
+#thermal-invoice-print-area .shop-name {
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 1mm;
+}
+#thermal-invoice-print-area .shop-info {
+    font-size: 9pt;
+    color: #333;
+    margin: 1mm 0;
+}
+#thermal-invoice-print-area .invoice-info {
+    margin: 3mm 0;
+    border-bottom: 1px dashed #000;
+    padding-bottom: 2mm;
+}
+#thermal-invoice-print-area .info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10pt;
+    margin: 1mm 0;
+}
+#thermal-invoice-print-area .customer-section {
+    margin: 3mm 0;
+    padding: 2mm;
+    background: #f5f5f5;
+    border-radius: 2mm;
+    font-size: 10pt;
+}
+#thermal-invoice-print-area .items-table {
+    width: 100%;
+    margin: 3mm 0;
+}
+#thermal-invoice-print-area .items-header {
+    border-top: 2px solid #000;
+    border-bottom: 1px solid #000;
+    padding: 1mm 0;
+    font-weight: bold;
+    font-size: 10pt;
+}
+#thermal-invoice-print-area .item-row {
+    border-bottom: 1px dashed #ccc;
+    padding: 2mm 0;
+    font-size: 10pt;
+}
+#thermal-invoice-print-area .item-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+}
+#thermal-invoice-print-area .totals-section {
+    margin: 3mm 0;
+    border-top: 2px solid #000;
+    padding-top: 2mm;
+}
+#thermal-invoice-print-area .total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10pt;
+    margin: 1mm 0;
+}
+#thermal-invoice-print-area .grand-total {
+    border-top: 2px solid #000;
+    padding-top: 2mm;
+    font-weight: bold;
+    font-size: 12pt;
+}
+#thermal-invoice-print-area .footer {
+    text-align: center;
+    margin-top: 5mm;
+    font-size: 10pt;
+}
+</style>
+
+<?php
 // Fetch Currency
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
+
+// Fetch shop settings for thermal invoice
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopName'");
+$shopName = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopPhone'");
+$shopPhone = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopAddress'");
+$shopAddress = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'deliveryHomeCity'");
+$shopCity = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 
 // Check first login
 $user_id = $_SESSION['id'];
@@ -923,42 +1029,36 @@ $stmt->close();
 
                     // Tip 1: Based on profit margin
                     if ($profit_margin < 10) {
-                        $tips[] = "هامش الربح منخفض (% " . number_format($profit_margin, 1) . "). ركز على زيادة الأسعار أو تقليل التكاليف لتحسين الربحية.";
+                        $tips[] = "هامش الربح منخفض (% " . number_format($profit_margin, 1) . "). ركز على زيادة الأسعار أو تقليل التكاليف.";
                     } elseif ($profit_margin > 30) {
-                        $tips[] = "هامش الربح جيد (% " . number_format($profit_margin, 1) . "). استمر في الحفاظ على هذا المستوى من خلال مراقبة التكاليف.";
-                    } else {
-                        $tips[] = "هامش الربح متوسط (% " . number_format($profit_margin, 1) . "). يمكن تحسينه من خلال تحسين هيكل التسعير.";
+                        $tips[] = "هامش الربح جيد (% " . number_format($profit_margin, 1) . "). حافظ على هذا المستوى.";
                     }
 
-                    // Tip 2: Based on average order value
+                    // Tip 2: Delivery Cost Analysis (NEW)
+                    if ($total_revenue > 0) {
+                        $delivery_percentage = ($total_delivery / $total_revenue) * 100;
+                        if ($total_delivery == 0 && $outside_city_orders > 0) {
+                            $tips[] = "لديك طلبات خارجية ولكن إيرادات التوصيل 0. تأكد من إعداد تكاليف التوصيل بشكل صحيح.";
+                        } elseif ($delivery_percentage > 15) {
+                            $tips[] = "تكاليف التوصيل تشكل نسبة عالية (" . number_format($delivery_percentage, 1) . "%) من الإيرادات. راجع اتفاقياتك مع شركات الشحن.";
+                        }
+                    }
+
+                    // Tip 3: Based on average order value
                     if ($avg_order_value < 50) {
-                        $tips[] = "متوسط قيمة الطلب منخفض (" . number_format($avg_order_value, 2) . " " . $currency . "). شجع العملاء على شراء المزيد من خلال عروض البيع بالجملة.";
+                        $tips[] = "متوسط قيمة الطلب منخفض. حاول عمل عروض (Bundle) لزيادة حجم السلة.";
                     } elseif ($avg_order_value > 200) {
-                        $tips[] = "متوسط قيمة الطلب ممتاز (" . number_format($avg_order_value, 2) . " " . $currency . "). ركز على جذب المزيد من هؤلاء العملاء.";
+                        $tips[] = "متوسط قيمة الطلب ممتاز (" . number_format($avg_order_value, 2) . " " . $currency . ").";
                     }
 
-                    // Tip 3: Based on unique customers
+                    // Tip 4: Based on unique customers
                     if ($unique_customers < 10) {
-                        $tips[] = "عدد العملاء الفريدين قليل (" . $unique_customers . "). ركز على حملات التسويق لجذب عملاء جدد.";
-                    } elseif ($unique_customers > 50) {
-                        $tips[] = "لديك قاعدة عملاء جيدة (" . $unique_customers . " عميل فريد). ركز على الاحتفاظ بالعملاء الحاليين.";
+                        $tips[] = "عدد العملاء قليل. ركز على التسويق لجذب عملاء جدد.";
                     }
 
-                    // Tip 4: Based on daily averages
-                    if ($avg_daily_orders < 5) {
-                        $tips[] = "متوسط الطلبات اليومية منخفض (" . number_format($avg_daily_orders, 1) . "). فكر في زيادة الترويج أو توسيع ساعات العمل.";
-                    }
-
-                    // Tip 5: Based on top products
-                    if (isset($top_products) && $top_products->num_rows > 0) {
-                        $top_products->data_seek(0);
-                        $top_prod = $top_products->fetch_assoc();
-                        $tips[] = "المنتج الأكثر مبيعاً: '" . htmlspecialchars($top_prod['name']) . "'. ركز على التسويق لهذا المنتج.";
-                    }
-
-                    // If no specific tips, add a general one
+                    // If no specific tips
                     if (empty($tips)) {
-                        $tips[] = "استمر في مراقبة أداء متجرك بانتظام. البيانات الحالية تبدو جيدة.";
+                        $tips[] = "أداء المتجر متوازن. استمر في مراقبة التقارير بانتظام.";
                     }
 
                     // Display up to 3 tips
@@ -998,44 +1098,283 @@ $stmt->close();
 
 <!-- End Day Modal -->
 <div id="end-day-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-    <div class="bg-dark-surface rounded-xl p-8 max-w-md w-full">
-        <h2 class="text-xl font-bold text-white mb-4">ملخص يوم العمل</h2>
-        <div id="day-summary" class="text-white"></div>
+    <div class="bg-dark-surface rounded-xl p-8 max-w-4xl w-full max-h-screen overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-white">ملخص يوم العمل</h2>
+            <button id="calculation-method-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded-lg transition-colors" title="طريقة الحساب">
+                <span class="material-icons-round text-sm">help_outline</span>
+            </button>
+        </div>
+
+        <div id="day-summary" class="text-white">
+            <!-- بيانات الملخص -->
+            <div id="summary-data"></div>
+        </div>
+
         <div class="flex justify-end mt-4">
             <button id="close-summary" class="bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded">إغلاق</button>
         </div>
     </div>
 </div>
 
+<!-- Calculation Method Modal -->
+<div id="calculation-method-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+    <div class="bg-dark-surface rounded-xl p-8 max-w-2xl w-full max-h-screen overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <span class="material-icons-round text-blue-500">calculate</span>
+                طريقة الحساب
+            </h2>
+            <button id="close-calculation-method-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="space-y-3 text-sm text-gray-300">
+            <div class="flex items-start gap-2">
+                <span class="text-green-400 font-bold">•</span>
+                <p><strong class="text-green-400">إجمالي المبيعات:</strong> مجموع قيمة جميع الفواتير الصادرة خلال الفترة</p>
+            </div>
+            <div class="flex items-start gap-2">
+                <span class="text-orange-400 font-bold">•</span>
+                <p><strong class="text-orange-400">إجمالي رسوم التوصيل:</strong> مجموع رسوم التوصيل من جميع الطلبات</p>
+            </div>
+            <div class="flex items-start gap-2">
+                <span class="text-red-400 font-bold">•</span>
+                <p><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> مجموع تكلفة شراء المنتجات المباعة (السعر × الكمية) للجميع الطلبات</p>
+            </div>
+            <div class="flex items-start gap-2">
+                <span class="text-yellow-400 font-bold">•</span>
+                <p><strong class="text-yellow-400">الرصيد الختامي:</strong> الرصيد الافتتاحي + إجمالي المبيعات</p>
+            </div>
+            <div class="flex items-start gap-2 bg-green-500/10 p-3 rounded-lg border border-green-500/20">
+                <span class="text-green-400 font-bold text-lg">→</span>
+                <p><strong class="text-green-400 text-lg">صافي الربح:</strong> إجمالي المبيعات - إجمالي تكلفة البضاعة - إجمالي رسوم التوصيل</p>
+            </div>
+            <div class="text-xs text-gray-400 mt-4 bg-dark/30 p-3 rounded-lg">
+                <p class="flex items-center gap-2">
+                    <span class="material-icons-round text-yellow-500" style="font-size: 16px;">info</span>
+                    <span>ملاحظة: هذه الحسابات تقديرية بناءً على البيانات المتوفرة في الفترة المحددة</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="thermal-invoice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs mx-auto overflow-hidden flex flex-col" style="max-height: 90vh;">
+        <div class="bg-dark-surface border-b border-white/5 p-4 flex items-center justify-between shrink-0">
+            <h2 class="text-lg font-bold text-white">طباعة حرارية</h2>
+            <button id="close-thermal-invoice-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 bg-white">
+            <div id="thermal-invoice-print-area" class="text-black text-xs leading-tight font-mono" dir="rtl">
+                <!-- Thermal invoice content will be populated here -->
+            </div>
+        </div>
+        <div class="bg-dark-surface border-t border-white/5 p-4 flex gap-2 shrink-0">
+            <button id="print-thermal-btn" class="flex-1 bg-primary hover:bg-primary-hover text-white py-2 px-4 rounded-lg font-bold transition-all flex items-center justify-center gap-2">
+                <span class="material-icons-round text-sm">print</span>
+                طباعة
+            </button>
+            <button id="close-thermal-modal-btn" class="bg-gray-600 hover:bg-gray-500 text-white py-2 px-4 rounded-lg font-bold transition-all">
+                إغلاق
+            </button>
+        </div>
+    </div>
+</div>
 
+
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
+    // Global variables
+    const currency = '<?php echo $currency; ?>';
+    const shopName = '<?php echo addslashes($shopName); ?>';
+    const shopPhone = '<?php echo addslashes($shopPhone); ?>';
+    const shopAddress = '<?php echo addslashes($shopAddress); ?>';
+    const shopCity = '<?php echo addslashes($shopCity); ?>';
+    let currentInvoiceId = null;
+
+    function toEnglishNumbers(str) {
+        if (typeof str === 'undefined' || str === null) {
+            return '';
+        }
+        const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        
+        let result = str.toString();
+        for (let i = 0; i < 10; i++) {
+            result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
+        }
+        return result;
+    }
+
+    function formatNumber(num) {
+        const numValue = parseFloat(num);
+        if (isNaN(numValue)) {
+            return '0.00';
+        }
+        return numValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatDualDate(dateString) {
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    function generateThermalContent(data) {
+        const invoiceDate = new Date(data.date);
+        const formattedDate = formatDualDate(invoiceDate);
+        const formattedTime = toEnglishNumbers(invoiceDate.toLocaleTimeString('ar-SA', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        }));
+
+        let locationText = '';
+        if(shopCity) locationText += shopCity;
+        if(shopCity && shopAddress) locationText += '، ';
+        if(shopAddress) locationText += shopAddress;
+
+        let thermalContent = `
+    <div class="header">
+        <div class="shop-name">${shopName}</div>
+        ${shopPhone ? `<div class="shop-info">📞 ${shopPhone}</div>` : ''}
+        ${locationText ? `<div class="shop-info">📍 ${locationText}</div>` : ''}
+    </div>
+
+    <div class="invoice-info">
+        <div class="info-row"><span>رقم الفاتورة:</span><span>#${String(data.id).padStart(6, '0')}</span></div>
+        <div class="info-row"><span>التاريخ:</span><span>${formattedDate}</span></div>
+        <div class="info-row"><span>الوقت:</span><span>${formattedTime}</span></div>
+    </div>
+
+    ${data.customer ? `
+    <div class="customer-section">
+        <div style="font-weight: bold;">العميل: ${data.customer.name}</div>
+        ${data.customer.phone ? `<div>${data.customer.phone}</div>` : ''}
+    </div>
+    ` : `
+    <div class="customer-section">
+        <div>💵 عميل نقدي</div>
+    </div>
+    `}
+
+    <div class="items-table">
+        <div class="items-header">المنتجات (${data.items.length})</div>`;
+
+        data.items.forEach((item, index) => {
+            const itemTotal = item.price * item.quantity;
+            thermalContent += `
+        <div class="item-row">
+            <div style="font-weight:bold">${index + 1}. ${item.name}</div>
+            <div class="item-details">
+                <span>${item.quantity} × ${parseFloat(item.price).toFixed(2)}</span>
+                <span style="font-weight: bold;">${itemTotal.toFixed(2)} ${currency}</span>
+            </div>
+        </div>`;
+        });
+
+        thermalContent += `</div>
+            <div class="totals-section">
+                <div class="total-row"><span>المجموع:</span><span>${data.subtotal.toFixed(2)} ${currency}</span></div>`;
+
+        if (data.delivery > 0) {
+            thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${data.delivery.toFixed(2)} ${currency}</span></div>`;
+            if (data.deliveryCity) {
+            thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${data.deliveryCity}</span></div>`;
+        }
+    }
+    
+    if (data.discount_amount && data.discount_amount > 0) {
+        thermalContent += `<div class="total-row"><span>الخصم:</span><span>-${data.discount_amount.toFixed(2)} ${currency}</span></div>`;
+    }
+
+    thermalContent += `
+        <div class="total-row grand-total"><span>الإجمالي:</span><span>${data.total.toFixed(2)} ${currency}</span></div>`;
+
+    const recVal = data.amount_received || 0;
+    const chgVal = data.change_due || 0;
+
+    if (recVal > 0) {
+        thermalContent += `
+        <div class="total-row" style="border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm;">
+            <span>المبلغ المستلم:</span>
+            <span>${parseFloat(recVal).toFixed(2)} ${currency}</span>
+        </div>
+        <div class="total-row">
+            <span>المبلغ الذي تم رده:</span>
+            <span>${parseFloat(chgVal).toFixed(2)} ${currency}</span>
+        </div>`;
+    }
+
+    thermalContent += `
+    </div>
+
+    <div style="text-align: center; margin: 5mm 0;">
+        <svg id="barcode-thermal-display"></svg>
+    </div>
+
+    <div class="footer">
+        <div style="font-weight: bold; margin-bottom: 2mm;">🌟 شكراً لثقتكم بنا 🌟</div>
+        ${shopName ? `<div>${shopName}</div>` : ''}
+    </div>`;
+
+        return thermalContent;
+    }
+
+    function displayThermalInvoice(data) {
+        const thermalPrintArea = document.getElementById('thermal-invoice-print-area');
+        thermalPrintArea.innerHTML = generateThermalContent(data);
+        
+        // توليد الباركود للعرض
+        setTimeout(() => {
+            try {
+                JsBarcode("#barcode-thermal-display", String(data.id).padStart(6, '0'), {
+                    format: "CODE128",
+                    width: 1,
+                    height: 30,
+                    displayValue: false,
+                    margin: 0
+                });
+            } catch (e) {
+                console.error('Error generating thermal barcode:', e);
+            }
+        }, 100);
+    }
+
+    async function viewInvoice(invoiceId) {
+        try {
+            const response = await fetch(`api.php?action=get_invoice_details&invoice_id=${invoiceId}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                currentInvoiceId = invoiceId;
+                displayThermalInvoice(result.data);
+                document.getElementById('thermal-invoice-modal').classList.remove('hidden');
+            } else {
+                throw new Error(result.message || 'حدث خطأ أثناء جلب الفاتورة');
+            }
+        } catch (error) {
+            console.error('Error viewing invoice:', error);
+            Swal.fire({
+                title: '!حدث خطأ',
+                text: error.message || 'حدث خطأ غير متوقع',
+                icon: 'error',
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'حسناً'
+            });
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         
-        const currency = '<?php echo $currency; ?>';
-
-        function toEnglishNumbers(str) {
-            if (typeof str === 'undefined' || str === null) {
-                return '';
-            }
-            const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-            const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-            
-            let result = str.toString();
-            for (let i = 0; i < 10; i++) {
-                result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
-            }
-            return result;
-        }
-
-        function formatNumber(num) {
-            const numValue = parseFloat(num);
-            if (isNaN(numValue)) {
-                return '0.00';
-            }
-            return numValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
+        // const currency = '<?php echo $currency; ?>';
 
         async function loadDashboardStats() {
             try {
@@ -1067,17 +1406,51 @@ $stmt->close();
                 
                 if (result.success) {
                     const summary = result.data.summary;
-                    const summaryTitle = document.querySelector('#end-day-modal h2');
-                    summaryTitle.textContent = `ملخص الفترة من ${summary.start_date} إلى ${summary.end_date}`;
-                    daySummaryContainer.innerHTML = `
-                        <div class="space-y-3">
-                            <p class="text-right"><strong class="text-green-400">إجمالي المبيعات:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
-                            <hr class="border-gray-600 my-3">
-                            <p class="text-right"><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
-                            <p class="text-right text-xl font-bold mt-4 text-green-400">صافي الربح: ${formatNumber(summary.total_profit)} ${currency}</p>
-                        </div>
-                    `;
-                    endDayModal.classList.remove('hidden');
+                    let invoicesHtml = '';
+                    if (summary.invoices && summary.invoices.length > 0) {
+                        invoicesHtml = `
+                            <hr class="border-gray-600 my-4">
+                            <h3 class="text-lg font-bold text-white mb-3">الفواتير (${summary.invoices.length})</h3>
+                            <div class="max-h-96 overflow-y-auto space-y-2">
+                        `;
+                        summary.invoices.forEach(invoice => {
+                            invoicesHtml += `
+                                <details class="bg-gray-700 rounded-lg p-3">
+                                    <summary class="cursor-pointer text-white font-medium flex justify-between items-center">
+                                        <span>فاتورة #${invoice.id} - ${invoice.customer_name || 'عميل غير محدد'}</span>
+                                        <div class="flex items-center gap-2">
+                                            <button onclick="viewInvoice(${invoice.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">عرض الفاتورة</button>
+                                            <span class="text-green-400">${formatNumber(invoice.total)} ${currency}</span>
+                                        </div>
+                                    </summary>
+                                    <div class="mt-3 text-gray-300 text-sm space-y-1">
+                                        <p><strong>التاريخ:</strong> ${new Date(invoice.created_at).toLocaleString('ar')}</p>
+                                        <p><strong>الهاتف:</strong> ${invoice.customer_phone || 'غير محدد'}</p>
+                                        <p><strong>رسوم التوصيل:</strong> ${formatNumber(invoice.delivery_cost)} ${currency}</p>
+                                        <p><strong>المنتجات:</strong> ${invoice.items || 'لا توجد منتجات'}</p>
+                                    </div>
+                                </details>
+                            `;
+                        });
+                        invoicesHtml += '</div>';
+                    }
+                        document.getElementById('summary-data').innerHTML = `
+                            <div class="space-y-3">
+                                <p class="text-right"><strong class="text-green-400">إجمالي المبيعات:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
+                                <p class="text-right"><strong class="text-orange-400">إجمالي رسوم التوصيل:</strong> ${formatNumber(summary.total_delivery)} ${currency}</p>
+                                <p class="text-right"><strong class="text-blue-400">الرصيد الافتتاحي:</strong> ${formatNumber(summary.opening_balance)} ${currency}</p>
+                                <p class="text-right"><strong class="text-yellow-400">الرصيد الختامي:</strong> ${formatNumber(summary.closing_balance)} ${currency}</p>
+                                <hr class="border-gray-600 my-3">
+                                <p class="text-right"><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
+                                <div class="bg-green-500/10 p-3 rounded-lg mt-4 border border-green-500/20">
+                                    <p class="text-right text-xl font-bold text-green-400">صافي الربح: ${formatNumber(summary.total_profit)} ${currency}</p>
+                                </div>
+                                ${invoicesHtml}
+                            </div>
+                        `;
+                        endDayModal.classList.remove('hidden');
+                        checkBusinessDayStatus();
+
                 } else {
                     throw new Error(result.message || 'حدث خطأ أثناء جلب ملخص اليوم');
                 }
@@ -1094,6 +1467,124 @@ $stmt->close();
         }
 
         loadDashboardStats();
+
+        // --- Thermal Invoice Functions ---
+        const shopName = '<?php echo addslashes($shopName); ?>';
+        const shopPhone = '<?php echo addslashes($shopPhone); ?>';
+        const shopAddress = '<?php echo addslashes($shopAddress); ?>';
+        const shopCity = '<?php echo addslashes($shopCity); ?>';
+
+        function formatDualDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.getMonth() + 1;
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        async function viewInvoice(invoiceId) {
+            try {
+                const response = await fetch(`api.php?action=get_invoice_details&invoice_id=${invoiceId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayThermalInvoice(result.data);
+                    document.getElementById('thermal-invoice-modal').classList.remove('hidden');
+                } else {
+                    throw new Error(result.message || 'حدث خطأ أثناء جلب الفاتورة');
+                }
+            } catch (error) {
+                console.error('Error viewing invoice:', error);
+                Swal.fire({
+                    title: '!حدث خطأ',
+                    text: error.message || 'حدث خطأ غير متوقع',
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'حسناً'
+                });
+            }
+        }
+
+        // Thermal modal event listeners
+        document.getElementById('close-thermal-invoice-modal').addEventListener('click', () => {
+            document.getElementById('thermal-invoice-modal').classList.add('hidden');
+        });
+
+        document.getElementById('close-thermal-modal-btn').addEventListener('click', () => {
+            document.getElementById('thermal-invoice-modal').classList.add('hidden');
+        });
+
+        document.getElementById('print-thermal-btn').addEventListener('click', () => {
+            // Get current invoice data from the modal
+            const thermalArea = document.getElementById('thermal-invoice-print-area');
+            const thermalContent = thermalArea.innerHTML;
+
+            const fullContent = `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=80mm">
+    <title>فاتورة حرارية</title>
+    <style>
+        @page { size: 80mm auto; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 80mm; padding: 5mm; font-size: 11pt;
+            line-height: 1.4; background: white; color: #000;
+        }
+        .header { text-align: center; margin-bottom: 5mm; border-bottom: 2px dashed #000; padding-bottom: 3mm; }
+        .shop-name { font-size: 16pt; font-weight: bold; margin-bottom: 1mm; }
+        .shop-info { font-size: 9pt; color: #333; margin: 1mm 0; }
+        .invoice-info { margin: 3mm 0; border-bottom: 1px dashed #000; padding-bottom: 2mm; }
+        .info-row { display: flex; justify-content: space-between; font-size: 10pt; margin: 1mm 0; }
+        .customer-section { margin: 3mm 0; padding: 2mm; background: #f5f5f5; border-radius: 2mm; font-size: 10pt; }
+        .items-table { width: 100%; margin: 3mm 0; }
+        .items-header { border-top: 2px solid #000; border-bottom: 1px solid #000; padding: 1mm 0; font-weight: bold; font-size: 10pt; }
+        .item-row { border-bottom: 1px dashed #ccc; padding: 2mm 0; font-size: 10pt; }
+        .item-details { display: flex; justify-content: space-between; font-size: 9pt; }
+        .totals-section { margin: 3mm 0; border-top: 2px solid #000; padding-top: 2mm; }
+        .total-row { display: flex; justify-content: space-between; font-size: 11pt; margin: 1mm 0; }
+        .grand-total { font-size: 14pt; font-weight: bold; border-top: 2px solid #000; padding-top: 2mm; margin-top: 2mm; }
+        .footer { text-align: center; margin-top: 5mm; border-top: 2px dashed #000; padding-top: 3mm; font-size: 10pt; }
+    </style>
+</head>
+<body>
+    ${thermalContent}
+</body>
+</html>`;
+
+            const printWindow = window.open('', '_blank', 'width=302,height=600');
+            printWindow.document.write(fullContent);
+            printWindow.document.close();
+            
+            // Load JsBarcode for barcode
+            const script = printWindow.document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
+            script.onload = function() {
+                try {
+                    // Assuming we have currentInvoiceId, but since it's not global, we need to get it from the content
+                    const barcodeElement = printWindow.document.querySelector('#barcode-thermal-display');
+                    if (barcodeElement) {
+                        // Extract invoice id from the content or use a placeholder
+                        JsBarcode(barcodeElement, currentInvoiceId.toString().padStart(6, '0'), {
+                            format: "CODE128",
+                            width: 1,
+                            height: 30,
+                            displayValue: false,
+                            margin: 0
+                        });
+                    }
+                    printWindow.print();
+                    printWindow.close();
+                } catch (e) {
+                    console.error('Error generating barcode for print:', e);
+                    printWindow.print();
+                    printWindow.close();
+                }
+            };
+            printWindow.document.head.appendChild(script);
+        });
 
         // --- Main Sales Chart ---
         const ctxMain = document.getElementById('mainChart').getContext('2d');
@@ -1318,6 +1809,17 @@ $stmt->close();
         });
 
         document.getElementById('view-summary-btn').addEventListener('click', handleViewSummary);
+        document.getElementById('calculation-method-btn').addEventListener('click', () => {
+            document.getElementById('calculation-method-modal').classList.remove('hidden');
+        });
+        document.getElementById('close-calculation-method-modal').addEventListener('click', () => {
+            document.getElementById('calculation-method-modal').classList.add('hidden');
+        });
+        document.getElementById('calculation-method-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('calculation-method-modal')) {
+                document.getElementById('calculation-method-modal').classList.add('hidden');
+            }
+        });
         
         async function checkBusinessDayStatus() {
             const response = await fetch('api.php?action=get_business_day_status');
@@ -1504,7 +2006,7 @@ $stmt->close();
                     
                     if (result.success) {
                         const summary = result.data.summary;
-                        daySummaryContainer.innerHTML = `
+                        document.getElementById('summary-data').innerHTML = `
                             <div class="space-y-3">
                                 <p class="text-right"><strong class="text-green-400">إجمالي المبيعات:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
                                 <p class="text-right"><strong class="text-blue-400">الرصيد الافتتاحي:</strong> ${formatNumber(summary.opening_balance)} ${currency}</p>
