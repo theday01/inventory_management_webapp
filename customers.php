@@ -45,6 +45,57 @@ require_once 'db.php';
     .pagination-btn.bg-primary:hover {
         background-color: var(--color-primary-hover, #047857);
     }
+
+    /* Toast Notification */
+    .toast-notification {
+        position: fixed;
+        bottom: 2rem;
+        left: 2rem;
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px rgba(5, 150, 105, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 9999;
+        animation: slideInUp 0.3s ease-out;
+        font-weight: 500;
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(1rem);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .toast-notification.remove {
+        animation: slideOutDown 0.3s ease-out forwards;
+    }
+
+    @keyframes slideOutDown {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(1rem);
+        }
+    }
+
+    .toast-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
 </style>
 
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark">
@@ -58,7 +109,7 @@ require_once 'db.php';
         
         <div class="flex items-center gap-3">
             <button id="export-excel-btn"
-                class="bg-dark/50 hover:bg-white/5 text-gray-300 hover:text-white border border-white/10 px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all">
+                class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all hover:border-emerald-500/50">
                 <span class="material-icons-round text-sm">download</span>
                 <span>تصدير Excel</span>
             </button>
@@ -186,6 +237,41 @@ require_once 'db.php';
     </div>
 </div>
 
+<div id="loading-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl p-12 border border-white/10 flex flex-col items-center gap-6">
+        <div class="relative w-20 h-20">
+            <div class="absolute inset-0 border-4 border-transparent border-t-primary border-r-primary rounded-full animate-spin"></div>
+            <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
+        </div>
+        <div class="text-center">
+            <h3 class="text-lg font-bold text-white mb-2">جاري التحميل...</h3>
+            <p id="loading-message" class="text-sm text-gray-400">يرجى الانتظار قليلاً</p>
+        </div>
+    </div>
+</div>
+
+<div id="export-options-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-md border border-white/10 m-4">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">خيارات التصدير</h3>
+            <button id="close-export-modal" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <p class="text-gray-300 text-sm">اختر ما تريد تصديره:</p>
+            <button id="export-current-page" class="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 px-4 py-3 rounded-xl font-medium flex items-center gap-2 transition-all hover:border-blue-500/50">
+                <span class="material-icons-round text-sm">filter_list</span>
+                <span>البيانات المعروضة حالياً فقط</span>
+            </button>
+            <button id="export-all-data" class="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-3 rounded-xl font-medium flex items-center gap-2 transition-all hover:border-emerald-500/50">
+                <span class="material-icons-round text-sm">database</span>
+                <span>جميع البيانات في النظام</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 <div id="camera-scan-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
@@ -214,6 +300,48 @@ require_once 'db.php';
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
+    // Utility function to show toast notifications
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification`;
+        
+        let icon = '';
+        if (type === 'success') {
+            icon = 'check_circle';
+        } else if (type === 'error') {
+            icon = 'error';
+        } else if (type === 'info') {
+            icon = 'info';
+        }
+
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <span class="material-icons-round">${icon}</span>
+            </div>
+            <span>${message}</span>
+        `;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('remove');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // دوال إدارة شاشة التحميل
+    function showLoadingOverlay(message = 'جاري معالجة البيانات...') {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingMessage = document.getElementById('loading-message');
+        loadingMessage.textContent = message;
+        loadingOverlay.classList.remove('hidden');
+    }
+
+    function hideLoadingOverlay() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        loadingOverlay.classList.add('hidden');
+    }
+
 document.addEventListener('DOMContentLoaded', function () {
     const addCustomerBtn = document.getElementById('add-customer-btn');
     const customerModal = document.getElementById('customer-modal');
@@ -234,6 +362,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const cameraVideo = document.getElementById('camera-video');
     const cameraCanvas = document.getElementById('camera-canvas');
     const scanStatus = document.getElementById('scan-status');
+    const exportOptionsModal = document.getElementById('export-options-modal');
+    const closeExportModalBtn = document.getElementById('close-export-modal');
+    const exportCurrentPageBtn = document.getElementById('export-current-page');
+    const exportAllDataBtn = document.getElementById('export-all-data');
+    const exportExcelBtn = document.getElementById('export-excel-btn');
 
     let currentPage = 1;
     const customersPerPage = 150;
@@ -245,14 +378,19 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadCustomers() {
         const searchQuery = searchInput.value;
         try {
+            showLoadingOverlay('جاري تحميل البيانات...');
             const response = await fetch(`api.php?action=getCustomers&search=${searchQuery}&page=${currentPage}&limit=${customersPerPage}`);
             const result = await response.json();
             if (result.success) {
                 displayCustomers(result.data);
                 renderPagination(result.total_customers);
+                hideLoadingOverlay();
+            } else {
+                hideLoadingOverlay();
             }
         } catch (error) {
             console.error('Error loading customers:', error);
+            hideLoadingOverlay();
             customersTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-400">حدث خطأ في تحميل البيانات</td></tr>';
         }
     }
@@ -377,6 +515,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const url = customerId ? 'api.php?action=updateCustomer' : 'api.php?action=addCustomer';
         
         try {
+            showLoadingOverlay(customerId ? 'جاري تحديث بيانات العميل...' : 'جاري إضافة العميل الجديد...');
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -384,6 +523,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             const result = await response.json();
             if (result.success) {
+                hideLoadingOverlay();
                 customerModal.classList.add('hidden');
                 if (!customerId) {
                     const newCustomerId = result.id || result.data?.id;
@@ -394,10 +534,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 loadCustomers();
             } else {
+                hideLoadingOverlay();
                 alert(result.message);
             }
         } catch (error) {
             console.error('Error saving customer:', error);
+            hideLoadingOverlay();
         }
     });
 
@@ -532,10 +674,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function getCustomerDetails(id) {
         try {
+            showLoadingOverlay('جاري جلب التفاصيل...');
             const response = await fetch(`api.php?action=getCustomerDetails&id=${id}`);
             const result = await response.json();
+            hideLoadingOverlay();
             return result.success ? result.data : null;
         } catch (error) {
+            hideLoadingOverlay();
             console.error('Error fetching customer details:', error);
             return null;
         }
@@ -628,28 +773,82 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Export Logic
-    const exportExcelBtn = document.getElementById('export-excel-btn');
     exportExcelBtn.addEventListener('click', () => {
-        const rows = Array.from(document.querySelectorAll('#customers-table-body tr'));
-        if (rows.length === 0) { alert('لا يوجد عملاء للتصدير'); return; }
+        const customersCount = document.querySelectorAll('#customers-table-body tr').length;
+        if (customersCount === 0) {
+            showToast('لا يوجد عملاء للتصدير', 'info');
+            return;
+        }
+        exportOptionsModal.classList.remove('hidden');
+    });
 
-        let csvContent = 'الاسم,الهاتف,البريد الإلكتروني,العنوان\n';
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length >= 5) { // Adjusted index because of added Avatar column
-                const name = cells[1].textContent.trim();
-                const phone = cells[2].textContent.trim();
-                const email = cells[3].textContent.trim();
-                const address = cells[4].textContent.trim();
-                csvContent += `"${name}","${phone}","${email}","${address}"\n`;
+    closeExportModalBtn.addEventListener('click', () => {
+        exportOptionsModal.classList.add('hidden');
+    });
+
+    exportCurrentPageBtn.addEventListener('click', async () => {
+        await performExport('current_page');
+        exportOptionsModal.classList.add('hidden');
+    });
+
+    exportAllDataBtn.addEventListener('click', async () => {
+        await performExport('all_data');
+        exportOptionsModal.classList.add('hidden');
+    });
+
+    async function performExport(exportType) {
+        try {
+            const searchQuery = searchInput.value;
+            const customersCount = document.querySelectorAll('#customers-table-body tr').length;
+
+            // إظهار شاشة التحميل
+            const loadingMsg = exportType === 'current_page' 
+                ? 'جاري تصدير البيانات المعروضة...' 
+                : 'جاري تصدير جميع البيانات...';
+            showLoadingOverlay(loadingMsg);
+
+            // إخفاء الزر المُطلب
+            exportExcelBtn.disabled = true;
+
+            // بناء URL التصدير
+            let url = `api.php?action=exportCustomersExcel&exportType=${exportType}`;
+            
+            // إذا كان التصدير للصفحة الحالية، أضف معاملات pagination
+            if (exportType === 'current_page') {
+                url += `&page=${currentPage}&limit=${customersPerPage}`;
+                if (searchQuery) {
+                    url += `&search=${encodeURIComponent(searchQuery)}`;
+                }
             }
-        });
+            
+            // إنشاء رابط وتحميل الملف
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `عملاء_${new Date().getTime()}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `العملاء_${new Date().getTime()}.csv`;
-        link.click();
+            // عرض رسالة النجاح وإخفاء التحميل
+            setTimeout(() => {
+                hideLoadingOverlay();
+                const exportTypeText = exportType === 'current_page' ? 'البيانات المعروضة' : 'جميع البيانات';
+                showToast(`تم تصدير ${exportTypeText} بنجاح (يجب أن تنتظر قليلا قبل بدء التحميل الفعلي على جهازك)✓`, 'success');
+                exportExcelBtn.disabled = false;
+            }, 500);
+
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            hideLoadingOverlay();
+            showToast('حدث خطأ في تصدير البيانات', 'error');
+            exportExcelBtn.disabled = false;
+        }
+    }
+    // إغلاق المودال عند الضغط خارجه
+    exportOptionsModal.addEventListener('click', (e) => {
+        if (e.target === exportOptionsModal) {
+            exportOptionsModal.classList.add('hidden');
+        }
     });
 
     loadCustomers();

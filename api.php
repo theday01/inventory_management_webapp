@@ -80,6 +80,9 @@ switch ($action) {
     case 'updateCustomer':
         updateCustomer($conn);
         break;
+    case 'exportCustomersExcel':
+        exportCustomersExcel($conn);
+        break;
     case 'createInvoice':
         createInvoice($conn);
         break;
@@ -2059,6 +2062,154 @@ function updateCustomer($conn) {
     }
 
     $stmt->close();
+}
+
+function exportCustomersExcel($conn) {
+    require_once 'vendor/autoload.php';
+
+    // الحصول على نوع التصدير والبيانات
+    $exportType = isset($_GET['exportType']) ? $_GET['exportType'] : 'all_data';
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 150;
+    $search = isset($_GET['search']) ? $_GET['search'] : '';
+    
+    // بناء شرط البحث
+    $baseSql = "FROM customers WHERE 1=1";
+    $params = [];
+    $types = '';
+
+    if (!empty($search)) {
+        $baseSql .= " AND (name LIKE ? OR phone LIKE ? OR email LIKE ?)";
+        $searchTerm = "%{$search}%";
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $types .= 'sss';
+    }
+
+    // بناء الاستعلام
+    $dataSql = "SELECT id, name, phone, email, address, city, created_at " . $baseSql . " ORDER BY name ASC";
+
+    // إذا كان التصدير للصفحة الحالية فقط
+    if ($exportType === 'current_page') {
+        $offset = ($page - 1) * $limit;
+        $dataSql .= " LIMIT ? OFFSET ?";
+        $types .= 'ii';
+        $params[] = $limit;
+        $params[] = $offset;
+    }
+
+    $stmt = $conn->prepare($dataSql);
+    if (!empty($types)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $customers = [];
+    while ($row = $result->fetch_assoc()) {
+        $customers[] = $row;
+    }
+    $stmt->close();
+
+    // إنشاء ملف Excel
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setRightToLeft(true);
+    $sheet->setTitle('قائمة العملاء');
+
+    // العناوين
+    $headers = ['#', 'الاسم', 'رقم الهاتف', 'البريد الإلكتروني', 'العنوان', 'المدينة', 'تاريخ الإضافة'];
+    $columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+
+    // تنسيق الرأس
+    $headerStyle = [
+        'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => 'FFFFFF']],
+        'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '059669']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER, 'wrapText' => true],
+        'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+    ];
+
+    // تطبيق تنسيق الرأس
+    foreach ($headers as $index => $header) {
+        $col = $columns[$index];
+        $sheet->setCellValue($col . '1', $header);
+        $sheet->getStyle($col . '1')->applyFromArray($headerStyle);
+    }
+
+    // تعيين عرض الأعمدة
+    $sheet->getColumnDimension('A')->setWidth(8);
+    $sheet->getColumnDimension('B')->setWidth(20);
+    $sheet->getColumnDimension('C')->setWidth(18);
+    $sheet->getColumnDimension('D')->setWidth(25);
+    $sheet->getColumnDimension('E')->setWidth(30);
+    $sheet->getColumnDimension('F')->setWidth(15);
+    $sheet->getColumnDimension('G')->setWidth(15);
+
+    // إضافة البيانات
+    $row = 2;
+    $dataStyle = [
+        'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+        'font' => ['size' => 11, 'color' => ['rgb' => '1F2937']],
+    ];
+
+    $alternateRowStyle = array_merge($dataStyle, [
+        'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
+    ]);
+
+    foreach ($customers as $index => $customer) {
+        $sheet->setCellValue('A' . $row, $index + 1);
+        $sheet->setCellValue('B' . $row, $customer['name']);
+        $sheet->setCellValue('C' . $row, $customer['phone'] ?: '-');
+        $sheet->setCellValue('D' . $row, $customer['email'] ?: '-');
+        $sheet->setCellValue('E' . $row, $customer['address'] ?: '-');
+        $sheet->setCellValue('F' . $row, $customer['city'] ?: '-');
+        $sheet->setCellValue('G' . $row, $customer['created_at'] ? date('Y-m-d', strtotime($customer['created_at'])) : '-');
+
+        // تطبيق التنسيق على الصف (تناوب الألوان)
+        $currentStyle = ($index % 2 === 0) ? $alternateRowStyle : $dataStyle;
+        $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray($currentStyle);
+
+        $row++;
+    }
+
+    // تجميد الصف الأول
+    $sheet->freezePane('A2');
+
+    // إعدادات الطباعة
+    $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+    $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
+    $sheet->getPageMargins()->setLeft(0.5);
+    $sheet->getPageMargins()->setRight(0.5);
+    $sheet->getPageMargins()->setTop(0.5);
+    $sheet->getPageMargins()->setBottom(0.5);
+
+    // إعدادات الطباعة - تكرار الصف الأول
+    $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(1, 1);
+
+    // إضافة معلومات التصدير في الأسفل
+    $infoRow = $row + 2;
+    $sheet->setCellValue('A' . $infoRow, 'نوع التصدير:');
+    $exportTypeText = ($exportType === 'all_data') ? 'جميع البيانات' : 'البيانات المعروضة';
+    $sheet->setCellValue('B' . $infoRow, $exportTypeText);
+    
+    $infoRow++;
+    $sheet->setCellValue('A' . $infoRow, 'تاريخ التصدير:');
+    $sheet->setCellValue('B' . $infoRow, date('Y-m-d H:i:s'));
+    
+    $infoRow++;
+    $sheet->setCellValue('A' . $infoRow, 'عدد السجلات:');
+    $sheet->setCellValue('B' . $infoRow, count($customers));
+
+    // حفظ الملف
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . 'عملاء_' . date('Y-m-d_H-i-s') . '.xlsx"');
+    header('Cache-Control: max-age=0');
+
+    $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+    ob_end_clean();
+    $writer->save('php://output');
+    exit;
 }
 
 function checkout($conn) {

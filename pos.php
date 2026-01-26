@@ -1158,7 +1158,7 @@ html:not(.dark) .text-red-500 {
         </div>
         <div class="p-6">
             <p class="text-gray-400 mb-4" id="quantity-product-name"></p>
-            <input type="number" id="quantity-input" min="1" class="w-full bg-dark/50 border border-white/10 text-white text-center text-2xl font-bold py-4 rounded-xl focus:outline-none focus:border-primary/50" value="1">
+            <input type="text" id="quantity-input" class="w-full bg-dark/50 border border-white/10 text-white text-center text-2xl font-bold py-4 rounded-xl focus:outline-none focus:border-primary/50" value="1" inputmode="numeric" pattern="[0-9]*" placeholder="أدخل الكمية (أرقام فقط)">
         </div>
         <div class="p-6 border-t border-white/5 grid grid-cols-2 gap-3">
             <button id="cancel-quantity-btn" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold transition-all">
@@ -1262,7 +1262,7 @@ html:not(.dark) .text-red-500 {
             <div id="cash-payment-details" class="space-y-4">
                 <div>
                     <label for="amount-received" class="block text-sm text-gray-400 mb-2">المبلغ المستلم</label>
-                    <input type="number" id="amount-received" placeholder="أدخل المبلغ..." class="w-full bg-dark/50 border border-white/10 text-white text-center text-xl font-bold py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                    <input type="text" id="amount-received" placeholder="أدخل المبلغ (أرقام فقط)..." class="w-full bg-dark/50 border border-white/10 text-white text-center text-xl font-bold py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" inputmode="decimal" pattern="[0-9.]*">
                 </div>
                 <div class="bg-white/5 p-4 rounded-xl text-center">
                     <p class="text-sm text-gray-400">الباقي</p>
@@ -2207,6 +2207,17 @@ document.addEventListener('DOMContentLoaded', function () {
         editingProductId = null;
     });
 
+    // معالجة input الكمية - السماح بالأرقام فقط
+    quantityInput.addEventListener('input', (e) => {
+        // إزالة أي أحرف غير رقمية
+        let value = e.target.value.replace(/[^0-9]/g, '');
+        // إذا كانت القيمة فارغة، اجعلها 1
+        if (value === '') {
+            value = '1';
+        }
+        e.target.value = value;
+    });
+
     quantityInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             confirmQuantityBtn.click();
@@ -2371,6 +2382,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
         paymentTotalAmount.textContent = `${total.toFixed(2)} ${currency}`;
 
+        // معالجة input المبلغ المستلم - السماح بالأرقام والنقاط فقط
+        amountReceivedInput.addEventListener('input', (e) => {
+            // إزالة أي أحرف غير رقمية وغير نقطة عشرية
+            let value = e.target.value.replace(/[^0-9.]/g, '');
+            // التأكد من وجود نقطة واحدة فقط
+            let parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            e.target.value = value;
+            calculateChange();
+        });
+
         const calculateChange = () => {
             const received = parseFloat(amountReceivedInput.value) || 0;
             const change = received - total;
@@ -2380,8 +2404,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 changeDueDisplay.textContent = '0.00 '  + currency;
             }
         };
-
-        amountReceivedInput.addEventListener('input', calculateChange);
 
         const closeModal = () => {
             paymentModal.classList.add('hidden');
