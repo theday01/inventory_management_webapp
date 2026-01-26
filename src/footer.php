@@ -393,10 +393,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Trigger input event for frameworks/listeners
             activeInput.dispatchEvent(new Event('input', { bubbles: true }));
             activeInput.focus();
+            
+            // Keep input visible above keyboard
+            scrollToInput(activeInput);
         }
         
         // Auto-disable shift after one char if desired, but standard keyboard keeps caps until toggle usually. 
-        // Let's toggle off shift if it was a single press logic, but for simplicity, toggle logic is manual.
+        // Let's toggle off shift after typing in English layout
+        if (currentLayout === 'en' && isShift && /^[a-z]$/.test(char)) {
+            isShift = false;
+            renderKeyboard();
+        }
     }
 
     function handleSpecialKey(e, type) {
@@ -418,6 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             activeInput.dispatchEvent(new Event('input', { bubbles: true }));
             activeInput.focus();
+            scrollToInput(activeInput);
         }
         
         if(type === 'enter' && activeInput) {
@@ -430,6 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if(type === 'space' && activeInput) {
             handleKeyPress(e, ' ');
+            scrollToInput(activeInput);
         }
         
         if(type === 'shift') {
@@ -458,6 +467,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add bottom padding to body/main content to prevent overlap
             addKeyboardPadding();
+            
+            // Scroll active input into view
+            if (activeInput) {
+                scrollToInput(activeInput);
+            }
         }, 10);
     }
 
@@ -481,7 +495,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add dynamic padding to prevent content being hidden
     function addKeyboardPadding() {
-        // Removed padding addition to prevent issues
+        const keyboardHeight = body.offsetHeight;
+        const mainContent = document.getElementById('settings-content-area') || 
+                          document.querySelector('main') ||
+                          document.body;
+        
+        if (mainContent) {
+            mainContent.style.paddingBottom = (keyboardHeight + 40) + 'px';
+        }
+        
+        // Also add padding to the html element for proper scroll space
+        document.documentElement.style.paddingBottom = (keyboardHeight + 40) + 'px';
     }
 
     function removeKeyboardPadding() {
@@ -491,6 +515,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (mainContent) {
             mainContent.style.paddingBottom = '';
         }
+        
+        document.documentElement.style.paddingBottom = '';
     }
 
     // Smart scroll to keep input visible above keyboard
@@ -502,26 +528,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const inputRect = input.getBoundingClientRect();
             const viewportHeight = window.innerHeight;
             
-            // Calculate if input is hidden behind keyboard
-            const inputBottom = inputRect.bottom;
-            const keyboardTop = viewportHeight - keyboardHeight;
+            // Calculate space needed: keyboard height + input height + margin
+            const requiredSpace = keyboardHeight + 100;
+            const inputTopFromBottom = viewportHeight - inputRect.top;
             
-            if (inputBottom > keyboardTop - 20) {
-                // Input is hidden, scroll it into view
-                const scrollTarget = inputRect.top + window.scrollY - 20;
+            // If input doesn't have enough space above keyboard
+            if (inputTopFromBottom < requiredSpace) {
+                // Scroll to position input well above keyboard
+                const scrollAmount = requiredSpace - inputTopFromBottom + 20;
                 
-                // Smooth scroll to position
                 const scrollableParent = findScrollableParent(input);
                 if (scrollableParent && scrollableParent !== document.body && scrollableParent !== document.documentElement) {
                     // Scroll within parent container
-                    scrollableParent.scrollTo({
-                        top: scrollableParent.scrollTop + (inputBottom - keyboardTop + 40),
+                    scrollableParent.scrollBy({
+                        top: scrollAmount,
                         behavior: 'smooth'
                     });
                 } else {
                     // Scroll entire window
-                    window.scrollTo({
-                        top: scrollTarget,
+                    window.scrollBy({
+                        top: scrollAmount,
                         behavior: 'smooth'
                     });
                 }
