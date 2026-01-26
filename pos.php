@@ -888,9 +888,6 @@ html:not(.dark) .text-red-500 {
                         <input type="text" id="discount-percent" min="0" max="100" step="0.1" 
                             placeholder="نسبة الخصم %"
                             class="flex-1 bg-dark/50 border border-white/10 text-white text-right px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
-                        <button id="apply-discount-btn" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-bold transition-colors">
-                            تطبيق
-                        </button>
                     </div>
                     <div class="text-xs text-gray-500 flex items-center gap-1">
                         <span class="material-icons-round text-xs">info</span>
@@ -1425,12 +1422,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const discountToggle = document.getElementById('discount-toggle');
     const discountOptionsDiv = document.getElementById('discount-options');
     const discountPercentInput = document.getElementById('discount-percent');
-    const applyDiscountBtn = document.getElementById('apply-discount-btn');
     const discountAmountDisplay = document.getElementById('discount-amount-display');
     const cartDiscountRow = document.getElementById('cart-discount-row');
     const cartDiscountAmount = document.getElementById('cart-discount-amount');
     
-    // Add input validation for discount percent
+    // Add input validation for discount percent and apply automatically
     discountPercentInput.addEventListener('input', function() {
         let value = this.value;
         // Convert Arabic numbers to English
@@ -1439,10 +1435,12 @@ document.addEventListener('DOMContentLoaded', function () {
         value = value.replace(/[^0-9.]/g, '');
         this.value = value;
         
-        // إعادة تعيين حالة التطبيق عند تغيير القيمة
-        if (parseFloat(value) !== discountPercent) {
-            discountApplied = false;
-            checkDiscountStatus();
+        // تطبيق الخصم تلقائياً عند الإدخال
+        if (discountToggle.checked && value) {
+            const inputPercent = parseFloat(value) || 0;
+            if (inputPercent >= 0 && inputPercent <= 100) {
+                applyDiscount();
+            }
         }
     });
     
@@ -1844,12 +1842,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (discountToggle.checked) {
             const inputPercent = parseFloat(discountPercentInput.value) || 0;
             
-            // إذا كان هناك قيمة في حقل الخصم ولم يتم تطبيقها
+            // إذا كان هناك قيمة في حقل الخصم ولم يتم تطبيقها، قم بتطبيقها تلقائياً
             if (inputPercent > 0 && !discountApplied) {
-                checkoutBtn.disabled = true;
-                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                showToast('⚠️ يرجى الضغط على "تطبيق" لتفعيل الخصم قبل الدفع', false);
-                return false;
+                applyDiscount();
+                return true;
             }
             
             // حساب المجموع الحالي
@@ -1857,13 +1853,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const appliedDiscountAmount = discountAmount;
             const expectedDiscountAmount = currentSubtotal * (discountPercent / 100);
             
-            // إذا تغير المجموع بعد تطبيق الخصم (تم إضافة منتج جديد مثلاً)
+            // إذا تغير المجموع بعد تطبيق الخصم (تم إضافة منتج جديد أو تغيير التوصيل مثلاً)
             if (discountApplied && Math.abs(appliedDiscountAmount - expectedDiscountAmount) > 0.01) {
-                checkoutBtn.disabled = true;
-                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                showToast('⚠️ تم تعديل السلة، يرجى إعادة تطبيق الخصم', false);
-                discountApplied = false;
-                return false;
+                // إعادة تطبيق الخصم تلقائياً
+                applyDiscount();
+                return true;
             }
         }
         
@@ -1976,8 +1970,8 @@ document.addEventListener('DOMContentLoaded', function () {
         
         updateTotals();
         
-        // فحص حالة الخصم بعد تغيير التوصيل
-        if (discountToggle.checked && discountApplied) {
+        // فحص حالة الخصم بعد تغيير التوصيل - إعادة تطبيق تلقائي
+        if (discountToggle.checked) {
             discountApplied = false;
             checkDiscountStatus();
         }
@@ -2025,8 +2019,8 @@ document.addEventListener('DOMContentLoaded', function () {
         
         updateTotals();
         
-        // فحص حالة الخصم بعد تغيير المدينة
-        if (discountToggle.checked && discountApplied) {
+        // فحص حالة الخصم بعد تغيير المدينة - إعادة تطبيق تلقائي
+        if (discountToggle.checked) {
             discountApplied = false;
             checkDiscountStatus();
         }
@@ -2045,16 +2039,7 @@ document.addEventListener('DOMContentLoaded', function () {
     deliveryCityInput.addEventListener('input', calculateDeliveryCost);
     
     // Apply discount button
-    applyDiscountBtn.addEventListener('click', function() {
-        applyDiscount();
-    });
-    
-    // Also apply discount when pressing Enter in the discount input
-    discountPercentInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            applyDiscount();
-        }
-    });
+    // لا يوجد زر تطبيق - يتم التطبيق تلقائياً عند الإدخال
 
     function updateTotals() {
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -2089,6 +2074,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateDiscountState() {
         if (discountToggle.checked) {
             discountOptionsDiv.classList.remove('hidden');
+            // تطبيق الخصم تلقائياً إذا كان هناك قيمة مدخلة
+            const inputPercent = parseFloat(discountPercentInput.value) || 0;
+            if (inputPercent > 0) {
+                applyDiscount();
+            }
         } else {
             discountOptionsDiv.classList.add('hidden');
             // Reset discount when toggled off
@@ -2131,8 +2121,6 @@ document.addEventListener('DOMContentLoaded', function () {
         checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         
         updateTotals();
-        
-        showToast(`تم تطبيق خصم ${discountPercent}% ( ${discountAmount.toFixed(2)} ${currency} )`, true);
     }
 
     cartItemsContainer.addEventListener('click', function (e) {

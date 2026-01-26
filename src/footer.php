@@ -1,10 +1,10 @@
-</div> <div id="virtual-keyboard-container" class="fixed bottom-0 left-0 w-full z-[9999] transform translate-y-full transition-transform duration-300 ease-in-out hidden">
+<div id="virtual-keyboard-container" class="fixed bottom-0 left-0 w-4/5 z-[9999] transform translate-y-full transition-transform duration-300 ease-in-out hidden left-1/10">
     <button id="vk-toggle-btn" class="absolute -top-12 left-4 bg-dark-surface border border-white/10 text-white p-2 rounded-t-xl shadow-lg flex items-center gap-2 hover:bg-white/5 transition-colors">
         <span class="material-icons-round">keyboard</span>
         <span class="text-xs font-bold">لوحة المفاتيح</span>
     </button>
 
-    <div id="vk-body" class="bg-[#1a1d24] border-t border-white/10 shadow-2xl backdrop-blur-xl p-2 pb-6 select-none">
+    <div id="vk-body" class="bg-transparent border-t border-white/10 shadow-2xl backdrop-blur-xl p-2 pb-6 select-none">
         <div class="flex justify-between items-center px-2 mb-2 border-b border-white/5 pb-2">
             <div class="flex items-center gap-2">
                 <button id="vk-lang-toggle" class="px-3 py-1 bg-white/5 rounded text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-colors">AR</button>
@@ -17,8 +17,7 @@
             </div>
         </div>
         
-        <div id="vk-keys" class="flex flex-col gap-1.5 max-w-5xl mx-auto direction-ltr">
-            </div>
+        <div id="vk-keys" class="flex flex-col gap-1.5 max-w-5xl mx-auto direction-ltr"></div>
     </div>
 </div>
 
@@ -28,10 +27,20 @@
         font-family: 'Tajawal', sans-serif; 
         /* Ensure keyboard stays above all content */
         z-index: 9999;
+        width: 70% !important;
+        left: 15% !important;
+        right: auto !important;
     }
     #virtual-keyboard-container.visible { 
         transform: translateY(0); 
         box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    }
+    
+    #vk-body {
+        width: 100% !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        background-color: transparent !important;
     }
     
     /* Add smooth transition for content padding */
@@ -224,8 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const countElement = document.getElementById('notification-count');
                 const countBadge = document.getElementById('notification-count-badge');
                 if (countElement) {
-                    countElement.textContent = data.unread_count;
-                    if (data.unread_count > 0) {
+                    countElement.textContent = currentUnread > 50 ? '*50' : currentUnread;
+                    if (currentUnread > 0) {
                         countElement.classList.remove('bg-green-500'); 
                         countElement.classList.add('bg-red-500'); 
                         countElement.style.display = 'inline-flex';
@@ -236,8 +245,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 if (countBadge) {
-                    countBadge.textContent = data.unread_count;
-                    if (data.unread_count > 0) countBadge.classList.remove('hidden'); else countBadge.classList.add('hidden');
+                    countBadge.textContent = currentUnread > 50 ? '*50' : currentUnread;
+                    if (currentUnread > 0) countBadge.classList.remove('hidden'); else countBadge.classList.add('hidden');
                 }
             });
     }
@@ -459,8 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function addKeyboardPadding() {
         const keyboardHeight = body.offsetHeight;
         const mainContent = document.getElementById('settings-content-area') || 
-                          document.querySelector('main') || 
-                          document.body;
+                          document.querySelector('main');
         
         if (mainContent) {
             mainContent.style.paddingBottom = (keyboardHeight + 20) + 'px';
@@ -470,8 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function removeKeyboardPadding() {
         const mainContent = document.getElementById('settings-content-area') || 
-                          document.querySelector('main') || 
-                          document.body;
+                          document.querySelector('main');
         
         if (mainContent) {
             mainContent.style.paddingBottom = '';

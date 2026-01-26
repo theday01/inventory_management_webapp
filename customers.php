@@ -262,11 +262,11 @@ require_once 'db.php';
             <p class="text-gray-300 text-sm">اختر ما تريد تصديره:</p>
             <button id="export-current-page" class="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 px-4 py-3 rounded-xl font-medium flex items-center gap-2 transition-all hover:border-blue-500/50">
                 <span class="material-icons-round text-sm">filter_list</span>
-                <span>البيانات المعروضة حالياً فقط</span>
+                <span>البيانات المعروضة حالياً في الجدول فقط</span>
             </button>
             <button id="export-all-data" class="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-3 rounded-xl font-medium flex items-center gap-2 transition-all hover:border-emerald-500/50">
-                <span class="material-icons-round text-sm">database</span>
-                <span>جميع البيانات في النظام</span>
+                <span class="material-icons-round text-sm">cloud</span>
+                <span>جميع البيانات في النظام <em style="font-size: 12px">(قد يستغرق وقتاً طويلاً)</em></span>
             </button>
         </div>
     </div>
@@ -326,7 +326,7 @@ require_once 'db.php';
         setTimeout(() => {
             toast.classList.add('remove');
             setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        }, 10000);
     }
 
     // دوال إدارة شاشة التحميل

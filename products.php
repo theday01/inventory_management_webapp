@@ -2499,7 +2499,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         formData.append('preview', 'true');
 
         try {
-            showLoading('جاري معاينة البيانات...');
+            showLoadingOverlay('جاري معاينة البيانات...');
             const response = await fetch('api.php?action=importProducts', {
                 method: 'POST',
                 body: formData
@@ -2528,7 +2528,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             console.error('Error previewing import:', error);
             showToast('حدث خطأ في معاينة الملف', false);
         } finally {
-            hideLoading();
+            hideLoadingOverlay();
         }
     });
 
@@ -2547,7 +2547,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         const formData = new FormData(importExcelForm);
 
         try {
-            showLoading('جاري استيراد المنتجات...');
+            showLoadingOverlay('جاري استيراد المنتجات...');
             const response = await fetch('api.php?action=importProducts', {
                 method: 'POST',
                 body: formData

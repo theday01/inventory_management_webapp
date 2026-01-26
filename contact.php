@@ -190,6 +190,34 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<div id="loading-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl p-12 border border-white/10 flex flex-col items-center gap-6">
+        <div class="relative w-20 h-20">
+            <div class="absolute inset-0 border-4 border-transparent border-t-primary border-r-primary rounded-full animate-spin"></div>
+            <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
+        </div>
+        <div class="text-center">
+            <h3 class="text-lg font-bold text-white mb-2">جاري التحميل...</h3>
+            <p id="loading-message" class="text-sm text-gray-400">يرجى الانتظار قليلاً</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // دوال إدارة شاشة التحميل
+    function showLoadingOverlay(message = 'جاري معالجة البيانات...') {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingMessage = document.getElementById('loading-message');
+        loadingMessage.textContent = message;
+        loadingOverlay.classList.remove('hidden');
+    }
+
+    function hideLoadingOverlay() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        loadingOverlay.classList.add('hidden');
+    }
+</script>
+
 <style>
 .stat-card {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
