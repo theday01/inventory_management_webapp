@@ -33,14 +33,12 @@
     }
     #virtual-keyboard-container.visible { 
         transform: translateY(0); 
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
     }
     
     #vk-body {
-        width: 100% !important;
+        width: 55% !important;
         margin: 0 auto !important;
         box-sizing: border-box !important;
-        background-color: transparent !important;
     }
     
     /* Add smooth transition for content padding */
@@ -151,6 +149,12 @@
     
     #vk-pin-btn.text-yellow-400 span {
         color: #facc15;
+    }
+    
+    /* Fast Toggle Button Appearance */
+    #vk-toggle-btn {
+        transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+        will-change: opacity, visibility;
     }
 </style>
 
@@ -288,12 +292,20 @@ document.addEventListener('DOMContentLoaded', function() {
         keysContainer.innerHTML = '';
         let layout;
         layout = currentLayout === 'ar' ? layoutAr : layoutEn;
-        // اللوحة العربية تعرض من اليمين لليسار فقط للعرض
-        // لكن الإدخال يكون حسب نوع الحقل
+
         keysContainer.style.direction = currentLayout === 'ar' ? 'rtl' : 'ltr';
         
-        // Theme Application
-        container.className = `fixed bottom-0 left-0 w-full z-[9999] transform translate-y-full transition-transform duration-300 ease-in-out hidden vk-size-${vkSettings.size}`;
+        // Theme Application - preserve visible state
+        const wasVisible = container.classList.contains('visible');
+        let newClassName = `fixed bottom-0 left-0 w-full z-[9999] transform translate-y-full transition-transform duration-300 ease-in-out vk-size-${vkSettings.size}`;
+        if (!wasVisible) {
+            newClassName += ' hidden';
+        }
+        container.className = newClassName;
+        if (wasVisible) {
+            container.classList.add('visible');
+        }
+        
         if(vkSettings.theme === 'system') {
             body.className = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'vk-theme-dark' : 'vk-theme-light';
         } else {
@@ -435,13 +447,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- 5. Visibility Logic ---
-// --- 5. Visibility Logic ---
     function showKeyboard() {
         container.classList.remove('hidden');
         // Small delay to allow display block to apply before transition
         setTimeout(() => {
             container.classList.add('visible');
             toggleBtn.style.opacity = '0';
+            toggleBtn.style.pointerEvents = 'none';
+            toggleBtn.style.visibility = 'hidden';
             
             // Add bottom padding to body/main content to prevent overlap
             addKeyboardPadding();
@@ -458,6 +471,8 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             container.classList.add('hidden');
             toggleBtn.style.opacity = '1';
+            toggleBtn.style.pointerEvents = 'auto';
+            toggleBtn.style.visibility = 'visible';
             
             // Remove bottom padding
             removeKeyboardPadding();
@@ -466,14 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add dynamic padding to prevent content being hidden
     function addKeyboardPadding() {
-        const keyboardHeight = body.offsetHeight;
-        const mainContent = document.getElementById('settings-content-area') || 
-                          document.querySelector('main');
-        
-        if (mainContent) {
-            mainContent.style.paddingBottom = (keyboardHeight + 20) + 'px';
-            mainContent.style.transition = 'padding-bottom 0.3s ease-out';
-        }
+        // Removed padding addition to prevent issues
     }
 
     function removeKeyboardPadding() {
@@ -545,7 +553,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    closeBtn.addEventListener('click', hideKeyboard);
+    closeBtn.addEventListener('click', () => {
+        hideKeyboard();
+        // تأكد من أن الزر يظهر بسرعة
+        setTimeout(() => {
+            toggleBtn.style.opacity = '1';
+            toggleBtn.style.pointerEvents = 'auto';
+            toggleBtn.style.visibility = 'visible';
+        }, 100);
+    });
 
     // دالة showToast لعرض الرسائل
     function showToast(type, message) {
@@ -649,6 +665,15 @@ document.addEventListener('DOMContentLoaded', function() {
         isPinned = true;
         pinBtn.classList.add('text-yellow-400');
         showKeyboard();
+        // تأكد من أن الزر مخفي عند التثبيت
+        toggleBtn.style.opacity = '0';
+        toggleBtn.style.pointerEvents = 'none';
+        toggleBtn.style.visibility = 'hidden';
+    } else {
+        // تأكد من أن الزر مرئي عند البداية إذا لم تكن اللوحة مثبتة
+        toggleBtn.style.opacity = '1';
+        toggleBtn.style.pointerEvents = 'auto';
+        toggleBtn.style.visibility = 'visible';
     }
 
     // Re-adjust scroll on window resize
