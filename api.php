@@ -215,14 +215,49 @@ switch ($action) {
 }
 
 function isHoliday($conn, $date) {
+    // 1. التحقق من جدول العطلات الرسمية
     $stmt = $conn->prepare("SELECT name FROM holidays WHERE date = ?");
-    if (!$stmt) return false;
-    $stmt->bind_param("s", $date);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $holiday = $result->fetch_assoc();
-    $stmt->close();
-    return $holiday ? $holiday['name'] : false;
+    if ($stmt) {
+        $stmt->bind_param("s", $date);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $holiday = $result->fetch_assoc();
+        $stmt->close();
+        if ($holiday) return $holiday['name'];
+    }
+
+    // 2. التحقق من إعدادات أيام العمل الأسبوعية
+    $settings_res = $conn->query("SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('work_days_enabled', 'work_days')");
+    $settings = [];
+    if ($settings_res) {
+        while ($row = $settings_res->fetch_assoc()) {
+            $settings[$row['setting_name']] = $row['setting_value'];
+        }
+    }
+
+    if (($settings['work_days_enabled'] ?? '0') === '1') {
+        $timestamp = strtotime($date);
+        $day_of_week = strtolower(date('l', $timestamp)); // e.g., "sunday"
+        $work_days_str = $settings['work_days'] ?? '';
+        $work_days = !empty($work_days_str) ? explode(',', $work_days_str) : [];
+        $work_days = array_map('trim', array_map('strtolower', $work_days));
+        
+        if (!in_array($day_of_week, $work_days)) {
+            $days_ar = [
+                'monday' => 'الاثنين',
+                'tuesday' => 'الثلاثاء',
+                'wednesday' => 'الأربعاء',
+                'thursday' => 'الخميس',
+                'friday' => 'الجمعة',
+                'saturday' => 'السبت',
+                'sunday' => 'الأحد'
+            ];
+            $day_name_ar = $days_ar[$day_of_week] ?? $day_of_week;
+            return "عطلة أسبوعية (" . $day_name_ar . ")";
+        }
+    }
+
+    return false;
 }
 
 function get_holiday_status($conn) {
@@ -523,9 +558,25 @@ function get_period_summary($conn) {
         $holiday_orders = intval($holiday_res['holiday_orders']);
         $stmt->close();
 
+        // Holiday stats breakdown
+        $stmt = $conn->prepare("
+            SELECT COALESCE(holiday_name, 'عطلة غير محددة') as holiday_name, COALESCE(SUM(total), 0) as sales, COUNT(*) as orders 
+            FROM invoices 
+            WHERE created_at BETWEEN ? AND ? AND is_holiday = 1 
+            GROUP BY holiday_name
+        ");
+        $stmt->bind_param("ss", $sql_start, $sql_end);
+        $stmt->execute();
+        $holiday_breakdown_res = $stmt->get_result();
+        $holiday_breakdown = [];
+        while ($row = $holiday_breakdown_res->fetch_assoc()) {
+            $holiday_breakdown[] = $row;
+        }
+        $stmt->close();
+
         // Get list of invoices in the period
         $stmt = $conn->prepare("
-            SELECT i.id, i.total, i.delivery_cost, i.created_at, i.is_holiday, c.name as customer_name, c.phone as customer_phone,
+            SELECT i.id, i.total, i.delivery_cost, i.created_at, i.is_holiday, i.holiday_name, c.name as customer_name, c.phone as customer_phone,
                    GROUP_CONCAT(CONCAT(p.name, ' (', ii.quantity, 'x ', ii.price, ')') SEPARATOR ', ') as items
             FROM invoices i
             LEFT JOIN customers c ON i.customer_id = c.id
@@ -555,6 +606,7 @@ function get_period_summary($conn) {
             'end_date' => $end_date,
             'holiday_sales' => $holiday_sales,
             'holiday_orders' => $holiday_orders,
+            'holiday_breakdown' => $holiday_breakdown,
             'invoices' => $invoices
         ];
         
@@ -2275,12 +2327,13 @@ function checkout($conn) {
 
         $total = (float)$data['total'];
 
-        $is_holiday = isHoliday($conn, date('Y-m-d')) ? 1 : 0;
+        $holiday_name = isHoliday($conn, date('Y-m-d'));
+        $is_holiday = $holiday_name ? 1 : 0;
 
-        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due, is_holiday) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due, is_holiday, holiday_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $discount_percent = isset($data['discount_percent']) ? (float)$data['discount_percent'] : 0;
         $discount_amount = isset($data['discount_amount']) ? (float)$data['discount_amount'] : 0;
-        $stmt->bind_param("iddsdssddi", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due, $is_holiday);
+        $stmt->bind_param("iddsdssddis", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due, $is_holiday, $holiday_name);
         
         $stmt->execute();
         $invoiceId = $stmt->insert_id;

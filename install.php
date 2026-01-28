@@ -36,7 +36,7 @@ $sql_users = "CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     role ENUM('admin', 'cashier') NOT NULL DEFAULT 'cashier',
     first_login BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
 $sql_security_questions = "CREATE TABLE IF NOT EXISTS security_questions (
@@ -64,7 +64,7 @@ $sql_products = "CREATE TABLE IF NOT EXISTS products (
     category_id INT(6) UNSIGNED,
     barcode VARCHAR(255),
     image VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
@@ -75,7 +75,7 @@ $sql_customers = "CREATE TABLE IF NOT EXISTS customers (
     phone VARCHAR(20),
     address TEXT,
     city VARCHAR(100) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
 $sql_invoices = "CREATE TABLE IF NOT EXISTS invoices (
@@ -91,7 +91,8 @@ $sql_invoices = "CREATE TABLE IF NOT EXISTS invoices (
     amount_received DECIMAL(10, 2) DEFAULT 0.00,
     change_due DECIMAL(10, 2) DEFAULT 0.00,
     is_holiday BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    holiday_name VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
@@ -240,6 +241,20 @@ if ($result_invoice && $result_invoice->num_rows == 0) {
     }
 } else {
     echo "<div style='color: #fff3cd;'>ℹ️ Column 'is_holiday' already exists in invoices table. Skipping.</div>";
+}
+
+// Add holiday_name column to invoices if it doesn't exist
+$check_invoice_name_column_sql = "SHOW COLUMNS FROM `invoices` LIKE 'holiday_name'";
+$result_invoice_name = $conn->query($check_invoice_name_column_sql);
+if ($result_invoice_name && $result_invoice_name->num_rows == 0) {
+    $alter_invoices_name = "ALTER TABLE invoices ADD COLUMN holiday_name VARCHAR(255) DEFAULT NULL";
+    if ($conn->query($alter_invoices_name) === TRUE) {
+        echo "<div style='color: green;'>✓ Column 'holiday_name' successfully added to invoices table.</div>";
+    } else {
+        echo "<div style='color: red;'>✗ Error adding column 'holiday_name': " . $conn->error . "</div>";
+    }
+} else {
+    echo "<div style='color: #fff3cd;'>ℹ️ Column 'holiday_name' already exists in invoices table. Skipping.</div>";
 }
 
 // ======================================

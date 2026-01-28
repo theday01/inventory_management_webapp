@@ -1457,7 +1457,7 @@ $holiday_revenue_range = $holiday_stats['holiday_revenue'];
                                         <p><strong>الهاتف:</strong> ${invoice.customer_phone || 'غير محدد'}</p>
                                         <p><strong>رسوم التوصيل:</strong> ${formatNumber(invoice.delivery_cost)} ${currency}</p>
                                         <p><strong>المنتجات:</strong> ${invoice.items || 'لا توجد منتجات'}</p>
-                                        ${invoice.is_holiday == 1 ? '<p class="text-yellow-500 font-bold flex items-center gap-1"><span class="material-icons-round text-sm">celebration</span> تم في يوم عطلة</p>' : ''}
+                                        ${invoice.is_holiday == 1 ? `<p class="text-yellow-500 font-bold flex items-center gap-1"><span class="material-icons-round text-sm">celebration</span> تم في يوم عطلة: ${invoice.holiday_name || 'عطلة رسمية'}</p>` : ''}
                                     </div>
                                 </details>
                             `;
@@ -1477,6 +1477,13 @@ $holiday_revenue_range = $holiday_stats['holiday_revenue'];
                                 </div>
                                 <div class="bg-yellow-500/10 p-3 rounded-lg mt-2 border border-yellow-500/20">
                                     <p class="text-right text-lg font-bold text-yellow-500">مبيعات أيام العطل: ${formatNumber(summary.holiday_sales)} ${currency} (${summary.holiday_orders} طلب)</p>
+                                    ${summary.holiday_breakdown && summary.holiday_breakdown.length > 0 ? `
+                                        <div class="mt-2 space-y-1 pr-4 border-r border-yellow-500/30">
+                                            ${summary.holiday_breakdown.map(item => `
+                                                <p class="text-right text-sm text-yellow-400/80">• ${item.holiday_name}: ${formatNumber(item.sales)} ${currency} (${item.orders} طلب)</p>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
                                 </div>
                                 ${invoicesHtml}
                             </div>
