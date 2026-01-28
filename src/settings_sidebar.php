@@ -46,14 +46,6 @@ function tabClass($tab, $current_page, $active_tab) {
         </div>
     </a>
 
-    <a href="settings.php?tab=keyboard" id="tab-btn-keyboard" class="<?php echo tabClass('keyboard', $current_page, $active_tab); ?>" data-tab="keyboard">
-        <span class="material-icons-round text-[20px] transition-colors">keyboard</span>
-        <div class="flex-1">
-            <span class="font-bold text-sm block">لوحة المفاتيح</span>
-            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">شاشة اللمس، اللغة</span>
-        </div>
-    </a>
-
     <a href="settings.php?tab=print" id="tab-btn-print" class="<?php echo tabClass('print', $current_page, $active_tab); ?>" data-tab="print">
         <span class="material-icons-round text-[20px] transition-colors">print</span>
         <div class="flex-1">
@@ -67,6 +59,14 @@ function tabClass($tab, $current_page, $active_tab) {
         <div class="flex-1">
             <span class="font-bold text-sm block">النظام والتنبيهات</span>
             <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">الوضع الليلي والمخزون</span>
+        </div>
+    </a>
+
+    <a href="settings.php?tab=workdays" id="tab-btn-workdays" class="<?php echo tabClass('workdays', $current_page, $active_tab); ?>" data-tab="workdays">
+        <span class="material-icons-round text-[20px] transition-colors">event_available</span>
+        <div class="flex-1">
+            <span class="font-bold text-sm block">أيام العمل والعطلات</span>
+            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">تحديد أوقات العمل</span>
         </div>
     </a>
     

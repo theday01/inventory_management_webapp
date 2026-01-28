@@ -40,12 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_POST['reset_set
         'rentalLandlordName' => '',
         'rentalLandlordPhone' => '',
         'rentalNotes' => '',
-        'virtualKeyboardEnabled' => '0', // تعطيل الوحدة المفاتيح الوهمية
-        'virtualKeyboardTheme' => 'system',
-        'virtualKeyboardSize' => 'medium',
-        'virtualKeyboardVibrate' => '0',
-        'virtualKeyboardAutoSearch' => '0',
         'printMode' => 'normal',
+        'work_days' => 'monday,tuesday,wednesday,thursday,friday,saturday',
     ];
 
     $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?)");
@@ -102,12 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'rentalLandlordName' => $_POST['rentalLandlordName'] ?? '',
         'rentalLandlordPhone' => $_POST['rentalLandlordPhone'] ?? '',
         'rentalNotes' => $_POST['rentalNotes'] ?? '',
-        'virtualKeyboardEnabled' => isset($_POST['virtualKeyboardEnabled']) ? '1' : '0',
-        'virtualKeyboardTheme' => $_POST['virtualKeyboardTheme'] ?? 'system',
-        'virtualKeyboardSize' => $_POST['virtualKeyboardSize'] ?? 'medium',
-        'virtualKeyboardVibrate' => isset($_POST['virtualKeyboardVibrate']) ? '1' : '0',
-        'virtualKeyboardAutoSearch' => isset($_POST['virtualKeyboardAutoSearch']) ? '1' : '0',
         'printMode' => $_POST['printMode'] ?? 'normal',
+        'work_days' => isset($_POST['work_days']) ? implode(',', $_POST['work_days']) : '',
     ];
 
     if (isset($_FILES['shopLogoFile']) && $_FILES['shopLogoFile']['error'] === UPLOAD_ERR_OK) {
@@ -171,11 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'rentalLandlordName' => 'اسم المالك',
         'rentalLandlordPhone' => 'هاتف المالك',
         'rentalNotes' => 'ملاحظات الإيجار',
-        'virtualKeyboardEnabled' => 'تفعيل لوحة المفاتيح الافتراضية',
-        'virtualKeyboardTheme' => 'سمة لوحة المفاتيح',
-        'virtualKeyboardSize' => 'حجم لوحة المفاتيح',
-        'virtualKeyboardVibrate' => 'اهتزاز لوحة المفاتيح',
-        'virtualKeyboardAutoSearch' => 'بحث تلقائي بلوحة المفاتيح'
+        'work_days' => 'أيام العمل',
     ];
     $changedLabels = [];
     foreach ($settings_to_save as $name => $value) {
@@ -602,98 +590,6 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                      </div>
                 </div>
 
-                <div id="tab-content-keyboard" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
-                    
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
-                        <div class="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-                            <h3 class="text-xl font-bold text-white flex items-center gap-3">
-                                <span class="material-icons-round text-primary">keyboard</span>
-                                لوحة المفاتيح الافتراضية
-                            </h3>
-                            
-                            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                                <span class="text-sm text-gray-300">تفعيل اللوحة</span>
-                                <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="virtualKeyboardEnabled" id="toggle-keyboard" value="1"
-                                        class="toggle-checkbox"
-                                        <?php echo (isset($settings['virtualKeyboardEnabled']) && $settings['virtualKeyboardEnabled'] == '1') ? 'checked' : ''; ?>
-                                        <?php echo $disabledAttr; ?>
-                                        onchange="toggleKeyboardSettings(this)" />
-                                    <label for="toggle-keyboard" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="keyboard-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['virtualKeyboardEnabled']) || $settings['virtualKeyboardEnabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div class="bg-white/5 border border-white/5 rounded-xl p-5">
-                                    <label class="block text-sm font-bold text-gray-300 mb-3">حجم لوحة المفاتيح</label>
-                                    <select name="virtualKeyboardSize" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all cursor-pointer" <?php echo $disabledAttr; ?>>
-                                        <option value="small" <?php echo ($settings['virtualKeyboardSize'] ?? '') == 'small' ? 'selected' : ''; ?>>صغير (مدمج)</option>
-                                        <option value="medium" <?php echo ($settings['virtualKeyboardSize'] ?? 'medium') == 'medium' ? 'selected' : ''; ?>>متوسط (افتراضي)</option>
-                                        <option value="large" <?php echo ($settings['virtualKeyboardSize'] ?? '') == 'large' ? 'selected' : ''; ?>>كبير (لشاشات اللمس)</option>
-                                    </select>
-                                </div>
-
-                                <div class="bg-white/5 border border-white/5 rounded-xl p-5">
-                                    <label class="block text-sm font-bold text-gray-300 mb-3">مظهر اللوحة (Theme)</label>
-                                    <select name="virtualKeyboardTheme" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all cursor-pointer" <?php echo $disabledAttr; ?>>
-                                        <option value="dark" <?php echo ($settings['virtualKeyboardTheme'] ?? '') == 'dark' ? 'selected' : ''; ?>>داكن (Dark)</option>
-                                        <option value="light" <?php echo ($settings['virtualKeyboardTheme'] ?? '') == 'light' ? 'selected' : ''; ?>>فاتح (Light)</option>
-                                        <option value="system" <?php echo ($settings['virtualKeyboardTheme'] ?? 'system') == 'system' ? 'selected' : ''; ?>>حسب النظام (System)</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                    <div class="flex items-center gap-3">
-                                        <span class="material-icons-round text-gray-400">search</span>
-                                        <div>
-                                            <h4 class="font-bold text-white text-sm">الظهور التلقائي عند البحث</h4>
-                                            <p class="text-[10px] text-gray-400">فتح اللوحة تلقائياً عند الضغط على حقل البحث</p>
-                                        </div>
-                                    </div>
-                                    <div class="relative inline-block w-10 align-middle select-none">
-                                        <input type="checkbox" name="virtualKeyboardAutoSearch" id="toggle-kb-search" value="1"
-                                            class="toggle-checkbox"
-                                            <?php echo (isset($settings['virtualKeyboardAutoSearch']) && $settings['virtualKeyboardAutoSearch'] == '1') ? 'checked' : ''; ?>
-                                            <?php echo $disabledAttr; ?> />
-                                        <label for="toggle-kb-search" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                    <div class="flex items-center gap-3">
-                                        <span class="material-icons-round text-gray-400">vibration</span>
-                                        <div>
-                                            <h4 class="font-bold text-white text-sm">اهتزاز عند الضغط</h4>
-                                            <p class="text-[10px] text-gray-400">اهتزاز بسيط (Haptic) عند الكتابة</p>
-                                        </div>
-                                    </div>
-                                    <div class="relative inline-block w-10 align-middle select-none">
-                                        <input type="checkbox" name="virtualKeyboardVibrate" id="toggle-kb-vibrate" value="1"
-                                            class="toggle-checkbox"
-                                            <?php echo (isset($settings['virtualKeyboardVibrate']) && $settings['virtualKeyboardVibrate'] == '1') ? 'checked' : ''; ?>
-                                            <?php echo $disabledAttr; ?> />
-                                        <label for="toggle-kb-vibrate" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 items-start">
-                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>
-                                <div class="text-sm text-gray-300">
-                                    <p class="font-bold text-blue-400 mb-1">كيف تعمل؟</p>
-                                    <p>ستظهر أيقونة لوحة مفاتيح صغيرة أسفل الشاشة. يمكنك فتحها يدوياً أو ستفتح تلقائياً عند الضغط على حقول البحث إذا تم تفعيل الخيار.</p>
-                                    <p class="mt-1">تدعم اللوحة اللغتين العربية والإنجليزية (AZERTY) مع الأرقام.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <div id="tab-content-print" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                         <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
@@ -787,6 +683,32 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </div>
                      </div>
 
+                </div>
+
+                <div id="tab-content-workdays" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
+                    <!-- Work Days Settings -->
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-3 mb-6">
+                            <span class="material-icons-round text-primary">calendar_month</span>
+                            أيام العمل الأسبوعية
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                            <?php
+                            $days = ['monday' => 'الاثنين', 'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء', 'thursday' => 'الخميس', 'friday' => 'الجمعة', 'saturday' => 'السبت', 'sunday' => 'الأحد'];
+                            $work_days = explode(',', $settings['work_days'] ?? 'monday,tuesday,wednesday,thursday,friday,saturday');
+                            foreach ($days as $en => $ar) {
+                                $checked = in_array($en, $work_days) ? 'checked' : '';
+                                echo "
+                                <label class='flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-3 cursor-pointer hover:bg-white/10 transition-colors'>
+                                    <input type='checkbox' name='work_days[]' value='$en' $checked class='form-checkbox h-5 w-5 text-primary bg-dark border-white/20 rounded focus:ring-primary/50' $disabledAttr>
+                                    <span class='text-white font-bold text-sm'>$ar</span>
+                                </label>
+                                ";
+                            }
+                            ?>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-4">حدد الأيام التي يعمل فيها المتجر. سيتم استخدام هذه الإعدادات في التقارير المستقبلية.</p>
+                    </div>
                 </div>
 
                 <div id="tab-content-reset" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">

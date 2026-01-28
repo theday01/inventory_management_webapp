@@ -1,6 +1,6 @@
 <?php
 // Database connection details
-$servername = "localhost";
+$servername = "127.0.0.1";
 $username = "root";
 $password = "";
 $dbname = "smart_shop";
@@ -205,12 +205,18 @@ foreach ($tables as $name => $sql) {
     }
 }
 
-// Add first_login column if not exists
-$alter_users = "ALTER TABLE users ADD COLUMN IF NOT EXISTS first_login BOOLEAN DEFAULT FALSE";
-if ($conn->query($alter_users) === TRUE) {
-    echo "<div style='color: green;'>✓ Column 'first_login' added to users table.</div>";
+// Add first_login column if it doesn't exist
+$check_column_sql = "SHOW COLUMNS FROM `users` LIKE 'first_login'";
+$result = $conn->query($check_column_sql);
+if ($result && $result->num_rows == 0) {
+    $alter_users = "ALTER TABLE users ADD COLUMN first_login BOOLEAN DEFAULT FALSE";
+    if ($conn->query($alter_users) === TRUE) {
+        echo "<div style='color: green;'>✓ Column 'first_login' successfully added to users table.</div>";
+    } else {
+        echo "<div style='color: red;'>✗ Error adding column 'first_login': " . $conn->error . "</div>";
+    }
 } else {
-    echo "<div style='color: orange;'>⚠ Warning: " . $conn->error . "</div>";
+    echo "<div style='color: #fff3cd;'>ℹ️ Column 'first_login' already exists. Skipping.</div>";
 }
 
 // ======================================

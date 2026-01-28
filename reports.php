@@ -2189,19 +2189,19 @@ $stmt->close();
                                 </h4>
                                 <div class="space-y-2 text-sm">
                                     <p class="text-gray-300">
-                                        <span class="text-green-400">🌐</span> الموقع الإلكتروني:
+                                        الموقع الإلكتروني:
                                         <a href="https://eagleshadow.technology" class="text-primary hover:text-primary-hover underline transition-colors">eagleshadow.technology</a>
                                     </p>
                                     <p class="text-gray-300">
-                                        <span class="text-green-400">✉️</span> البريد الإلكتروني:
+                                        البريد الإلكتروني:
                                         <a href="mailto:support@eagleshadow.technology" class="text-primary hover:text-primary-hover underline transition-colors">support@eagleshadow.technology</a>
                                     </p>
                                     <p class="text-gray-300">
-                                        <span class="text-green-400">📱</span> واتساب:
+                                        واتساب:
                                         <a href="https://wa.me/212700979284?text=مرحباً، انا قادم من نظام سمارتشوب واريد تخصيص بعض المميزات لأجل متجري فقط ...." target="_blank" class="text-primary hover:text-primary-hover underline transition-colors">0700979284</a>
                                     </p>
                                     <p class="text-gray-300">
-                                        <span class="text-green-400">💬</span> صفحة الدعم:
+                                        صفحة الدعم:
                                         <a href="contact.php" class="text-primary hover:text-primary-hover underline transition-colors">اذهب إلى صفحة التواصل</a>
                                         <span class="text-xs text-gray-400">(يمكنك الوصول إلى هذه الصفحة في أي وقت عبر الإعدادات)</span>
                                     </p>
