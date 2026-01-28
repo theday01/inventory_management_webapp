@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_POST['reset_set
         'rentalLandlordPhone' => '',
         'rentalNotes' => '',
         'printMode' => 'normal',
+        'work_days_enabled' => '1',
         'work_days' => 'monday,tuesday,wednesday,thursday,friday,saturday',
     ];
 
@@ -99,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'rentalLandlordPhone' => $_POST['rentalLandlordPhone'] ?? '',
         'rentalNotes' => $_POST['rentalNotes'] ?? '',
         'printMode' => $_POST['printMode'] ?? 'normal',
+        'work_days_enabled' => isset($_POST['work_days_enabled']) ? '1' : '0',
         'work_days' => isset($_POST['work_days']) ? implode(',', $_POST['work_days']) : '',
     ];
 
@@ -163,6 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'rentalLandlordName' => 'اسم المالك',
         'rentalLandlordPhone' => 'هاتف المالك',
         'rentalNotes' => 'ملاحظات الإيجار',
+        'work_days_enabled' => 'تفعيل أيام العمل',
         'work_days' => 'أيام العمل',
     ];
     $changedLabels = [];
@@ -688,26 +691,42 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 <div id="tab-content-workdays" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
                     <!-- Work Days Settings -->
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
-                        <h3 class="text-xl font-bold text-white flex items-center gap-3 mb-6">
-                            <span class="material-icons-round text-primary">calendar_month</span>
-                            أيام العمل الأسبوعية
-                        </h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                            <?php
-                            $days = ['monday' => 'الاثنين', 'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء', 'thursday' => 'الخميس', 'friday' => 'الجمعة', 'saturday' => 'السبت', 'sunday' => 'الأحد'];
-                            $work_days = explode(',', $settings['work_days'] ?? 'monday,tuesday,wednesday,thursday,friday,saturday');
-                            foreach ($days as $en => $ar) {
-                                $checked = in_array($en, $work_days) ? 'checked' : '';
-                                echo "
-                                <label class='flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-3 cursor-pointer hover:bg-white/10 transition-colors'>
-                                    <input type='checkbox' name='work_days[]' value='$en' $checked class='form-checkbox h-5 w-5 text-primary bg-dark border-white/20 rounded focus:ring-primary/50' $disabledAttr>
-                                    <span class='text-white font-bold text-sm'>$ar</span>
-                                </label>
-                                ";
-                            }
-                            ?>
+                        <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                            <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                                <span class="material-icons-round text-primary">calendar_month</span>
+                                أيام العمل الأسبوعية
+                            </h3>
+                            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                                <span class="text-sm text-gray-300">تفعيل أيام العمل</span>
+                                <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" name="work_days_enabled" id="toggle-work-days" value="1"
+                                        class="toggle-checkbox"
+                                        <?php echo (isset($settings['work_days_enabled']) && $settings['work_days_enabled'] == '1') ? 'checked' : ''; ?>
+                                        <?php echo $disabledAttr; ?>
+                                        onchange="toggleWorkDaysSettings(this)" />
+                                    <label for="toggle-work-days" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-4">حدد الأيام التي يعمل فيها المتجر. سيتم استخدام هذه الإعدادات في التقارير المستقبلية.</p>
+
+                        <div id="work-days-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['work_days_enabled']) || $settings['work_days_enabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
+                            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                                <?php
+                                $days = ['monday' => 'الاثنين', 'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء', 'thursday' => 'الخميس', 'friday' => 'الجمعة', 'saturday' => 'السبت', 'sunday' => 'الأحد'];
+                                $work_days = explode(',', $settings['work_days'] ?? 'monday,tuesday,wednesday,thursday,friday,saturday');
+                                foreach ($days as $en => $ar) {
+                                    $checked = in_array($en, $work_days) ? 'checked' : '';
+                                    echo "
+                                    <label class='flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-3 cursor-pointer hover:bg-white/10 transition-colors'>
+                                        <input type='checkbox' name='work_days[]' value='$en' $checked class='form-checkbox h-5 w-5 text-primary bg-dark border-white/20 rounded focus:ring-primary/50' $disabledAttr>
+                                        <span class='text-white font-bold text-sm'>$ar</span>
+                                    </label>
+                                    ";
+                                }
+                                ?>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-4">حدد الأيام التي يعمل فيها المتجر. سيتم استخدام هذه الإعدادات في التقارير المستقبلية.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -852,6 +871,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const content = document.getElementById('rental-settings-content');
         if (!checkbox.checked) {
             if (confirm('⚠️ تنبيه!\n\nهل أنت متأكد من تعطيل ميزة تذكير الإيجار؟')) {
+                content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+            } else {
+                checkbox.checked = true;
+            }
+        } else {
+            content.classList.remove('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+        }
+    }
+
+    function toggleWorkDaysSettings(checkbox) {
+        const content = document.getElementById('work-days-settings-content');
+        if (!checkbox.checked) {
+            if (confirm('⚠️ تنبيه!\n\nهل أنت متأكد من تعطيل أيام العمل الأسبوعية؟')) {
                 content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
             } else {
                 checkbox.checked = true;
