@@ -206,9 +206,33 @@ switch ($action) {
     case 'send_contact_message':
         send_contact_message($conn);
         break;
+    case 'get_holiday_status':
+        get_holiday_status($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
+}
+
+function isHoliday($conn, $date) {
+    $stmt = $conn->prepare("SELECT name FROM holidays WHERE date = ?");
+    if (!$stmt) return false;
+    $stmt->bind_param("s", $date);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $holiday = $result->fetch_assoc();
+    $stmt->close();
+    return $holiday ? $holiday['name'] : false;
+}
+
+function get_holiday_status($conn) {
+    $today = date('Y-m-d');
+    $holidayName = isHoliday($conn, $today);
+    if ($holidayName) {
+        echo json_encode(['success' => true, 'is_holiday' => true, 'holiday_name' => $holidayName]);
+    } else {
+        echo json_encode(['success' => true, 'is_holiday' => false]);
+    }
 }
 
 function get_business_day_status($conn) {
@@ -490,9 +514,18 @@ function get_period_summary($conn) {
         // تحديث معادلة الربح: الربح = المبيعات - تكلفة البضاعة - تكلفة التوصيل
         $total_profit = $total_sales - $total_cogs - $total_delivery;
 
+        // Holiday stats
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as holiday_sales, COUNT(*) as holiday_orders FROM invoices WHERE created_at BETWEEN ? AND ? AND is_holiday = 1");
+        $stmt->bind_param("ss", $sql_start, $sql_end);
+        $stmt->execute();
+        $holiday_res = $stmt->get_result()->fetch_assoc();
+        $holiday_sales = floatval($holiday_res['holiday_sales']);
+        $holiday_orders = intval($holiday_res['holiday_orders']);
+        $stmt->close();
+
         // Get list of invoices in the period
         $stmt = $conn->prepare("
-            SELECT i.id, i.total, i.delivery_cost, i.created_at, c.name as customer_name, c.phone as customer_phone,
+            SELECT i.id, i.total, i.delivery_cost, i.created_at, i.is_holiday, c.name as customer_name, c.phone as customer_phone,
                    GROUP_CONCAT(CONCAT(p.name, ' (', ii.quantity, 'x ', ii.price, ')') SEPARATOR ', ') as items
             FROM invoices i
             LEFT JOIN customers c ON i.customer_id = c.id
@@ -520,6 +553,8 @@ function get_period_summary($conn) {
             'total_profit' => $total_profit,
             'start_date' => $start_date,
             'end_date' => $end_date,
+            'holiday_sales' => $holiday_sales,
+            'holiday_orders' => $holiday_orders,
             'invoices' => $invoices
         ];
         
@@ -2240,10 +2275,12 @@ function checkout($conn) {
 
         $total = (float)$data['total'];
 
-        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $is_holiday = isHoliday($conn, date('Y-m-d')) ? 1 : 0;
+
+        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due, is_holiday) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $discount_percent = isset($data['discount_percent']) ? (float)$data['discount_percent'] : 0;
         $discount_amount = isset($data['discount_amount']) ? (float)$data['discount_amount'] : 0;
-        $stmt->bind_param("iddsdssdd", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due);
+        $stmt->bind_param("iddsdssddi", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due, $is_holiday);
         
         $stmt->execute();
         $invoiceId = $stmt->insert_id;

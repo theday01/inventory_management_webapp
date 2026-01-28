@@ -803,6 +803,10 @@ html:not(.dark) .text-red-500 {
     <div id="business-day-notification" class="hidden bg-yellow-500/10 text-yellow-400 p-4 text-center">
         يجب بدء يوم عمل جديد لتتمكن من تسجيل المبيعات. <a href="reports.php" class="font-bold underline">اذهب إلى صفحة التقارير لبدء اليوم</a>.
     </div>
+    <div id="holiday-notification" class="hidden bg-blue-500/10 text-blue-400 p-4 text-center border-b border-blue-500/20">
+        <span class="material-icons-round text-sm align-middle mr-1">celebration</span>
+        اليوم عطلة رسمية: <span id="holiday-name" class="font-bold"></span>. يمكنك الاستمرار في تسجيل المبيعات بشكل عادي.
+    </div>
     <div class="flex-1 flex flex-row-reverse relative overflow-hidden">
     <!-- Cart Sidebar (Left) -->
     <aside class="w-96 bg-dark-surface border-r border-white/5 flex flex-col z-20 shadow-2xl">
@@ -3131,7 +3135,21 @@ document.addEventListener('DOMContentLoaded', function () {
         thermalInvoiceModal.classList.add('hidden');
     });
 
+    async function checkHolidayStatus() {
+        try {
+            const response = await fetch('api.php?action=get_holiday_status');
+            const result = await response.json();
+            if (result.success && result.is_holiday) {
+                document.getElementById('holiday-notification').classList.remove('hidden');
+                document.getElementById('holiday-name').textContent = result.holiday_name;
+            }
+        } catch (error) {
+            console.error('Error checking holiday status:', error);
+        }
+    }
+
     checkBusinessDayStatusForPOS();
+    checkHolidayStatus();
 });
 </script>
 

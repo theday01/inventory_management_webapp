@@ -388,6 +388,19 @@ $top_city_name = $top_city ? $top_city['city'] : 'لا توجد بيانات';
 $top_city_orders = $top_city ? $top_city['order_count'] : 0;
 $stmt->close();
 
+// 11. Holiday Sales in selected range
+$sql_holiday_stats = "
+    SELECT 
+        COUNT(*) as holiday_orders,
+        COALESCE(SUM(total), 0) as holiday_revenue
+    FROM invoices
+    WHERE created_at BETWEEN '$sql_start' AND '$sql_end'
+    AND is_holiday = 1
+";
+$holiday_stats = $conn->query($sql_holiday_stats)->fetch_assoc();
+$holiday_orders_range = $holiday_stats['holiday_orders'];
+$holiday_revenue_range = $holiday_stats['holiday_revenue'];
+
 ?>
 
 <style>
@@ -556,6 +569,10 @@ $stmt->close();
 </style>
 
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark transition-all duration-300">
+    <div id="holiday-notification" class="hidden bg-blue-500/10 text-blue-400 p-4 text-center border-b border-blue-500/20 no-print">
+        <span class="material-icons-round text-sm align-middle mr-1">celebration</span>
+        اليوم عطلة رسمية: <span id="holiday-name" class="font-bold"></span>.
+    </div>
     
     <header class="bg-dark-surface/50 backdrop-blur-md border-b border-white/5 p-6 sticky top-0 z-20 no-print">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -733,6 +750,18 @@ $stmt->close();
                 <div class="mt-4 flex items-center text-xs text-cyan-400 bg-cyan-500/10 w-fit px-2 py-1 rounded-full border border-cyan-500/10">
                     <span class="material-icons-round text-sm mr-1">shopping_cart</span>
                     <span><?php echo number_format($top_city_orders); ?> طلب</span>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform <?php echo $holiday_orders_range > 0 ? '' : 'opacity-50'; ?>">
+                <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <span class="material-icons-round text-6xl text-yellow-500">celebration</span>
+                </div>
+                <p class="text-sm text-gray-400 font-medium mb-1">مبيعات أيام العطل</p>
+                <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($holiday_revenue_range, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
+                <div class="mt-4 flex items-center text-xs text-yellow-400 bg-yellow-500/10 w-fit px-2 py-1 rounded-full border border-yellow-500/10">
+                    <span class="material-icons-round text-sm mr-1">event</span>
+                    <span><?php echo number_format($holiday_orders_range); ?> طلب خلال العطلات</span>
                 </div>
             </div>
         </div>
@@ -1428,6 +1457,7 @@ $stmt->close();
                                         <p><strong>الهاتف:</strong> ${invoice.customer_phone || 'غير محدد'}</p>
                                         <p><strong>رسوم التوصيل:</strong> ${formatNumber(invoice.delivery_cost)} ${currency}</p>
                                         <p><strong>المنتجات:</strong> ${invoice.items || 'لا توجد منتجات'}</p>
+                                        ${invoice.is_holiday == 1 ? '<p class="text-yellow-500 font-bold flex items-center gap-1"><span class="material-icons-round text-sm">celebration</span> تم في يوم عطلة</p>' : ''}
                                     </div>
                                 </details>
                             `;
@@ -1444,6 +1474,9 @@ $stmt->close();
                                 <p class="text-right"><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
                                 <div class="bg-green-500/10 p-3 rounded-lg mt-4 border border-green-500/20">
                                     <p class="text-right text-xl font-bold text-green-400">صافي الربح: ${formatNumber(summary.total_profit)} ${currency}</p>
+                                </div>
+                                <div class="bg-yellow-500/10 p-3 rounded-lg mt-2 border border-yellow-500/20">
+                                    <p class="text-right text-lg font-bold text-yellow-500">مبيعات أيام العطل: ${formatNumber(summary.holiday_sales)} ${currency} (${summary.holiday_orders} طلب)</p>
                                 </div>
                                 ${invoicesHtml}
                             </div>
@@ -2050,6 +2083,20 @@ $stmt->close();
         });
 
         checkBusinessDayStatus();
+
+        async function checkHolidayStatus() {
+            try {
+                const response = await fetch('api.php?action=get_holiday_status');
+                const result = await response.json();
+                if (result.success && result.is_holiday) {
+                    document.getElementById('holiday-notification').classList.remove('hidden');
+                    document.getElementById('holiday-name').textContent = result.holiday_name;
+                }
+            } catch (error) {
+                console.error('Error checking holiday status:', error);
+            }
+        }
+        checkHolidayStatus();
     });
 </script>
 

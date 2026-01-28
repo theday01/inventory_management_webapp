@@ -90,6 +90,7 @@ $sql_invoices = "CREATE TABLE IF NOT EXISTS invoices (
     payment_method VARCHAR(50) NOT NULL DEFAULT 'cash',
     amount_received DECIMAL(10, 2) DEFAULT 0.00,
     change_due DECIMAL(10, 2) DEFAULT 0.00,
+    is_holiday BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
@@ -166,6 +167,13 @@ $sql_media_gallery = "CREATE TABLE IF NOT EXISTS media_gallery (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
+$sql_holidays = "CREATE TABLE IF NOT EXISTS holidays (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    date DATE NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
 // UPDATED: business_days table with nullable user_id and better foreign key constraint
 $sql_business_days = "CREATE TABLE IF NOT EXISTS business_days (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -194,6 +202,7 @@ $tables = [
     'notifications' => $sql_notifications,
     'rental_payments' => $sql_rental_payments,
     'media_gallery' => $sql_media_gallery,
+    'holidays' => $sql_holidays,
     'business_days' => $sql_business_days
 ];
 
@@ -217,6 +226,20 @@ if ($result && $result->num_rows == 0) {
     }
 } else {
     echo "<div style='color: #fff3cd;'>ℹ️ Column 'first_login' already exists. Skipping.</div>";
+}
+
+// Add is_holiday column to invoices if it doesn't exist
+$check_invoice_column_sql = "SHOW COLUMNS FROM `invoices` LIKE 'is_holiday'";
+$result_invoice = $conn->query($check_invoice_column_sql);
+if ($result_invoice && $result_invoice->num_rows == 0) {
+    $alter_invoices = "ALTER TABLE invoices ADD COLUMN is_holiday BOOLEAN DEFAULT FALSE";
+    if ($conn->query($alter_invoices) === TRUE) {
+        echo "<div style='color: green;'>✓ Column 'is_holiday' successfully added to invoices table.</div>";
+    } else {
+        echo "<div style='color: red;'>✗ Error adding column 'is_holiday': " . $conn->error . "</div>";
+    }
+} else {
+    echo "<div style='color: #fff3cd;'>ℹ️ Column 'is_holiday' already exists in invoices table. Skipping.</div>";
 }
 
 // ======================================
@@ -370,6 +393,51 @@ if ($category_count == 0) {
 } else {
     echo "<div style='background: #fff3cd; padding: 15px; border: 1px solid #ffeeba; border-radius: 5px; margin: 10px 0;'>";
     echo "ℹ️ توجد بالفعل فئات في النظام ($category_count فئة). لم يتم إضافة الفئات الافتراضية.";
+    echo "</div>";
+}
+
+// ======================================
+// ADD DEFAULT HOLIDAYS
+// ======================================
+echo "<h3>Adding Default Holidays...</h3>";
+
+$check_holidays = $conn->query("SELECT COUNT(*) as count FROM holidays");
+$holiday_count = $check_holidays->fetch_assoc()['count'];
+
+if ($holiday_count == 0) {
+    $default_holidays = [
+        ['2025-01-01', 'رأس السنة الميلادية'],
+        ['2025-01-11', 'تقديم وثيقة الاستقلال'],
+        ['2025-05-01', 'عيد الشغل'],
+        ['2025-07-30', 'عيد العرش'],
+        ['2025-08-14', 'ذكرى استرجاع إقليم وادي الذهب'],
+        ['2025-08-20', 'ذكرى ثورة الملك والشعب'],
+        ['2025-08-21', 'عيد الشباب'],
+        ['2025-11-06', 'ذكرى المسيرة الخضراء'],
+        ['2025-11-18', 'عيد الاستقلال'],
+        ['2024-11-06', 'ذكرى المسيرة الخضراء'],
+        ['2024-11-18', 'عيد الاستقلال'],
+    ];
+
+    $stmt_holiday = $conn->prepare("INSERT IGNORE INTO holidays (date, name) VALUES (?, ?)");
+    $total_holidays = 0;
+
+    foreach ($default_holidays as $holiday) {
+        $stmt_holiday->bind_param("ss", $holiday[0], $holiday[1]);
+        if ($stmt_holiday->execute()) {
+            if ($conn->affected_rows > 0) {
+                $total_holidays++;
+            }
+        }
+    }
+    $stmt_holiday->close();
+
+    echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>";
+    echo "✅ تم إضافة <strong>$total_holidays</strong> عطلة رسمية بنجاح!";
+    echo "</div>";
+} else {
+    echo "<div style='background: #fff3cd; padding: 15px; border: 1px solid #ffeeba; border-radius: 5px; margin: 10px 0;'>";
+    echo "ℹ️ توجد بالفعل عطلات في النظام ($holiday_count عطلة). لم يتم إضافة العطلات الافتراضية.";
     echo "</div>";
 }
 
