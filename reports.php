@@ -323,7 +323,9 @@ $sql_latest_invoices = "
         i.id,
         c.name as customer_name,
         i.total,
-        i.created_at
+        i.created_at,
+        i.is_holiday,
+        i.holiday_name
     FROM invoices i
     LEFT JOIN customers c ON i.customer_id = c.id
     WHERE i.created_at BETWEEN '$sql_start' AND '$sql_end'
@@ -400,6 +402,23 @@ $sql_holiday_stats = "
 $holiday_stats = $conn->query($sql_holiday_stats)->fetch_assoc();
 $holiday_orders_range = $holiday_stats['holiday_orders'];
 $holiday_revenue_range = $holiday_stats['holiday_revenue'];
+
+// 12. Holiday Breakdown in selected range
+$sql_holiday_breakdown = "
+    SELECT 
+        COALESCE(holiday_name, 'عطلة غير محددة') as holiday_name,
+        COUNT(*) as orders,
+        COALESCE(SUM(total), 0) as revenue
+    FROM invoices
+    WHERE created_at BETWEEN '$sql_start' AND '$sql_end'
+    AND is_holiday = 1
+    GROUP BY holiday_name
+";
+$holiday_breakdown = $conn->query($sql_holiday_breakdown);
+if (!$holiday_breakdown) {
+    // Fallback to avoid error if query fails
+    $holiday_breakdown = (object) ['num_rows' => 0];
+}
 
 ?>
 
@@ -763,6 +782,16 @@ $holiday_revenue_range = $holiday_stats['holiday_revenue'];
                     <span class="material-icons-round text-sm mr-1">event</span>
                     <span><?php echo number_format($holiday_orders_range); ?> طلب خلال العطلات</span>
                 </div>
+                <?php if ($holiday_orders_range > 0 && $holiday_breakdown->num_rows > 0): ?>
+                <div class="mt-4 pt-4 border-t border-white/5 space-y-2">
+                    <?php while($item = $holiday_breakdown->fetch_assoc()): ?>
+                    <div class="flex justify-between items-center text-[10px]">
+                        <span class="text-gray-400">• <?php echo htmlspecialchars($item['holiday_name']); ?></span>
+                        <span class="text-yellow-500/80"><?php echo number_format($item['revenue'], 2); ?> <?php echo $currency; ?> (<?php echo $item['orders']; ?>)</span>
+                    </div>
+                    <?php endwhile; ?>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -939,7 +968,12 @@ $holiday_revenue_range = $holiday_stats['holiday_revenue'];
                                 while($inv = $latest_invoices->fetch_assoc()) {
                             ?>
                             <tr class="group hover:bg-white/5 transition-colors">
-                                <td class="py-3 text-white font-medium">#<?php echo htmlspecialchars($inv['id']); ?></td>
+                                <td class="py-3 text-white font-medium flex items-center gap-1">
+                                    #<?php echo htmlspecialchars($inv['id']); ?>
+                                    <?php if ($inv['is_holiday']): ?>
+                                        <span class="material-icons-round text-[14px] text-yellow-500 cursor-help" title="<?php echo htmlspecialchars($inv['holiday_name']); ?>">celebration</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="py-3 text-gray-300"><?php echo htmlspecialchars($inv['customer_name'] ?: 'عميل غير محدد'); ?></td>
                                 <td class="py-3 text-left text-primary font-bold"><?php echo number_format($inv['total'], 2); ?> <span class="text-xs text-gray-500 font-normal"><?php echo $currency; ?></span></td>
                             </tr>

@@ -2333,7 +2333,7 @@ function checkout($conn) {
         $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due, is_holiday, holiday_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $discount_percent = isset($data['discount_percent']) ? (float)$data['discount_percent'] : 0;
         $discount_amount = isset($data['discount_amount']) ? (float)$data['discount_amount'] : 0;
-        $stmt->bind_param("iddsdssddis", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due, $is_holiday, $holiday_name);
+        $stmt->bind_param("iddsddsddis", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due, $is_holiday, $holiday_name);
         
         $stmt->execute();
         $invoiceId = $stmt->insert_id;
