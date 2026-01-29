@@ -1939,6 +1939,30 @@ if (!$holiday_breakdown) {
                 Swal.fire('خطأ', 'الرجاء إدخال الرصيد الافتتاحي', 'error');
                 return;
             }
+
+            // التحقق مما إذا كان اليوم يوم عطلة قبل البدء
+            try {
+                const holidayRes = await fetch('api.php?action=get_holiday_status');
+                const holidayData = await holidayRes.json();
+                if (holidayData.success && holidayData.is_holiday) {
+                    const confirmHoliday = await Swal.fire({
+                        title: 'تنبيه: يوم عطلة',
+                        text: `اليوم مسجل كأحد أيام العطلة (${holidayData.holiday_name}) في إعدادات النظام، هل أنت متأكد من رغبتك في بدء يوم عمل جديد؟`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#10B981',
+                        cancelButtonColor: '#6B7280',
+                        confirmButtonText: 'نعم، ابدأ العمل',
+                        cancelButtonText: 'تراجع'
+                    });
+                    
+                    if (!confirmHoliday.isConfirmed) {
+                        return; // إلغاء العملية
+                    }
+                }
+            } catch (e) {
+                console.error('Error checking holiday status:', e);
+            }
             
             try {
                 const response = await fetch('api.php?action=start_day', {

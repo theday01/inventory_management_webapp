@@ -726,6 +726,17 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 ?>
                             </div>
                             <p class="text-xs text-gray-500 mt-4">حدد الأيام التي يعمل فيها المتجر. سيتم استخدام هذه الإعدادات في التقارير المستقبلية.</p>
+
+                            <div id="work-days-warning" class="mt-6 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3 transition-all duration-500">
+                                <span class="material-icons-round text-blue-400 mt-0.5">info</span>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-blue-400 mb-1">تنبيه بخصوص تغيير أيام العمل</h4>
+                                    <p class="text-xs text-gray-300 leading-relaxed">
+                                        أي تغيير في أيام العمل سيبدأ تأثيره على التقارير والإحصائيات ابتداءً من المرة القادمة التي تقوم فيها ببدء يوم عمل جديد. 
+                                        النظام يحافظ على دقة التقارير السابقة كما هي؛ التغيير يشمل البيانات المستقبلية فقط.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1204,6 +1215,26 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
         // Initially disable
         disableSave();
+
+        // Work days change listener
+        let workDaysWarningTimer = null;
+        document.querySelectorAll('input[name="work_days[]"]').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const warning = document.getElementById('work-days-warning');
+                if (warning) {
+                    if (workDaysWarningTimer) clearTimeout(workDaysWarningTimer);
+                    
+                    warning.classList.remove('bg-blue-500/10', 'border-blue-500/20');
+                    warning.classList.add('bg-orange-500/20', 'border-orange-500/40', 'scale-[1.02]');
+                    
+                    workDaysWarningTimer = setTimeout(() => {
+                        warning.classList.remove('bg-orange-500/20', 'border-orange-500/40', 'scale-[1.02]');
+                        warning.classList.add('bg-blue-500/10', 'border-blue-500/20');
+                        workDaysWarningTimer = null;
+                    }, 2000);
+                }
+            });
+        });
     });
 </script>
 
