@@ -377,6 +377,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </div>
                         </div>
                     </div>
+
                 </div>
                 
                 <div id="tab-content-delivery" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
@@ -739,6 +740,86 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </div>
                         </div>
                     </div>
+
+                    <!-- Moroccan National and Religious Holidays -->
+                    <div id="holidays-management-section" class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b border-white/5 pb-4 gap-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                                    <span class="material-icons-round text-primary">festival</span>
+                                    العطل الوطنية والدينية (المغرب)
+                                </h3>
+                                <p class="text-xs text-gray-500 mt-1">إدارة العطل الرسمية لضمان دقة التقارير والإحصائيات</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                    <span class="text-[10px] text-gray-400">آخر تحقق تلقائي: </span>
+                                    <span id="last-sync-date" class="text-[10px] text-primary font-bold">
+                                        <?php echo !empty($settings['last_holiday_sync_date'] ?? '') ? htmlspecialchars($settings['last_holiday_sync_date']) : 'لم يتم التحقق بعد'; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <?php if ($isAdmin): ?>
+                            <div class="flex items-center gap-3">
+                                <button type="button" onclick="syncMoroccanHolidays()" id="sync-holidays-btn" class="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                                    <span class="material-icons-round text-sm">sync</span>
+                                    <span id="sync-btn-text">تحديث العطل الآن</span>
+                                </button>
+                                <button type="button" onclick="openHolidayModal()" class="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                                    <span class="material-icons-round text-sm">add</span>
+                                    إضافة عطلة مخصصة
+                                </button>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-4">
+                                <label class="text-xs text-gray-400">عرض عطل سنة:</label>
+                                <select id="holiday-year-filter" onchange="loadHolidays()" class="bg-dark/50 border border-white/10 text-white text-xs px-3 py-1.5 rounded-lg">
+                                    <?php
+                                    $curYear = (int)date('Y');
+                                    for($y = $curYear - 1; $y <= $curYear + 2; $y++) {
+                                        $sel = ($y == $curYear) ? 'selected' : '';
+                                        echo "<option value='$y' $sel>$y</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="syncInvoicesWithHolidays()" class="text-[10px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1 rounded-full border border-white/5 transition-all flex items-center gap-1">
+                                    <span class="material-icons-round text-xs">history</span>
+                                    تحديث بيانات التقارير السابقة
+                                </button>
+                                <div id="online-status" class="flex items-center gap-2 text-[10px] text-gray-500 bg-white/5 px-3 py-1 rounded-full border border-white/5">
+                                    <span class="material-icons-round text-xs">language</span>
+                                    <span id="status-text">جاري التحقق...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-white/5">
+                            <table class="w-full text-right border-collapse">
+                                <thead>
+                                    <tr class="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
+                                        <th class="px-6 py-4 font-bold">التاريخ</th>
+                                        <th class="px-6 py-4 font-bold">اسم العطلة</th>
+                                        <th class="px-6 py-4 font-bold text-center">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="holidays-table-body" class="text-sm text-gray-300">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-4 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3">
+                            <span class="material-icons-round text-blue-400 text-sm mt-0.5">info</span>
+                            <p class="text-[10px] text-gray-400 leading-relaxed">
+                                ملاحظة: التواريخ الدينية (مثل عيد الفطر وعيد الأضحى) هي تقديرات بناءً على التقويم الهجري العالمي. 
+                                يمكنك تعديل التاريخ يدوياً إذا اختلف يوم واحد حسب رؤية الهلال الرسمية بالمغرب.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="tab-content-reset" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
@@ -837,6 +918,130 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         }
         
         localStorage.setItem('activeSettingsTab', tabName);
+        if(tabName === 'workdays') loadHolidays();
+    }
+
+    async function loadHolidays() {
+        const year = document.getElementById('holiday-year-filter').value;
+        const tbody = document.getElementById('holidays-table-body');
+        if(!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>';
+        
+        try {
+            const res = await fetch(`api.php?action=getHolidays&year=${year}`);
+            const data = await res.json();
+            if (data.success && data.data.length > 0) {
+                let html = '';
+                data.data.forEach(h => {
+                    html += `
+                    <tr class="hover:bg-white/[0.02] border-b border-white/5 last:border-0">
+                        <td class="px-6 py-4 font-mono text-xs text-primary">${h.date}</td>
+                        <td class="px-6 py-4 font-bold text-white">${h.name}</td>
+                        <td class="px-6 py-4 text-center flex justify-center gap-2">
+                            <button type="button" onclick="openHolidayModal(${h.id}, '${h.name}', '${h.date}')" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20">
+                                <span class="material-icons-round text-sm">edit</span>
+                            </button>
+                            <button type="button" onclick="deleteHoliday(${h.id})" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20">
+                                <span class="material-icons-round text-sm">delete</span>
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } else {
+                tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">لا توجد عطل مسجلة لهذا العام.</td></tr>';
+            }
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-red-400">فشل في تحميل البيانات</td></tr>';
+        }
+    }
+
+    async function syncMoroccanHolidays() {
+        if (!navigator.onLine) {
+             alert('يرجى الاتصال بالإنترنت أولاً ليتمكن النظام من جلب العطل الدينية');
+             return;
+        }
+        const year = document.getElementById('holiday-year-filter').value;
+        const btn = document.getElementById('sync-holidays-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-icons-round animate-spin text-sm">sync</span> جاري التحديث...';
+        
+        try {
+            const res = await fetch(`api.php?action=syncMoroccanHolidays&year=${year}`);
+            const data = await res.json();
+            if (data.success) {
+                alert(`تم تحديث ${data.count} عطلة بنجاح (تشمل العطل الوطنية والدينية)`);
+                loadHolidays();
+                if(data.last_sync) document.getElementById('last-sync-date').innerText = data.last_sync;
+            } else {
+                alert('فشل التحديث: ' + data.message);
+            }
+        } catch (e) {
+            alert('خطأ في الاتصال بالخادم');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round text-sm">sync</span> تحديث العطل الآن';
+        }
+    }
+
+    function openHolidayModal(id = '', name = '', date = '') {
+        const modal = document.getElementById('holidayModal');
+        document.getElementById('holiday-id').value = id;
+        document.getElementById('holiday-name').value = name;
+        document.getElementById('holiday-date').value = date;
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+             document.getElementById('holidayModalBackdrop').classList.remove('opacity-0');
+             document.getElementById('holidayModalContent').classList.remove('opacity-0', 'scale-95');
+        }, 10);
+    }
+
+    function closeHolidayModal() {
+        document.getElementById('holidayModalBackdrop').classList.add('opacity-0');
+        document.getElementById('holidayModalContent').classList.add('opacity-0', 'scale-95');
+        setTimeout(() => document.getElementById('holidayModal').classList.add('hidden'), 300);
+    }
+
+    async function saveHoliday() {
+        const id = document.getElementById('holiday-id').value;
+        const name = document.getElementById('holiday-name').value;
+        const date = document.getElementById('holiday-date').value;
+        if (!name || !date) return alert('يرجى ملء اسم العطلة وتاريخها');
+
+        const action = id ? 'updateHoliday' : 'addHoliday';
+        const body = id ? { id, name, date } : { name, date };
+
+        try {
+            const res = await fetch(`api.php?action=${action}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                closeHolidayModal();
+                loadHolidays();
+            } else {
+                alert(data.message);
+            }
+        } catch (e) {
+            alert('خطأ أثناء الحفظ');
+        }
+    }
+
+    async function deleteHoliday(id) {
+        if(!confirm('هل أنت متأكد من حذف هذه العطلة؟ قد يؤثر ذلك على تقارير المبيعات لهذا اليوم.')) return;
+        try {
+            const res = await fetch('api.php?action=deleteHoliday', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) loadHolidays();
+        } catch (e) {
+            alert('خطأ أثناء الحذف');
+        }
     }
 
     function toggleKeyboardSettings(checkbox) {
@@ -860,9 +1065,44 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 history.replaceState(null, '', `settings.php?tab=${t}`);
             });
         });
+
+        // Online status check for holidays sync
+        function updateOnlineStatus() {
+            const statusText = document.getElementById('status-text');
+            if (!statusText) return;
+            if (navigator.onLine) {
+                statusText.innerText = 'متصل';
+                statusText.className = 'text-green-500';
+            } else {
+                statusText.innerText = 'غير متصل';
+                statusText.className = 'text-red-500';
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+
+        if (initialTab === 'workdays') loadHolidays();
     });
 
-    // ... (Other scripts) ...
+    async function syncInvoicesWithHolidays() {
+        if (!confirm('سيقوم هذا بتحديث حالة "العطلة" في جميع الفواتير السابقة بناءً على قائمة العطلات الحالية. هل تريد الاستمرار؟')) return;
+        
+        showLoadingOverlay('جاري تحديث بيانات التقارير...');
+        try {
+            const res = await fetch('api.php?action=syncInvoicesWithHolidays');
+            const data = await res.json();
+            if (data.success) {
+                alert('تم تحديث البيانات بنجاح. ستظهر التغييرات في التقارير الآن.');
+            } else {
+                alert('حدث خطأ: ' + data.message);
+            }
+        } catch (e) {
+            alert('خطأ في الاتصال');
+        } finally {
+            hideLoadingOverlay();
+        }
+    }
 </script>
 
 <?php if ($isAdmin): ?>
@@ -1324,6 +1564,35 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     </div>
 </div>
 
+<div id="holidayModal" class="fixed inset-0 z-[100] hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="holidayModalBackdrop" onclick="closeHolidayModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-[#1e1e2e] border border-white/10 rounded-2xl w-full max-w-md transform scale-95 opacity-0 transition-all duration-300 relative shadow-2xl overflow-hidden flex flex-col" id="holidayModalContent">
+            <div class="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between shrink-0">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <span class="material-icons-round text-primary">edit_calendar</span>
+                    إدارة العطلة
+                </h3>
+                <button onclick="closeHolidayModal()" class="text-gray-400 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"><span class="material-icons-round">close</span></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="holiday-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">اسم العطلة</label>
+                    <input type="text" id="holiday-name" placeholder="مثال: عيد الفطر، ذكرى المسيرة..." class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">التاريخ</label>
+                    <input type="date" id="holiday-date" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" style="color-scheme: dark;">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeHolidayModal()" class="flex-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-300 px-4 py-3 rounded-xl font-bold transition-all">إلغاء</button>
+                    <button type="button" onclick="saveHoliday()" class="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20">حفظ العطلة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <?php endif; ?>
 
 <?php require_once 'src/footer.php'; ?>

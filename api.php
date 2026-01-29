@@ -141,7 +141,27 @@ switch ($action) {
         getUploadedImages($conn);
         break;
     case 'getNotifications':
+        checkUpcomingHolidays($conn);
         getNotifications($conn);
+        break;
+    case 'getHolidays':
+        getHolidays($conn);
+        break;
+    case 'addHoliday':
+        addHoliday($conn);
+        break;
+    case 'updateHoliday':
+        updateHoliday($conn);
+        break;
+    case 'deleteHoliday':
+        deleteHoliday($conn);
+        break;
+    case 'syncMoroccanHolidays':
+        syncMoroccanHolidays($conn);
+        break;
+    case 'syncInvoicesWithHolidays':
+        syncInvoicesWithHolidays($conn);
+        echo json_encode(['success' => true, 'message' => 'تم تحديث بيانات الفواتير السابقة بنجاح']);
         break;
     case 'cleanOldNotifications':
         cleanOldNotifications($conn);
@@ -2905,6 +2925,267 @@ function create_notification($conn, $message, $type) {
     $stmt->bind_param("ss", $message, $type);
     $stmt->execute();
     $stmt->close();
+}
+
+function getHolidays($conn) {
+    $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+    $stmt = $conn->prepare("SELECT * FROM holidays WHERE YEAR(date) = ? ORDER BY date ASC");
+    $stmt->bind_param("i", $year);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $holidays = [];
+    while ($row = $result->fetch_assoc()) {
+        $holidays[] = $row;
+    }
+    $stmt->close();
+    echo json_encode(['success' => true, 'data' => $holidays]);
+}
+
+function addHoliday($conn) {
+    if ($_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (empty($data['name']) || empty($data['date'])) {
+        echo json_encode(['success' => false, 'message' => 'الاسم والتاريخ مطلوبان']);
+        return;
+    }
+    $stmt = $conn->prepare("INSERT INTO holidays (name, date) VALUES (?, ?)");
+    $stmt->bind_param("ss", $data['name'], $data['date']);
+    if ($stmt->execute()) {
+        syncInvoicesWithHolidays($conn);
+        echo json_encode(['success' => true, 'message' => 'تم إضافة العطلة بنجاح']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'فشل إضافة العطلة: ' . $conn->error]);
+    }
+    $stmt->close();
+}
+
+function updateHoliday($conn) {
+    if ($_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (empty($data['id']) || empty($data['name']) || empty($data['date'])) {
+        echo json_encode(['success' => false, 'message' => 'جميع الحقول مطلوبة']);
+        return;
+    }
+    $stmt = $conn->prepare("UPDATE holidays SET name = ?, date = ? WHERE id = ?");
+    $stmt->bind_param("ssi", $data['name'], $data['date'], $data['id']);
+    if ($stmt->execute()) {
+        syncInvoicesWithHolidays($conn);
+        echo json_encode(['success' => true, 'message' => 'تم تحديث العطلة بنجاح']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'فشل التحديث']);
+    }
+    $stmt->close();
+}
+
+function deleteHoliday($conn) {
+    if ($_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (empty($data['id'])) {
+        echo json_encode(['success' => false, 'message' => 'معرف العطلة مطلوب']);
+        return;
+    }
+    
+    // Get holiday date before deletion to update invoices
+    $stmtDate = $conn->prepare("SELECT date FROM holidays WHERE id = ?");
+    $stmtDate->bind_param("i", $data['id']);
+    $stmtDate->execute();
+    $hDate = $stmtDate->get_result()->fetch_assoc()['date'] ?? null;
+    $stmtDate->close();
+
+    $stmt = $conn->prepare("DELETE FROM holidays WHERE id = ?");
+    $stmt->bind_param("i", $data['id']);
+    if ($stmt->execute()) {
+        if ($hDate) {
+            // Update invoices for this specific date
+            $updateStmt = $conn->prepare("UPDATE invoices SET is_holiday = 0, holiday_name = NULL WHERE DATE(created_at) = ? AND holiday_name IS NOT NULL AND holiday_name NOT LIKE 'عطلة أسبوعية%'");
+            $updateStmt->bind_param("s", $hDate);
+            $updateStmt->execute();
+            $updateStmt->close();
+        }
+        echo json_encode(['success' => true, 'message' => 'تم حذف العطلة بنجاح']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'فشل الحذف']);
+    }
+    $stmt->close();
+}
+
+function syncMoroccanHolidays($conn) {
+    if ($_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+    $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+    $results = syncHolidaysInternal($conn, $year, true); // Force sync
+    // Also sync next year to be proactive
+    syncHolidaysInternal($conn, $year + 1, false);
+
+    if ($results['success']) {
+        $today = date('Y-m-d H:i');
+        $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_holiday_sync_date', '$today') ON DUPLICATE KEY UPDATE setting_value = '$today'");
+        syncInvoicesWithHolidays($conn);
+        echo json_encode(['success' => true, 'message' => 'تم تحديث العطل بنجاح', 'count' => $results['count']]);
+    } else {
+        echo json_encode(['success' => false, 'message' => $results['message']]);
+    }
+}
+
+function syncHolidaysInternal($conn, $year, $force = false) {
+    // Check if religious holidays for this year were already synced
+    // To respect user deletions, we don't re-sync religious holidays if they exist
+    $res = $conn->query("SELECT id FROM holidays WHERE YEAR(date) = $year AND name IN ('فاتح محرم', 'عيد المولد النبوي', 'عيد الفطر', 'عيد الأضحى') LIMIT 1");
+    $alreadySynced = ($res && $res->num_rows > 0);
+
+    if ($alreadySynced && !$force) {
+        // Still update fixed holidays as they are stable
+        $fixedHolidays = [
+            ['01-01', 'رأس السنة الميلادية'], ['01-11', 'تقديم وثيقة الاستقلال'],
+            ['01-14', 'رأس السنة الأمازيغية'], ['05-01', 'عيد الشغل'],
+            ['07-30', 'عيد العرش'], ['08-14', 'ذكرى استرجاع إقليم وادي الذهب'],
+            ['08-20', 'ذكرى ثورة الملك والشعب'], ['08-21', 'عيد الشباب'],
+            ['11-06', 'ذكرى المسيرة الخضراء'], ['11-18', 'عيد الاستقلال']
+        ];
+        foreach ($fixedHolidays as $h) {
+            $date = $year . '-' . $h[0];
+            $stmt = $conn->prepare("INSERT IGNORE INTO holidays (name, date) VALUES (?, ?)");
+            $stmt->bind_param("ss", $h[1], $date);
+            $stmt->execute();
+            $stmt->close();
+        }
+        return ['success' => true, 'count' => 0, 'message' => 'Year already synced'];
+    }
+
+    $fixedHolidays = [
+        ['01-01', 'رأس السنة الميلادية'], ['01-11', 'تقديم وثيقة الاستقلال'],
+        ['01-14', 'رأس السنة الأمازيغية'], ['05-01', 'عيد الشغل'],
+        ['07-30', 'عيد العرش'], ['08-14', 'ذكرى استرجاع إقليم وادي الذهب'],
+        ['08-20', 'ذكرى ثورة الملك والشعب'], ['08-21', 'عيد الشباب'],
+        ['11-06', 'ذكرى المسيرة الخضراء'], ['11-18', 'عيد الاستقلال']
+    ];
+
+    $count = 0;
+    foreach ($fixedHolidays as $h) {
+        $date = $year . '-' . $h[0];
+        $stmt = $conn->prepare("INSERT IGNORE INTO holidays (name, date) VALUES (?, ?)");
+        $stmt->bind_param("ss", $h[1], $date);
+        $stmt->execute();
+        if ($stmt->affected_rows > 0) $count++;
+        $stmt->close();
+    }
+
+    // Parallelize religious holidays check
+    $religiousHolidays = [
+        ['01-01', 'فاتح محرم'], ['12-03', 'عيد المولد النبوي'],
+        ['13-03', 'عيد المولد النبوي (اليوم الثاني)'], ['01-10', 'عيد الفطر'],
+        ['02-10', 'عيد الفطر (اليوم الثاني)'], ['10-12', 'عيد الأضحى'],
+        ['11-12', 'عيد الأضحى (اليوم الثاني)']
+    ];
+
+    $mh = curl_multi_init();
+    $requests = [];
+    $hijriYears = [$year - 580, $year - 579, $year - 578];
+
+    foreach ($hijriYears as $hYear) {
+        foreach ($religiousHolidays as $rh) {
+            $hDate = $rh[0] . '-' . $hYear;
+            $url = "https://api.aladhan.com/v1/hToG/" . $hDate;
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_multi_add_handle($mh, $ch);
+            $requests[] = ['handle' => $ch, 'name' => $rh[1]];
+        }
+    }
+
+    $active = null;
+    do { $mrc = curl_multi_exec($mh, $active); } while ($mrc == CURLM_CALL_MULTI_PERFORM);
+    while ($active && $mrc == CURLM_OK) {
+        if (curl_multi_select($mh) != -1) {
+            do { $mrc = curl_multi_exec($mh, $active); } while ($mrc == CURLM_CALL_MULTI_PERFORM);
+        }
+    }
+
+    foreach ($requests as $request) {
+        $response = curl_multi_getcontent($request['handle']);
+        if ($response) {
+            $data = json_decode($response, true);
+            if (isset($data['data']['gregorian']['date'])) {
+                $gDateParts = explode('-', $data['data']['gregorian']['date']);
+                $gDate = $gDateParts[2] . '-' . $gDateParts[1] . '-' . $gDateParts[0];
+                if (strpos($gDate, (string)$year) === 0) {
+                    $stmt = $conn->prepare("INSERT IGNORE INTO holidays (name, date) VALUES (?, ?)");
+                    $stmt->bind_param("ss", $request['name'], $gDate);
+                    $stmt->execute();
+                    if ($stmt->affected_rows > 0) $count++;
+                    $stmt->close();
+                }
+            }
+        }
+        curl_multi_remove_handle($mh, $request['handle']);
+        curl_close($request['handle']);
+    }
+    curl_multi_close($mh);
+
+    return ['success' => true, 'count' => $count];
+}
+
+function syncInvoicesWithHolidays($conn) {
+    // 1. Reset all non-weekly holidays
+    $conn->query("UPDATE invoices SET is_holiday = 0, holiday_name = NULL WHERE holiday_name IS NOT NULL AND holiday_name NOT LIKE 'عطلة أسبوعية%'");
+    
+    // 2. Fetch all current holidays
+    $res = $conn->query("SELECT name, date FROM holidays");
+    if ($res) {
+        $stmt = $conn->prepare("UPDATE invoices SET is_holiday = 1, holiday_name = ? WHERE DATE(created_at) = ?");
+        while ($h = $res->fetch_assoc()) {
+            $stmt->bind_param("ss", $h['name'], $h['date']);
+            $stmt->execute();
+        }
+        $stmt->close();
+    }
+}
+
+function checkUpcomingHolidays($conn) {
+    // Only check if we haven't checked today
+    $today = date('Y-m-d');
+    $lastCheckDate = '';
+    $res = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'last_holiday_sync_auto_date'");
+    if ($res && $res->num_rows > 0) {
+        $lastCheckDate = $res->fetch_assoc()['setting_value'];
+    }
+
+    if ($lastCheckDate !== $today) {
+        // We attempt a sync for current and next year to be proactive (intelligent sync)
+        $currentYear = (int)date('Y');
+        $results = syncHolidaysInternal($conn, $currentYear);
+        syncHolidaysInternal($conn, $currentYear + 1);
+        
+        // If successful or if it's just fixed holidays (at least some progress), we mark as checked today
+        if ($results['success']) {
+            $now = date('Y-m-d H:i');
+            $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_holiday_sync_date', '$now') ON DUPLICATE KEY UPDATE setting_value = '$now'");
+            $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_holiday_sync_auto_date', '$today') ON DUPLICATE KEY UPDATE setting_value = '$today'");
+            syncInvoicesWithHolidays($conn);
+        } else {
+            // If failed (likely no internet), we don't update last_holiday_sync_auto_date 
+            // so it tries again on next request.
+            // But we might want to avoid spamming if internet is down for a long time.
+            // For now, let's just create a system notification about the failure if it's the first time today.
+            $notifRes = $conn->query("SELECT id FROM notifications WHERE type = 'holiday_sync_failed' AND DATE(created_at) = '$today'");
+            if ($notifRes->num_rows == 0) {
+                create_notification($conn, "⚠️ فشل التحقق التلقائي من العطلات بسبب عدم توفر اتصال بالإنترنت. يرجى التحقق يدوياً عند توفر الاتصال.", "holiday_sync_failed");
+            }
+        }
+    }
 }
 
 function getNotifications($conn) {

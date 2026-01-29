@@ -420,6 +420,33 @@ if (!$holiday_breakdown) {
     $holiday_breakdown = (object) ['num_rows' => 0];
 }
 
+// 13. Enhanced Holiday Analytics (Comparison)
+// Get count of actual holiday days in the date range
+$sql_holiday_count = "
+    SELECT COUNT(DISTINCT DATE(created_at)) as holiday_days
+    FROM invoices
+    WHERE created_at BETWEEN '$sql_start' AND '$sql_end'
+    AND is_holiday = 1
+";
+$holiday_days_res = $conn->query($sql_holiday_count);
+$actual_holiday_days = $holiday_days_res ? $holiday_days_res->fetch_assoc()['holiday_days'] : 0;
+
+// Get count of regular days in the date range (where sales happened)
+$sql_regular_days_count = "
+    SELECT COUNT(DISTINCT DATE(created_at)) as regular_days
+    FROM invoices
+    WHERE created_at BETWEEN '$sql_start' AND '$sql_end'
+    AND is_holiday = 0
+";
+$regular_days_res = $conn->query($sql_regular_days_count);
+$actual_regular_days = $regular_days_res ? $regular_days_res->fetch_assoc()['regular_days'] : 0;
+
+$avg_rev_per_holiday = $actual_holiday_days > 0 ? $holiday_revenue_range / $actual_holiday_days : 0;
+$regular_revenue = $total_revenue - $holiday_revenue_range;
+$avg_rev_per_regular = $actual_regular_days > 0 ? $regular_revenue / $actual_regular_days : 0;
+
+$holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / $avg_rev_per_regular) * 100 : 0;
+
 ?>
 
 <style>
@@ -776,18 +803,41 @@ if (!$holiday_breakdown) {
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-icons-round text-6xl text-yellow-500">celebration</span>
                 </div>
-                <p class="text-sm text-gray-400 font-medium mb-1">مبيعات أيام العطل</p>
+                <div class="flex justify-between items-start mb-1">
+                    <p class="text-sm text-gray-400 font-medium">تحليل مبيعات العطلات</p>
+                    <?php if ($holiday_performance_index > 100): ?>
+                        <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold">+<?php echo number_format($holiday_performance_index - 100, 1); ?>% نمو</span>
+                    <?php elseif ($holiday_performance_index > 0): ?>
+                        <span class="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold"><?php echo number_format(100 - $holiday_performance_index, 1); ?>%- أقل</span>
+                    <?php endif; ?>
+                </div>
                 <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($holiday_revenue_range, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
+                
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                    <div class="bg-white/5 p-2 rounded-lg border border-white/5">
+                        <p class="text-[10px] text-gray-500">معدل البيع اليومي (عطلة)</p>
+                        <p class="text-xs font-bold text-yellow-500"><?php echo number_format($avg_rev_per_holiday, 2); ?></p>
+                    </div>
+                    <div class="bg-white/5 p-2 rounded-lg border border-white/5">
+                        <p class="text-[10px] text-gray-500">معدل البيع اليومي (عادي)</p>
+                        <p class="text-xs font-bold text-gray-300"><?php echo number_format($avg_rev_per_regular, 2); ?></p>
+                    </div>
+                </div>
+
                 <div class="mt-4 flex items-center text-xs text-yellow-400 bg-yellow-500/10 w-fit px-2 py-1 rounded-full border border-yellow-500/10">
                     <span class="material-icons-round text-sm mr-1">event</span>
-                    <span><?php echo number_format($holiday_orders_range); ?> طلب خلال العطلات</span>
+                    <span><?php echo number_format($holiday_orders_range); ?> طلب خلال <?php echo $actual_holiday_days; ?> أيام عطلة</span>
                 </div>
+
                 <?php if ($holiday_orders_range > 0 && $holiday_breakdown->num_rows > 0): ?>
                 <div class="mt-4 pt-4 border-t border-white/5 space-y-2">
-                    <?php while($item = $holiday_breakdown->fetch_assoc()): ?>
+                    <?php 
+                    $holiday_breakdown->data_seek(0);
+                    while($item = $holiday_breakdown->fetch_assoc()): 
+                    ?>
                     <div class="flex justify-between items-center text-[10px]">
-                        <span class="text-gray-400">• <?php echo htmlspecialchars($item['holiday_name']); ?></span>
-                        <span class="text-yellow-500/80"><?php echo number_format($item['revenue'], 2); ?> <?php echo $currency; ?> (<?php echo $item['orders']; ?>)</span>
+                        <span class="text-gray-400 truncate max-w-[120px]">• <?php echo htmlspecialchars($item['holiday_name']); ?></span>
+                        <span class="text-yellow-500/80 font-bold"><?php echo number_format($item['revenue'], 2); ?> <?php echo $currency; ?></span>
                     </div>
                     <?php endwhile; ?>
                 </div>
