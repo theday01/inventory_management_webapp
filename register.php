@@ -112,6 +112,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         header("Location: register.php?error=" . urlencode("كلمات المرور غير متطابقة"));
         exit();
     } else {
+        // التحقق من تكرار إجابات الأمان
+        $answers = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $answer_key = 'security_answer_' . $i;
+            if (isset($_POST[$answer_key])) {
+                $answers[] = strtolower(trim($_POST[$answer_key]));
+            }
+        }
+        
+        if (count($answers) !== count(array_unique($answers))) {
+            header("Location: register.php?error=" . urlencode("يجب أن تكون إجابات الأمان فريدة وغير مكررة"));
+            exit();
+        }
+
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         $role = 'admin';
 
@@ -324,6 +338,54 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         selectElements.forEach((select, index) => {
             select.addEventListener('change', updateAvailableOptions);
         });
+
+        // ===== نظام التحقق من تكرار إجابات الأمان =====
+        const answerInputs = [
+            document.getElementById('security_answer_1'),
+            document.getElementById('security_answer_2'),
+            document.getElementById('security_answer_3')
+        ];
+
+        const errorMessages = [
+            document.getElementById('error_security_answer_1'),
+            document.getElementById('error_security_answer_2'),
+            document.getElementById('error_security_answer_3')
+        ];
+
+        function validateAnswers() {
+            const values = answerInputs.map(input => input.value.trim().toLowerCase());
+            let hasDuplicate = false;
+
+            answerInputs.forEach((input, index) => {
+                const val = values[index];
+                if (val !== '' && values.filter((v, i) => v === val && i !== index).length > 0) {
+                    errorMessages[index].classList.remove('hidden');
+                    input.classList.add('border-red-500');
+                    hasDuplicate = true;
+                } else {
+                    errorMessages[index].classList.add('hidden');
+                    input.classList.remove('border-red-500');
+                }
+            });
+            return !hasDuplicate;
+        }
+
+        answerInputs.forEach(input => {
+            input.addEventListener('input', validateAnswers);
+        });
+
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (!validateAnswers()) {
+                e.preventDefault();
+                showToast('الرجاء التأكد من عدم تكرار إجابات الأمان', false);
+                
+                // التمرير إلى أول إجابة مكررة
+                const firstError = document.querySelector('.border-red-500');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
     });
 </script>
     <div
@@ -412,6 +474,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" id="security_answer_1" name="security_answer_1"
                             class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                             placeholder="أجب على السؤال" required>
+                        <p id="error_security_answer_1" class="text-red-500 text-xs mt-1 hidden font-bold">هذه الإجابة مكررة وغير مقبولة</p>
                     </div>
 
                     <!-- سؤال الأمان 2 -->
@@ -432,6 +495,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" id="security_answer_2" name="security_answer_2"
                             class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                             placeholder="أجب على السؤال" required>
+                        <p id="error_security_answer_2" class="text-red-500 text-xs mt-1 hidden font-bold">هذه الإجابة مكررة وغير مقبولة</p>
                     </div>
                 </div>
 
@@ -453,6 +517,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="text" id="security_answer_3" name="security_answer_3"
                         class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                         placeholder="أجب على السؤال" required>
+                    <p id="error_security_answer_3" class="text-red-500 text-xs mt-1 hidden font-bold">هذه الإجابة مكررة وغير مقبولة</p>
                 </div>
             </div>
 
