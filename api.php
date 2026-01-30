@@ -3114,11 +3114,15 @@ function syncHolidaysInternal($conn, $year, $force = false) {
         }
     }
 
+    $anySuccess = false;
     foreach ($requests as $request) {
         $response = curl_multi_getcontent($request['handle']);
-        if ($response) {
+        $info = curl_getinfo($request['handle']);
+        
+        if ($response && $info['http_code'] == 200) {
             $data = json_decode($response, true);
             if (isset($data['data']['gregorian']['date'])) {
+                $anySuccess = true;
                 $gDateParts = explode('-', $data['data']['gregorian']['date']);
                 $gDate = $gDateParts[2] . '-' . $gDateParts[1] . '-' . $gDateParts[0];
                 if (strpos($gDate, (string)$year) === 0) {
@@ -3134,6 +3138,10 @@ function syncHolidaysInternal($conn, $year, $force = false) {
         curl_close($request['handle']);
     }
     curl_multi_close($mh);
+
+    if (!empty($requests) && !$anySuccess) {
+        return ['success' => false, 'message' => 'تعذر الاتصال بخادم مواقيت الصلاة (Aladhan API). يرجى التحقق من اتصال الإنترنت.'];
+    }
 
     return ['success' => true, 'count' => $count];
 }

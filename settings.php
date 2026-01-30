@@ -778,7 +778,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <select id="holiday-year-filter" onchange="loadHolidays()" class="bg-dark/50 border border-white/10 text-white text-xs px-3 py-1.5 rounded-lg">
                                     <?php
                                     $curYear = (int)date('Y');
-                                    for($y = $curYear - 1; $y <= $curYear + 2; $y++) {
+                                    for($y = $curYear; $y <= $curYear + 2; $y++) {
                                         $sel = ($y == $curYear) ? 'selected' : '';
                                         echo "<option value='$y' $sel>$y</option>";
                                     }
@@ -957,7 +957,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     }
 
     async function syncMoroccanHolidays() {
-        if (!navigator.onLine) {
+        await updateOnlineStatus();
+        const statusText = document.getElementById('status-text');
+        if (statusText && statusText.innerText.includes('غير متصل')) {
              alert('يرجى الاتصال بالإنترنت أولاً ليتمكن النظام من جلب العطل الدينية');
              return;
         }
@@ -1067,15 +1069,32 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         });
 
         // Online status check for holidays sync
-        function updateOnlineStatus() {
+        async function updateOnlineStatus() {
             const statusText = document.getElementById('status-text');
             if (!statusText) return;
-            if (navigator.onLine) {
-                statusText.innerText = 'متصل';
-                statusText.className = 'text-green-500';
-            } else {
+
+            if (!navigator.onLine) {
                 statusText.innerText = 'غير متصل';
                 statusText.className = 'text-red-500';
+                return;
+            }
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000);
+                
+                await fetch('https://api.aladhan.com/v1/hToG/01-01-1445', { 
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    signal: controller.signal 
+                });
+                
+                clearTimeout(timeoutId);
+                statusText.innerText = 'متصل بالإنترنت';
+                statusText.className = 'text-green-500';
+            } catch (e) {
+                statusText.innerText = 'متصل محلياً (لا يوجد إنترنت)';
+                statusText.className = 'text-orange-500';
             }
         }
         window.addEventListener('online', updateOnlineStatus);
