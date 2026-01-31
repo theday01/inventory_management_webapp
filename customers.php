@@ -64,6 +64,11 @@ require_once 'db.php';
         font-weight: 500;
     }
 
+    .toast-notification.warning {
+        background: linear-gradient(135deg, #F59E0B 0%, #F97316 100%);
+        box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+    }
+
     @keyframes slideInUp {
         from {
             opacity: 0;
@@ -312,6 +317,9 @@ require_once 'db.php';
             icon = 'error';
         } else if (type === 'info') {
             icon = 'info';
+        } else if (type === 'warning') {
+            icon = 'warning';
+            toast.classList.add('warning');
         }
 
         toast.innerHTML = `
@@ -370,6 +378,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let currentPage = 1;
     const customersPerPage = 150;
+    let totalCustomersInSystem = 0;
     let currentBarcodeData = null;
     let cameraStream = null;
     let cameraActive = false;
@@ -384,6 +393,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (result.success) {
                 displayCustomers(result.data);
                 renderPagination(result.total_customers);
+                
+                if (searchQuery.trim() === '') {
+                    totalCustomersInSystem = result.total_customers;
+                }
+                
                 hideLoadingOverlay();
             } else {
                 hideLoadingOverlay();
@@ -774,9 +788,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Export Logic
     exportExcelBtn.addEventListener('click', () => {
-        const customersCount = document.querySelectorAll('#customers-table-body tr').length;
-        if (customersCount === 0) {
-            showToast('لا يوجد عملاء للتصدير', 'info');
+        if (totalCustomersInSystem === 0) {
+            showToast('لا توجد بيانات موجودة لرفعها', 'warning');
             return;
         }
         exportOptionsModal.classList.remove('hidden');
@@ -787,6 +800,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     exportCurrentPageBtn.addEventListener('click', async () => {
+        const noDataMessage = document.querySelector('#customers-table-body .text-gray-500');
+        if (noDataMessage && noDataMessage.closest('tr')) {
+            showToast('لا توجد بيانات في الصفحة الحالية لتصديرها', 'info');
+            return;
+        }
         await performExport('current_page');
         exportOptionsModal.classList.add('hidden');
     });
