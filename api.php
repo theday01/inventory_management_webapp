@@ -238,6 +238,9 @@ switch ($action) {
     case 'deleteExpense':
         deleteExpense($conn);
         break;
+    case 'refund_invoice':
+        refundInvoice($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -570,8 +573,7 @@ function get_period_summary($conn) {
         $sql_start = $start_date . " 00:00:00";
         $sql_end = $end_date . " 23:59:59";
 
-        // Calculate sales AND delivery costs during the period
-        // تم التعديل لجلب إجمالي التوصيل أيضاً
+        // 1. Total Sales
         $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales, COALESCE(SUM(delivery_cost), 0) as total_delivery FROM invoices WHERE created_at BETWEEN ? AND ?");
         $stmt->bind_param("ss", $sql_start, $sql_end);
         $stmt->execute();
@@ -579,8 +581,15 @@ function get_period_summary($conn) {
         $total_sales = floatval($res['total_sales']);
         $total_delivery = floatval($res['total_delivery']);
         $stmt->close();
+
+        // 2. Total Refunds
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_refunds FROM refunds WHERE created_at BETWEEN ? AND ?");
+        $stmt->bind_param("ss", $sql_start, $sql_end);
+        $stmt->execute();
+        $total_refunds = floatval($stmt->get_result()->fetch_assoc()['total_refunds']);
+        $stmt->close();
         
-        // Calculate total cost of goods sold (using historical cost_price from invoice_items)
+        // 3. COGS
         $stmt = $conn->prepare("
             SELECT COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs
             FROM invoice_items ii
@@ -592,14 +601,24 @@ function get_period_summary($conn) {
         $total_cogs = floatval($stmt->get_result()->fetch_assoc()['total_cogs']);
         $stmt->close();
 
-        // Calculate general expenses during the period
+        // 4. Expenses
         $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses WHERE expense_date BETWEEN ? AND ?");
         $stmt->bind_param("ss", $start_date, $end_date);
         $stmt->execute();
         $total_general_expenses = floatval($stmt->get_result()->fetch_assoc()['total_expenses']);
         $stmt->close();
 
-        // Calculate rental payments during the period
+        // Drawer Expenses (for closing balance calc)
+        // Note: Using created_at for drawer expenses to match shift/day logic better, but here we used expense_date for general report.
+        // For consistency in financial report, we use expense_date.
+        // But for "Cash in Drawer" estimation, we need paid_from_drawer.
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as drawer_expenses FROM expenses WHERE expense_date BETWEEN ? AND ? AND paid_from_drawer = 1");
+        $stmt->bind_param("ss", $start_date, $end_date);
+        $stmt->execute();
+        $drawer_expenses = floatval($stmt->get_result()->fetch_assoc()['drawer_expenses']);
+        $stmt->close();
+
+        // Rent
         $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_rent FROM rental_payments WHERE payment_date BETWEEN ? AND ?");
         $stmt->bind_param("ss", $start_date, $end_date);
         $stmt->execute();
@@ -608,18 +627,20 @@ function get_period_summary($conn) {
 
         $total_other_costs = $total_general_expenses + $total_rent;
 
-        // Get opening balance from the first business day in the period
+        // 5. Opening Balance
         $stmt = $conn->prepare("SELECT COALESCE(opening_balance, 0) as opening_balance FROM business_days WHERE start_time BETWEEN ? AND ? ORDER BY start_time ASC LIMIT 1");
         $stmt->bind_param("ss", $sql_start, $sql_end);
         $stmt->execute();
         $opening_balance = floatval($stmt->get_result()->fetch_assoc()['opening_balance']);
         $stmt->close();
 
-        // Closing balance = opening balance + total sales
-        $closing_balance = $opening_balance + $total_sales;
+        // 6. Closing Balance (Cash Flow)
+        $closing_balance = $opening_balance + $total_sales - $total_refunds - $drawer_expenses;
 
-        // تحديث معادلة الربح: الربح = المبيعات - تكلفة البضاعة - تكلفة التوصيل - المصاريف الأخرى
-        $total_profit = $total_sales - $total_cogs - $total_delivery - $total_other_costs;
+        // 7. Net Profit
+        // Profit = (Sales - Refunds) - COGS - Expenses
+        $net_revenue = $total_sales - $total_refunds;
+        $total_profit = $net_revenue - $total_cogs - $total_other_costs;
 
         // Holiday stats
         $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as holiday_sales, COUNT(*) as holiday_orders FROM invoices WHERE created_at BETWEEN ? AND ? AND is_holiday = 1");
@@ -669,6 +690,8 @@ function get_period_summary($conn) {
 
         $summary = [
             'total_sales' => $total_sales,
+            'total_refunds' => $total_refunds,
+            'drawer_expenses' => $drawer_expenses,
             'total_delivery' => $total_delivery,
             'opening_balance' => $opening_balance,
             'closing_balance' => $closing_balance,
@@ -796,8 +819,7 @@ function end_day($conn) {
         $day_id = intval($day['id']);
         $start_time = $day['start_time'];
 
-        // Calculate sales AND delivery costs during the business day
-        // تم التعديل لجلب إجمالي التوصيل
+        // 1. Calculate Total Sales (Revenue)
         $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales, COALESCE(SUM(delivery_cost), 0) as total_delivery FROM invoices WHERE created_at >= ?");
         $stmt->bind_param("s", $start_time);
         $stmt->execute();
@@ -806,7 +828,17 @@ function end_day($conn) {
         $total_delivery = floatval($res['total_delivery']);
         $stmt->close();
         
-        // Calculate total cost of goods sold (using historical cost_price from invoice_items)
+        // 2. Calculate Total Refunds (Cash Out)
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_refunds FROM refunds WHERE created_at >= ?");
+        $stmt->bind_param("s", $start_time);
+        $stmt->execute();
+        $total_refunds = floatval($stmt->get_result()->fetch_assoc()['total_refunds']);
+        $stmt->close();
+
+        // 3. Calculate COGS (Cost of Goods Sold) - Adjusted for Refunds? 
+        // Ideally we should subtract COGS of returned items. 
+        // For simplicity in this iteration, we keep COGS as "Sold" and Refunds as "Loss of Revenue".
+        // Better: Net Sales = Sales - Refunds.
         $stmt = $conn->prepare("
             SELECT COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs
             FROM invoice_items ii
@@ -818,14 +850,24 @@ function end_day($conn) {
         $total_cogs = floatval($stmt->get_result()->fetch_assoc()['total_cogs']);
         $stmt->close();
 
-        // Calculate total expenses and rent today
+        // 4. Expenses
         $today_date = date('Y-m-d', strtotime($start_time));
+        
+        // Total Expenses (for Profit calc)
         $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses WHERE expense_date >= ?");
         $stmt->bind_param("s", $today_date);
         $stmt->execute();
         $total_general_expenses = floatval($stmt->get_result()->fetch_assoc()['total_expenses']);
         $stmt->close();
 
+        // Drawer Expenses (for Cash calc) - Using created_at to match shift
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as drawer_expenses FROM expenses WHERE created_at >= ? AND paid_from_drawer = 1");
+        $stmt->bind_param("s", $start_time);
+        $stmt->execute();
+        $drawer_expenses = floatval($stmt->get_result()->fetch_assoc()['drawer_expenses']);
+        $stmt->close();
+
+        // Rent
         $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_rent FROM rental_payments WHERE payment_date >= ?");
         $stmt->bind_param("s", $today_date);
         $stmt->execute();
@@ -834,9 +876,16 @@ function end_day($conn) {
 
         $total_other_costs = $total_general_expenses + $total_rent;
 
-        $closing_balance = floatval($day['opening_balance']) + $total_sales;
-        // تحديث معادلة الربح: الربح = المبيعات - تكلفة البضاعة - تكلفة التوصيل - المصاريف
-        $total_profit = $total_sales - $total_cogs - $total_delivery - $total_other_costs;
+        // 5. Closing Balance Calculation (Cash Flow)
+        // Closing = Opening + Sales - Refunds - Expenses Paid From Drawer
+        $closing_balance = floatval($day['opening_balance']) + $total_sales - $total_refunds - $drawer_expenses;
+
+        // 6. Net Profit Calculation
+        // Profit = (Sales - Refunds) - COGS - Expenses
+        // Note: We stop subtracting delivery_cost as it's part of Revenue. 
+        // If driver cost is in Expenses, it's handled there.
+        $net_revenue = $total_sales - $total_refunds;
+        $total_profit = $net_revenue - $total_cogs - $total_other_costs;
 
         $stmt = $conn->prepare("UPDATE business_days SET end_time = NOW(), closing_balance = ? WHERE id = ?");
         $stmt->bind_param("di", $closing_balance, $day_id);
@@ -845,6 +894,8 @@ function end_day($conn) {
             $stmt->close();
             $summary = [
                 'total_sales' => $total_sales,
+                'total_refunds' => $total_refunds, // New
+                'drawer_expenses' => $drawer_expenses, // New
                 'total_delivery' => $total_delivery,
                 'opening_balance' => floatval($day['opening_balance']),
                 'closing_balance' => $closing_balance,
@@ -2410,64 +2461,78 @@ function checkout($conn) {
         $customer_id = isset($data['customer_id']) ? (int)$data['customer_id'] : null;
         $delivery_cost = isset($data['delivery_cost']) ? (float)$data['delivery_cost'] : 0;
         $delivery_city = isset($data['delivery_city']) ? $data['delivery_city'] : null;
-        $payment_method = isset($data['payment_method']) ? $data['payment_method'] : 'cash';
-        $amount_received = isset($data['amount_received']) ? (float)$data['amount_received'] : 0;
-        $change_due = isset($data['change_due']) ? (float)$data['change_due'] : 0;
+        // SECURITY: Force payment method to 'cash' as per requirements
+        $payment_method = 'cash'; 
+        
+        // SECURITY: Calculate total server-side
+        $calculated_subtotal = 0;
+        $verified_items = [];
 
-        $total = (float)$data['total'];
+        foreach ($data['items'] as $item) {
+            $product_id = (int)$item['id'];
+            $quantity = (int)$item['quantity'];
+            
+            if ($quantity <= 0) continue;
+
+            $stmt = $conn->prepare("SELECT name, price, cost_price, quantity FROM products WHERE id = ?");
+            $stmt->bind_param("i", $product_id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            if ($res->num_rows === 0) {
+                throw new Exception("المنتج غير موجود (ID: $product_id)");
+            }
+            $product = $res->fetch_assoc();
+            $stmt->close();
+
+            if ($product['quantity'] < $quantity) {
+                throw new Exception("الكمية غير كافية للمنتج: " . $product['name']);
+            }
+
+            $line_total = $product['price'] * $quantity;
+            $calculated_subtotal += $line_total;
+
+            $verified_items[] = [
+                'id' => $product_id,
+                'name' => $product['name'],
+                'quantity' => $quantity,
+                'price' => $product['price'],
+                'cost_price' => $product['cost_price']
+            ];
+        }
+
+        $discount_amount = isset($data['discount_amount']) ? (float)$data['discount_amount'] : 0;
+        // Recalculate total safely
+        $total = $calculated_subtotal + $delivery_cost - $discount_amount;
+        if ($total < 0) $total = 0;
+
+        $amount_received = isset($data['amount_received']) ? (float)$data['amount_received'] : 0;
+        $change_due = $amount_received - $total; // Server-side calculation
 
         $holiday_name = isHoliday($conn, date('Y-m-d'));
         $is_holiday = $holiday_name ? 1 : 0;
 
+        // Insert Invoice
         $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due, is_holiday, holiday_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $discount_percent = isset($data['discount_percent']) ? (float)$data['discount_percent'] : 0;
-        $discount_amount = isset($data['discount_amount']) ? (float)$data['discount_amount'] : 0;
+        $discount_percent = 0; // Simplified, or calculate if needed
         $stmt->bind_param("iddsddsddis", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due, $is_holiday, $holiday_name);
         
         $stmt->execute();
         $invoiceId = $stmt->insert_id;
         $stmt->close();
         
-        $stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, product_id, product_name, quantity, price, cost_price) VALUES (?, ?, ?, ?, ?, ?)");
-        foreach ($data['items'] as $item) {
-            $product_id = (int)$item['id'];
-            $product_name = $item['name'];
-            $quantity = (int)$item['quantity'];
-            $price = (float)$item['price'];
-            
-            // التحقق من الكمية وجلب سعر التكلفة الحالي
-            $checkStmt = $conn->prepare("SELECT quantity, cost_price FROM products WHERE id = ?");
-            $checkStmt->bind_param("i", $product_id);
-            $checkStmt->execute();
-            $result = $checkStmt->get_result();
-            
-            if ($result->num_rows === 0) {
-                throw new Exception("المنتج غير موجود");
-            }
-            
-            $productData = $result->fetch_assoc();
-            $currentStock = $productData['quantity'];
-            $currentCostPrice = (float)$productData['cost_price'];
-            $checkStmt->close();
-            
-            if ($currentStock < $quantity) {
-                throw new Exception("الكمية المتوفرة غير كافية للمنتج (متوفر: " . $currentStock . ")");
-            }
-            
-            $stmt->bind_param("iisidd", $invoiceId, $product_id, $product_name, $quantity, $price, $currentCostPrice);
-            $stmt->execute();
+        // Insert Items & Update Stock
+        $stmt_item = $conn->prepare("INSERT INTO invoice_items (invoice_id, product_id, product_name, quantity, price, cost_price) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt_update = $conn->prepare("UPDATE products SET quantity = quantity - ? WHERE id = ?");
 
-            // تحديث المخزون
-            $updateStmt = $conn->prepare("UPDATE products SET quantity = GREATEST(0, quantity - ?) WHERE id = ? AND quantity >= ?");
-            $updateStmt->bind_param("iii", $quantity, $product_id, $quantity);
-            $updateStmt->execute();
-            
-            if ($updateStmt->affected_rows === 0) {
-                throw new Exception("فشل في تحديث المخزون - الكمية غير كافية");
-            }
-            $updateStmt->close();
+        foreach ($verified_items as $item) {
+            $stmt_item->bind_param("iisidd", $invoiceId, $item['id'], $item['name'], $item['quantity'], $item['price'], $item['cost_price']);
+            $stmt_item->execute();
+
+            $stmt_update->bind_param("ii", $item['quantity'], $item['id']);
+            $stmt_update->execute();
         }
-        $stmt->close();
+        $stmt_item->close();
+        $stmt_update->close();
 
         $barcode = 'INV' . str_pad($invoiceId, 8, '0', STR_PAD_LEFT);
         $updateStmt = $conn->prepare("UPDATE invoices SET barcode = ? WHERE id = ?");
@@ -3711,13 +3776,17 @@ function addExpense($conn) {
         return;
     }
 
-    $stmt = $conn->prepare("INSERT INTO expenses (title, amount, category, expense_date, notes) VALUES (?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO expenses (title, amount, category, expense_date, notes, paid_from_drawer) VALUES (?, ?, ?, ?, ?, ?)");
     $category = $data['category'] ?? 'general';
     $notes = $data['notes'] ?? '';
-    $stmt->bind_param("sdsss", $data['title'], $data['amount'], $category, $data['expense_date'], $notes);
+    $paid_from_drawer = isset($data['paid_from_drawer']) && $data['paid_from_drawer'] ? 1 : 0;
+    
+    $stmt->bind_param("sdsssi", $data['title'], $data['amount'], $category, $data['expense_date'], $notes, $paid_from_drawer);
 
     if ($stmt->execute()) {
-        create_notification($conn, "تم إضافة مصروف جديد: " . $data['title'] . " بمبلغ " . $data['amount'], "expense_add");
+        $msg = "تم إضافة مصروف جديد: " . $data['title'] . " بمبلغ " . $data['amount'];
+        if ($paid_from_drawer) $msg .= " (خصم من الصندوق)";
+        create_notification($conn, $msg, "expense_add");
         echo json_encode(['success' => true, 'message' => 'تم إضافة المصروف بنجاح']);
     } else {
         echo json_encode(['success' => false, 'message' => 'فشل إضافة المصروف']);
@@ -3814,6 +3883,85 @@ function send_contact_message($conn) {
 
     // For this simulation, we'll just return a success message
     echo json_encode(['success' => true, 'message' => 'شكراً لك! تم استلام رسالتك بنجاح وسنقوم بالرد في أقرب وقت ممكن.']);
+}
+
+function refundInvoice($conn) {
+    // Only admin can refund
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك (المسؤول فقط)']);
+        return;
+    }
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    $invoice_id = isset($data['invoice_id']) ? (int)$data['invoice_id'] : 0;
+    $reason = isset($data['reason']) ? $data['reason'] : '';
+
+    if ($invoice_id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'معرف الفاتورة غير صالح']);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        // 1. Check if invoice exists and get details
+        $stmt = $conn->prepare("SELECT total FROM invoices WHERE id = ?");
+        $stmt->bind_param("i", $invoice_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($res->num_rows === 0) {
+            throw new Exception("الفاتورة غير موجودة");
+        }
+        $invoice = $res->fetch_assoc();
+        $total_amount = $invoice['total'];
+        $stmt->close();
+
+        // 2. Check if already refunded
+        $stmt = $conn->prepare("SELECT id FROM refunds WHERE invoice_id = ?");
+        $stmt->bind_param("i", $invoice_id);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            throw new Exception("تم استرجاع هذه الفاتورة مسبقاً");
+        }
+        $stmt->close();
+
+        // 3. Get Invoice Items to restock
+        $stmt = $conn->prepare("SELECT product_id, quantity FROM invoice_items WHERE invoice_id = ?");
+        $stmt->bind_param("i", $invoice_id);
+        $stmt->execute();
+        $items_res = $stmt->get_result();
+        $items = [];
+        while ($row = $items_res->fetch_assoc()) {
+            $items[] = $row;
+        }
+        $stmt->close();
+
+        // 4. Restock Products
+        $stmt_update = $conn->prepare("UPDATE products SET quantity = quantity + ? WHERE id = ?");
+        foreach ($items as $item) {
+            if ($item['product_id']) { // Check if product wasn't deleted (product_id could be null if set null on delete)
+                $stmt_update->bind_param("ii", $item['quantity'], $item['product_id']);
+                $stmt_update->execute();
+            }
+        }
+        $stmt_update->close();
+
+        // 5. Insert Refund Record
+        $items_json = json_encode($items);
+        $stmt = $conn->prepare("INSERT INTO refunds (invoice_id, amount, items_json, reason) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("idss", $invoice_id, $total_amount, $items_json, $reason);
+        $stmt->execute();
+        $stmt->close();
+
+        $conn->commit();
+        create_notification($conn, "تم استرجاع الفاتورة #$invoice_id بقيمة $total_amount", "refund");
+        
+        echo json_encode(['success' => true, 'message' => 'تم استرجاع الفاتورة بنجاح وإعادة المنتجات للمخزون']);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'فشل الاسترجاع: ' . $e->getMessage()]);
+    }
 }
 
 if (ob_get_length()) ob_end_flush();

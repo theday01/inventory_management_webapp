@@ -78,6 +78,17 @@ $sql_customers = "CREATE TABLE IF NOT EXISTS customers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
+// UPDATED: Refunds Table
+$sql_refunds = "CREATE TABLE IF NOT EXISTS refunds (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    invoice_id INT(6) UNSIGNED NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    items_json TEXT,
+    reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
 $sql_invoices = "CREATE TABLE IF NOT EXISTS invoices (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     customer_id INT(6) UNSIGNED,
@@ -216,6 +227,7 @@ $tables = [
     'media_gallery' => $sql_media_gallery,
     'holidays' => $sql_holidays,
     'expenses' => $sql_expenses,
+    'refunds' => $sql_refunds,
     'business_days' => $sql_business_days
 ];
 
@@ -281,6 +293,20 @@ if ($result_ii_cost && $result_ii_cost->num_rows == 0) {
     }
 } else {
     echo "<div style='color: #fff3cd;'>ℹ️ Column 'cost_price' already exists in invoice_items table. Skipping.</div>";
+}
+
+// Add paid_from_drawer column to expenses if it doesn't exist
+$check_exp_drawer = "SHOW COLUMNS FROM `expenses` LIKE 'paid_from_drawer'";
+$result_exp_drawer = $conn->query($check_exp_drawer);
+if ($result_exp_drawer && $result_exp_drawer->num_rows == 0) {
+    $alter_exp = "ALTER TABLE expenses ADD COLUMN paid_from_drawer BOOLEAN DEFAULT FALSE";
+    if ($conn->query($alter_exp) === TRUE) {
+        echo "<div style='color: green;'>✓ Column 'paid_from_drawer' successfully added to expenses table.</div>";
+    } else {
+        echo "<div style='color: red;'>✗ Error adding column 'paid_from_drawer': " . $conn->error . "</div>";
+    }
+} else {
+    echo "<div style='color: #fff3cd;'>ℹ️ Column 'paid_from_drawer' already exists in expenses table. Skipping.</div>";
 }
 
 // ======================================

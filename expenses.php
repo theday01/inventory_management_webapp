@@ -134,6 +134,13 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 <label class="block text-sm text-gray-400 mb-2">ملاحظات (اختياري)</label>
                 <textarea id="expense-notes" rows="3" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" placeholder="أي تفاصيل إضافية..."></textarea>
             </div>
+
+            <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                <input type="checkbox" id="expense-from-drawer" class="w-5 h-5 rounded border-gray-600 text-primary focus:ring-primary bg-dark/50">
+                <label for="expense-from-drawer" class="text-sm text-white cursor-pointer select-none">
+                    خصم المبلغ من الصندوق اليومي (Cash Drawer)
+                </label>
+            </div>
             
             <div class="pt-4 flex gap-3">
                 <button type="button" onclick="closeExpenseModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-all">إلغاء</button>
@@ -280,7 +287,8 @@ document.getElementById('expense-form').addEventListener('submit', async (e) => 
         amount: document.getElementById('expense-amount').value,
         expense_date: document.getElementById('expense-date').value,
         category: document.getElementById('expense-category').value,
-        notes: document.getElementById('expense-notes').value
+        notes: document.getElementById('expense-notes').value,
+        paid_from_drawer: document.getElementById('expense-from-drawer').checked
     };
     
     try {

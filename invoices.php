@@ -740,6 +740,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     const shopPhone = '<?php echo addslashes($shopPhone); ?>';
     const shopAddress = '<?php echo addslashes($shopAddress); ?>';
     const shopCity = '<?php echo addslashes($shopCity); ?>';
+    const userRole = '<?php echo $_SESSION['role']; ?>';
 
     function toEnglishNumbers(str) {
         const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -879,15 +880,27 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             });
             const formattedDate = toEnglishNumbers(gregorianDate);
             
+            let actionButtons = `
+                <button class="view-invoice-btn bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-lg text-sm font-bold transition-all" data-id="${invoice.id}">
+                    عرض
+                </button>
+            `;
+
+            if (userRole === 'admin') {
+                actionButtons += `
+                    <button class="refund-invoice-btn bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-sm font-bold transition-all mr-2" data-id="${invoice.id}">
+                        استرجاع
+                    </button>
+                `;
+            }
+
             row.innerHTML = `
                 <td class="p-4 text-sm font-bold text-primary">#${String(invoice.id).padStart(6, '0')}</td>
                 <td class="p-4 text-sm text-gray-300">${formattedDate}</td>
                 <td class="p-4 text-sm text-gray-300">${invoice.customer_name || 'عميل نقدي'}</td>
                 <td class="p-4 text-sm font-bold text-white">${parseFloat(invoice.total).toFixed(2)} ${currency}</td>
                 <td class="p-4">
-                    <button class="view-invoice-btn bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-lg text-sm font-bold transition-all" data-id="${invoice.id}">
-                        عرض
-                    </button>
+                    ${actionButtons}
                 </td>
             `;
             
@@ -900,6 +913,52 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 await viewInvoice(invoiceId);
             });
         });
+
+        document.querySelectorAll('.refund-invoice-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const invoiceId = this.dataset.id;
+                await handleRefund(invoiceId);
+            });
+        });
+    }
+
+    async function handleRefund(invoiceId) {
+        const { value: reason } = await Swal.fire({
+            title: 'استرجاع الفاتورة',
+            text: `هل أنت متأكد من رغبتك في استرجاع الفاتورة #${invoiceId}؟ سيتم إعادة المنتجات للمخزون وخصم المبلغ من الصندوق.`,
+            input: 'text',
+            inputLabel: 'سبب الاسترجاع (اختياري)',
+            inputPlaceholder: 'سبب الاسترجاع...',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'نعم، استرجاع',
+            cancelButtonText: 'إلغاء'
+        });
+
+        if (reason !== undefined) { // If confirmed (reason can be empty string)
+            showLoading('جاري معالجة الاسترجاع...');
+            try {
+                const response = await fetch('api.php?action=refund_invoice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ invoice_id: invoiceId, reason: reason })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    Swal.fire('تم!', result.message, 'success');
+                    loadInvoices(); // Reload table
+                } else {
+                    Swal.fire('خطأ!', result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error refunding invoice:', error);
+                Swal.fire('خطأ!', 'حدث خطأ غير متوقع', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
     }
 
     async function viewInvoice(invoiceId) {
