@@ -22,6 +22,7 @@ add_ remov_prod.php
 add_test_reports.php
 add_test_notif.php
 add_expenses_data.php
+add_test_data_full.php
 
 
 

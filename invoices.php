@@ -881,18 +881,21 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             const formattedDate = toEnglishNumbers(gregorianDate);
             
             let actionButtons = `
-                <button class="view-invoice-btn bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-lg text-sm font-bold transition-all" data-id="${invoice.id}">
-                    عرض
-                </button>
-            `;
+                <div class="flex items-center gap-2">
+                    <button class="view-invoice-btn bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2" data-id="${invoice.id}">
+                        <span class="material-icons-round text-base">visibility</span>
+                        عرض
+                    </button>`;
 
             if (userRole === 'admin') {
                 actionButtons += `
-                    <button class="refund-invoice-btn bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-sm font-bold transition-all mr-2" data-id="${invoice.id}">
+                    <button class="refund-invoice-btn bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2" data-id="${invoice.id}">
+                        <span class="material-icons-round text-base">assignment_return</span>
                         استرجاع
-                    </button>
-                `;
+                    </button>`;
             }
+            
+            actionButtons += `</div>`;
 
             row.innerHTML = `
                 <td class="p-4 text-sm font-bold text-primary">#${String(invoice.id).padStart(6, '0')}</td>

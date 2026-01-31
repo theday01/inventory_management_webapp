@@ -241,6 +241,9 @@ switch ($action) {
     case 'refund_invoice':
         refundInvoice($conn);
         break;
+    case 'getRefunds':
+        getRefunds($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -3962,6 +3965,67 @@ function refundInvoice($conn) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => 'فشل الاسترجاع: ' . $e->getMessage()]);
     }
+}
+
+function getRefunds($conn) {
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
+
+    // Base query parts
+    $queryBody = "FROM refunds r 
+                  LEFT JOIN invoices i ON r.invoice_id = i.id
+                  LEFT JOIN customers c ON i.customer_id = c.id";
+                  
+    $whereClause = " WHERE 1=1";
+    $params = [];
+    $types = '';
+
+    if (!empty($search)) {
+        $whereClause .= " AND (r.invoice_id LIKE ? OR c.name LIKE ? OR r.reason LIKE ?)";
+        $searchTerm = "%{$search}%";
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $types .= 'sss';
+    }
+
+    // Count Total
+    $countSql = "SELECT COUNT(r.id) as total " . $queryBody . $whereClause;
+    $stmt = $conn->prepare($countSql);
+    if (!empty($types)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $total_refunds = $stmt->get_result()->fetch_assoc()['total'];
+    $stmt->close();
+
+    $offset = ($page - 1) * $limit;
+    
+    // Fetch Data with Items Summary
+    $dataSql = "SELECT r.id, r.invoice_id, r.amount, r.reason, r.created_at, 
+                       c.name as customer_name,
+                       GROUP_CONCAT(CONCAT(ii.product_name, ' (', ii.quantity, ')') SEPARATOR ', ') as items_summary
+                " . $queryBody . "
+                LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
+                " . $whereClause . "
+                GROUP BY r.id
+                ORDER BY r.created_at DESC LIMIT ? OFFSET ?";
+                
+    $dataTypes = $types . 'ii';
+    $dataParams = array_merge($params, [$limit, $offset]);
+
+    $stmt = $conn->prepare($dataSql);
+    $stmt->bind_param($dataTypes, ...$dataParams);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $refunds = [];
+    while ($row = $result->fetch_assoc()) {
+        $refunds[] = $row;
+    }
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'data' => $refunds, 'total_refunds' => $total_refunds]);
 }
 
 if (ob_get_length()) ob_end_flush();
