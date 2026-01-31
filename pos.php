@@ -800,12 +800,15 @@ html:not(.dark) .text-red-500 {
 
 <!-- Main Content -->
 <main class="flex-1 flex flex-col relative overflow-hidden">
-    <div id="business-day-notification" class="hidden bg-yellow-500/10 text-yellow-400 p-4 text-center">
-        <span class="ml-4">يجب بدء يوم عمل جديد لتتمكن من تسجيل المبيعات.</span>
-        <button id="start-day-banner-btn" class="bg-yellow-500 hover:bg-yellow-600 text-dark-surface font-bold py-2 px-6 rounded-lg shadow-lg transition-all transform hover:scale-105">
-            بدء يوم العمل الآن
-        </button>
-        <span class="mr-4 text-xs">أو <a href="reports.php" class="underline">اذهب إلى صفحة التقارير</a></span>
+    <div id="business-day-notification" class="hidden bg-yellow-500/10 text-yellow-400 p-6 text-center border-b border-yellow-500/20">
+        <div class="flex flex-col items-center gap-4">
+            <p class="text-sm font-medium">يجب بدء يوم عمل جديد لتتمكن من تسجيل المبيعات.</p>
+            <button id="start-day-banner-btn" class="bg-yellow-500 hover:bg-yellow-600 text-dark-surface font-bold py-3 px-8 rounded-lg shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 w-fit">
+                <span class="material-icons-round text-sm">flag</span>
+                <span>بدء يوم العمل الآن</span>
+            </button>
+            <p class="text-xs text-yellow-400/80">أو <a href="reports.php" class="underline hover:text-yellow-300">اذهب إلى صفحة التقارير</a></p>
+        </div>
     </div>
     <div id="holiday-notification" class="hidden bg-blue-500/10 text-blue-400 p-4 text-center border-b border-blue-500/20">
         <span class="material-icons-round text-sm align-middle mr-1">celebration</span>
