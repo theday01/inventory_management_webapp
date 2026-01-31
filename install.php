@@ -103,6 +103,7 @@ $sql_invoice_items = "CREATE TABLE IF NOT EXISTS invoice_items (
     product_name VARCHAR(255) NOT NULL DEFAULT 'منتج محذوف',
     quantity INT(6) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
+    cost_price DECIMAL(10, 2) DEFAULT 0,
     FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
@@ -175,6 +176,16 @@ $sql_holidays = "CREATE TABLE IF NOT EXISTS holidays (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
+$sql_expenses = "CREATE TABLE IF NOT EXISTS expenses (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(100) DEFAULT 'general',
+    expense_date DATE NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
 // UPDATED: business_days table with nullable user_id and better foreign key constraint
 $sql_business_days = "CREATE TABLE IF NOT EXISTS business_days (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -204,6 +215,7 @@ $tables = [
     'rental_payments' => $sql_rental_payments,
     'media_gallery' => $sql_media_gallery,
     'holidays' => $sql_holidays,
+    'expenses' => $sql_expenses,
     'business_days' => $sql_business_days
 ];
 
@@ -257,6 +269,20 @@ if ($result_invoice_name && $result_invoice_name->num_rows == 0) {
     echo "<div style='color: #fff3cd;'>ℹ️ Column 'holiday_name' already exists in invoices table. Skipping.</div>";
 }
 
+// Add cost_price column to invoice_items if it doesn't exist
+$check_ii_cost_sql = "SHOW COLUMNS FROM `invoice_items` LIKE 'cost_price'";
+$result_ii_cost = $conn->query($check_ii_cost_sql);
+if ($result_ii_cost && $result_ii_cost->num_rows == 0) {
+    $alter_ii = "ALTER TABLE invoice_items ADD COLUMN cost_price DECIMAL(10, 2) DEFAULT 0";
+    if ($conn->query($alter_ii) === TRUE) {
+        echo "<div style='color: green;'>✓ Column 'cost_price' successfully added to invoice_items table.</div>";
+    } else {
+        echo "<div style='color: red;'>✗ Error adding column 'cost_price': " . $conn->error . "</div>";
+    }
+} else {
+    echo "<div style='color: #fff3cd;'>ℹ️ Column 'cost_price' already exists in invoice_items table. Skipping.</div>";
+}
+
 // ======================================
 // INSERT DEFAULT SETTINGS
 // ======================================
@@ -302,6 +328,8 @@ $default_settings = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('printMode', 'normal') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('thermalPrinterWidth', '58mm') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('thermalPrinterCopies', '1') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('expense_cycle', 'monthly') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('expense_cycle_last_change', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     
     // Rental Settings (NEW SYSTEM) - Only added when user saves
     // No default values forced during installation

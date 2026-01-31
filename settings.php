@@ -41,6 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_POST['reset_set
         'rentalLandlordPhone' => '',
         'rentalNotes' => '',
         'printMode' => 'normal',
+        'expense_cycle' => 'monthly',
+        'expense_cycle_last_change' => '',
         'work_days_enabled' => '1',
         'holidays_enabled' => '1',
         'work_days' => 'monday,tuesday,wednesday,thursday,friday,saturday',
@@ -101,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'rentalLandlordPhone' => $_POST['rentalLandlordPhone'] ?? '',
         'rentalNotes' => $_POST['rentalNotes'] ?? '',
         'printMode' => $_POST['printMode'] ?? 'normal',
+        'expense_cycle' => $_POST['expense_cycle'] ?? 'monthly',
         'work_days_enabled' => isset($_POST['work_days_enabled']) ? '1' : '0',
         'holidays_enabled' => isset($_POST['holidays_enabled']) ? '1' : '0',
         'work_days' => isset($_POST['work_days']) ? implode(',', $_POST['work_days']) : '',
@@ -134,6 +137,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
 
     foreach ($settings_to_save as $name => $value) {
+        // إذا تغيرت دورة المصاريف، نحدث تاريخ آخر تغيير
+        if ($name === 'expense_cycle' && isset($existing['expense_cycle']) && $existing['expense_cycle'] !== $value) {
+            $now = date('Y-m-d H:i:s');
+            $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('expense_cycle_last_change', '$now') ON DUPLICATE KEY UPDATE setting_value = '$now'");
+        }
         $stmt->bind_param("sss", $name, $value, $value);
         $stmt->execute();
     }
@@ -167,6 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'rentalLandlordName' => 'اسم المالك',
         'rentalLandlordPhone' => 'هاتف المالك',
         'rentalNotes' => 'ملاحظات الإيجار',
+        'expense_cycle' => 'دورة حساب المصاريف',
         'work_days_enabled' => 'تفعيل أيام العمل',
         'holidays_enabled' => 'تفعيل العطل الرسمية',
         'work_days' => 'أيام العمل',
@@ -579,6 +588,36 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </div>
                         </div>
                      </div>
+                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                            <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                                <span class="material-icons-round text-primary">update</span>
+                                دورة حساب المصاريف
+                            </h3>
+                            <div class="bg-orange-500/10 border border-orange-500/20 px-4 py-2 rounded-xl">
+                                <p class="text-[10px] text-orange-400 font-bold">⚠️ ننصح بتغيير هذه الإعدادات مرة واحدة سنوياً فقط</p>
+                            </div>
+                        </div>
+                        <div class="p-6 bg-white/5 rounded-2xl border border-white/5">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">تحديد دورة الحساب</label>
+                                    <select name="expense_cycle" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" <?php echo $disabledAttr; ?>>
+                                        <option value="monthly" <?php echo (isset($settings['expense_cycle']) && $settings['expense_cycle'] == 'monthly') ? 'selected' : ''; ?>>دورة شهرية (كل شهر)</option>
+                                        <option value="bi-monthly" <?php echo (isset($settings['expense_cycle']) && $settings['expense_cycle'] == 'bi-monthly') ? 'selected' : ''; ?>>دورة كل 15 يوماً (نصف شهرية)</option>
+                                    </select>
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    <p class="mb-2"><strong class="text-gray-300">الدورة الشهرية:</strong> يتم احتساب المصاريف من 1 إلى نهاية الشهر.</p>
+                                    <p><strong class="text-gray-300">دورة الـ 15 يوماً:</strong> يتم تقسيم الشهر لدورتين (من 1-15 ومن 16-نهاية الشهر).</p>
+                                    <?php if(!empty($settings['expense_cycle_last_change'] ?? '')): ?>
+                                        <p class="mt-3 text-primary">تاريخ آخر تغيير: <?php echo htmlspecialchars($settings['expense_cycle_last_change']); ?></p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                     </div>
+
                      <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3"><span class="material-icons-round text-primary">receipt</span>إعدادات الضريبة</h3>

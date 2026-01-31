@@ -42,7 +42,7 @@ function tabClass($tab, $current_page, $active_tab) {
         <span class="material-icons-round text-[20px] transition-colors">account_balance</span>
         <div class="flex-1">
             <span class="font-bold text-sm block">المالية والضرائب</span>
-            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">العملة ونسب الضريبة</span>
+            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">العملة/ المصاريف ونسب الضريبة</span>
         </div>
     </a>
 

@@ -40,6 +40,14 @@ if (!isset($shopName)) {
                 <span class="material-icons-round text-xl">receipt_long</span>
                 <span class="font-bold">الفواتير</span>
             </a>
+
+            <?php if ($_SESSION['role'] === 'admin'): ?>
+            <a href="expenses.php"
+                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'expenses.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
+                <span class="material-icons-round text-xl">payments</span>
+                <span class="font-bold">المصاريف</span>
+            </a>
+            <?php endif; ?>
             
             <a href="products.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'products.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">

@@ -180,15 +180,23 @@ $sql_metrics = "
         COUNT(DISTINCT i.id) as total_orders,
         COALESCE(SUM(i.total), 0) as total_revenue,
         COALESCE(SUM(i.delivery_cost), 0) as total_delivery,
-        COALESCE(SUM(ii.quantity * COALESCE(p.cost_price, 0)), 0) as total_cogs,
+        COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs,
         COALESCE(SUM(ii.quantity), 0) as total_items_sold,
         MAX(i.total) as max_order_value
     FROM invoices i
     LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
-    LEFT JOIN products p ON ii.product_id = p.id
     WHERE i.created_at BETWEEN '$sql_start' AND '$sql_end'
 ";
 $metrics_result = $conn->query($sql_metrics)->fetch_assoc();
+
+// 1.1 Expenses during the same period
+$sql_expenses_total = "SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE expense_date BETWEEN '$start_date' AND '$end_date'";
+$total_general_expenses = $conn->query($sql_expenses_total)->fetch_assoc()['total'];
+
+$sql_rent_total = "SELECT COALESCE(SUM(amount), 0) as total FROM rental_payments WHERE payment_date BETWEEN '$start_date' AND '$end_date'";
+$total_rent = $conn->query($sql_rent_total)->fetch_assoc()['total'];
+
+$total_other_costs = $total_general_expenses + $total_rent;
 
 $total_orders = $metrics_result['total_orders'];
 $total_items_sold = $metrics_result['total_items_sold'] ?? 0;
@@ -196,13 +204,17 @@ $max_order_value = $metrics_result['max_order_value'] ?? 0;
 $total_revenue = $metrics_result['total_revenue'];
 $total_delivery = $metrics_result['total_delivery'];
 $total_cogs = $metrics_result['total_cogs'];
-$gross_profit = $total_revenue - $total_delivery - $total_cogs;
+$gross_profit = $total_revenue - $total_delivery - $total_cogs - $total_other_costs;
 $avg_order_value = $total_orders > 0 ? ($total_revenue - $total_delivery) / $total_orders : 0;
 $profit_margin = $total_revenue > 0 ? ($gross_profit / $total_revenue) * 100 : 0;
 
-// Total cost including COGS and delivery
-$total_cost = $total_cogs + $total_delivery;
+// Total cost including COGS, delivery, and other expenses
+$total_cost = $total_cogs + $total_delivery + $total_other_costs;
 $profit_markup = $total_cost > 0 ? ($gross_profit / $total_cost) * 100 : 0;
+
+// Fetch cycle configuration
+$resCycle = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'expense_cycle'");
+$expenseCycleType = ($resCycle && $resCycle->num_rows > 0) ? $resCycle->fetch_assoc()['setting_value'] : 'monthly';
 
 // Additional metrics for quick summary
 $sql_unique_customers = "SELECT COUNT(DISTINCT customer_id) as unique_customers FROM invoices WHERE created_at BETWEEN '$sql_start' AND '$sql_end'";
@@ -1123,9 +1135,20 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         <span class="text-red-400 font-bold text-lg"><?php echo number_format($total_cogs, 2); ?> <?php echo $currency; ?></span>
                     </div>
                     <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
+                        <span class="text-gray-400">إجمالي المصاريف العامة</span>
+                        <span class="text-orange-400 font-bold text-lg"><?php echo number_format($total_other_costs, 2); ?> <?php echo $currency; ?></span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
                         <span class="text-gray-400">صافي الربح</span>
                         <span class="text-primary font-bold text-xl"><?php echo number_format($gross_profit, 2); ?> <?php echo $currency; ?></span>
                     </div>
+                </div>
+                <div class="mt-4 p-3 bg-white/5 rounded-xl border border-white/5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-primary text-sm">update</span>
+                        <span class="text-xs text-gray-400">نظام الدورة المالية:</span>
+                    </div>
+                    <span class="text-xs font-bold text-white"><?php echo $expenseCycleType === 'bi-monthly' ? 'كل 15 يوماً' : 'شهري'; ?></span>
                 </div>
             </div>
 
@@ -1253,20 +1276,24 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             </div>
             <div class="flex items-start gap-2">
                 <span class="text-red-400 font-bold">•</span>
-                <p><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> مجموع تكلفة شراء المنتجات المباعة (السعر × الكمية) للجميع الطلبات</p>
+                <p><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> مجموع تكلفة شراء المنتجات المباعة (سعر التكلفة وقت البيع × الكمية)</p>
+            </div>
+            <div class="flex items-start gap-2">
+                <span class="text-orange-500 font-bold">•</span>
+                <p><strong class="text-orange-500">إجمالي المصاريف:</strong> مجموع المصاريف العامة والرواتب والإيجارات المسجلة خلال الفترة</p>
             </div>
             <div class="flex items-start gap-2">
                 <span class="text-yellow-400 font-bold">•</span>
                 <p><strong class="text-yellow-400">الرصيد الختامي:</strong> الرصيد الافتتاحي + إجمالي المبيعات</p>
             </div>
             <div class="flex items-start gap-2 bg-green-500/10 p-3 rounded-lg border border-green-500/20">
-                <span class="text-green-400 font-bold text-lg">→</span>
-                <p><strong class="text-green-400 text-lg">صافي الربح:</strong> إجمالي المبيعات - إجمالي تكلفة البضاعة - إجمالي رسوم التوصيل</p>
+                <span class="text-green-400 font-bold text-lg">></span>
+                <p><strong class="text-green-400 text-lg">صافي الربح:</strong> إجمالي المبيعات - إجمالي تكلفة البضاعة - إجمالي رسوم التوصيل - إجمالي المصاريف</p>
             </div>
             <div class="text-xs text-gray-400 mt-4 bg-dark/30 p-3 rounded-lg">
                 <p class="flex items-center gap-2">
                     <span class="material-icons-round text-yellow-500" style="font-size: 16px;">info</span>
-                    <span>ملاحظة: هذه الحسابات تقديرية بناءً على البيانات المتوفرة في الفترة المحددة</span>
+                    <span>ملاحظة: هذه الحسابات تقدم بناءً على البيانات المتوفرة في الفترة المحددة</span>
                 </p>
             </div>
         </div>
@@ -1556,6 +1583,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                                 <p class="text-right"><strong class="text-yellow-400">الرصيد الختامي:</strong> ${formatNumber(summary.closing_balance)} ${currency}</p>
                                 <hr class="border-gray-600 my-3">
                                 <p class="text-right"><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
+                                <p class="text-right"><strong class="text-orange-500">إجمالي المصاريف:</strong> ${formatNumber(summary.total_expenses)} ${currency}</p>
                                 <div class="bg-green-500/10 p-3 rounded-lg mt-4 border border-green-500/20">
                                     <p class="text-right text-xl font-bold text-green-400">صافي الربح: ${formatNumber(summary.total_profit)} ${currency}</p>
                                 </div>
@@ -2160,6 +2188,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                                 <p class="text-right"><strong class="text-blue-400">الرصيد الافتتاحي:</strong> ${formatNumber(summary.opening_balance)} ${currency}</p>
                                 <p class="text-right"><strong class="text-yellow-400">الرصيد الختامي:</strong> ${formatNumber(summary.closing_balance)} ${currency}</p>
                                 <p class="text-right"><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
+                                <p class="text-right"><strong class="text-orange-500">إجمالي المصاريف:</strong> ${formatNumber(summary.total_expenses)} ${currency}</p>
                                 <p class="text-right text-xl font-bold mt-4 text-green-400">صافي الربح: ${formatNumber(summary.total_profit)} ${currency}</p>
                             </div>
                         `;

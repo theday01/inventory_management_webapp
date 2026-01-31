@@ -229,6 +229,15 @@ switch ($action) {
     case 'get_holiday_status':
         get_holiday_status($conn);
         break;
+    case 'getExpenses':
+        getExpenses($conn);
+        break;
+    case 'addExpense':
+        addExpense($conn);
+        break;
+    case 'deleteExpense':
+        deleteExpense($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
         break;
@@ -281,6 +290,31 @@ function isHoliday($conn, $date) {
     }
 
     return false;
+}
+
+function get_expense_cycle_dates($conn) {
+    $res = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'expense_cycle'");
+    $cycle = ($res && $res->num_rows > 0) ? $res->fetch_assoc()['setting_value'] : 'monthly';
+
+    $today = new DateTime();
+    $year = $today->format('Y');
+    $month = $today->format('m');
+    $day = (int)$today->format('d');
+
+    if ($cycle === 'bi-monthly') {
+        if ($day <= 15) {
+            $start = "$year-$month-01";
+            $end = "$year-$month-15";
+        } else {
+            $start = "$year-$month-16";
+            $end = $today->format('Y-m-t'); // Last day of month
+        }
+    } else {
+        $start = "$year-$month-01";
+        $end = $today->format('Y-m-t');
+    }
+
+    return ['start' => $start, 'end' => $end, 'cycle' => $cycle];
 }
 
 function get_holiday_status($conn) {
@@ -546,18 +580,33 @@ function get_period_summary($conn) {
         $total_delivery = floatval($res['total_delivery']);
         $stmt->close();
         
-        // Calculate total cost of goods sold
+        // Calculate total cost of goods sold (using historical cost_price from invoice_items)
         $stmt = $conn->prepare("
-            SELECT COALESCE(SUM(ii.quantity * COALESCE(p.cost_price, 0)), 0) as total_cogs
+            SELECT COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs
             FROM invoice_items ii
             JOIN invoices i ON ii.invoice_id = i.id
-            LEFT JOIN products p ON ii.product_id = p.id
             WHERE i.created_at BETWEEN ? AND ?
         ");
         $stmt->bind_param("ss", $sql_start, $sql_end);
         $stmt->execute();
         $total_cogs = floatval($stmt->get_result()->fetch_assoc()['total_cogs']);
         $stmt->close();
+
+        // Calculate general expenses during the period
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses WHERE expense_date BETWEEN ? AND ?");
+        $stmt->bind_param("ss", $start_date, $end_date);
+        $stmt->execute();
+        $total_general_expenses = floatval($stmt->get_result()->fetch_assoc()['total_expenses']);
+        $stmt->close();
+
+        // Calculate rental payments during the period
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_rent FROM rental_payments WHERE payment_date BETWEEN ? AND ?");
+        $stmt->bind_param("ss", $start_date, $end_date);
+        $stmt->execute();
+        $total_rent = floatval($stmt->get_result()->fetch_assoc()['total_rent']);
+        $stmt->close();
+
+        $total_other_costs = $total_general_expenses + $total_rent;
 
         // Get opening balance from the first business day in the period
         $stmt = $conn->prepare("SELECT COALESCE(opening_balance, 0) as opening_balance FROM business_days WHERE start_time BETWEEN ? AND ? ORDER BY start_time ASC LIMIT 1");
@@ -569,8 +618,8 @@ function get_period_summary($conn) {
         // Closing balance = opening balance + total sales
         $closing_balance = $opening_balance + $total_sales;
 
-        // تحديث معادلة الربح: الربح = المبيعات - تكلفة البضاعة - تكلفة التوصيل
-        $total_profit = $total_sales - $total_cogs - $total_delivery;
+        // تحديث معادلة الربح: الربح = المبيعات - تكلفة البضاعة - تكلفة التوصيل - المصاريف الأخرى
+        $total_profit = $total_sales - $total_cogs - $total_delivery - $total_other_costs;
 
         // Holiday stats
         $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as holiday_sales, COUNT(*) as holiday_orders FROM invoices WHERE created_at BETWEEN ? AND ? AND is_holiday = 1");
@@ -620,10 +669,11 @@ function get_period_summary($conn) {
 
         $summary = [
             'total_sales' => $total_sales,
-            'total_delivery' => $total_delivery, // إضافة قيمة التوصيل
+            'total_delivery' => $total_delivery,
             'opening_balance' => $opening_balance,
             'closing_balance' => $closing_balance,
             'total_cogs' => $total_cogs,
+            'total_expenses' => $total_other_costs,
             'total_profit' => $total_profit,
             'start_date' => $start_date,
             'end_date' => $end_date,
@@ -756,12 +806,11 @@ function end_day($conn) {
         $total_delivery = floatval($res['total_delivery']);
         $stmt->close();
         
-        // Calculate total cost of goods sold
+        // Calculate total cost of goods sold (using historical cost_price from invoice_items)
         $stmt = $conn->prepare("
-            SELECT COALESCE(SUM(ii.quantity * p.cost_price), 0) as total_cogs
+            SELECT COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs
             FROM invoice_items ii
             JOIN invoices i ON ii.invoice_id = i.id
-            JOIN products p ON ii.product_id = p.id
             WHERE i.created_at >= ?
         ");
         $stmt->bind_param("s", $start_time);
@@ -769,9 +818,25 @@ function end_day($conn) {
         $total_cogs = floatval($stmt->get_result()->fetch_assoc()['total_cogs']);
         $stmt->close();
 
+        // Calculate total expenses and rent today
+        $today_date = date('Y-m-d', strtotime($start_time));
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses WHERE expense_date >= ?");
+        $stmt->bind_param("s", $today_date);
+        $stmt->execute();
+        $total_general_expenses = floatval($stmt->get_result()->fetch_assoc()['total_expenses']);
+        $stmt->close();
+
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_rent FROM rental_payments WHERE payment_date >= ?");
+        $stmt->bind_param("s", $today_date);
+        $stmt->execute();
+        $total_rent = floatval($stmt->get_result()->fetch_assoc()['total_rent']);
+        $stmt->close();
+
+        $total_other_costs = $total_general_expenses + $total_rent;
+
         $closing_balance = floatval($day['opening_balance']) + $total_sales;
-        // تحديث معادلة الربح
-        $total_profit = $total_sales - $total_cogs - $total_delivery;
+        // تحديث معادلة الربح: الربح = المبيعات - تكلفة البضاعة - تكلفة التوصيل - المصاريف
+        $total_profit = $total_sales - $total_cogs - $total_delivery - $total_other_costs;
 
         $stmt = $conn->prepare("UPDATE business_days SET end_time = NOW(), closing_balance = ? WHERE id = ?");
         $stmt->bind_param("di", $closing_balance, $day_id);
@@ -780,10 +845,11 @@ function end_day($conn) {
             $stmt->close();
             $summary = [
                 'total_sales' => $total_sales,
-                'total_delivery' => $total_delivery, // إضافة قيمة التوصيل
+                'total_delivery' => $total_delivery,
                 'opening_balance' => floatval($day['opening_balance']),
                 'closing_balance' => $closing_balance,
                 'total_cogs' => $total_cogs,
+                'total_expenses' => $total_other_costs,
                 'total_profit' => $total_profit
             ];
             create_notification($conn, "تم إنهاء يوم العمل. إجمالي المبيعات: " . $total_sales, "business_day_end");
@@ -2362,15 +2428,15 @@ function checkout($conn) {
         $invoiceId = $stmt->insert_id;
         $stmt->close();
         
-        $stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, product_id, product_name, quantity, price, cost_price) VALUES (?, ?, ?, ?, ?, ?)");
         foreach ($data['items'] as $item) {
             $product_id = (int)$item['id'];
             $product_name = $item['name'];
             $quantity = (int)$item['quantity'];
             $price = (float)$item['price'];
             
-            // التحقق من الكمية
-            $checkStmt = $conn->prepare("SELECT quantity FROM products WHERE id = ?");
+            // التحقق من الكمية وجلب سعر التكلفة الحالي
+            $checkStmt = $conn->prepare("SELECT quantity, cost_price FROM products WHERE id = ?");
             $checkStmt->bind_param("i", $product_id);
             $checkStmt->execute();
             $result = $checkStmt->get_result();
@@ -2379,14 +2445,16 @@ function checkout($conn) {
                 throw new Exception("المنتج غير موجود");
             }
             
-            $currentStock = $result->fetch_assoc()['quantity'];
+            $productData = $result->fetch_assoc();
+            $currentStock = $productData['quantity'];
+            $currentCostPrice = (float)$productData['cost_price'];
             $checkStmt->close();
             
             if ($currentStock < $quantity) {
                 throw new Exception("الكمية المتوفرة غير كافية للمنتج (متوفر: " . $currentStock . ")");
             }
             
-            $stmt->bind_param("iisid", $invoiceId, $product_id, $product_name, $quantity, $price);
+            $stmt->bind_param("iisidd", $invoiceId, $product_id, $product_name, $quantity, $price, $currentCostPrice);
             $stmt->execute();
 
             // تحديث المخزون
@@ -2647,18 +2715,42 @@ function getDashboardStats($conn) {
             SELECT 
                 COUNT(DISTINCT i.id) as total_orders,
                 COALESCE(SUM(i.total), 0) as revenue,
-                COALESCE(SUM(ii.quantity * COALESCE(p.cost_price, 0)), 0) as total_cost
+                COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs,
+                COALESCE(SUM(i.delivery_cost), 0) as total_delivery
             FROM invoices i 
             LEFT JOIN invoice_items ii ON i.id = ii.invoice_id 
-            LEFT JOIN products p ON ii.product_id = p.id 
             WHERE DATE(i.created_at) = '$today'
         ");
         
-        $todayData = $result ? $result->fetch_assoc() : ['total_orders' => 0, 'revenue' => 0, 'total_cost' => 0];
+        $todayData = $result ? $result->fetch_assoc() : ['total_orders' => 0, 'revenue' => 0, 'total_cogs' => 0, 'total_delivery' => 0];
         
-        $stats['todayRevenue'] = $todayData['revenue'];
-        $stats['todayCost'] = $todayData['total_cost'];
+        // Fetch today's expenses
+        $expRes = $conn->query("SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE expense_date = '$today'");
+        $todayExpenses = $expRes ? $expRes->fetch_assoc()['total'] : 0;
+
+        // Fetch today's rental payments
+        $rentRes = $conn->query("SELECT COALESCE(SUM(amount), 0) as total FROM rental_payments WHERE payment_date = '$today'");
+        $todayRent = $rentRes ? $rentRes->fetch_assoc()['total'] : 0;
+
+        // Fetch current cycle expenses for additional info
+        $cycle = get_expense_cycle_dates($conn);
+        $cycleStart = $cycle['start'];
+        $cycleEnd = $cycle['end'];
+        
+        $cycleExpRes = $conn->query("SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE expense_date BETWEEN '$cycleStart' AND '$cycleEnd'");
+        $cycleExpenses = $cycleExpRes ? $cycleExpRes->fetch_assoc()['total'] : 0;
+
+        $cycleRentRes = $conn->query("SELECT COALESCE(SUM(amount), 0) as total FROM rental_payments WHERE payment_date BETWEEN '$cycleStart' AND '$cycleEnd'");
+        $cycleRent = $cycleRentRes ? $cycleRentRes->fetch_assoc()['total'] : 0;
+
+        $totalOtherCosts = floatval($todayExpenses) + floatval($todayRent);
+
+        $stats['todayRevenue'] = floatval($todayData['revenue']);
+        $stats['todayCost'] = floatval($todayData['total_cogs']) + floatval($todayData['total_delivery']) + $totalOtherCosts;
         $stats['todayProfit'] = $stats['todayRevenue'] - $stats['todayCost'];
+        
+        $stats['currentCycleExpenses'] = floatval($cycleExpenses) + floatval($cycleRent);
+        $stats['expenseCycleType'] = $cycle['cycle'];
         $stats['todayMargin'] = $stats['todayRevenue'] > 0 ? ($stats['todayProfit'] / $stats['todayRevenue'] * 100) : 0;
         $stats['todayOrders'] = $todayData['total_orders'];
         
@@ -3570,6 +3662,89 @@ function calculateNextPaymentDate($currentDate, $rentalType) {
     }
     
     return $date->format('Y-m-d');
+}
+
+function getExpenses($conn) {
+    if ($_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+    $offset = ($page - 1) * $limit;
+
+    $sql = "SELECT * FROM expenses ORDER BY expense_date DESC, created_at DESC LIMIT ? OFFSET ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $limit, $offset);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $expenses = [];
+    while ($row = $result->fetch_assoc()) {
+        $expenses[] = $row;
+    }
+    $stmt->close();
+
+    $countRes = $conn->query("SELECT COUNT(*) as total FROM expenses");
+    $total = $countRes->fetch_assoc()['total'];
+
+    echo json_encode([
+        'success' => true,
+        'data' => $expenses,
+        'pagination' => [
+            'total' => $total,
+            'limit' => $limit,
+            'current_page' => $page,
+            'total_pages' => ceil($total / $limit)
+        ]
+    ]);
+}
+
+function addExpense($conn) {
+    if ($_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (empty($data['title']) || empty($data['amount']) || empty($data['expense_date'])) {
+        echo json_encode(['success' => false, 'message' => 'جميع الحقول مطلوبة']);
+        return;
+    }
+
+    $stmt = $conn->prepare("INSERT INTO expenses (title, amount, category, expense_date, notes) VALUES (?, ?, ?, ?, ?)");
+    $category = $data['category'] ?? 'general';
+    $notes = $data['notes'] ?? '';
+    $stmt->bind_param("sdsss", $data['title'], $data['amount'], $category, $data['expense_date'], $notes);
+
+    if ($stmt->execute()) {
+        create_notification($conn, "تم إضافة مصروف جديد: " . $data['title'] . " بمبلغ " . $data['amount'], "expense_add");
+        echo json_encode(['success' => true, 'message' => 'تم إضافة المصروف بنجاح']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'فشل إضافة المصروف']);
+    }
+    $stmt->close();
+}
+
+function deleteExpense($conn) {
+    if ($_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (empty($data['id'])) {
+        echo json_encode(['success' => false, 'message' => 'معرف المصروف مطلوب']);
+        return;
+    }
+
+    $stmt = $conn->prepare("DELETE FROM expenses WHERE id = ?");
+    $stmt->bind_param("i", $data['id']);
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'تم حذف المصروف بنجاح']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'فشل الحذف']);
+    }
+    $stmt->close();
 }
 
 function updateFirstLogin($conn) {
