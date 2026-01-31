@@ -68,22 +68,25 @@ if (!isset($shopName)) {
                 <span class="font-bold">حساب الزكاة</span>
             </a>
 
-            <a href="notifications.php" class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'notifications.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
-                <div class="flex items-center gap-3">
-                    <span class="material-icons-round text-xl">notifications</span>
-                    <span class="font-bold">الإشعارات</span>
-                </div>
-                <span id="notification-count" class="px-2 py-0.5 text-xs font-bold text-white bg-green-500 rounded-full" style="display: none;">0</span>
-            </a>
-
-            <a href="settings.php"
-                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'settings.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
-                <span class="material-icons-round text-xl">settings</span>
-                <span class="font-bold">الإعدادات</span>
-            </a>
-            
         </div>
     </nav>
+
+    <!-- Secondary Navigation -->
+    <div class="px-4 py-2 space-y-2 border-t border-white/5 dark:border-white/5 border-gray-200">
+        <a href="notifications.php" class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'notifications.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
+            <div class="flex items-center gap-3">
+                <span class="material-icons-round text-xl">notifications</span>
+                <span class="font-bold">الإشعارات</span>
+            </div>
+            <span id="notification-count" class="px-2 py-0.5 text-xs font-bold text-white bg-green-500 rounded-full" style="display: none;">0</span>
+        </a>
+
+        <a href="settings.php"
+            class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'settings.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
+            <span class="material-icons-round text-xl">settings</span>
+            <span class="font-bold">الإعدادات</span>
+        </a>
+    </div>
 
     <!-- User Profile -->
     <div class="p-4 border-t border-white/5 dark:border-white/5 border-gray-200">
