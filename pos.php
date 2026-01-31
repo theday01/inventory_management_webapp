@@ -801,7 +801,11 @@ html:not(.dark) .text-red-500 {
 <!-- Main Content -->
 <main class="flex-1 flex flex-col relative overflow-hidden">
     <div id="business-day-notification" class="hidden bg-yellow-500/10 text-yellow-400 p-4 text-center">
-        يجب بدء يوم عمل جديد لتتمكن من تسجيل المبيعات. <a href="reports.php" class="font-bold underline">اذهب إلى صفحة التقارير لبدء اليوم</a>.
+        <span class="ml-4">يجب بدء يوم عمل جديد لتتمكن من تسجيل المبيعات.</span>
+        <button id="start-day-banner-btn" class="bg-yellow-500 hover:bg-yellow-600 text-dark-surface font-bold py-2 px-6 rounded-lg shadow-lg transition-all transform hover:scale-105">
+            بدء يوم العمل الآن
+        </button>
+        <span class="mr-4 text-xs">أو <a href="reports.php" class="underline">اذهب إلى صفحة التقارير</a></span>
     </div>
     <div id="holiday-notification" class="hidden bg-blue-500/10 text-blue-400 p-4 text-center border-b border-blue-500/20">
         <span class="material-icons-round text-sm align-middle mr-1">celebration</span>
@@ -3107,6 +3111,96 @@ document.addEventListener('DOMContentLoaded', function () {
     loadCategories();
     loadProducts();
 
+    async function handleStartDayPOS() {
+        // Promt for opening balance
+        const { value: opening_balance } = await Swal.fire({
+            title: 'بدء يوم عمل جديد',
+            input: 'text',
+            inputLabel: 'الرصيد الافتتاحي',
+            inputPlaceholder: 'أدخل المبلغ...',
+            showCancelButton: true,
+            confirmButtonText: 'بدء اليوم',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: '#10B981',
+            inputValidator: (value) => {
+                if (!value) return 'الرجاء إدخال الرصيد الافتتاحي';
+                if (isNaN(toEnglishNumbers(value))) return 'الرجاء إدخال رقم صحيح';
+            }
+        });
+
+        if (!opening_balance) return;
+
+        // Check for holiday warning
+        try {
+            const holidayRes = await fetch('api.php?action=get_holiday_status');
+            const holidayData = await holidayRes.json();
+            if (holidayData.success && holidayData.is_holiday) {
+                const { isConfirmed } = await Swal.fire({
+                    title: 'تنبيه: يوم عطلة',
+                    text: `اليوم مسجل كأحد أيام العطلة (${holidayData.holiday_name}) في إعدادات النظام، هل أنت متأكد من رغبتك في بدء يوم عمل جديد؟`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#10B981',
+                    cancelButtonColor: '#6B7280',
+                    confirmButtonText: 'نعم، ابدأ العمل',
+                    cancelButtonText: 'تراجع'
+                });
+                
+                if (!isConfirmed) return;
+            }
+        } catch (e) { console.error(e); }
+
+        try {
+            showLoading('جاري بدء يوم العمل...');
+            const response = await fetch('api.php?action=start_day', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ opening_balance: toEnglishNumbers(opening_balance) })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                Swal.fire('تم بنجاح', 'تم بدء يوم عمل جديد بنجاح', 'success').then(() => {
+                    location.reload();
+                });
+            } else if (result.code === 'business_day_open_exists' || result.code === 'business_day_closed_exists') {
+                const isClosed = result.code === 'business_day_closed_exists';
+                const { isConfirmed } = await Swal.fire({
+                    title: isClosed ? 'يوم عمل مغلق' : 'يوم عمل مفتوح بالفعل',
+                    html: `<p class="mb-4">${result.message}</p><p>هل تريد ${isClosed ? 'إعادة فتح' : 'تمديد'} يوم العمل الحالي بإضافة مبلغ <strong>${opening_balance} ${currency}</strong>؟</p>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#10B981',
+                    confirmButtonText: 'نعم، تمديد',
+                    cancelButtonText: 'إلغاء'
+                });
+
+                if (isConfirmed) {
+                    const action = isClosed ? 'reopen_day' : 'extend_day';
+                    const extRes = await fetch(`api.php?action=${action}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ day_id: result.day_id, opening_balance: toEnglishNumbers(opening_balance) })
+                    });
+                    const extResult = await extRes.json();
+                    if (extResult.success) {
+                        Swal.fire('تم بنجاح', extResult.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('خطأ', extResult.message, 'error');
+                    }
+                }
+            } else {
+                Swal.fire('خطأ', result.message, 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            Swal.fire('خطأ', 'حدث خطأ في الاتصال', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
     async function checkBusinessDayStatusForPOS() {
         try {
             const response = await fetch('api.php?action=get_business_day_status');
@@ -3115,6 +3209,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('business-day-notification').classList.remove('hidden');
                 document.getElementById('checkout-btn').disabled = true;
                 document.getElementById('checkout-btn').classList.add('opacity-50', 'cursor-not-allowed');
+                
+                const bannerBtn = document.getElementById('start-day-banner-btn');
+                if (bannerBtn) {
+                    bannerBtn.addEventListener('click', handleStartDayPOS);
+                }
             }
         } catch (error) {
             console.error('Error checking business day status:', error);

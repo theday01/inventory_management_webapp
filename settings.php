@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_POST['reset_set
         'rentalNotes' => '',
         'printMode' => 'normal',
         'work_days_enabled' => '1',
+        'holidays_enabled' => '1',
         'work_days' => 'monday,tuesday,wednesday,thursday,friday,saturday',
     ];
 
@@ -101,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'rentalNotes' => $_POST['rentalNotes'] ?? '',
         'printMode' => $_POST['printMode'] ?? 'normal',
         'work_days_enabled' => isset($_POST['work_days_enabled']) ? '1' : '0',
+        'holidays_enabled' => isset($_POST['holidays_enabled']) ? '1' : '0',
         'work_days' => isset($_POST['work_days']) ? implode(',', $_POST['work_days']) : '',
     ];
 
@@ -166,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'rentalLandlordPhone' => 'هاتف المالك',
         'rentalNotes' => 'ملاحظات الإيجار',
         'work_days_enabled' => 'تفعيل أيام العمل',
+        'holidays_enabled' => 'تفعيل العطل الرسمية',
         'work_days' => 'أيام العمل',
     ];
     $changedLabels = [];
@@ -744,11 +747,24 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     <!-- Moroccan National and Religious Holidays -->
                     <div id="holidays-management-section" class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
                         <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b border-white/5 pb-4 gap-4">
-                            <div>
-                                <h3 class="text-xl font-bold text-white flex items-center gap-3">
-                                    <span class="material-icons-round text-primary">festival</span>
-                                    العطل الوطنية والدينية (المغرب)
-                                </h3>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                                        <span class="material-icons-round text-primary">festival</span>
+                                        العطل الوطنية والدينية (المغرب)
+                                    </h3>
+                                    <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                                        <span class="text-sm text-gray-300">تفعيل ميزة العطل</span>
+                                        <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                            <input type="checkbox" name="holidays_enabled" id="toggle-holidays" value="1"
+                                                class="toggle-checkbox"
+                                                <?php echo (isset($settings['holidays_enabled']) && $settings['holidays_enabled'] == '1') ? 'checked' : ''; ?>
+                                                <?php echo $disabledAttr; ?>
+                                                onchange="toggleHolidaysSettings(this)" />
+                                            <label for="toggle-holidays" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <p class="text-xs text-gray-500 mt-1">إدارة العطل الرسمية لضمان دقة التقارير والإحصائيات</p>
                                 <div class="flex items-center gap-2 mt-2">
                                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
@@ -772,6 +788,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <?php endif; ?>
                         </div>
 
+                        <div id="holidays-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['holidays_enabled']) || $settings['holidays_enabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
                         <div class="flex items-center justify-between mb-6">
                             <div class="flex items-center gap-4">
                                 <label class="text-xs text-gray-400">عرض عطل سنة:</label>
@@ -819,6 +836,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 يمكنك تعديل التاريخ يدوياً إذا اختلف يوم واحد حسب رؤية الهلال الرسمية بالمغرب.
                             </p>
                         </div>
+                        </div> <!-- end holidays-settings-content -->
                     </div>
                 </div>
 
@@ -1142,6 +1160,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const content = document.getElementById('rental-settings-content');
         if (!checkbox.checked) {
             if (confirm('⚠️ تنبيه!\n\nهل أنت متأكد من تعطيل ميزة تذكير الإيجار؟')) {
+                content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+            } else {
+                checkbox.checked = true;
+            }
+        } else {
+            content.classList.remove('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+        }
+    }
+
+    function toggleHolidaysSettings(checkbox) {
+        const content = document.getElementById('holidays-settings-content');
+        if (!checkbox.checked) {
+            if (confirm('⚠️ تنبيه!\n\nهل أنت متأكد من تعطيل ميزة العطل الرسمية؟')) {
                 content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
             } else {
                 checkbox.checked = true;

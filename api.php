@@ -235,19 +235,8 @@ switch ($action) {
 }
 
 function isHoliday($conn, $date) {
-    // 1. التحقق من جدول العطلات الرسمية
-    $stmt = $conn->prepare("SELECT name FROM holidays WHERE date = ?");
-    if ($stmt) {
-        $stmt->bind_param("s", $date);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $holiday = $result->fetch_assoc();
-        $stmt->close();
-        if ($holiday) return $holiday['name'];
-    }
-
-    // 2. التحقق من إعدادات أيام العمل الأسبوعية
-    $settings_res = $conn->query("SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('work_days_enabled', 'work_days')");
+    // جلب الإعدادات الخاصة بالعطل وأيام العمل
+    $settings_res = $conn->query("SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('work_days_enabled', 'work_days', 'holidays_enabled')");
     $settings = [];
     if ($settings_res) {
         while ($row = $settings_res->fetch_assoc()) {
@@ -255,6 +244,20 @@ function isHoliday($conn, $date) {
         }
     }
 
+    // 1. التحقق من جدول العطلات الرسمية (فقط إذا كانت ميزة العطل مفعلة)
+    if (($settings['holidays_enabled'] ?? '0') === '1') {
+        $stmt = $conn->prepare("SELECT name FROM holidays WHERE date = ?");
+        if ($stmt) {
+            $stmt->bind_param("s", $date);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $holiday = $result->fetch_assoc();
+            $stmt->close();
+            if ($holiday) return $holiday['name'];
+        }
+    }
+
+    // 2. التحقق من إعدادات أيام العمل الأسبوعية
     if (($settings['work_days_enabled'] ?? '0') === '1') {
         $timestamp = strtotime($date);
         $day_of_week = strtolower(date('l', $timestamp)); // e.g., "sunday"
