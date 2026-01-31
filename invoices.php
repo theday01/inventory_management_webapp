@@ -888,11 +888,19 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                     </button>`;
 
             if (userRole === 'admin') {
-                actionButtons += `
-                    <button class="refund-invoice-btn bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2" data-id="${invoice.id}">
+                if (parseInt(invoice.is_refunded) === 1) {
+                    actionButtons += `
+                    <button class="bg-gray-500/10 text-gray-500 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 cursor-not-allowed opacity-50" disabled title="تم استرجاع هذه الفاتورة">
                         <span class="material-icons-round text-base">assignment_return</span>
-                        استرجاع
+                        تم الاسترجاع
                     </button>`;
+                } else {
+                    actionButtons += `
+                        <button class="refund-invoice-btn bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2" data-id="${invoice.id}">
+                            <span class="material-icons-round text-base">assignment_return</span>
+                            استرجاع
+                        </button>`;
+                }
             }
             
             actionButtons += `</div>`;

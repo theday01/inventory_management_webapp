@@ -2606,6 +2606,7 @@ function getInvoices($conn) {
 
     $baseSql = "FROM invoices i 
                 LEFT JOIN customers c ON i.customer_id = c.id
+                LEFT JOIN refunds r ON i.id = r.invoice_id
                 WHERE 1=1";
     
     $params = [];
@@ -2636,7 +2637,8 @@ function getInvoices($conn) {
     $stmt->close();
 
     $offset = ($page - 1) * $limit;
-    $dataSql = "SELECT DISTINCT i.id, i.total, i.created_at, c.name as customer_name "
+    $dataSql = "SELECT DISTINCT i.id, i.total, i.created_at, c.name as customer_name,
+                CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END as is_refunded "
              . $baseSql 
              . " ORDER BY i.created_at DESC LIMIT ? OFFSET ?";
     
