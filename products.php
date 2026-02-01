@@ -1,5 +1,5 @@
 <?php
-$page_title = 'إدارة المخزون والمنتجات';
+$page_title = 'products_page_title';
 $current_page = 'products.php';
 require_once 'session.php';
 require_once 'src/header.php';
@@ -30,33 +30,33 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     <!-- Header -->
     <header
         class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-30 shrink-0">
-        <h2 class="text-xl font-bold text-white">إدارة المخزون والمنتجات</h2>
+        <h2 class="text-xl font-bold text-white"><?php echo __('products_page_title'); ?></h2>
 
         <div class="flex items-center gap-4">
             <button id="add-product-btn"
                 class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-rose-500/30 flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">add</span>
-                <span>منتج جديد</span>
+                <span><?php echo __('new_product'); ?></span>
             </button>
             <button id="bulk-add-btn"
                 class="bg-gradient-to-r from-violet-500/20 to-purple-500/20 hover:from-violet-500/30 hover:to-purple-500/30 text-violet-300 border border-violet-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">playlist_add</span>
-                <span>إضافة جماعية للمنتجات</span>
+                <span><?php echo __('bulk_add_products'); ?></span>
             </button>
             <button id="manage-categories-btn"
                 class="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-blue-300 border border-blue-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">category</span>
-                <span>إدارة الفئات</span>
+                <span><?php echo __('manage_categories'); ?></span>
             </button>
             <button id="export-csv-btn"
                 class="bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 text-orange-300 border border-orange-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">download</span>
-                <span>تصدير Excel</span>
+                <span><?php echo __('export_excel'); ?></span>
             </button>
             <button id="import-excel-btn"
                 class="bg-gradient-to-r from-teal-500/20 to-green-500/20 hover:from-teal-500/30 hover:to-green-500/30 text-teal-300 border border-teal-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">upload_file</span>
-                <span>استيراد من Excel</span>
+                <span><?php echo __('import_excel'); ?></span>
             </button>
         </div>
     </header>
@@ -71,9 +71,9 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         <div id="bulk-actions-bar" class="hidden bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-center justify-between transition-all">
             <span id="selected-count" class="text-white font-bold"></span>
             <div class="flex items-center gap-2">
-                <button id="print-labels-btn" class="text-white hover:bg-white/10 p-2 rounded-lg transition-colors" title="طباعة ملصقات الباركود"><span class="material-icons-round">print</span></button>
-                <button id="bulk-edit-btn" class="text-white hover:bg-white/10 p-2 rounded-lg transition-colors" title="تعديل جماعي"><span class="material-icons-round">edit</span></button>
-                <button id="bulk-delete-btn" class="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors" title="حذف جماعي"><span class="material-icons-round">delete</span></button>
+                <button id="print-labels-btn" class="text-white hover:bg-white/10 p-2 rounded-lg transition-colors" title="<?php echo __('print_barcode_labels'); ?>"><span class="material-icons-round">print</span></button>
+                <button id="bulk-edit-btn" class="text-white hover:bg-white/10 p-2 rounded-lg transition-colors" title="<?php echo __('bulk_edit'); ?>"><span class="material-icons-round">edit</span></button>
+                <button id="bulk-delete-btn" class="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors" title="<?php echo __('bulk_delete'); ?>"><span class="material-icons-round">delete</span></button>
             </div>
         </div>
         <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -81,7 +81,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 <div class="relative w-full md:w-96">
                     <span
                     class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
-                <input type="text" id="product-search-input" placeholder="بحث عن اسم المنتج، الباركود..."
+                <input type="text" id="product-search-input" placeholder="<?php echo __('search_products_placeholder'); ?>"
                     class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                 <button id="scan-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white">
                     <span class="material-icons-round">qr_code_scanner</span>
@@ -91,7 +91,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <div class="relative min-w-[200px]">
                 <select id="product-category-filter"
                     class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
-                    <option value="">جميع الفئات</option>
+                    <option value=""><?php echo __('all_categories'); ?></option>
                 </select>
                 <span
                     class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
@@ -99,10 +99,10 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <div class="relative min-w-[200px]">
                 <select id="stock-status-filter"
                     class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
-                    <option value="">كل المخزون</option>
-                    <option value="out_of_stock">منتهي</option>
-                    <option value="low_stock">منخفض</option>
-                    <option value="critical_stock">حرج</option>
+                    <option value=""><?php echo __('all_stock'); ?></option>
+                    <option value="out_of_stock"><?php echo __('stock_status_out'); ?></option>
+                    <option value="low_stock"><?php echo __('stock_status_low'); ?></option>
+                    <option value="critical_stock"><?php echo __('stock_status_critical'); ?></option>
                 </select>
                 <span
                     class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
@@ -117,13 +117,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     <thead>
                         <tr class="text-right">
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="name">المنتج <span class="sort-icon opacity-30">▲</span></th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الصورة</th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الفئة</th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="price">سعر البيع <span class="sort-icon opacity-30">▲</span></th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="quantity">الكمية <span class="sort-icon opacity-30">▲</span></th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">تفاصيل</th>
-                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300">الإجراءات</th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="name"><?php echo __('product'); ?> <span class="sort-icon opacity-30">▲</span></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300"><?php echo __('product_image'); ?></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300"><?php echo __('category'); ?></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="price"><?php echo __('selling_price'); ?> <span class="sort-icon opacity-30">▲</span></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="quantity"><?php echo __('quantity'); ?> <span class="sort-icon opacity-30">▲</span></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300"><?php echo __('details'); ?></th>
+                            <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300"><?php echo __('actions'); ?></th>
                         </tr>
                     </thead>
                     <tbody id="products-table-body" class="divide-y divide-white/5">
@@ -139,7 +139,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     <div id="stock-check-loading" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
         <div class="bg-dark-surface rounded-2xl p-8 flex flex-col items-center gap-4 border border-white/10">
             <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-white font-bold text-lg">جاري فحص المخزون...</p>
+            <p class="text-white font-bold text-lg"><?php echo __('checking_stock'); ?></p>
         </div>
     </div>
 
@@ -147,8 +147,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     <div id="export-loading" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
         <div class="bg-dark-surface rounded-2xl p-8 flex flex-col items-center gap-4 border border-white/10">
             <div class="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-white font-bold text-lg">جاري تصدير ملف Excel...</p>
-            <p class="text-gray-400 text-sm">قد يستغرق هذا بضع ثوانٍ حسب حجم البيانات</p>
+            <p class="text-white font-bold text-lg"><?php echo __('exporting_excel'); ?></p>
+            <p class="text-gray-400 text-sm"><?php echo __('export_wait_msg'); ?></p>
         </div>
     </div>
 
@@ -158,7 +158,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <div class="p-6 border-b border-white/5 flex justify-between items-center shrink-0">
                 <h3 class="text-xl font-bold text-white flex items-center gap-2">
                     <span class="material-icons-round text-yellow-500">inventory</span>
-                    تقرير المخزون المنخفض
+                    <?php echo __('low_stock_report'); ?>
                 </h3>
                 <button id="close-stock-modal" class="text-gray-400 hover:text-white transition-colors">
                     <span class="material-icons-round">close</span>
@@ -172,10 +172,10 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <div class="p-6 border-t border-white/5 flex justify-end gap-3 shrink-0">
                 <button id="export-stock-report" class="bg-primary/10 hover:bg-primary/20 text-primary px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2">
                     <span class="material-icons-round text-sm">download</span>
-                    تصدير التقرير TXT
+                    <?php echo __('export_report_txt'); ?>
                 </button>
                 <button id="close-stock-modal-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2 rounded-xl font-bold transition-all">
-                    إغلاق
+                    <?php echo __('close'); ?>
                 </button>
             </div>
         </div>
@@ -189,8 +189,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                         <span class="material-icons-round text-green-500 text-2xl">check_circle</span>
                     </div>
                     <div>
-                        <h3 class="text-xl font-bold text-white">تم الحذف بنجاح</h3>
-                        <p class="text-sm text-gray-400" id="delete-summary">تم حذف المنتجات المحددة</p>
+                        <h3 class="text-xl font-bold text-white"><?php echo __('deleted_successfully_msg'); ?></h3>
+                        <p class="text-sm text-gray-400" id="delete-summary"><?php echo __('selected_products_deleted'); ?></p>
                     </div>
                 </div>
                 <button id="close-delete-modal" class="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg">
@@ -204,7 +204,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     <div class="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-400 mb-1">إجمالي المحذوفة</p>
+                                <p class="text-sm text-gray-400 mb-1"><?php echo __('total_deleted'); ?></p>
                                 <p class="text-3xl font-bold text-green-500" id="total-deleted">0</p>
                             </div>
                             <span class="material-icons-round text-green-500 text-4xl opacity-20">inventory_2</span>
@@ -214,7 +214,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     <div class="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-400 mb-1">مرتبطة بفواتير</p>
+                                <p class="text-sm text-gray-400 mb-1"><?php echo __('linked_to_invoices'); ?></p>
                                 <p class="text-3xl font-bold text-orange-500" id="linked-deleted">0</p>
                             </div>
                             <span class="material-icons-round text-orange-500 text-4xl opacity-20">receipt_long</span>
@@ -232,7 +232,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     <div class="flex items-start gap-3">
                         <span class="material-icons-round text-blue-500 text-xl mt-0.5">info</span>
                         <div class="flex-1">
-                            <h4 class="text-blue-500 font-bold mb-1">ملاحظة مهمة</h4>
+                            <h4 class="text-blue-500 font-bold mb-1"><?php echo __('important_note'); ?></h4>
                             <p class="text-sm text-gray-300 leading-relaxed" id="linked-note-text"></p>
                         </div>
                     </div>
@@ -241,7 +241,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             
             <div class="p-6 border-t border-white/5 flex justify-end shrink-0">
                 <button id="close-delete-modal-btn" class="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-0.5 shadow-lg shadow-primary/20">
-                    فهمت، شكراً
+                    <?php echo __('understood_thanks'); ?>
                 </button>
             </div>
         </div>
@@ -385,34 +385,34 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 <div id="bulk-edit-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-lg border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">تعديل جماعي للمنتجات</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('bulk_edit_products_title'); ?></h3>
             <button id="close-bulk-edit-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
         <form id="bulk-edit-form">
             <div class="p-6">
-                <p class="text-gray-300 mb-4">اترك الحقول فارغة لعدم تغييرها.</p>
+                <p class="text-gray-300 mb-4"><?php echo __('leave_empty_to_keep'); ?></p>
                 <div class="space-y-4">
                     <div>
-                        <label for="bulk-edit-category" class="block text-sm font-medium text-gray-300 mb-2">الفئة</label>
+                        <label for="bulk-edit-category" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('category'); ?></label>
                         <select id="bulk-edit-category" name="category_id" class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
-                            <option value="">-- عدم التغيير --</option>
+                            <option value=""><?php echo __('no_change'); ?></option>
                             <!-- Categories will be loaded here -->
                         </select>
                     </div>
                     <div>
-                        <label for="bulk-edit-price" class="block text-sm font-medium text-gray-300 mb-2">سعر البيع</label>
-                        <input type="text" id="bulk-edit-price" name="price" step="0.01" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="اترك فارغاً لعدم التغيير">
+                        <label for="bulk-edit-price" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('selling_price'); ?></label>
+                        <input type="text" id="bulk-edit-price" name="price" step="0.01" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="<?php echo __('leave_empty_to_keep'); ?>">
                     </div>
                     <div>
-                        <label for="bulk-edit-quantity" class="block text-sm font-medium text-gray-300 mb-2">الكمية</label>
-                        <input type="text" id="bulk-edit-quantity" name="quantity" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="اترك فارغاً لعدم التغيير">
+                        <label for="bulk-edit-quantity" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('quantity'); ?></label>
+                        <input type="text" id="bulk-edit-quantity" name="quantity" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="<?php echo __('leave_empty_to_keep'); ?>">
                     </div>
                 </div>
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end gap-4">
-                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold">تطبيق التغييرات</button>
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold"><?php echo __('apply_changes'); ?></button>
             </div>
         </form>
     </div>
@@ -422,7 +422,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 <div id="product-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-lg border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 id="product-modal-title" class="text-lg font-bold text-white">إضافة منتج جديد</h3>
+            <h3 id="product-modal-title" class="text-lg font-bold text-white"><?php echo __('add_new_product_title'); ?></h3>
             <button id="close-product-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -432,34 +432,34 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 <input type="hidden" id="product-id" name="id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="mb-4">
-                        <label for="product-name" class="block text-sm font-medium text-gray-300 mb-2">اسم المنتج</label>
+                        <label for="product-name" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('product_name'); ?></label>
                         <input type="text" id="product-name" name="name" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
                     </div>
                     <div class="mb-4">
-                        <label for="product-category" class="block text-sm font-medium text-gray-300 mb-2">الفئة</label>
+                        <label for="product-category" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('category'); ?></label>
                         <select id="product-category" name="category_id" class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
-                            <option value="">اختر فئة</option>
+                            <option value=""><?php echo __('select_category'); ?></option>
                             <!-- Categories will be loaded here -->
                         </select>
                     </div>
                     <div class="mb-4">
-                        <label for="product-price" class="block text-sm font-medium text-gray-300 mb-2">سعر البيع</label>
+                        <label for="product-price" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('selling_price'); ?></label>
                         <input type="text" id="product-price" name="price" step="0.01" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
                     </div>
                     <div class="mb-4">
-                        <label for="product-cost-price" class="block text-sm font-medium text-gray-300 mb-2">سعر التكلفة</label>
+                        <label for="product-cost-price" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('cost_price'); ?></label>
                         <input type="text" id="product-cost-price" name="cost_price" step="0.01" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" placeholder="0.00">
                     </div>
                     <div class="mb-4">
-                        <label for="product-quantity" class="block text-sm font-medium text-gray-300 mb-2">الكمية</label>
+                        <label for="product-quantity" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('quantity'); ?></label>
                         <input type="text" id="product-quantity" name="quantity" inputmode="numeric" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" required>
                     </div>
                     <div class="mb-4 col-span-2">
-                        <label for="product-barcode" class="block text-sm font-medium text-gray-300 mb-2">الباركود</label>
+                        <label for="product-barcode" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('barcode'); ?></label>
                         <input type="text" id="product-barcode" name="barcode" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
                     </div>
                     <div class="mb-4 col-span-2">
-                        <label for="product-image" class="block text-sm font-medium text-gray-300 mb-2">صورة المنتج</label>
+                        <label for="product-image" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('product_image_label'); ?></label>
                         <div class="flex gap-2">
                             <input type="file" id="product-image" name="image" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50">
                             <button type="button" id="select-from-gallery-btn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold">...</button>
@@ -474,7 +474,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 </div>
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end gap-4">
-                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ المنتج</button>
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all"><?php echo __('save_product'); ?></button>
             </div>
         </form>
     </div>
@@ -485,7 +485,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 <div id="image-gallery-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-4xl border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">اختر صورة من المعرض</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('select_image_from_gallery'); ?></h3>
             <button id="close-gallery-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -496,7 +496,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             </div>
         </div>
         <div class="p-6 border-t border-white/5 flex justify-end gap-4">
-            <button id="select-image-btn" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold">اختر الصورة</button>
+            <button id="select-image-btn" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold"><?php echo __('select_image'); ?></button>
         </div>
     </div>
 </div>
@@ -505,7 +505,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 <div id="bulk-add-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-4xl border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">إضافة منتجات جماعية</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('bulk_add_products_title'); ?></h3>
             <button id="close-bulk-add-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -516,13 +516,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     <table class="w-full">
                         <thead>
                             <tr class="text-right border-b border-white/10">
-                                <th class="p-2 text-sm font-medium text-gray-300">اسم المنتج</th>
-                                <th class="p-2 text-sm font-medium text-gray-300">الفئة</th>
-                                <th class="p-2 text-sm font-medium text-gray-300">سعر البيع</th>
-                                <th class="p-2 text-sm font-medium text-gray-300">التكلفة</th>
-                                <th class="p-2 text-sm font-medium text-gray-300">الكمية</th>
-                                <th class="p-2 text-sm font-medium text-gray-300">الباركود</th>
-                                <th class="p-2 text-sm font-medium text-gray-300">الصورة</th>
+                                <th class="p-2 text-sm font-medium text-gray-300"><?php echo __('product_name'); ?></th>
+                                <th class="p-2 text-sm font-medium text-gray-300"><?php echo __('category'); ?></th>
+                                <th class="p-2 text-sm font-medium text-gray-300"><?php echo __('selling_price'); ?></th>
+                                <th class="p-2 text-sm font-medium text-gray-300"><?php echo __('cost_price'); ?></th>
+                                <th class="p-2 text-sm font-medium text-gray-300"><?php echo __('quantity'); ?></th>
+                                <th class="p-2 text-sm font-medium text-gray-300"><?php echo __('barcode'); ?></th>
+                                <th class="p-2 text-sm font-medium text-gray-300"><?php echo __('product_image_label'); ?></th>
                                 <th class="p-2 text-sm font-medium text-gray-300"></th>
                             </tr>
                         </thead>
@@ -534,12 +534,12 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 <div class="mt-4">
                     <button type="button" id="add-bulk-row" class="text-primary hover:text-primary-hover font-bold flex items-center gap-2">
                         <span class="material-icons-round text-sm">add</span>
-                        <span>إضافة صف جديد</span>
+                        <span><?php echo __('add_new_row'); ?></span>
                     </button>
                 </div>
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end gap-4">
-                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ كل المنتجات</button>
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all"><?php echo __('save_all_products'); ?></button>
             </div>
         </form>
     </div>
@@ -550,7 +550,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 <div id="import-excel-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-2xl border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">استيراد المنتجات من ملف Excel</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('import_products_excel_title'); ?></h3>
             <button id="close-import-excel-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -559,43 +559,43 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <div class="p-6">
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">اختر ملف Excel (.xlsx أو .xls)</label>
+                        <label class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('select_excel_file'); ?></label>
                         <input type="file" id="excel-file" name="excel_file" accept=".xlsx,.xls" class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2 rounded-xl focus:outline-none focus:border-primary/50" required>
                     </div>
                     <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-                        <h4 class="text-sm font-bold text-blue-400 mb-2">تنسيق الملف المطلوب:</h4>
-                        <p class="text-xs text-gray-300 mb-2">يجب أن يحتوي الملف على الأعمدة التالية (الصف الأول هو العناوين):</p>
+                        <h4 class="text-sm font-bold text-blue-400 mb-2"><?php echo __('required_file_format'); ?></h4>
+                        <p class="text-xs text-gray-300 mb-2"><?php echo __('file_columns_desc'); ?></p>
                         <ul class="text-xs text-gray-400 space-y-1">
-                            <li>• <strong>Name</strong> - اسم المنتج (مطلوب)</li>
-                            <li>• <strong>Price</strong> - سعر البيع (مطلوب)</li>
-                            <li>• <strong>Quantity</strong> - الكمية (مطلوب)</li>
-                            <li>• <strong>Barcode</strong> - الباركود (اختياري)</li>
-                            <li>• <strong>Category</strong> - اسم الفئة (اختياري، سيتم إنشاؤها إذا لم تكن موجودة)</li>
-                            <li>• <strong>Cost Price</strong> - سعر التكلفة (اختياري)</li>
-                            <li>• <strong>Image</strong> - مسار الصورة (اختياري)</li>
+                            <li>• <strong>Name</strong> - <?php echo __('product_name'); ?> (<?php echo __('required'); ?>)</li>
+                            <li>• <strong>Price</strong> - <?php echo __('selling_price'); ?> (<?php echo __('required'); ?>)</li>
+                            <li>• <strong>Quantity</strong> - <?php echo __('quantity'); ?> (<?php echo __('required'); ?>)</li>
+                            <li>• <strong>Barcode</strong> - <?php echo __('barcode'); ?> (<?php echo __('optional'); ?>)</li>
+                            <li>• <strong>Category</strong> - <?php echo __('category'); ?> (<?php echo __('optional'); ?>)</li>
+                            <li>• <strong>Cost Price</strong> - <?php echo __('cost_price'); ?> (<?php echo __('optional'); ?>)</li>
+                            <li>• <strong>Image</strong> - <?php echo __('product_image_label'); ?> (<?php echo __('optional'); ?>)</li>
                         </ul>
                         <div class="mt-3 pt-3 border-t border-blue-500/20">
-                            <p class="text-xs text-gray-300 mb-2">💡 <strong>نصيحة:</strong> للحصول على نموذج جاهز للتعديل، اضغط على زر "تحميل نموذج Excel" في الأعلى.</p>
+                            <p class="text-xs text-gray-300 mb-2">💡 <strong><?php echo __('tips'); ?>:</strong> <?php echo __('download_excel_template'); ?>.</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
                         <input type="checkbox" id="skip-duplicates" name="skip_duplicates" class="rounded border-white/10 bg-dark/50">
-                        <label for="skip-duplicates" class="text-sm text-gray-300">تجاهل المنتجات المكررة (بناءً على الاسم والباركود)</label>
+                        <label for="skip-duplicates" class="text-sm text-gray-300"><?php echo __('skip_duplicates'); ?></label>
                     </div>
                 </div>
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end gap-4">
                 <button type="button" id="download-template-in-modal-btn" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2">
                     <span class="material-icons-round text-sm">download</span>
-                    تحميل نموذج Excel
+                    <?php echo __('download_excel_template'); ?>
                 </button>
                 <button type="button" id="preview-import-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2">
                     <span class="material-icons-round text-sm">visibility</span>
-                    معاينة البيانات
+                    <?php echo __('preview_data'); ?>
                 </button>
                 <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
                     <span class="material-icons-round text-sm">upload</span>
-                    استيراد المنتجات
+                    <?php echo __('import_products_btn'); ?>
                 </button>
             </div>
         </form>
@@ -607,7 +607,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 <div id="barcode-scanner-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">مسح الباركود</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('scan_barcode_title'); ?></h3>
             <button id="close-barcode-scanner-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -622,7 +622,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 <div id="product-details-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-6xl border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">تفاصيل المنتج</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('product_details_title'); ?></h3>
             <button id="close-product-details-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -642,7 +642,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 <div id="category-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-4xl border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">إدارة الفئات</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('manage_categories_title'); ?></h3>
             <button id="close-category-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -652,34 +652,34 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 <input type="hidden" id="category-id" name="id">
                 <div class="grid grid-cols-1 gap-4 mb-4">
                     <div>
-                        <label for="category-name" class="block text-sm font-medium text-gray-300 mb-2">اسم الفئة *</label>
+                        <label for="category-name" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('category_name_required'); ?></label>
                         <input type="text" id="category-name" name="name"
                             class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50"
                             required>
                     </div>
                     <div>
-                        <label for="category-description" class="block text-sm font-medium text-gray-300 mb-2">الوصف</label>
+                        <label for="category-description" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('category_description'); ?></label>
                         <textarea id="category-description" name="description" rows="2"
                             class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50"
-                            placeholder="وصف مختصر للفئة..."></textarea>
+                            placeholder="<?php echo __('category_desc_placeholder'); ?>"></textarea>
                     </div>
                     <div>
-                        <label for="category-fields" class="block text-sm font-medium text-gray-300 mb-2">حقول مخصصة (مفصولة بفاصلة)</label>
+                        <label for="category-fields" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('custom_fields_comma'); ?></label>
                         <textarea id="category-fields" name="fields" rows="3"
                             class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50"
-                            placeholder="مثال: الحجم, اللون, المادة, الوزن"></textarea>
-                        <p class="text-xs text-gray-500 mt-1">افصل بين الحقول بالفاصلة (,) أو الفاصلة العربية (،)</p>
+                            placeholder="<?php echo __('custom_fields_example'); ?>"></textarea>
+                        <p class="text-xs text-gray-500 mt-1"><?php echo __('comma_separator_hint'); ?></p>
                     </div>
                 </div>
                 <div class="flex justify-end gap-4">
-                    <button type="button" id="cancel-category-edit" class="text-gray-400 hover:text-white px-4 py-2 rounded-xl transition-colors hidden">إلغاء التعديل</button>
+                    <button type="button" id="cancel-category-edit" class="text-gray-400 hover:text-white px-4 py-2 rounded-xl transition-colors hidden"><?php echo __('cancel_edit'); ?></button>
                     <button type="submit"
-                        class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ الفئة</button>
+                        class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all"><?php echo __('save_category'); ?></button>
                 </div>
             </form>
             <hr class="border-white/10 my-6">
             <div>
-                <h4 class="text-md font-bold text-white mb-4">الفئات الحالية (<?php echo "30"; ?> فئة)</h4>
+                <h4 class="text-md font-bold text-white mb-4"><?php echo __('current_categories'); ?> (<?php echo "30"; ?>)</h4>
                 <div id="category-list" class="space-y-2 max-h-96 overflow-y-auto">
                     <!-- Categories will be loaded here via JavaScript -->
                 </div>
@@ -694,27 +694,27 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
                 <span class="material-icons-round text-green-500">download</span>
-                خيارات التصدير
+                <?php echo __('export_options_title'); ?>
             </h3>
             <button id="close-export-options-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
         <div class="p-6">
-            <p class="text-gray-300 mb-6">اختر نوع البيانات التي تريد تصديرها إلى ملف Excel:</p>
+            <p class="text-gray-300 mb-6"><?php echo __('export_type_select'); ?></p>
             <div class="space-y-3">
                 <button id="export-current-page" class="w-full bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary p-4 rounded-xl transition-all flex items-center gap-3">
                     <span class="material-icons-round text-primary">table_view</span>
                     <div class="text-right">
-                        <div class="font-bold">تصدير الصفحة الحالية</div>
-                        <div class="text-sm text-gray-400">تصدير المنتجات المعروضة حالياً فقط (مع الفلاتر المطبقة)</div>
+                        <div class="font-bold"><?php echo __('export_current_page'); ?></div>
+                        <div class="text-sm text-gray-400"><?php echo __('export_current_page_desc'); ?></div>
                     </div>
                 </button>
                 <button id="export-all-products" class="w-full bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 p-4 rounded-xl transition-all flex items-center gap-3">
                     <span class="material-icons-round text-green-500">inventory_2</span>
                     <div class="text-right">
-                        <div class="font-bold">تصدير كل المنتجات</div>
-                        <div class="text-sm text-gray-400">تصدير جميع المنتجات بدون استثناء (تجاهل الفلاتر)</div>
+                        <div class="font-bold"><?php echo __('export_all_products'); ?></div>
+                        <div class="text-sm text-gray-400"><?php echo __('export_all_products_desc'); ?></div>
                     </div>
                 </button>
             </div>
@@ -817,7 +817,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         const stockStatus = stockStatusFilter.value;
 
         try {
-            showLoading('جاري تحميل المنتجات...');
+            showLoading(__('loading_products'));
             const response = await fetch(`api.php?action=getProducts&search=${searchQuery}&category_id=${categoryId}&stock_status=${stockStatus}&page=${currentPage}&limit=${productsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
             const result = await response.json();
             if (result.success) {
@@ -826,7 +826,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             }
         } catch (error) {
             console.error('خطأ في تحميل المنتجات:', error);
-            showToast('حدث خطأ في تحميل المنتجات', false);
+            showToast(__('loading_error'), false);
         } finally {
             hideLoading();
         }
@@ -843,28 +843,28 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
                         <div class="bg-primary/10 p-3 rounded-xl"><span class="material-icons-round text-primary text-2xl">inventory_2</span></div>
                         <div>
-                            <p class="text-gray-400 text-sm">إجمالي المنتجات</p>
+                            <p class="text-gray-400 text-sm">${__('total_products')}</p>
                             <p class="text-white text-xl font-bold">${stats.total_products}</p>
                         </div>
                     </div>
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
                         <div class="bg-green-500/10 p-3 rounded-xl"><span class="material-icons-round text-green-500 text-2xl">attach_money</span></div>
                         <div>
-                            <p class="text-gray-400 text-sm">قيمة المخزون</p>
+                            <p class="text-gray-400 text-sm">${__('stock_value')}</p>
                             <p class="text-white text-xl font-bold">${parseFloat(stats.total_stock_value).toFixed(2)}</p>
                         </div>
                     </div>
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
                         <div class="bg-red-500/10 p-3 rounded-xl"><span class="material-icons-round text-red-500 text-2xl">highlight_off</span></div>
                         <div>
-                            <p class="text-gray-400 text-sm">نفذ من المخزون</p>
+                            <p class="text-gray-400 text-sm">${__('out_of_stock_count')}</p>
                             <p class="text-white text-xl font-bold">${stats.out_of_stock}</p>
                         </div>
                     </div>
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
                         <div class="bg-yellow-500/10 p-3 rounded-xl"><span class="material-icons-round text-yellow-500 text-2xl">warning</span></div>
                         <div>
-                            <p class="text-gray-400 text-sm">مخزون منخفض</p>
+                            <p class="text-gray-400 text-sm">${__('low_stock_count')}</p>
                             <p class="text-white text-xl font-bold">${stats.low_stock}</p>
                         </div>
                     </div>
@@ -878,7 +878,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     function displayProducts(products, lowAlert, criticalAlert) {
         productsTableBody.innerHTML = '';
         if (products.length === 0) {
-            productsTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-500">لا توجد منتجات لعرضها.</td></tr>';
+            productsTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">${__('no_products_display')}</td></tr>`;
             return;
         }
 
@@ -893,15 +893,15 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             if (qty === 0) {
                 rowClass += ' bg-gray-900/40 hover:bg-gray-900/50'; 
                 quantityClass = 'text-gray-500 font-bold';
-                quantityBadge = '<span class="inline-flex items-center gap-1 text-xs bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">block</span>منتهي</span>';
+                quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">block</span>${__('stock_status_out')}</span>`;
             } else if (qty <= criticalAlert) {
                 rowClass += ' bg-red-900/20 hover:bg-red-900/30'; 
                 quantityClass = 'text-red-400 font-bold';
-                quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">error</span>حرج (${qty}/${criticalAlert})</span>`;
+                quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">error</span>${__('stock_status_critical')} (${qty}/${criticalAlert})</span>`;
             } else if (qty <= lowAlert) {
                 rowClass += ' bg-orange-900/20 hover:bg-orange-900/30';
                 quantityClass = 'text-orange-400 font-bold';
-                quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">warning</span>منخفض (${qty}/${lowAlert})</span>`;
+                quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">warning</span>${__('stock_status_low')} (${qty}/${lowAlert})</span>`;
             } else {
                 rowClass += ' bg-transparent hover:bg-white/5';
             }
@@ -914,7 +914,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 <td class="p-4 text-sm text-gray-300">
                     <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" class="w-10 h-10 rounded-md object-cover">
                 </td>
-                <td class="p-4 text-sm text-gray-300">${product.category_name || 'غير مصنّف'}</td>
+                <td class="p-4 text-sm text-gray-300">${product.category_name || '-'}</td>
                 <td class="p-4 text-sm text-gray-300">${parseFloat(product.price).toFixed(2)}</td>
                 <td class="p-4 text-sm ${quantityClass}">
                     <div class="flex items-center">
@@ -992,13 +992,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     
     async function confirmAndDelete(productId) {
         const confirmed = await showConfirmModal(
-            'حذف منتج',
-            'هل أنت متأكد من حذف هذا المنتج؟ سيتم نقله إلى الأرشيف ويمكن استعادته لاحقًا.'
+            __('confirm_delete_product_title'),
+            __('confirm_delete_product_msg')
         );
         
         if (confirmed) {
             try {
-                showLoading('جاري حذف المنتج...');
+                showLoading(__('deleting_products'));
                 const response = await fetch('api.php?action=bulkDeleteProducts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1007,13 +1007,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 const result = await response.json();
                 if (result.success) {
                     loadProducts();
-                    showToast('تم حذف المنتج بنجاح', true);
+                    showToast(__('product_deleted_success'), true);
                 } else {
-                    showToast(result.message || 'فشل في حذف المنتج', false);
+                    showToast(result.message || __('product_delete_fail'), false);
                 }
             } catch (error) {
                 console.error('خطأ في الحذف:', error);
-                showToast('حدث خطأ في الحذف', false);
+                showToast(__('delete_error'), false);
             } finally {
                 hideLoading();
             }
@@ -1062,7 +1062,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             link.click();
             document.body.removeChild(link);
             
-            showToast('تم تصدير المنتجات بنجاح', true);
+            showToast(__('report_exported_success'), true);
             
             // إضافة تأخير قصير قبل إخفاء التحميل لتجنب الإغلاق الفوري
             setTimeout(() => {
@@ -1070,7 +1070,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             }, 1500);
         } catch (error) {
             console.error('خطأ في تصدير Excel:', error);
-            showToast('حدث خطأ في تصدير Excel', false);
+            showToast(__('export_error'), false);
             document.getElementById('export-loading').classList.add('hidden');
         }
     }
@@ -1079,18 +1079,18 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     printLabelsBtn.addEventListener('click', async () => {
         const selectedIds = getSelectedProductIds();
         if (selectedIds.length === 0) {
-            showToast('الرجاء تحديد منتجات لطباعة ملصقاتها', false);
+            showToast(__('select_products_print'), false);
             return;
         }
 
         try {
-            showLoading('جاري تحضير الملصقات...');
+            showLoading(__('preparing_labels'));
             const response = await fetch(`api.php?action=getProducts&ids=${selectedIds.join(',')}`);
             const result = await response.json();
             if (result.success) {
                 const products = result.data;
                 const printWindow = window.open('', '', 'height=600,width=800');
-                printWindow.document.write('<html><head><title>طباعة الملصقات</title>');
+                printWindow.document.write('<html><head><title>' + __('print_barcode_labels') + '</title>');
                 printWindow.document.write('<style>body { font-family: sans-serif; text-align: center; } .label { display: inline-block; border: 1px solid #000; padding: 10px; margin: 5px; } svg { height: 50px; } </style>');
                 printWindow.document.write('</head><body>');
                 products.forEach(p => {
@@ -1115,11 +1115,11 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
                 printWindow.print();
             } else {
-                showToast('فشل في تحضير الملصقات', false);
+                showToast(__('failed_prepare_labels'), false);
             }
         } catch (error) {
             console.error('خطأ في طباعة الملصقات:', error);
-            showToast('حدث خطأ في طباعة الملصقات', false);
+            showToast(__('failed_prepare_labels'), false);
         } finally {
             hideLoading();
         }
@@ -1166,7 +1166,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
         if (selectedIds.length > 0) {
             bulkActionsBar.classList.remove('hidden');
-            selectedCount.textContent = `${selectedIds.length} منتجات محددة`;
+            selectedCount.textContent = `${selectedIds.length} ${__('selected_count')}`;
         } else {
             bulkActionsBar.classList.add('hidden');
         }
@@ -1181,7 +1181,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
     bulkEditBtn.addEventListener('click', async () => {
         const categories = await loadCategories();
-        bulkEditCategorySelect.innerHTML = '<option value="">-- عدم التغيير --</option>';
+        bulkEditCategorySelect.innerHTML = `<option value="">${__('no_change')}</option>`;
         if (categories) {
             categories.forEach(category => {
                 const option = document.createElement('option');
@@ -1209,7 +1209,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         };
 
         try {
-            showLoading('جاري تحديث المنتجات...');
+            showLoading(__('updating_products'));
             const response = await fetch('api.php?action=bulkUpdateProducts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1220,13 +1220,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 bulkEditModal.classList.add('hidden');
                 bulkEditForm.reset();
                 loadProducts();
-                showToast(result.message || 'تم تحديث المنتجات بنجاح', true);
+                showToast(result.message || __('bulk_update_success'), true);
             } else {
-                showToast(result.message || 'فشل في تحديث المنتجات', false);
+                showToast(result.message || __('bulk_update_fail'), false);
             }
         } catch (error) {
             console.error('خطأ في التحديث الجماعي:', error);
-            showToast('حدث خطأ في التحديث الجماعي', false);
+            showToast(__('bulk_update_fail'), false);
         } finally {
             hideLoading();
         }
@@ -1236,18 +1236,18 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         const selectedIds = getSelectedProductIds();
         
         if (selectedIds.length === 0) {
-            showToast('الرجاء تحديد منتجات للحذف', false);
+            showToast(__('select_products_delete'), false);
             return;
         }
         
         const confirmed = await showConfirmModal(
-            'حذف جماعي',
-            `هل أنت متأكد من حذف ${selectedIds.length} منتج؟\n\n⚠️ تنبيه: إذا كانت هذه المنتجات مرتبطة بفواتير، سيتم حذفها من قائمة المنتجات ولكن الفواتير القديمة ستحتفظ بمعلوماتها.`
+            __('confirm_bulk_delete_title'),
+            __('confirm_bulk_delete_msg').replace('%d', selectedIds.length)
         );
         
         if (confirmed) {
             try {
-                showLoading('جاري حذف المنتجات...');
+                showLoading(__('deleting_products'));
                 
                 const response = await fetch('api.php?action=bulkDeleteProducts', {
                     method: 'POST',
@@ -1280,11 +1280,11 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     showDeleteSuccessModal(result);
                     
                 } else {
-                    showToast(result.message || 'فشل في حذف المنتجات', false);
+                    showToast(result.message || __('product_delete_fail'), false);
                 }
             } catch (error) {
                 console.error('خطأ في الحذف الجماعي:', error);
-                showToast('حدث خطأ: ' + error.message, false);
+                showToast(__('delete_error') + ': ' + error.message, false);
             } finally {
                 hideLoading();
             }
@@ -1302,7 +1302,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         const linkedNoteText = document.getElementById('linked-note-text');
         
         // تحديث الإحصائيات
-        deleteSummary.textContent = `تم حذف ${result.deleted_count} منتج من قاعدة البيانات`;
+        deleteSummary.textContent = `${__('deleted_successfully_msg')} ${result.deleted_count}`;
         totalDeleted.textContent = result.deleted_count;
         
         const linkedCount = result.linked_info ? result.linked_info.count : 0;
@@ -1326,10 +1326,10 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                         <p class="font-bold text-white mb-1">${productInfo.split(' (')[0]}</p>
                         <p class="text-xs text-gray-400 flex items-center gap-1">
                             <span class="material-icons-round text-xs">receipt_long</span>
-                            <span>مرتبط بـ ${productInfo.match(/\((\d+)/)?.[1] || '0'} فاتورة</span>
+                            <span>${__('linked_to_invoices')} ${productInfo.match(/\((\d+)/)?.[1] || '0'}</span>
                         </p>
                     </div>
-                    <span class="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded font-bold">محذوف</span>
+                    <span class="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded font-bold">${__('deleted_products')}</span>
                 `;
                 
                 deletedProductsList.appendChild(productCard);
@@ -1344,8 +1344,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             noLinkedCard.className = 'bg-green-500/10 border border-green-500/30 rounded-xl p-6 text-center';
             noLinkedCard.innerHTML = `
                 <span class="material-icons-round text-green-500 text-5xl mb-3">check_circle</span>
-                <p class="text-white font-bold mb-1">تم الحذف بنجاح</p>
-                <p class="text-sm text-gray-400">جميع المنتجات المحددة لم تكن مرتبطة بأي فواتير</p>
+                <p class="text-white font-bold mb-1">${__('deleted_successfully_msg')}</p>
+                <p class="text-sm text-gray-400">${__('selected_products_deleted')}</p>
             `;
             deletedProductsList.appendChild(noLinkedCard);
             
@@ -1421,12 +1421,12 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             const response = await fetch(`api.php?action=getProductDetails&id=${id}`);
             const result = await response.json();
             if (!result.success) {
-                showToast(result.message || 'فشل في تحميل تفاصيل المنتج', false);
+                showToast(result.message || __('failed_load_product_details'), false);
             }
             return result.success ? result.data : null;
         } catch (error) {
             console.error('خطأ في تحميل تفاصيل المنتج:', error);
-            showToast('حدث خطأ في تحميل تفاصيل المنتج', false);
+            showToast(__('error_loading_product_details'), false);
             return null;
         }
     }
@@ -1444,13 +1444,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
         productDetailsInfo.innerHTML = `
             <div class="space-y-2 text-sm">
-                <div class="flex justify-between"><span class="font-medium text-gray-400">الاسم:</span><span class="text-white">${product.name}</span></div>
-                <div class="flex justify-between"><span class="font-medium text-gray-400">الفئة:</span><span class="text-white">${product.category_name}</span></div>
-                <div class="flex justify-between"><span class="font-medium text-gray-400">سعر البيع:</span><span class="text-white">${product.price}</span></div>
-                <div class="flex justify-between"><span class="font-medium text-gray-400">سعر التكلفة:</span><span class="text-white">${product.cost_price || '0.00'}</span></div>
-                <div class="flex justify-between"><span class="font-medium text-gray-400">الكمية:</span><span class="text-white">${product.quantity}</span></div>
-                <div class="flex justify-between"><span class="font-medium text-gray-400">الباركود:</span><span class="text-white">${product.barcode || 'N/A'}</span></div>
-                ${fieldsHtml ? '<hr class="border-white/10 my-3"><h4 class="text-md font-bold text-white pt-2 mb-2">حقول مخصصة</h4>' + fieldsHtml : '<hr class="border-white/10 my-3"><p class="text-gray-500">لا توجد حقول مخصصة.</p>'}
+                <div class="flex justify-between"><span class="font-medium text-gray-400">${__('product_name')}:</span><span class="text-white">${product.name}</span></div>
+                <div class="flex justify-between"><span class="font-medium text-gray-400">${__('category')}:</span><span class="text-white">${product.category_name}</span></div>
+                <div class="flex justify-between"><span class="font-medium text-gray-400">${__('selling_price')}:</span><span class="text-white">${product.price}</span></div>
+                <div class="flex justify-between"><span class="font-medium text-gray-400">${__('cost_price')}:</span><span class="text-white">${product.cost_price || '0.00'}</span></div>
+                <div class="flex justify-between"><span class="font-medium text-gray-400">${__('quantity')}:</span><span class="text-white">${product.quantity}</span></div>
+                <div class="flex justify-between"><span class="font-medium text-gray-400">${__('barcode')}:</span><span class="text-white">${product.barcode || 'N/A'}</span></div>
+                ${fieldsHtml ? '<hr class="border-white/10 my-3"><h4 class="text-md font-bold text-white pt-2 mb-2">' + __('custom_fields_optional') + '</h4>' + fieldsHtml : '<hr class="border-white/10 my-3"><p class="text-gray-500">' + __('no_custom_fields') + '</p>'}
             </div>
         `;
 
@@ -1460,11 +1460,11 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 <div class="flex gap-4 mt-4">
                     <button id="download-barcode-pdf" class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2">
                         <span class="material-icons-round text-sm">picture_as_pdf</span>
-                        <span>تحميل PDF</span>
+                        <span>${__('download_pdf')}</span>
                     </button>
                     <button id="print-barcode" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2">
                         <span class="material-icons-round text-sm">print</span>
-                        <span>طباعة</span>
+                        <span>${__('print_btn')}</span>
                     </button>
                 </div>
             `;
@@ -1504,7 +1504,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 const svgElement = document.getElementById('barcode-svg');
                 const svgData = new XMLSerializer().serializeToString(svgElement);
                 const printWindow = window.open('', '', 'height=400,width=800');
-                printWindow.document.write('<html><head><title>طباعة الباركود</title></head><body>');
+                printWindow.document.write('<html><head><title>' + __('scan_barcode_title') + '</title></head><body>');
                 printWindow.document.write(svgData);
                 printWindow.document.write('</body></html>');
                 printWindow.document.close();
@@ -1512,18 +1512,18 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             });
 
         } else {
-            productBarcodeSection.innerHTML = '<p class="text-gray-500">لا يوجد باركود لهذا المنتج.</p>';
+            productBarcodeSection.innerHTML = `<p class="text-gray-500">${__('no_barcode_product')}</p>`;
         }
     }
     async function openEditModal(productId) {
     try {
-        showLoading('جاري تحميل بيانات المنتج...');
+        showLoading(__('loading_product_data'));
         const product = await getProductDetails(productId);
         if (product) {
             // Reset form and set modal title
             productForm.reset();
             customFieldsContainer.innerHTML = '';
-            document.getElementById('product-modal-title').textContent = 'تعديل المنتج';
+            document.getElementById('product-modal-title').textContent = __('edit_product_title');
 
             // Populate main form fields
             document.getElementById('product-id').value = product.id;
@@ -1557,14 +1557,14 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         }
     } catch (error) {
         console.error('Error opening edit modal:', error);
-        showToast('فشل في تحميل بيانات المنتج للتعديل', false);
+        showToast(__('error_loading_product_details'), false);
     } finally {
         hideLoading();
     }
 }
     addProductBtn.addEventListener('click', async () => {
         productForm.reset();
-        document.getElementById('product-modal-title').textContent = 'إضافة منتج جديد';
+        document.getElementById('product-modal-title').textContent = __('add_new_product_title');
         document.getElementById('product-id').value = '';
         customFieldsContainer.innerHTML = '';
         await loadCategoriesIntoSelect();
@@ -1586,7 +1586,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
         const row = document.createElement('tr');
         row.className = 'border-b border-white/5';
-        let categoryOptions = '<option value="">اختر فئة</option>';
+        let categoryOptions = `<option value="">${__('select_category')}</option>`;
         if (categoriesCache) {
             categoriesCache.forEach(category => {
                 categoryOptions += `<option value="${category.id}">${category.name}</option>`;
@@ -1607,9 +1607,9 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             <td class="p-2">
                 <input type="hidden" name="image_path[]" class="bulk-image-path">
                 <div class="flex items-center gap-1">
-                    <span class="bulk-image-display text-xs text-gray-400 truncate flex-1" title="لم تختر صورة">لم تختر...</span>
-                    <button type="button" class="bulk-upload-btn p-1.5 text-gray-400 hover:text-primary transition-colors" title="رفع صورة"><span class="material-icons-round text-lg">upload</span></button>
-                    <button type="button" class="bulk-gallery-btn p-1.5 text-gray-400 hover:text-primary transition-colors" title="اختر من المعرض"><span class="material-icons-round text-lg">photo_library</span></button>
+                    <span class="bulk-image-display text-xs text-gray-400 truncate flex-1" title="${__('no_image_selected')}">${__('no_image_selected')}...</span>
+                    <button type="button" class="bulk-upload-btn p-1.5 text-gray-400 hover:text-primary transition-colors" title="${__('product_image_label')}"><span class="material-icons-round text-lg">upload</span></button>
+                    <button type="button" class="bulk-gallery-btn p-1.5 text-gray-400 hover:text-primary transition-colors" title="${__('select_image_from_gallery')}"><span class="material-icons-round text-lg">photo_library</span></button>
                 </div>
                 <input type="file" class="hidden-file-input" accept="image/*" style="display:none;">
             </td>
@@ -1688,7 +1688,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 formData.append('image', file);
 
                 try {
-                    displaySpan.textContent = 'جاري الرفع...';
+                    displaySpan.textContent = __('uploading');
                     const response = await fetch('api.php?action=uploadImage', {
                         method: 'POST',
                         body: formData
@@ -1699,15 +1699,15 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                         const fileName = result.filePath.split('/').pop();
                         displaySpan.textContent = fileName;
                         displaySpan.title = result.filePath;
-                        showToast('تم رفع الصورة بنجاح', true);
+                        showToast(__('image_upload_success'), true);
                     } else {
-                        displaySpan.textContent = 'فشل الرفع';
-                        showToast(result.message || 'فشل رفع الصورة', false);
+                        displaySpan.textContent = __('upload_failed_text');
+                        showToast(result.message || __('image_upload_fail'), false);
                     }
                 } catch (error) {
                     console.error('Upload error:', error);
-                    displaySpan.textContent = 'خطأ';
-                    showToast('حدث خطأ أثناء الرفع', false);
+                    displaySpan.textContent = __('error');
+                    showToast(__('upload_error'), false);
                 } finally {
                     fileInput.value = '';
                 }
@@ -1741,7 +1741,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         }
 
         try {
-            showLoading('جاري إضافة المنتجات...');
+            showLoading(__('adding_products'));
             const response = await fetch('api.php?action=bulkAddProducts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1754,13 +1754,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 bulkAddTableBody.innerHTML = '';
                 addBulkRow();
                 loadProducts();
-                showToast(result.message || 'تم إضافة المنتجات بنجاح', true);
+                showToast(result.message || __('bulk_add_success'), true);
             } else {
-                showToast(result.message || 'فشل في إضافة المنتجات', false);
+                showToast(result.message || __('bulk_add_fail'), false);
             }
         } catch (error) {
             console.error('خطأ في الإضافة الجماعية:', error);
-            showToast('حدث خطأ في الإضافة الجماعية', false);
+            showToast(__('bulk_add_fail'), false);
         } finally {
             hideLoading();
         }
@@ -1831,7 +1831,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             }
             selectedImage = null; // Reset selection
         } else {
-            showToast('الرجاء تحديد صورة أولاً', false);
+            showToast(__('select_image_first'), false);
         }
     });
 
@@ -1865,7 +1865,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         if (fields.length > 0) {
             const title = document.createElement('h4');
             title.className = 'text-sm font-bold text-white mb-3 pt-2 border-t border-white/10';
-            title.textContent = 'حقول مخصصة للفئة (اختيارية)';
+            title.textContent = __('custom_fields_optional');
             customFieldsContainer.appendChild(title);
         }
         
@@ -1894,11 +1894,11 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
         const productId = document.getElementById('product-id').value;
         const action = productId ? 'updateProduct' : 'addProduct';
-        const successMessage = productId ? 'تم تحديث المنتج بنجاح' : 'تم إضافة المنتج بنجاح';
-        const errorMessage = productId ? 'فشل في تحديث المنتج' : 'فشل في إضافة المنتج';
+        const successMessage = productId ? __('product_updated_success') : __('product_added_success');
+        const errorMessage = productId ? __('product_update_fail') : __('product_add_fail');
 
         try {
-            showLoading('جاري حفظ المنتج...');
+            showLoading(__('saving_product'));
             const response = await fetch(`api.php?action=${action}`, {
                 method: 'POST',
                 body: formData,
@@ -1923,7 +1923,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             }
         } catch (error) {
             console.error(`خطأ في ${productId ? 'تحديث' : 'إضافة'} المنتج:`, error);
-            showToast(`حدث خطأ في ${productId ? 'تحديث' : 'إضافة'} المنتج`, false);
+            showToast(productId ? __('product_update_fail') : __('product_add_fail'), false);
         } finally {
             hideLoading();
         }
@@ -1948,14 +1948,14 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             }
         } catch (error) {
             console.error('خطأ في تحميل الفئات:', error);
-            showToast('حدث خطأ في تحميل الفئات', false);
+            showToast(__('category_load_error'), false);
         }
         return [];
     }
 
     async function loadCategoriesIntoSelect() {
         const categories = await loadCategories();
-        productCategorySelect.innerHTML = '<option value="">اختر فئة</option>';
+        productCategorySelect.innerHTML = `<option value="">${__('select_category')}</option>`;
         if(categories) {
             categories.forEach(category => {
                 const option = document.createElement('option');
@@ -1969,7 +1969,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
     async function loadCategoriesIntoFilter() {
         const categories = await loadCategories();
-        categoryFilter.innerHTML = '<option value="">جميع الفئات</option>';
+        categoryFilter.innerHTML = `<option value="">${__('all_categories')}</option>`;
         if(categories) {
             categories.forEach(category => {
                 const option = document.createElement('option');
@@ -1983,7 +1983,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     function displayCategories(categories) {
         categoryList.innerHTML = '';
         if (categories.length === 0) {
-            categoryList.innerHTML = '<p class="text-gray-500">لا توجد فئات حالياً.</p>';
+            categoryList.innerHTML = `<p class="text-gray-500">${__('no_categories_now')}</p>`;
             return;
         }
 
@@ -2001,14 +2001,14 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                     <div class="flex items-center gap-2 mb-1">
                         <span class="material-icons-round text-primary text-sm">category</span>
                         <span class="font-bold text-white">${category.name}</span>
-                        ${fieldsCount > 0 ? `<span class="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded">${fieldsCount} حقل</span>` : ''}
+                        ${fieldsCount > 0 ? `<span class="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded">${fieldsCount} ${__('fields_count').replace('%d', '')}</span>` : ''}
                     </div>
                     ${category.description ? `<p class="text-xs text-gray-400 mb-2">${category.description}</p>` : ''}
                     ${fieldsCount > 0 ? `
                         <p class="text-xs text-gray-500">
-                            <strong>الحقول:</strong> ${fieldsPreview}${hasMoreFields ? '...' : ''}
+                            <strong>${__('fields_label')}</strong> ${fieldsPreview}${hasMoreFields ? '...' : ''}
                         </p>
-                    ` : '<p class="text-xs text-gray-500">لا توجد حقول مخصصة</p>'}
+                    ` : `<p class="text-xs text-gray-500">${__('no_custom_fields_cat')}</p>`}
                 </div>
                 <div class="flex gap-2 mr-4">
                     <button class="edit-category-btn p-2 text-gray-400 hover:text-primary transition-colors" 
@@ -2016,12 +2016,12 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                         data-name="${category.name}" 
                         data-description="${category.description || ''}"
                         data-fields="${category.fields || ''}"
-                        title="تعديل">
+                        title="${__('edit_cat_tooltip')}">
                         <span class="material-icons-round text-lg">edit</span>
                     </button>
                     <button class="delete-category-btn p-2 text-gray-400 hover:text-red-500 transition-colors" 
                         data-id="${category.id}"
-                        title="حذف">
+                        title="${__('delete_cat_tooltip')}">
                         <span class="material-icons-round text-lg">delete</span>
                     </button>
                 </div>
@@ -2042,7 +2042,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         const url = id ? 'api.php?action=updateCategory' : 'api.php?action=addCategory';
 
         try {
-            showLoading('جاري حفظ الفئة...');
+            showLoading(__('saving_category'));
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2054,13 +2054,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 loadCategories();
                 loadCategoriesIntoSelect();
                 loadCategoriesIntoFilter();
-                showToast(result.message || 'تم حفظ الفئة بنجاح', true);
+                showToast(result.message || __('category_saved_success'), true);
             } else {
-                showToast(result.message || 'فشل في حفظ الفئة', false);
+                showToast(result.message || __('category_save_fail'), false);
             }
         } catch (error) {
             console.error('خطأ في حفظ الفئة:', error);
-            showToast('حدث خطأ في حفظ الفئة', false);
+            showToast(__('category_save_fail'), false);
         } finally {
             hideLoading();
         }
@@ -2083,8 +2083,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             const id = btn.dataset.id;
             
             const confirmed = await showConfirmModal(
-                'حذف الفئة',
-                'هل أنت متأكد من حذف هذه الفئة؟ سيتم حذف جميع الحقول المخصصة المرتبطة بها.'
+                __('confirm_delete_category_title'),
+                __('confirm_delete_category_msg')
             );
             
             if (confirmed) {
@@ -2104,7 +2104,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
     async function deleteCategory(id) {
         try {
-            showLoading('جاري حذف الفئة...');
+            showLoading(__('deleting_category'));
             const response = await fetch('api.php?action=deleteCategory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2115,13 +2115,13 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 loadCategories();
                 loadCategoriesIntoSelect();
                 loadCategoriesIntoFilter();
-                showToast(result.message || 'تم حذف الفئة بنجاح', true);
+                showToast(result.message || __('category_deleted_success'), true);
             } else {
-                showToast(result.message || 'فشل في حذف الفئة', false);
+                showToast(result.message || __('category_delete_fail'), false);
             }
         } catch (error) {
             console.error('خطأ في حذف الفئة:', error);
-            showToast('حدث خطأ في حذف الفئة', false);
+            showToast(__('category_delete_fail'), false);
         } finally {
             hideLoading();
         }
@@ -2149,7 +2149,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         codeReader.listVideoInputDevices()
             .then((videoInputDevices) => {
                 if (videoInputDevices.length === 0) {
-                    showToast('لم يتم العثور على كاميرا', false);
+                    showToast(__('no_camera_found'), false);
                     return;
                 }
                 const firstDeviceId = videoInputDevices[1].deviceId;
@@ -2167,7 +2167,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             })
             .catch((err) => {
                 console.error(err);
-                showToast('فشل في تشغيل الكاميرا', false);
+                showToast(__('camera_fail'), false);
             });
     }
 
@@ -2182,7 +2182,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     const checkStockBtn = document.createElement('button');
     checkStockBtn.innerHTML = `
         <span class="material-icons-round text-sm">inventory</span>
-        <span>فحص المخزون المنخفض</span>
+        <span>${__('check_low_stock_btn')}</span>
     `;
     checkStockBtn.className = 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5';
     checkStockBtn.onclick = async function() {
@@ -2204,7 +2204,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 const totalIssues = result.outOfStockCount + result.criticalCount + result.lowCount;
                 
                 if (totalIssues === 0) {
-                    showToast('✅ جميع المنتجات بكميات جيدة', true);
+                    showToast('✅ ' + __('all_products_good_stock'), true);
                 } else {
                     const outOfStock = result.outOfStock || [];
                     const critical = result.critical || [];
@@ -2217,19 +2217,19 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div class="bg-gray-500/10 border border-gray-500/30 rounded-xl p-4 text-center">
                                     <div class="text-3xl font-bold text-gray-400">${outOfStock.length}</div>
-                                    <div class="text-sm text-gray-400 mt-1">منتهي (0)</div>
+                                    <div class="text-sm text-gray-400 mt-1">${__('stock_status_out')} (0)</div>
                                 </div>
                                 <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
                                     <div class="text-3xl font-bold text-red-500">${critical.length}</div>
-                                    <div class="text-sm text-red-400 mt-1">حرج (1-5)</div>
+                                    <div class="text-sm text-red-400 mt-1">${__('stock_status_critical')} (1-5)</div>
                                 </div>
                                 <div class="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 text-center">
                                     <div class="text-3xl font-bold text-orange-500">${low.length}</div>
-                                    <div class="text-sm text-orange-400 mt-1">منخفض (6-10)</div>
+                                    <div class="text-sm text-orange-400 mt-1">${__('stock_status_low')} (6-10)</div>
                                 </div>
                                 <div class="bg-primary/10 border border-primary/30 rounded-xl p-4 text-center">
                                     <div class="text-3xl font-bold text-primary">${totalIssues}</div>
-                                    <div class="text-sm text-gray-400 mt-1">الإجمالي</div>
+                                    <div class="text-sm text-gray-400 mt-1">${__('total')}</div>
                                 </div>
                             </div>
                     `;
@@ -2241,7 +2241,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                                 <summary class="flex items-center justify-between cursor-pointer list-none">
                                     <div class="flex items-center gap-2">
                                         <span class="material-icons-round text-gray-400">block</span>
-                                        <h4 class="text-lg font-bold text-gray-400">منتجات منتهية تماماً (كمية = 0)</h4>
+                                        <h4 class="text-lg font-bold text-gray-400">${__('products_out_of_stock_zero')}</h4>
                                     </div>
                                     <span class="text-sm text-gray-400">${outOfStock.length}</span>
                                 </summary>
@@ -2254,9 +2254,9 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                                     <div>
                                         <div class="font-bold text-white flex items-center gap-2">
                                             ${product.name}
-                                            <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded">نفذت الكمية</span>
+                                            <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded">${__('out_of_stock')}</span>
                                         </div>
-                                        <div class="text-sm text-gray-500 mt-1">يجب طلب مخزون جديد فوراً</div>
+                                        <div class="text-sm text-gray-500 mt-1">${__('reorder_immediately')}</div>
                                     </div>
                                     <div class="text-2xl font-bold text-gray-500">0</div>
                                 </div>
@@ -2276,7 +2276,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                                 <summary class="flex items-center justify-between cursor-pointer list-none">
                                     <div class="flex items-center gap-2">
                                         <span class="material-icons-round text-red-500">error</span>
-                                        <h4 class="text-lg font-bold text-red-500">منتجات حرجة (كمية 1-5)</h4>
+                                        <h4 class="text-lg font-bold text-red-500">${__('products_critical_stock')}</h4>
                                     </div>
                                     <span class="text-sm text-red-500">${critical.length}</span>
                                 </summary>
@@ -2288,7 +2288,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                                 <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-red-900/30 transition-colors">
                                     <div>
                                         <div class="font-bold text-white">${product.name}</div>
-                                        <div class="text-sm text-gray-400">الكمية المتبقية</div>
+                                        <div class="text-sm text-gray-400">${__('remaining_quantity')}</div>
                                     </div>
                                     <div class="text-2xl font-bold text-red-500">${product.quantity}</div>
                                 </div>
@@ -2308,7 +2308,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                                 <summary class="flex items-center justify-between cursor-pointer list-none">
                                     <div class="flex items-center gap-2">
                                         <span class="material-icons-round text-orange-500">warning</span>
-                                        <h4 class="text-lg font-bold text-orange-500">منتجات منخفضة (كمية 6-10)</h4>
+                                        <h4 class="text-lg font-bold text-orange-500">${__('products_low_stock')}</h4>
                                     </div>
                                     <span class="text-sm text-orange-500">${low.length}</span>
                                 </summary>
@@ -2320,7 +2320,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                                 <div class="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-orange-900/30 transition-colors">
                                     <div>
                                         <div class="font-bold text-white">${product.name}</div>
-                                        <div class="text-sm text-gray-400">الكمية المتبقية</div>
+                                        <div class="text-sm text-gray-400">${__('remaining_quantity')}</div>
                                     </div>
                                     <div class="text-2xl font-bold text-orange-500">${product.quantity}</div>
                                 </div>
@@ -2345,7 +2345,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         } catch (error) {
             loadingScreen.classList.add('hidden');
             console.error('خطأ:', error);
-            showToast('حدث خطأ في فحص المخزون', false);
+            showToast(__('stock_check_error'), false);
         }
     };
 
@@ -2376,7 +2376,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     if (exportStockReport) {
         exportStockReport.addEventListener('click', () => {
             if (!window.stockReportData) {
-                showToast('لا توجد بيانات للتصدير', false);
+                showToast(__('no_data_export'), false);
                 return;
             }
             
@@ -2385,9 +2385,9 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             const dateStr = now.toLocaleDateString('fr-FR');
             const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
             
-            let txtContent = `تقرير المخزون الشامل\n`;
-            txtContent += `التاريخ: ${dateStr}\n`;
-            txtContent += `الوقت: ${timeStr}\n`;
+            let txtContent = `${__('comprehensive_stock_report')}\n`;
+            txtContent += `${__('date')}: ${dateStr}\n`;
+            txtContent += `${__('time')}: ${timeStr}\n`;
             txtContent += `${'='.repeat(60)}\n\n`;
             
             const outOfStock = window.stockReportData.outOfStock || [];
@@ -2395,58 +2395,58 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             const low = window.stockReportData.low || [];
             const totalIssues = outOfStock.length + critical.length + low.length;
             
-            txtContent += `📊 ملخص الحالة:\n`;
-            txtContent += `   - منتجات منتهية (0): ${outOfStock.length}\n`;
-            txtContent += `   - منتجات حرجة (1-5): ${critical.length}\n`;
-            txtContent += `   - منتجات منخفضة (6-10): ${low.length}\n`;
-            txtContent += `   - إجمالي المشاكل: ${totalIssues}\n\n`;
+            txtContent += `📊 ${__('status_summary')}\n`;
+            txtContent += `   - ${__('out_of_stock_products')} (0): ${outOfStock.length}\n`;
+            txtContent += `   - ${__('critical_stock_products')} (1-5): ${critical.length}\n`;
+            txtContent += `   - ${__('low_stock_products')} (6-10): ${low.length}\n`;
+            txtContent += `   - ${__('total_issues')}: ${totalIssues}\n\n`;
             
             // المنتجات المنتهية
             if (outOfStock.length > 0) {
                 txtContent += `${'='.repeat(60)}\n`;
-                txtContent += `⛔ منتجات منتهية تماماً (كمية = 0):\n`;
+                txtContent += `⛔ ${__('products_out_of_stock_zero')}:\n`;
                 txtContent += `${'-'.repeat(60)}\n`;
-                txtContent += `⚠️ هذه المنتجات نفذت بالكامل وتحتاج طلب مخزون فوري!\n\n`;
+                txtContent += `⚠️ ${__('reorder_immediately')}!\n\n`;
                 outOfStock.forEach((p, i) => {
                     txtContent += `${i + 1}. ${p.name}\n`;
-                    txtContent += `   الكمية: 0 (نفذت)\n`;
-                    txtContent += `   الحالة: يجب الطلب فوراً\n\n`;
+                    txtContent += `   ${__('quantity')}: 0 (${__('stock_status_out')})\n`;
+                    txtContent += `   ${__('actions')}: ${__('reorder_immediately')}\n\n`;
                 });
             }
             
             // المنتجات الحرجة
             if (critical.length > 0) {
                 txtContent += `${'='.repeat(60)}\n`;
-                txtContent += `🔴 منتجات حرجة (كمية 1-5):\n`;
+                txtContent += `🔴 ${__('products_critical_stock')}:\n`;
                 txtContent += `${'-'.repeat(60)}\n`;
                 critical.forEach((p, i) => {
                     txtContent += `${i + 1}. ${p.name}\n`;
-                    txtContent += `   الكمية: ${p.quantity}\n\n`;
+                    txtContent += `   ${__('quantity')}: ${p.quantity}\n\n`;
                 });
             }
             
             // المنتجات المنخفضة
             if (low.length > 0) {
                 txtContent += `${'='.repeat(60)}\n`;
-                txtContent += `🟡 منتجات منخفضة (كمية 6-10):\n`;
+                txtContent += `🟡 ${__('products_low_stock')}:\n`;
                 txtContent += `${'-'.repeat(60)}\n`;
                 low.forEach((p, i) => {
                     txtContent += `${i + 1}. ${p.name}\n`;
-                    txtContent += `   الكمية: ${p.quantity}\n\n`;
+                    txtContent += `   ${__('quantity')}: ${p.quantity}\n\n`;
                 });
             }
             
             txtContent += `${'='.repeat(60)}\n`;
-            txtContent += `📋 توصيات:\n`;
+            txtContent += `📋 ${__('recommendations')}\n`;
             txtContent += `${'-'.repeat(60)}\n`;
             if (outOfStock.length > 0) {
-                txtContent += `• أولوية قصوى: طلب المنتجات المنتهية (${outOfStock.length} منتج)\n`;
+                txtContent += `• ${__('priority_high_reorder')} (${outOfStock.length} ${__('product')})\n`;
             }
             if (critical.length > 0) {
-                txtContent += `• أولوية عالية: إعادة تخزين المنتجات الحرجة (${critical.length} منتج)\n`;
+                txtContent += `• ${__('priority_medium_restock')} (${critical.length} ${__('product')})\n`;
             }
             if (low.length > 0) {
-                txtContent += `• أولوية متوسطة: مراقبة المنتجات المنخفضة (${low.length} منتج)\n`;
+                txtContent += `• ${__('priority_low_monitor')} (${low.length} ${__('product')})\n`;
             }
             
             const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
@@ -2455,7 +2455,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             link.download = `stock-report-${now.getTime()}.txt`;
             link.click();
             
-            showToast('تم تصدير التقرير بنجاح', true);
+            showToast(__('report_exported_success'), true);
         });
     }
     // إغلاق عند النقر خارج Modal
@@ -2490,7 +2490,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     previewImportBtn.addEventListener('click', async () => {
         const fileInput = document.getElementById('excel-file');
         if (!fileInput.files[0]) {
-            showToast('الرجاء اختيار ملف Excel أولاً', false);
+            showToast(__('select_excel_first'), false);
             return;
         }
 
@@ -2499,7 +2499,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         formData.append('preview', 'true');
 
         try {
-            showLoadingOverlay('جاري معاينة البيانات...');
+            showLoadingOverlay(__('previewing_data'));
             const response = await fetch('api.php?action=importProducts', {
                 method: 'POST',
                 body: formData
@@ -2507,26 +2507,26 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             const result = await response.json();
             if (result.success) {
                 // Show preview modal or alert with data summary
-                let previewText = `تم العثور على ${result.data.total_rows} صف في الملف.\n\n`;
+                let previewText = `${__('rows_found_in_file').replace('%d', result.data.total_rows)}\n\n`;
                 if (result.data.valid_products > 0) {
-                    previewText += `✅ منتجات صالحة: ${result.data.valid_products}\n`;
+                    previewText += `✅ ${__('valid_products')} ${result.data.valid_products}\n`;
                 }
                 if (result.data.errors.length > 0) {
-                    previewText += `❌ أخطاء: ${result.data.errors.length}\n`;
+                    previewText += `❌ ${__('errors')} ${result.data.errors.length}\n`;
                     result.data.errors.slice(0, 5).forEach((error, i) => {
                         previewText += `  ${i + 1}. ${error}\n`;
                     });
                     if (result.data.errors.length > 5) {
-                        previewText += `  ... و ${result.data.errors.length - 5} أخطاء أخرى\n`;
+                        previewText += `  ${__('and_more_errors').replace('%d', result.data.errors.length - 5)}\n`;
                     }
                 }
                 alert(previewText);
             } else {
-                showToast(result.message || 'فشل في معاينة الملف', false);
+                showToast(result.message || __('preview_fail'), false);
             }
         } catch (error) {
             console.error('Error previewing import:', error);
-            showToast('حدث خطأ في معاينة الملف', false);
+            showToast(__('preview_fail'), false);
         } finally {
             hideLoadingOverlay();
         }
@@ -2540,14 +2540,14 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         e.preventDefault();
         const fileInput = document.getElementById('excel-file');
         if (!fileInput.files[0]) {
-            showToast('الرجاء اختيار ملف Excel', false);
+            showToast(__('select_excel_first'), false);
             return;
         }
 
         const formData = new FormData(importExcelForm);
 
         try {
-            showLoadingOverlay('جاري استيراد المنتجات...');
+            showLoadingOverlay(__('importing_products'));
             const response = await fetch('api.php?action=importProducts', {
                 method: 'POST',
                 body: formData
@@ -2555,11 +2555,11 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             const result = await response.json();
             if (result.success) {
                 // إنشاء رسالة نجاح مخصصة مع عدد المنتجات المضافة
-                let successMessage = 'تم استيراد المنتجات بنجاح';
+                let successMessage = __('products_imported_success');
                 if (result.data && result.data.imported_count !== undefined) {
-                    successMessage += ` - تم إضافة ${result.data.imported_count} منتج`;
+                    successMessage += ` - ${__('product_added_success')} (${result.data.imported_count})`;
                     if (result.data.skipped_count && result.data.skipped_count > 0) {
-                        successMessage += `، تم تجاهل ${result.data.skipped_count} منتج مكرر`;
+                        successMessage += `، ${__('duplicates_skipped').replace('%d', result.data.skipped_count)}`;
                     }
                 }
                 // حفظ الرسالة في sessionStorage بدلاً من عرضها مباشرة
@@ -2570,11 +2570,11 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                 // Reload the page to refresh all data
                 window.location.reload();
             } else {
-                showToast(result.message || 'فشل في استيراد المنتجات', false);
+                showToast(result.message || __('import_fail'), false);
             }
         } catch (error) {
             console.error('Error importing products:', error);
-            showToast('حدث خطأ في استيراد المنتجات', false);
+            showToast(__('import_fail'), false);
         } finally {
             hideLoading();
         }

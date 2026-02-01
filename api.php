@@ -163,7 +163,7 @@ switch ($action) {
         break;
     case 'syncInvoicesWithHolidays':
         syncInvoicesWithHolidays($conn);
-        echo json_encode(['success' => true, 'message' => 'تم تحديث بيانات الفواتير السابقة بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('invoices_synced_success')]);
         break;
     case 'cleanOldNotifications':
         cleanOldNotifications($conn);
@@ -384,12 +384,12 @@ function start_day($conn) {
     try {
         // Check if user is logged in and has admin role
         if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
-            sendJsonResponse(['success' => false, 'message' => 'يجب تسجيل الدخول أولاً']);
+            sendJsonResponse(['success' => false, 'message' => __('login_required')]);
             return;
         }
         
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-            sendJsonResponse(['success' => false, 'message' => 'غير مصرح لك']);
+            sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
             return;
         }
 
@@ -398,7 +398,7 @@ function start_day($conn) {
         $data = json_decode($rawInput, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            sendJsonResponse(['success' => false, 'message' => 'بيانات غير صالحة']);
+            sendJsonResponse(['success' => false, 'message' => __('invalid_data')]);
             return;
         }
         
@@ -408,7 +408,7 @@ function start_day($conn) {
 
         // Validate user_id
         if ($user_id <= 0) {
-            sendJsonResponse(['success' => false, 'message' => 'معرف المستخدم غير صالح']);
+            sendJsonResponse(['success' => false, 'message' => __('invalid_user_id')]);
             return;
         }
 
@@ -419,7 +419,7 @@ function start_day($conn) {
         $user_result = $user_check->get_result();
         if ($user_result->num_rows === 0) {
             $user_check->close();
-            sendJsonResponse(['success' => false, 'message' => 'المستخدم غير موجود في قاعدة البيانات']);
+            sendJsonResponse(['success' => false, 'message' => __('user_not_found')]);
             return;
         }
         $user_check->close();
@@ -429,7 +429,7 @@ function start_day($conn) {
             $today = date('Y-m-d');
             $stmt = $conn->prepare("SELECT id, start_time, end_time FROM business_days WHERE DATE(start_time) = ? ORDER BY start_time DESC LIMIT 1");
             if (!$stmt) {
-                sendJsonResponse(['success' => false, 'message' => 'خطأ في قاعدة البيانات: ' . $conn->error]);
+                sendJsonResponse(['success' => false, 'message' => __('db_error') . ': ' . $conn->error]);
                 return;
             }
             
@@ -445,8 +445,8 @@ function start_day($conn) {
                     // Business day is open, allow extension
                     sendJsonResponse([
                         'success' => false,
-                        'message' => 'يوجد يوم عمل مفتوح بالفعل.',
-                        'details' => "تم العثور على يوم عمل مفتوح بدأ في: " . date('Y-m-d H:i', strtotime($day['start_time'])),
+                        'message' => __('business_day_open_exists'),
+                        'details' => __('business_day_started_at') . " " . date('Y-m-d H:i', strtotime($day['start_time'])),
                         'code' => 'business_day_open_exists',
                         'day_id' => $day['id']
                     ]);
@@ -455,8 +455,8 @@ function start_day($conn) {
                     // Business day is closed, allow reopening
                     sendJsonResponse([
                         'success' => false,
-                        'message' => 'يوجد يوم عمل مغلق لهذا اليوم.',
-                        'details' => 'يمكنك إعادة فتح اليوم وتمديده.',
+                        'message' => __('business_day_closed_exists'),
+                        'details' => __('business_day_can_reopen'),
                         'code' => 'business_day_closed_exists',
                         'day_id' => $day['id']
                     ]);
@@ -469,7 +469,7 @@ function start_day($conn) {
         // Insert new business day
         $stmt = $conn->prepare("INSERT INTO business_days (start_time, opening_balance, user_id) VALUES (NOW(), ?, ?)");
         if (!$stmt) {
-            sendJsonResponse(['success' => false, 'message' => 'خطأ في إعداد الاستعلام: ' . $conn->error]);
+            sendJsonResponse(['success' => false, 'message' => __('db_prep_error') . ': ' . $conn->error]);
             return;
         }
         
@@ -477,23 +477,23 @@ function start_day($conn) {
         
         if ($stmt->execute()) {
             $stmt->close();
-            create_notification($conn, "تم بدء يوم عمل جديد برصيد افتتاحي: " . $opening_balance, "business_day_start");
-            sendJsonResponse(['success' => true, 'message' => 'تم بدء يوم العمل بنجاح']);
+            create_notification($conn, __('notification_business_day_started') . ": " . $opening_balance, "business_day_start");
+            sendJsonResponse(['success' => true, 'message' => __('business_day_started_success')]);
         } else {
             $error = $stmt->error;
             $stmt->close();
-            sendJsonResponse(['success' => false, 'message' => 'فشل في بدء يوم العمل: ' . $error]);
+            sendJsonResponse(['success' => false, 'message' => __('business_day_start_fail') . ': ' . $error]);
         }
         
     } catch (Exception $e) {
-        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }
 }
 
 function reopen_day($conn) {
     try {
         if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-            sendJsonResponse(['success' => false, 'message' => 'غير مصرح لك']);
+            sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
             return;
         }
 
@@ -501,7 +501,7 @@ function reopen_day($conn) {
         $data = json_decode($rawInput, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            sendJsonResponse(['success' => false, 'message' => 'بيانات غير صالحة']);
+            sendJsonResponse(['success' => false, 'message' => __('invalid_data')]);
             return;
         }
 
@@ -509,13 +509,13 @@ function reopen_day($conn) {
         $additional_balance = isset($data['opening_balance']) ? floatval($data['opening_balance']) : 0;
 
         if ($day_id <= 0) {
-            sendJsonResponse(['success' => false, 'message' => 'معرف يوم العمل غير صالح']);
+            sendJsonResponse(['success' => false, 'message' => __('invalid_business_day_id')]);
             return;
         }
 
         $stmt = $conn->prepare("UPDATE business_days SET end_time = NULL, closing_balance = NULL, opening_balance = opening_balance + ? WHERE id = ?");
         if (!$stmt) {
-            sendJsonResponse(['success' => false, 'message' => 'خطأ في إعداد الاستعلام: ' . $conn->error]);
+            sendJsonResponse(['success' => false, 'message' => __('db_prep_error') . ': ' . $conn->error]);
             return;
         }
 
@@ -523,26 +523,26 @@ function reopen_day($conn) {
 
         if ($stmt->execute()) {
             if ($stmt->affected_rows > 0) {
-                create_notification($conn, "تم إعادة فتح يوم العمل وتمديده بمبلغ: " . $additional_balance, "business_day_reopen");
-                sendJsonResponse(['success' => true, 'message' => 'تم إعادة فتح يوم العمل بنجاح']);
+                create_notification($conn, __('notification_business_day_reopened') . ": " . $additional_balance, "business_day_reopen");
+                sendJsonResponse(['success' => true, 'message' => __('business_day_reopen_success')]);
             } else {
-                sendJsonResponse(['success' => false, 'message' => 'لم يتم العثور على يوم عمل لإعادة فتحه']);
+                sendJsonResponse(['success' => false, 'message' => __('business_day_not_found_reopen')]);
             }
         } else {
             $error = $stmt->error;
-            sendJsonResponse(['success' => false, 'message' => 'فشل في إعادة فتح يوم العمل: ' . $error]);
+            sendJsonResponse(['success' => false, 'message' => __('business_day_reopen_fail') . ': ' . $error]);
         }
         $stmt->close();
 
     } catch (Exception $e) {
-        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }
 }
 
 function extend_day($conn) {
     try {
         if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-            sendJsonResponse(['success' => false, 'message' => 'غير مصرح لك']);
+            sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
             return;
         }
 
@@ -550,7 +550,7 @@ function extend_day($conn) {
         $data = json_decode($rawInput, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            sendJsonResponse(['success' => false, 'message' => 'بيانات غير صالحة']);
+            sendJsonResponse(['success' => false, 'message' => __('invalid_data')]);
             return;
         }
 
@@ -558,14 +558,14 @@ function extend_day($conn) {
         $additional_balance = isset($data['opening_balance']) ? floatval($data['opening_balance']) : 0;
 
         if ($day_id <= 0) {
-            sendJsonResponse(['success' => false, 'message' => 'معرف يوم العمل غير صالح']);
+            sendJsonResponse(['success' => false, 'message' => __('invalid_business_day_id')]);
             return;
         }
 
         // Add the additional balance to the existing opening_balance
         $stmt = $conn->prepare("UPDATE business_days SET opening_balance = opening_balance + ? WHERE id = ? AND end_time IS NULL");
         if (!$stmt) {
-            sendJsonResponse(['success' => false, 'message' => 'خطأ في إعداد الاستعلام: ' . $conn->error]);
+            sendJsonResponse(['success' => false, 'message' => __('db_prep_error') . ': ' . $conn->error]);
             return;
         }
 
@@ -573,19 +573,19 @@ function extend_day($conn) {
 
         if ($stmt->execute()) {
             if ($stmt->affected_rows > 0) {
-                 create_notification($conn, "تم تمديد يوم العمل وإضافة مبلغ: " . $additional_balance, "business_day_extend");
-                sendJsonResponse(['success' => true, 'message' => 'تم تمديد يوم العمل بنجاح']);
+                 create_notification($conn, __('notification_business_day_extended') . ": " . $additional_balance, "business_day_extend");
+                sendJsonResponse(['success' => true, 'message' => __('business_day_extend_success')]);
             } else {
-                sendJsonResponse(['success' => false, 'message' => 'لم يتم العثور على يوم عمل مفتوح لتمديده']);
+                sendJsonResponse(['success' => false, 'message' => __('business_day_not_found_extend')]);
             }
         } else {
             $error = $stmt->error;
-            sendJsonResponse(['success' => false, 'message' => 'فشل في تمديد يوم العمل: ' . $error]);
+            sendJsonResponse(['success' => false, 'message' => __('business_day_extend_fail') . ': ' . $error]);
         }
         $stmt->close();
 
     } catch (Exception $e) {
-        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -732,12 +732,12 @@ function get_period_summary($conn) {
         
         sendJsonResponse([
             'success' => true, 
-            'message' => 'تم جلب ملخص الفترة بنجاح', 
+            'message' => __('period_summary_success'), 
             'data' => ['summary' => $summary]
         ]);
         
     } catch (Exception $e) {
-        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -745,7 +745,7 @@ function get_invoice_details($conn) {
     try {
         $invoice_id = isset($_GET['invoice_id']) ? intval($_GET['invoice_id']) : 0;
         if (!$invoice_id) {
-            sendJsonResponse(['success' => false, 'message' => 'رقم الفاتورة مطلوب']);
+            sendJsonResponse(['success' => false, 'message' => __('invoice_id_required')]);
             return;
         }
 
@@ -762,7 +762,7 @@ function get_invoice_details($conn) {
         $stmt->close();
 
         if (!$invoice) {
-            sendJsonResponse(['success' => false, 'message' => 'الفاتورة غير موجودة']);
+            sendJsonResponse(['success' => false, 'message' => __('invoice_not_found')]);
             return;
         }
 
@@ -808,25 +808,25 @@ function get_invoice_details($conn) {
 
         sendJsonResponse([
             'success' => true,
-            'message' => 'تم جلب بيانات الفاتورة بنجاح',
+            'message' => __('invoice_details_success'),
             'data' => $invoice_data
         ]);
 
     } catch (Exception $e) {
-        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }
 }
 // Also update the end_day function for consistency:
 function end_day($conn) {
     try {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-            sendJsonResponse(['success' => false, 'message' => 'غير مصرح لك']);
+            sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
             return;
         }
 
         $stmt = $conn->prepare("SELECT * FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
         if (!$stmt) {
-            sendJsonResponse(['success' => false, 'message' => 'خطأ في قاعدة البيانات']);
+            sendJsonResponse(['success' => false, 'message' => __('db_error')]);
             return;
         }
         
@@ -836,7 +836,7 @@ function end_day($conn) {
         $stmt->close();
 
         if (!$day) {
-            sendJsonResponse(['success' => false, 'message' => 'لا يوجد يوم عمل مفتوح لإنهائه']);
+            sendJsonResponse(['success' => false, 'message' => __('business_day_no_open')]);
             return;
         }
 
@@ -927,27 +927,27 @@ function end_day($conn) {
                 'total_expenses' => $total_other_costs,
                 'total_profit' => $total_profit
             ];
-            create_notification($conn, "تم إنهاء يوم العمل. إجمالي المبيعات: " . $total_sales, "business_day_end");
+            create_notification($conn, __('notification_business_day_ended') . ": " . $total_sales, "business_day_end");
             sendJsonResponse([
                 'success' => true, 
-                'message' => 'تم إنهاء يوم العمل بنجاح', 
+                'message' => __('business_day_ended_success'), 
                 'data' => ['summary' => $summary]
             ]);
         } else {
             $error = $stmt->error;
             $stmt->close();
-            sendJsonResponse(['success' => false, 'message' => 'فشل في إنهاء يوم العمل: ' . $error]);
+            sendJsonResponse(['success' => false, 'message' => __('business_day_end_fail') . ': ' . $error]);
         }
         
     } catch (Exception $e) {
-        sendJsonResponse(['success' => false, 'message' => 'خطأ: ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }
 }
 
 function updateShopLogo($conn) {
     // فقط المدير يمكنه تغيير الشعار
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
@@ -960,7 +960,7 @@ function updateShopLogo($conn) {
             $uploadDir = __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'uploads';
             if (!is_dir($uploadDir)) {
                 if (!@mkdir($uploadDir, 0755, true)) {
-                    echo json_encode(['success' => false, 'message' => 'فشل في إنشاء مجلد الرفع']);
+                    echo json_encode(['success' => false, 'message' => __('upload_dir_fail')]);
                     return;
                 }
             }
@@ -986,20 +986,20 @@ function updateShopLogo($conn) {
                 $stmt->bind_param("ss", $destUrl, $destUrl);
                 
                 if ($stmt->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'تم تحديث الشعار بنجاح', 'logoUrl' => $destUrl]);
+                    echo json_encode(['success' => true, 'message' => __('logo_update_success'), 'logoUrl' => $destUrl]);
                 } else {
-                    echo json_encode(['success' => false, 'message' => 'فشل في تحديث قاعدة البيانات']);
+                    echo json_encode(['success' => false, 'message' => __('db_update_fail')]);
                 }
                 $stmt->close();
 
             } else {
-                echo json_encode(['success' => false, 'message' => 'فشل في نقل الملف المرفوع']);
+                echo json_encode(['success' => false, 'message' => __('file_move_fail')]);
             }
         } else {
-            echo json_encode(['success' => false, 'message' => 'نوع الملف غير مسموح به']);
+            echo json_encode(['success' => false, 'message' => __('invalid_file_type')]);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => 'لم يتم العثور على ملف مرفوع أو حدث خطأ']);
+        echo json_encode(['success' => false, 'message' => __('no_file_uploaded')]);
     }
 }
 
@@ -1031,10 +1031,10 @@ function uploadImage($conn) {
         if ($imagePath) {
             echo json_encode(['success' => true, 'filePath' => $imagePath]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'فشل في رفع الصورة']);
+            echo json_encode(['success' => false, 'message' => __('image_upload_fail')]);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => 'لم يتم إرسال أي صورة']);
+        echo json_encode(['success' => false, 'message' => __('no_image_sent')]);
     }
 }
 
@@ -1129,7 +1129,7 @@ function restoreProducts($conn) {
         $product_ids = $data['product_ids'] ?? [];
 
         if (empty($product_ids)) {
-            echo json_encode(['success' => false, 'message' => 'لم يتم تحديد منتجات للاستعادة']);
+            echo json_encode(['success' => false, 'message' => __('no_products_selected')]);
             return;
         }
 
@@ -1147,7 +1147,7 @@ function restoreProducts($conn) {
         $restore_stmt = $conn->prepare($restore_sql);
         $restore_stmt->bind_param($types, ...$product_ids);
         if (!$restore_stmt->execute()) {
-             throw new Exception('فشل في استعادة المنتجات: ' . $restore_stmt->error);
+             throw new Exception(__('product_restore_fail') . ': ' . $restore_stmt->error);
         }
         $restore_stmt->close();
         
@@ -1156,19 +1156,19 @@ function restoreProducts($conn) {
         $delete_stmt = $conn->prepare($delete_sql);
         $delete_stmt->bind_param($types, ...$product_ids);
         if (!$delete_stmt->execute()) {
-            throw new Exception('فشل في الحذف من الأرشيف: ' . $delete_stmt->error);
+            throw new Exception(__('archive_delete_fail') . ': ' . $delete_stmt->error);
         }
         $restored_count = $delete_stmt->affected_rows;
         $delete_stmt->close();
 
         $conn->commit();
         if ($restored_count > 0) {
-            create_notification($conn, "✅ تمت استعادة {$restored_count} منتج بنجاح إلى المخزون الرئيسي.", "product_restore");
+            create_notification($conn, sprintf(__('notification_products_restored'), $restored_count), "product_restore");
         }
-        echo json_encode(['success' => true, 'message' => "تم استعادة {$restored_count} منتج بنجاح"]);
+        echo json_encode(['success' => true, 'message' => sprintf(__('products_restored_success'), $restored_count)]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'خطأ في استعادة المنتجات: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('product_restore_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -1178,7 +1178,7 @@ function permanentlyDeleteProducts($conn) {
         $product_ids = $data['product_ids'] ?? [];
 
         if (empty($product_ids)) {
-            echo json_encode(['success' => false, 'message' => 'لم يتم تحديد منتجات للحذف النهائي']);
+            echo json_encode(['success' => false, 'message' => __('no_products_selected_delete')]);
             return;
         }
         $product_ids = array_map('intval', $product_ids);
@@ -1189,14 +1189,14 @@ function permanentlyDeleteProducts($conn) {
         $delete_stmt = $conn->prepare($delete_sql);
         $delete_stmt->bind_param($types, ...$product_ids);
         if (!$delete_stmt->execute()) {
-            throw new Exception('فشل في الحذف النهائي: ' . $delete_stmt->error);
+            throw new Exception(__('permanent_delete_fail') . ': ' . $delete_stmt->error);
         }
         $deleted_count = $delete_stmt->affected_rows;
         $delete_stmt->close();
         
-        echo json_encode(['success' => true, 'message' => "تم حذف {$deleted_count} منتج نهائياً"]);
+        echo json_encode(['success' => true, 'message' => sprintf(__('products_deleted_permanently'), $deleted_count)]);
      } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطأ في الحذف النهائي: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('permanent_delete_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -1239,7 +1239,7 @@ function bulkUpdateProducts($conn) {
     $product_ids = $data['product_ids'] ?? [];
 
     if (empty($product_ids)) {
-        echo json_encode(['success' => false, 'message' => 'لم يتم تحديد منتجات']);
+        echo json_encode(['success' => false, 'message' => __('no_products_selected')]);
         return;
     }
 
@@ -1264,7 +1264,7 @@ function bulkUpdateProducts($conn) {
     }
 
     if (empty($updates)) {
-        echo json_encode(['success' => false, 'message' => 'لا توجد تغييرات لتطبيقها']);
+        echo json_encode(['success' => false, 'message' => __('no_changes_to_apply')]);
         return;
     }
 
@@ -1285,9 +1285,9 @@ function bulkUpdateProducts($conn) {
             $msg = "تم تعديل " . implode(' و ', $changed) . " لعدد " . count($product_ids) . " منتج";
             create_notification($conn, $msg, "stock_update");
         }
-        echo json_encode(['success' => true, 'message' => 'تم تحديث المنتجات بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('bulk_update_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل في تحديث المنتجات']);
+        echo json_encode(['success' => false, 'message' => __('bulk_update_fail')]);
     }
     $stmt->close();
 }
@@ -1298,7 +1298,7 @@ function bulkDeleteProducts($conn) {
         $product_ids = $data['product_ids'] ?? [];
 
         if (empty($product_ids)) {
-            echo json_encode(['success' => false, 'message' => 'لم يتم تحديد منتجات']);
+            echo json_encode(['success' => false, 'message' => __('no_products_selected')]);
             return;
         }
 
@@ -1306,7 +1306,7 @@ function bulkDeleteProducts($conn) {
         $product_ids = array_filter($product_ids, function($id) { return $id > 0; });
 
         if (empty($product_ids)) {
-            echo json_encode(['success' => false, 'message' => 'معرفات المنتجات غير صالحة']);
+            echo json_encode(['success' => false, 'message' => __('bulk_delete_invalid_ids')]);
             return;
         }
 
@@ -1370,17 +1370,17 @@ function bulkDeleteProducts($conn) {
         $conn->commit();
         
         if ($deleted_count > 0) {
-            $msg = "تمت أرشفة {$deleted_count} منتج.";
+            $msg = sprintf(__('bulk_delete_success'), $deleted_count);
             if ($deleted_count === 1 && !empty($products_info)) {
                 $firstName = $products_info[0]['name'];
-                $msg = "تمت أرشفة 1 منتج ({$firstName})، سيتم حذفه نهائيا بعد 30 يوم دون امكانية استرجاعه";
+                $msg = sprintf(__('bulk_delete_single_success'), $firstName);
             }
             create_notification($conn, $msg, "product_delete");
         }
         
         $response = [
             'success' => true,
-            'message' => "تمت أرشفة {$deleted_count} منتج بنجاح",
+            'message' => sprintf(__('bulk_delete_success'), $deleted_count),
             'deleted_count' => $deleted_count
         ];
         
@@ -1388,13 +1388,13 @@ function bulkDeleteProducts($conn) {
         if (!empty($linked_products)) {
             $linked_count = count($linked_products);
             $linked_names = array_map(function($p) { 
-                return $p['name'] . " ({$p['invoice_count']} فاتورة)"; 
+                return $p['name'] . " ({$p['invoice_count']} " . __('invoice_count').")"; 
             }, $linked_products);
             
             $response['linked_info'] = [
                 'count' => $linked_count,
                 'products' => $linked_names,
-                'note' => "تنبيه: {$linked_count} من المنتجات المؤرشفة مرتبطة بفواتير سابقة. الفواتير القديمة ستحتفظ بمعلومات هذه المنتجات."
+                'note' => sprintf(__('bulk_delete_linked_note'), $linked_count)
             ];
         }
         
@@ -1404,7 +1404,7 @@ function bulkDeleteProducts($conn) {
         $conn->rollback();
         echo json_encode([
             'success' => false, 
-            'message' => 'حدث خطأ في أرشفة المنتجات: ' . $e->getMessage()
+            'message' => __('bulk_delete_fail') . ': ' . $e->getMessage()
         ]);
     }
 }
@@ -1662,7 +1662,7 @@ function addProduct($conn) {
 
     if (!empty($data['image_path'])) {
         if (!is_valid_image_path($data['image_path'])) {
-            echo json_encode(['success' => false, 'message' => 'مسار صورة غير صالح']);
+            echo json_encode(['success' => false, 'message' => __('product_image_invalid')]);
             return;
         }
         $imagePath = $data['image_path'];
@@ -1693,11 +1693,11 @@ function addProduct($conn) {
         }
 
         $conn->commit();
-        create_notification($conn, "تمت إضافة منتج جديد: " . $data['name'], "product_add");
-        echo json_encode(['success' => true, 'message' => 'تم إضافة المنتج بنجاح', 'id' => $productId]);
+        create_notification($conn, __('notification_product_added') . ": " . $data['name'], "product_add");
+        echo json_encode(['success' => true, 'message' => __('product_added_success'), 'id' => $productId]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'فشل في إضافة المنتج: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('product_add_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -1706,14 +1706,14 @@ function updateProduct($conn) {
     $productId = isset($data['id']) ? (int)$data['id'] : 0;
 
     if ($productId === 0) {
-        echo json_encode(['success' => false, 'message' => 'معرف المنتج مطلوب']);
+        echo json_encode(['success' => false, 'message' => __('product_id_required')]);
         return;
     }
 
     $imagePath = null;
     if (!empty($data['image_path'])) {
         if (!is_valid_image_path($data['image_path'])) {
-            echo json_encode(['success' => false, 'message' => 'مسار صورة غير صالح']);
+            echo json_encode(['success' => false, 'message' => __('product_image_invalid')]);
             return;
         }
         $imagePath = $data['image_path'];
@@ -1772,11 +1772,11 @@ function updateProduct($conn) {
         }
 
         $conn->commit();
-        create_notification($conn, "تم تحديث المنتج: " . $data['name'], "product_update");
-        echo json_encode(['success' => true, 'message' => 'تم تحديث المنتج بنجاح']);
+        create_notification($conn, __('notification_product_updated') . ": " . $data['name'], "product_update");
+        echo json_encode(['success' => true, 'message' => __('product_updated_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'فشل في تحديث المنتج: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('product_update_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -1785,7 +1785,7 @@ function bulkAddProducts($conn) {
     $products = $data['products'] ?? [];
 
     if (empty($products)) {
-        echo json_encode(['success' => false, 'message' => 'لم يتم إرسال أي منتجات']);
+        echo json_encode(['success' => false, 'message' => __('no_products_sent')]);
         return;
     }
 
@@ -1814,7 +1814,7 @@ function bulkAddProducts($conn) {
             $image_path = !empty($product['image_path']) ? $product['image_path'] : null;
             
             if (!is_valid_image_path($image_path)) {
-                throw new Exception("مسار صورة غير صالح للمنتج: " . htmlspecialchars($name));
+                throw new Exception(__('invalid_image_path') . ": " . htmlspecialchars($name));
             }
 
             $stmt->execute();
@@ -1823,17 +1823,17 @@ function bulkAddProducts($conn) {
         $stmt->close();
         $conn->commit();
         
-        create_notification($conn, "تمت إضافة " . count($products) . " منتج جديد بنجاح.", "product_add");
-        echo json_encode(['success' => true, 'message' => 'تم إضافة المنتجات بنجاح']);
+        create_notification($conn, sprintf(__('notification_bulk_products_added'), count($products)), "product_add");
+        echo json_encode(['success' => true, 'message' => __('bulk_add_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'فشل في إضافة المنتجات: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('bulk_add_fail') . ': ' . $e->getMessage()]);
     }
 }
 
 function importProducts($conn) {
     if (!isset($_FILES['excel_file']) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK) {
-        echo json_encode(['success' => false, 'message' => 'لم يتم رفع ملف Excel صالح']);
+        echo json_encode(['success' => false, 'message' => __('import_no_file')]);
         return;
     }
 
@@ -1847,12 +1847,12 @@ function importProducts($conn) {
         $rows = $worksheet->toArray();
 
         if (empty($rows)) {
-            echo json_encode(['success' => false, 'message' => 'الملف لا يحتوي على أي بيانات']);
+            echo json_encode(['success' => false, 'message' => __('import_empty_file')]);
             return;
         }
 
         if (count($rows) < 2) {
-            echo json_encode(['success' => false, 'message' => 'الملف يحتوي على عناوين فقط، أضف بعض البيانات']);
+            echo json_encode(['success' => false, 'message' => __('import_headers_only')]);
             return;
         }
 
@@ -1884,7 +1884,7 @@ function importProducts($conn) {
 
         // Check required columns
         if ($columnMap['name'] === false || $columnMap['price'] === false || $columnMap['quantity'] === false) {
-            echo json_encode(['success' => false, 'message' => 'الملف يفتقر إلى الأعمدة المطلوبة: Name/اسم, Price/سعر, Quantity/كمية. العناوين الموجودة: ' . implode(', ', $headers)]);
+            echo json_encode(['success' => false, 'message' => sprintf(__('import_missing_columns'), implode(', ', $headers))]);
             return;
         }
 
@@ -1905,15 +1905,15 @@ function importProducts($conn) {
 
             // Validate required fields
             if (empty($name)) {
-                $errors[] = "الصف $rowNum: اسم المنتج مطلوب";
+                $errors[] = sprintf(__('import_row_error_name'), $rowNum);
                 continue;
             }
             if (!is_numeric($price) || $price < 0) {
-                $errors[] = "الصف $rowNum: سعر البيع غير صالح";
+                $errors[] = sprintf(__('import_row_error_price'), $rowNum);
                 continue;
             }
             if (!is_numeric($quantity) || $quantity < 0) {
-                $errors[] = "الصف $rowNum: الكمية غير صالحة";
+                $errors[] = sprintf(__('import_row_error_qty'), $rowNum);
                 continue;
             }
 
@@ -2015,11 +2015,16 @@ function importProducts($conn) {
         $stmt->close();
         $conn->commit();
 
-        create_notification($conn, "تم استيراد $insertedCount منتج من ملف Excel بنجاح.", "product_add");
+        create_notification($conn, sprintf(__('notification_import_success'), $insertedCount), "product_add");
+
+        $message = sprintf(__('import_success_with_count'), $insertedCount);
+        if (count($errors) > 0) {
+            $message .= sprintf(__('import_skipped_errors'), count($errors));
+        }
 
         echo json_encode([
             'success' => true, 
-            'message' => "تم استيراد $insertedCount منتج بنجاح" . (count($errors) > 0 ? ". تم تجاهل " . count($errors) . " صف بسبب أخطاء" : ""),
+            'message' => $message,
             'data' => [
                 'imported_count' => $insertedCount,
                 'skipped_count' => count($errors),
@@ -2031,7 +2036,7 @@ function importProducts($conn) {
         if ($conn->connect_errno === 0) {
             $conn->rollback();
         }
-        echo json_encode(['success' => false, 'message' => 'فشل في استيراد المنتجات: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('import_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2039,7 +2044,7 @@ function getProductDetails($conn) {
     $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
     if ($product_id === 0) {
-        echo json_encode(['success' => false, 'message' => 'معرف المنتج غير صالح']);
+        echo json_encode(['success' => false, 'message' => __('invalid_product_id')]);
         return;
     }
 
@@ -2051,7 +2056,7 @@ function getProductDetails($conn) {
     $stmt->close();
 
     if (!$product) {
-        echo json_encode(['success' => false, 'message' => 'لم يتم العثور على المنتج']);
+        echo json_encode(['success' => false, 'message' => __('product_not_found')]);
         return;
     }
 
@@ -2076,7 +2081,7 @@ function getCategoryFields($conn) {
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 
     if ($category_id === 0) {
-        echo json_encode(['success' => false, 'message' => 'معرف الفئة غير صالح']);
+        echo json_encode(['success' => false, 'message' => __('category_id_required')]);
         return;
     }
 
@@ -2117,7 +2122,7 @@ function addCategory($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => 'اسم الفئة مطلوب']);
+        echo json_encode(['success' => false, 'message' => __('category_name_required_msg')]);
         return;
     }
 
@@ -2143,10 +2148,10 @@ function addCategory($conn) {
         }
 
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => 'تم إضافة الفئة بنجاح', 'id' => $categoryId]);
+        echo json_encode(['success' => true, 'message' => __('category_added_success'), 'id' => $categoryId]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'فشل في إضافة الفئة: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('category_add_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2154,7 +2159,7 @@ function updateCategory($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['id']) || empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => 'معرف الفئة والاسم مطلوبان']);
+        echo json_encode(['success' => false, 'message' => __('category_name_required_msg')]);
         return;
     }
 
@@ -2184,10 +2189,10 @@ function updateCategory($conn) {
         }
 
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => 'تم تحديث الفئة بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('category_updated_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'فشل في تحديث الفئة: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('category_update_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2195,7 +2200,7 @@ function deleteCategory($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['id'])) {
-        echo json_encode(['success' => false, 'message' => 'معرف الفئة مطلوب']);
+        echo json_encode(['success' => false, 'message' => __('category_id_required')]);
         return;
     }
 
@@ -2203,9 +2208,9 @@ function deleteCategory($conn) {
     $stmt->bind_param("i", $data['id']);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'تم حذف الفئة بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('category_deleted_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل في حذف الفئة']);
+        echo json_encode(['success' => false, 'message' => __('category_delete_fail')]);
     }
 
     $stmt->close();
@@ -2245,7 +2250,7 @@ function addCustomer($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => 'اسم العميل مطلوب']);
+        echo json_encode(['success' => false, 'message' => __('customer_name_required')]);
         return;
     }
 
@@ -2259,9 +2264,9 @@ function addCustomer($conn) {
 
     if ($stmt->execute()) {
         $customerId = $stmt->insert_id;
-        echo json_encode(['success' => true, 'message' => 'تم إضافة العميل بنجاح', 'id' => $customerId]);
+        echo json_encode(['success' => true, 'message' => __('customer_added_success'), 'id' => $customerId]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل في إضافة العميل']);
+        echo json_encode(['success' => false, 'message' => __('customer_add_fail')]);
     }
 
     $stmt->close();
@@ -2271,7 +2276,7 @@ function getCustomerDetails($conn) {
     $customer_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
     if ($customer_id === 0) {
-        echo json_encode(['success' => false, 'message' => 'معرف العميل غير صالح']);
+        echo json_encode(['success' => false, 'message' => __('invalid_customer_id')]);
         return;
     }
 
@@ -2283,7 +2288,7 @@ function getCustomerDetails($conn) {
     $stmt->close();
 
     if (!$customer) {
-        echo json_encode(['success' => false, 'message' => 'لم يتم العثور على العميل']);
+        echo json_encode(['success' => false, 'message' => __('customer_not_found')]);
         return;
     }
 
@@ -2294,7 +2299,7 @@ function updateCustomer($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['id']) || empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => 'معرف العميل والاسم مطلوبان']);
+        echo json_encode(['success' => false, 'message' => __('customer_id_name_required')]);
         return;
     }
 
@@ -2307,9 +2312,9 @@ function updateCustomer($conn) {
     $stmt->bind_param("sssssi", $data['name'], $phone, $email, $address, $city, $data['id']);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'تم تحديث العميل بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('customer_updated_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل في تحديث العميل']);
+        echo json_encode(['success' => false, 'message' => __('customer_update_fail')]);
     }
 
     $stmt->close();
@@ -2467,7 +2472,7 @@ function checkout($conn) {
     $day_stmt = $conn->prepare("SELECT id FROM business_days WHERE end_time IS NULL");
     $day_stmt->execute();
     if ($day_stmt->get_result()->num_rows == 0) {
-        echo json_encode(['success' => false, 'message' => 'يجب بدء يوم عمل جديد أولاً']);
+        echo json_encode(['success' => false, 'message' => __('business_day_start_required')]);
         return;
     }
     $day_stmt->close();
@@ -2475,7 +2480,7 @@ function checkout($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['items']) || !is_array($data['items'])) {
-        echo json_encode(['success' => false, 'message' => 'لا توجد منتجات في السلة']);
+        echo json_encode(['success' => false, 'message' => __('cart_empty')]);
         return;
     }
 
@@ -2503,13 +2508,13 @@ function checkout($conn) {
             $stmt->execute();
             $res = $stmt->get_result();
             if ($res->num_rows === 0) {
-                throw new Exception("المنتج غير موجود (ID: $product_id)");
+                throw new Exception(__('product_not_found_id') . ": $product_id");
             }
             $product = $res->fetch_assoc();
             $stmt->close();
 
             if ($product['quantity'] < $quantity) {
-                throw new Exception("الكمية غير كافية للمنتج: " . $product['name']);
+                throw new Exception(__('insufficient_stock_for') . ": " . $product['name']);
             }
 
             $line_total = $product['price'] * $quantity;
@@ -2565,11 +2570,11 @@ function checkout($conn) {
         $updateStmt->close();
 
         $conn->commit();
-        create_notification($conn, "تم إنشاء فاتورة جديدة برقم: " . $barcode, "new_sale");
-        echo json_encode(['success' => true, 'message' => 'تم إنشاء الفاتورة بنجاح', 'invoice_id' => $invoiceId]);
+        create_notification($conn, __('notification_invoice_created') . ": " . $barcode, "new_sale");
+        echo json_encode(['success' => true, 'message' => __('invoice_created_success'), 'invoice_id' => $invoiceId]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'فشل في إنشاء الفاتورة: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('invoice_creation_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2581,7 +2586,7 @@ function getInvoice($conn) {
     $invoice_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
     if ($invoice_id === 0) {
-        echo json_encode(['success' => false, 'message' => 'معرف الفاتورة غير صالح']);
+        echo json_encode(['success' => false, 'message' => __('invoice_id_invalid')]);
         return;
     }
 
@@ -2596,7 +2601,7 @@ function getInvoice($conn) {
     $stmt->close();
 
     if (!$invoice) {
-        echo json_encode(['success' => false, 'message' => 'لم يتم العثور على الفاتورة']);
+        echo json_encode(['success' => false, 'message' => __('invoice_not_found')]);
         return;
     }
 
@@ -2701,7 +2706,7 @@ function updateDeliverySettings($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (!isset($data['deliveryInsideCity']) || !isset($data['deliveryOutsideCity'])) {
-        echo json_encode(['success' => false, 'message' => 'القيم مطلوبة']);
+        echo json_encode(['success' => false, 'message' => __('values_required')]);
         return;
     }
     
@@ -2723,11 +2728,11 @@ function updateDeliverySettings($conn) {
         $stmt->close();
         $conn->commit();
         
-        create_notification($conn, "تم تحديث إعدادات التوصيل: داخل المدينة {$data['deliveryInsideCity']}، خارج المدينة {$data['deliveryOutsideCity']}", "settings_update");
-        echo json_encode(['success' => true, 'message' => 'تم تحديث إعدادات التوصيل بنجاح']);
+        create_notification($conn, sprintf(__('notification_delivery_settings_updated'), $data['deliveryInsideCity'], $data['deliveryOutsideCity']), "settings_update");
+        echo json_encode(['success' => true, 'message' => __('delivery_settings_update_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'فشل في تحديث الإعدادات: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('settings_update_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2876,7 +2881,7 @@ function getDashboardStats($conn) {
         
         echo json_encode(['success' => true, 'data' => $stats]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطأ في جلب الإحصائيات: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('fetch_stats_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2920,7 +2925,7 @@ function getSalesChart($conn) {
         
         echo json_encode(['success' => true, 'data' => $data]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطأ في جلب بيانات المبيعات: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('fetch_sales_data_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2968,7 +2973,7 @@ function getTopProducts($conn) {
         
         echo json_encode(['success' => true, 'data' => $products]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطأ في جلب المنتجات الأكثر مبيعاً: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('fetch_top_products_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3016,7 +3021,7 @@ function getCategorySales($conn) {
         
         echo json_encode(['success' => true, 'data' => $categories]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطأ في جلب مبيعات الفئات: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('fetch_category_sales_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3054,7 +3059,7 @@ function getRecentInvoices($conn) {
         
         echo json_encode(['success' => true, 'data' => $invoices]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطأ في جلب الفواتير الأخيرة: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('fetch_recent_invoices_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3102,7 +3107,7 @@ function getTopCustomers($conn) {
         
         echo json_encode(['success' => true, 'data' => $customers]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطأ في جلب أفضل العملاء: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('fetch_top_customers_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3129,54 +3134,54 @@ function getHolidays($conn) {
 
 function addHoliday($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['name']) || empty($data['date'])) {
-        echo json_encode(['success' => false, 'message' => 'الاسم والتاريخ مطلوبان']);
+        echo json_encode(['success' => false, 'message' => __('name_date_required')]);
         return;
     }
     $stmt = $conn->prepare("INSERT INTO holidays (name, date) VALUES (?, ?)");
     $stmt->bind_param("ss", $data['name'], $data['date']);
     if ($stmt->execute()) {
         syncInvoicesWithHolidays($conn);
-        echo json_encode(['success' => true, 'message' => 'تم إضافة العطلة بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('holiday_added_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل إضافة العطلة: ' . $conn->error]);
+        echo json_encode(['success' => false, 'message' => __('holiday_add_fail') . ': ' . $conn->error]);
     }
     $stmt->close();
 }
 
 function updateHoliday($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['id']) || empty($data['name']) || empty($data['date'])) {
-        echo json_encode(['success' => false, 'message' => 'جميع الحقول مطلوبة']);
+        echo json_encode(['success' => false, 'message' => __('all_fields_required')]);
         return;
     }
     $stmt = $conn->prepare("UPDATE holidays SET name = ?, date = ? WHERE id = ?");
     $stmt->bind_param("ssi", $data['name'], $data['date'], $data['id']);
     if ($stmt->execute()) {
         syncInvoicesWithHolidays($conn);
-        echo json_encode(['success' => true, 'message' => 'تم تحديث العطلة بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('holiday_updated_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل التحديث']);
+        echo json_encode(['success' => false, 'message' => __('update_fail')]);
     }
     $stmt->close();
 }
 
 function deleteHoliday($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['id'])) {
-        echo json_encode(['success' => false, 'message' => 'معرف العطلة مطلوب']);
+        echo json_encode(['success' => false, 'message' => __('holiday_id_required')]);
         return;
     }
     
@@ -3197,16 +3202,16 @@ function deleteHoliday($conn) {
             $updateStmt->execute();
             $updateStmt->close();
         }
-        echo json_encode(['success' => true, 'message' => 'تم حذف العطلة بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('holiday_deleted_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل الحذف']);
+        echo json_encode(['success' => false, 'message' => __('delete_fail')]);
     }
     $stmt->close();
 }
 
 function syncMoroccanHolidays($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
@@ -3218,7 +3223,7 @@ function syncMoroccanHolidays($conn) {
         $today = date('Y-m-d H:i');
         $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_holiday_sync_date', '$today') ON DUPLICATE KEY UPDATE setting_value = '$today'");
         syncInvoicesWithHolidays($conn);
-        echo json_encode(['success' => true, 'message' => 'تم تحديث العطل بنجاح', 'count' => $results['count']]);
+        echo json_encode(['success' => true, 'message' => __('holidays_synced_success'), 'count' => $results['count']]);
     } else {
         echo json_encode(['success' => false, 'message' => $results['message']]);
     }
@@ -3246,7 +3251,7 @@ function syncHolidaysInternal($conn, $year, $force = false) {
             $stmt->execute();
             $stmt->close();
         }
-        return ['success' => true, 'count' => 0, 'message' => 'Year already synced'];
+        return ['success' => true, 'count' => 0, 'message' => __('year_already_synced')];
     }
 
     $fixedHolidays = [
@@ -3326,7 +3331,7 @@ function syncHolidaysInternal($conn, $year, $force = false) {
     curl_multi_close($mh);
 
     if (!empty($requests) && !$anySuccess) {
-        return ['success' => false, 'message' => 'تعذر الاتصال بخادم مواقيت الصلاة (Aladhan API). يرجى التحقق من اتصال الإنترنت.'];
+        return ['success' => false, 'message' => __('aladhan_api_error')];
     }
 
     return ['success' => true, 'count' => $count];
@@ -3449,11 +3454,11 @@ function markNotificationRead($conn) {
         if ($stmt->execute()) {
             echo json_encode(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'فشل التحديث']);
+            echo json_encode(['success' => false, 'message' => __('update_fail')]);
         }
         $stmt->close();
     } else {
-        echo json_encode(['success' => false, 'message' => 'معرف غير صالح']);
+        echo json_encode(['success' => false, 'message' => __('invalid_id')]);
     }
 }
 
@@ -3467,11 +3472,11 @@ function deleteNotification($conn) {
         if ($stmt->execute()) {
             echo json_encode(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'فشل الحذف']);
+            echo json_encode(['success' => false, 'message' => __('delete_fail')]);
         }
         $stmt->close();
     } else {
-        echo json_encode(['success' => false, 'message' => 'معرف غير صالح']);
+        echo json_encode(['success' => false, 'message' => __('invalid_id')]);
     }
 }
 
@@ -3479,7 +3484,7 @@ function markAllNotificationsRead($conn) {
     if ($conn->query("UPDATE notifications SET status = 'read' WHERE status = 'unread'")) {
         echo json_encode(['success' => true]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل في تحديث الإشعارات']);
+        echo json_encode(['success' => false, 'message' => __('update_fail')]);
     }
 }
 
@@ -3535,18 +3540,18 @@ function checkRentalDue($conn) {
         }
         
         if (!isset($settings['rentalEnabled']) || $settings['rentalEnabled'] != '1') {
-            echo json_encode(['success' => true, 'message' => 'Rental feature disabled']);
+            echo json_encode(['success' => true, 'message' => __('rental_disabled')]);
             return;
         }
         
         $currentMonth = date('Y-m');
         if (isset($settings['rentalPaidMonth']) && $settings['rentalPaidMonth'] === $currentMonth) {
-            echo json_encode(['success' => true, 'notification_sent' => false, 'message' => 'تم دفع إيجار هذا الشهر', 'paid_this_month' => true]);
+            echo json_encode(['success' => true, 'notification_sent' => false, 'message' => __('rental_paid_this_month'), 'paid_this_month' => true]);
             return;
         }
         
         if (!isset($settings['rentalPaymentDate']) || !isset($settings['rentalType'])) {
-            echo json_encode(['success' => false, 'message' => 'إعدادات الإيجار غير مكتملة']);
+            echo json_encode(['success' => false, 'message' => __('rental_settings_incomplete')]);
             return;
         }
         
@@ -3560,7 +3565,7 @@ function checkRentalDue($conn) {
         $todayDate = date('Y-m-d');
         
         if ($lastNotificationDate === $todayDate) {
-            echo json_encode(['success' => true, 'message' => 'Already notified today']);
+            echo json_encode(['success' => true, 'message' => __('already_notified_today')]);
             return;
         }
         
@@ -3577,10 +3582,10 @@ function checkRentalDue($conn) {
             $amount = number_format((float)($settings['rentalAmount'] ?? 0), 2);
             $currency = $settings['currency'] ?? 'MAD';
             
-            $notificationMessage = "🏠 تذكير: يتبقى {$daysUntilDue} يوم لدفع إيجار المتجر بمبلغ {$amount} {$currency}";
+            $notificationMessage = sprintf(__('rental_reminder_msg'), $daysUntilDue, $amount, $currency);
             
             if (isset($settings['rentalLandlordName']) && !empty($settings['rentalLandlordName'])) {
-                $notificationMessage .= "\nالمالك: " . $settings['rentalLandlordName'];
+                $notificationMessage .= "\n" . __('rental_landlord') . ": " . $settings['rentalLandlordName'];
             }
             
             $shouldNotify = true;
@@ -3589,10 +3594,10 @@ function checkRentalDue($conn) {
             $amount = number_format((float)($settings['rentalAmount'] ?? 0), 2);
             $currency = $settings['currency'] ?? 'MAD';
             
-            $notificationMessage = "🚨 تنبيه عاجل: اليوم هو موعد دفع إيجار المتجر بمبلغ {$amount} {$currency}!";
+            $notificationMessage = sprintf(__('rental_due_today_msg'), $amount, $currency);
             
             if (isset($settings['rentalLandlordPhone']) && !empty($settings['rentalLandlordPhone'])) {
-                $notificationMessage .= "\nهاتف المالك: " . $settings['rentalLandlordPhone'];
+                $notificationMessage .= "\n" . __('rental_landlord_phone') . ": " . $settings['rentalLandlordPhone'];
             }
             
             $shouldNotify = true;
@@ -3603,10 +3608,10 @@ function checkRentalDue($conn) {
             $amount = number_format((float)($settings['rentalAmount'] ?? 0), 2);
             $currency = $settings['currency'] ?? 'MAD';
             
-            $notificationMessage = "⚠️ تحذير: تأخرت عن دفع الإيجار بـ {$daysOverdue} يوم! المبلغ المستحق: {$amount} {$currency}";
+            $notificationMessage = sprintf(__('rental_overdue_msg'), $daysOverdue, $amount, $currency);
             
             if (isset($settings['rentalLandlordPhone']) && !empty($settings['rentalLandlordPhone'])) {
-                $notificationMessage .= "\nهاتف المالك للتواصل: " . $settings['rentalLandlordPhone'];
+                $notificationMessage .= "\n" . __('rental_landlord_phone') . ": " . $settings['rentalLandlordPhone'];
             }
             
             $shouldNotify = true;
@@ -3617,7 +3622,7 @@ function checkRentalDue($conn) {
                 $conn->query("UPDATE settings SET setting_value = '{$nextPaymentDate}' WHERE setting_name = 'rentalPaymentDate'");
                 
                 $nextDateFormatted = date('Y/m/d', strtotime($nextPaymentDate));
-                create_notification($conn, "تم تحديث موعد الإيجار التالي تلقائياً إلى {$nextDateFormatted}", "rental_auto_update");
+                create_notification($conn, sprintf(__('rental_next_date_updated'), $nextDateFormatted), "rental_auto_update");
             }
         }
         
@@ -3637,12 +3642,12 @@ function checkRentalDue($conn) {
                 'success' => true, 
                 'notification_sent' => false,
                 'days_until_due' => $daysUntilDue,
-                'message' => 'No notification needed yet'
+                'message' => __('no_notification_needed')
             ]);
         }
         
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'Error checking rental: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('error_checking_rental') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3655,7 +3660,7 @@ function markRentalPaidThisMonth($conn) {
             $settings[$row['setting_name']] = $row['setting_value'];
         }
         if (!isset($settings['rentalPaymentDate']) || !isset($settings['rentalType'])) {
-            echo json_encode(['success' => false, 'message' => 'إعدادات الإيجار غير مكتملة']);
+            echo json_encode(['success' => false, 'message' => __('rental_settings_incomplete')]);
             return;
         }
         $currentMonth = date('Y-m');
@@ -3680,13 +3685,13 @@ function markRentalPaidThisMonth($conn) {
         $stmt->execute();
         $stmt->close();
         
-        create_notification($conn, "✅ تم تأكيد دفع إيجار هذا الشهر. الموعد القادم: " . date('Y/m/d', strtotime($nextPaymentDate)), "rental_paid");
+        create_notification($conn, "✅ " . __('rental_paid_success') . ". الموعد القادم: " . date('Y/m/d', strtotime($nextPaymentDate)), "rental_paid");
         $conn->commit();
         
-        echo json_encode(['success' => true, 'message' => 'تم تسجيل دفع الإيجار لهذا الشهر', 'next_payment_date' => $nextPaymentDate, 'paid_month' => $currentMonth]);
+        echo json_encode(['success' => true, 'message' => __('rental_paid_success'), 'next_payment_date' => $nextPaymentDate, 'paid_month' => $currentMonth]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'خطأ أثناء تسجيل الدفع: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('payment_record_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3739,7 +3744,7 @@ function getRentalPayments($conn) {
             ]
         ]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطأ في جلب سجل المدفوعات: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('fetch_payments_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3757,7 +3762,7 @@ function calculateNextPaymentDate($currentDate, $rentalType) {
 
 function getExpenses($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -3792,13 +3797,13 @@ function getExpenses($conn) {
 
 function addExpense($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['title']) || empty($data['amount']) || empty($data['expense_date'])) {
-        echo json_encode(['success' => false, 'message' => 'جميع الحقول مطلوبة']);
+        echo json_encode(['success' => false, 'message' => __('all_fields_required')]);
         return;
     }
 
@@ -3810,34 +3815,34 @@ function addExpense($conn) {
     $stmt->bind_param("sdsssi", $data['title'], $data['amount'], $category, $data['expense_date'], $notes, $paid_from_drawer);
 
     if ($stmt->execute()) {
-        $msg = "تم إضافة مصروف جديد: " . $data['title'] . " بمبلغ " . $data['amount'];
-        if ($paid_from_drawer) $msg .= " (خصم من الصندوق)";
+        $msg = sprintf(__('notification_expense_added'), $data['title'], $data['amount']);
+        if ($paid_from_drawer) $msg .= " " . __('deducted_from_drawer');
         create_notification($conn, $msg, "expense_add");
-        echo json_encode(['success' => true, 'message' => 'تم إضافة المصروف بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('expense_added_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل إضافة المصروف']);
+        echo json_encode(['success' => false, 'message' => __('expense_add_fail')]);
     }
     $stmt->close();
 }
 
 function deleteExpense($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['id'])) {
-        echo json_encode(['success' => false, 'message' => 'معرف المصروف مطلوب']);
+        echo json_encode(['success' => false, 'message' => __('expense_id_required')]);
         return;
     }
 
     $stmt = $conn->prepare("DELETE FROM expenses WHERE id = ?");
     $stmt->bind_param("i", $data['id']);
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'تم حذف المصروف بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('expense_deleted_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل الحذف']);
+        echo json_encode(['success' => false, 'message' => __('delete_fail')]);
     }
     $stmt->close();
 }
@@ -3849,7 +3854,7 @@ function updateFirstLogin($conn) {
     if ($stmt->execute()) {
         echo json_encode(['success' => true]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'فشل في التحديث']);
+        echo json_encode(['success' => false, 'message' => __('update_fail')]);
     }
     $stmt->close();
 }
@@ -3858,7 +3863,7 @@ function updateSetting($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (!isset($data['settings']) || !is_array($data['settings'])) {
-        echo json_encode(['success' => false, 'message' => 'القيم مطلوبة']);
+        echo json_encode(['success' => false, 'message' => __('values_required')]);
         return;
     }
     
@@ -3869,7 +3874,7 @@ function updateSetting($conn) {
         
         foreach ($data['settings'] as $setting) {
             if (!isset($setting['name']) || !isset($setting['value'])) {
-                throw new Exception('إعداد غير صالح');
+                throw new Exception(__('invalid_data'));
             }
             $stmt->bind_param("ss", $setting['name'], $setting['value']);
             $stmt->execute();
@@ -3878,10 +3883,10 @@ function updateSetting($conn) {
         $stmt->close();
         $conn->commit();
         
-        echo json_encode(['success' => true, 'message' => 'تم تحديث الإعدادات بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('settings_updated_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'فشل في تحديث الإعدادات: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('settings_update_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3895,7 +3900,7 @@ function send_contact_message($conn) {
     $message = filter_var(trim($data['message'] ?? ''), FILTER_SANITIZE_STRING);
 
     if (empty($name) || empty($email) || empty($subject) || empty($message)) {
-        echo json_encode(['success' => false, 'message' => 'يرجى ملء جميع الحقول بشكل صحيح.']);
+        echo json_encode(['success' => false, 'message' => __('fill_all_fields_correctly')]);
         return;
     }
 
@@ -3908,13 +3913,13 @@ function send_contact_message($conn) {
     // mail($to, $subject, $full_message, $headers); // This would be the actual send function
 
     // For this simulation, we'll just return a success message
-    echo json_encode(['success' => true, 'message' => 'شكراً لك! تم استلام رسالتك بنجاح وسنقوم بالرد في أقرب وقت ممكن.']);
+    echo json_encode(['success' => true, 'message' => __('contact_message_sent')]);
 }
 
 function refundInvoice($conn) {
     // Only admin can refund
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك (المسؤول فقط)']);
+        echo json_encode(['success' => false, 'message' => __('admin_only')]);
         return;
     }
 
@@ -3923,7 +3928,7 @@ function refundInvoice($conn) {
     $reason = isset($data['reason']) ? $data['reason'] : '';
 
     if ($invoice_id <= 0) {
-        echo json_encode(['success' => false, 'message' => 'معرف الفاتورة غير صالح']);
+        echo json_encode(['success' => false, 'message' => __('invoice_id_invalid')]);
         return;
     }
 
@@ -3936,7 +3941,7 @@ function refundInvoice($conn) {
         $stmt->execute();
         $res = $stmt->get_result();
         if ($res->num_rows === 0) {
-            throw new Exception("الفاتورة غير موجودة");
+            throw new Exception(__('invoice_not_found'));
         }
         $invoice = $res->fetch_assoc();
         $total_amount = $invoice['total'];
@@ -3947,7 +3952,7 @@ function refundInvoice($conn) {
         $stmt->bind_param("i", $invoice_id);
         $stmt->execute();
         if ($stmt->get_result()->num_rows > 0) {
-            throw new Exception("تم استرجاع هذه الفاتورة مسبقاً");
+            throw new Exception(__('invoice_already_refunded'));
         }
         $stmt->close();
 
@@ -3980,13 +3985,13 @@ function refundInvoice($conn) {
         $stmt->close();
 
         $conn->commit();
-        create_notification($conn, "تم استرجاع الفاتورة #$invoice_id بقيمة $total_amount", "refund");
+        create_notification($conn, sprintf(__('notification_invoice_refunded'), $invoice_id, $total_amount), "refund");
         
-        echo json_encode(['success' => true, 'message' => 'تم استرجاع الفاتورة بنجاح وإعادة المنتجات للمخزون']);
+        echo json_encode(['success' => true, 'message' => __('refund_success')]);
 
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'فشل الاسترجاع: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('refund_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -4107,7 +4112,7 @@ function performDatabaseBackup($conn) {
     if (file_put_contents($filepath, $sqlScript)) {
         return ['success' => true, 'filename' => $filename, 'path' => $filepath, 'size' => filesize($filepath)];
     } else {
-        return ['success' => false, 'message' => 'فشل في كتابة ملف النسخة الاحتياطية'];
+        return ['success' => false, 'message' => __('backup_write_fail')];
     }
 }
 
@@ -4144,9 +4149,9 @@ function checkAutoBackup($conn) {
         
         $result = performDatabaseBackup($conn);
         if ($result['success']) {
-            create_notification($conn, "تم إنشاء نسخة احتياطية تلقائية للنظام بنجاح.", "system_backup");
+            create_notification($conn, __('notification_auto_backup_success'), "system_backup");
         } else {
-             create_notification($conn, "فشل إنشاء النسخة الاحتياطية التلقائية.", "system_error");
+             create_notification($conn, __('notification_auto_backup_fail'), "system_error");
         }
     }
 }
@@ -4154,13 +4159,13 @@ function checkAutoBackup($conn) {
 function createBackup($conn) {
     // Permission check
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     
     $result = performDatabaseBackup($conn);
     if ($result['success']) {
-        echo json_encode(['success' => true, 'message' => 'تم إنشاء النسخة الاحتياطية بنجاح', 'filename' => $result['filename']]);
+        echo json_encode(['success' => true, 'message' => __('backup_created_success'), 'filename' => $result['filename']]);
     } else {
         echo json_encode(['success' => false, 'message' => $result['message']]);
     }
@@ -4168,7 +4173,7 @@ function createBackup($conn) {
 
 function getBackups($conn) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     
@@ -4199,7 +4204,7 @@ function getBackups($conn) {
 
 function deleteBackup($conn) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     
@@ -4207,7 +4212,7 @@ function deleteBackup($conn) {
     $filename = basename($data['filename'] ?? '');
     
     if (empty($filename)) {
-        echo json_encode(['success' => false, 'message' => 'اسم الملف مطلوب']);
+        echo json_encode(['success' => false, 'message' => __('filename_required')]);
         return;
     }
     
@@ -4215,18 +4220,18 @@ function deleteBackup($conn) {
     
     if (file_exists($filepath) && strpos($filename, '.sql') !== false) {
         if (unlink($filepath)) {
-            echo json_encode(['success' => true, 'message' => 'تم حذف النسخة الاحتياطية بنجاح']);
+            echo json_encode(['success' => true, 'message' => __('backup_deleted_success')]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'فشل في حذف الملف']);
+            echo json_encode(['success' => false, 'message' => __('delete_fail')]);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => 'الملف غير موجود']);
+        echo json_encode(['success' => false, 'message' => __('file_not_found')]);
     }
 }
 
 function downloadBackup($conn) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     
@@ -4234,7 +4239,7 @@ function downloadBackup($conn) {
     $filepath = __DIR__ . '/backups/' . $filename;
     
     if (empty($filename) || !file_exists($filepath) || strpos($filename, '.sql') === false) {
-        echo json_encode(['success' => false, 'message' => 'الملف غير موجود']);
+        echo json_encode(['success' => false, 'message' => __('file_not_found')]);
         return;
     }
     
@@ -4255,7 +4260,7 @@ function downloadBackup($conn) {
 
 function restoreBackup($conn) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
@@ -4267,12 +4272,12 @@ function restoreBackup($conn) {
         $file = $_FILES['backup_file'];
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         if (strtolower($ext) !== 'sql') {
-            echo json_encode(['success' => false, 'message' => 'يجب أن يكون الملف بصيغة .sql']);
+            echo json_encode(['success' => false, 'message' => __('sql_file_required')]);
             return;
         }
         $filename = 'restore_' . date('Y-m-d_H-i-s') . '_' . basename($file['name']);
         if (!move_uploaded_file($file['tmp_name'], $backupDir . $filename)) {
-            echo json_encode(['success' => false, 'message' => 'فشل في رفع الملف']);
+            echo json_encode(['success' => false, 'message' => __('file_upload_fail')]);
             return;
         }
     } 
@@ -4283,13 +4288,13 @@ function restoreBackup($conn) {
     }
 
     if (empty($filename)) {
-        echo json_encode(['success' => false, 'message' => 'لم يتم تحديد ملف']);
+        echo json_encode(['success' => false, 'message' => __('no_file_selected')]);
         return;
     }
 
     $filepath = $backupDir . basename($filename);
     if (!file_exists($filepath)) {
-        echo json_encode(['success' => false, 'message' => 'ملف النسخة الاحتياطية غير موجود']);
+        echo json_encode(['success' => false, 'message' => __('backup_file_not_found')]);
         return;
     }
 
@@ -4297,7 +4302,7 @@ function restoreBackup($conn) {
     // We use a session or file to track progress. Since session might be locked during execution, 
     // we use a temp file for progress tracking.
     $progressFile = sys_get_temp_dir() . '/restore_progress_' . session_id() . '.json';
-    file_put_contents($progressFile, json_encode(['percent' => 0, 'status' => 'بدء الاستعادة...']));
+    file_put_contents($progressFile, json_encode(['percent' => 0, 'status' => __('restore_started')]));
 
     // Close session to allow polling requests
     session_write_close();
@@ -4331,7 +4336,7 @@ function restoreBackup($conn) {
                         // Log error but try to continue or stop?
                         // For database integrity, usually stopping is better, but dumps might have glitches.
                         // We will throw exception.
-                        throw new Exception("خطأ في قاعدة البيانات: " . $conn->error);
+                        throw new Exception(__('db_error') . ": " . $conn->error);
                     }
                     $query = '';
                     
@@ -4339,26 +4344,26 @@ function restoreBackup($conn) {
                     $percent = ($bytesRead / $fileSize) * 100;
                     file_put_contents($progressFile, json_encode([
                         'percent' => round($percent, 1), 
-                        'status' => 'جاري استعادة البيانات (' . round($percent) . '%)'
+                        'status' => __('restoring_data') . ' (' . round($percent) . '%)'
                     ]));
                 }
             }
             
             fclose($handle);
         } else {
-            throw new Exception("تعذر قراءة الملف");
+            throw new Exception(__('read_file_error'));
         }
 
         $conn->query("SET FOREIGN_KEY_CHECKS = 1");
         
-        file_put_contents($progressFile, json_encode(['percent' => 100, 'status' => 'تمت الاستعادة بنجاح']));
+        file_put_contents($progressFile, json_encode(['percent' => 100, 'status' => __('restore_success')]));
         
         // Re-open session to send response (optional, but good practice)
         session_start();
         echo json_encode(['success' => true, 'message' => __('backup_success')]);
 
     } catch (Exception $e) {
-        file_put_contents($progressFile, json_encode(['percent' => 100, 'status' => 'حدث خطأ']));
+        file_put_contents($progressFile, json_encode(['percent' => 100, 'status' => __('error_occurred')]));
         echo json_encode(['success' => false, 'message' => __('backup_failed') . ': ' . $e->getMessage()]);
     }
 }
@@ -4371,7 +4376,7 @@ function getRestoreProgress() {
         $data = json_decode(file_get_contents($progressFile), true);
         echo json_encode(['success' => true, 'percent' => $data['percent'], 'status' => $data['status']]);
     } else {
-        echo json_encode(['success' => true, 'percent' => 0, 'status' => 'انتظار...']);
+        echo json_encode(['success' => true, 'percent' => 0, 'status' => __('waiting')]);
     }
 }
 
