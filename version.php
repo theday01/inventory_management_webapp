@@ -1,16 +1,20 @@
 <?php
-$page_title = 'إصدار النظام';
-$current_page = 'version.php';
 require_once 'session.php';
+require_once 'src/language.php';
+
+$page_title = __('version_page_title');
+$current_page = 'version.php';
+
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
-// محاكاة بيانات النظام
+// System Simulation Data
 $systemVersion = '2.5.0';
 $buildNumber = '20250103-RC';
 $releaseDate = '2025-01-03';
 $phpVersion = phpversion();
-$dbStatus = $conn->ping() ? 'متصل' : 'غير متصل';
+$dbStatus = $conn->ping() ? __('db_connected') : __('db_disconnected');
+$serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? 'Apache/Linux';
 ?>
 
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark">
@@ -19,7 +23,7 @@ $dbStatus = $conn->ping() ? 'متصل' : 'غير متصل';
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-20 shrink-0">
         <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <span class="material-icons-round text-primary">settings_suggest</span>
-            إصدار النظام
+            <?php echo __('version_page_title'); ?>
         </h2>
     </header>
 
@@ -32,26 +36,26 @@ $dbStatus = $conn->ping() ? 'متصل' : 'غير متصل';
             
             <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-3xl p-8 glass-panel text-center relative overflow-hidden group">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-purple-600"></div>
-                <h1 class="text-3xl font-bold text-white mb-2">Smart Shop <span style="font-size: 14px;" class="text-primary">نظام إدارة المتاجر الذكي</span></h1>
+                <h1 class="text-3xl font-bold text-white mb-2">Smart Shop <span style="font-size: 14px;" class="text-primary"><?php echo __('smart_shop_title_sub'); ?></span></h1>
                 <div class="flex items-center justify-center gap-2 mb-6">
-                    <span class="px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-bold border border-green-500/20">Stable</span>
-                    <span class="px-3 py-1 rounded-full bg-white/5 text-gray-400 text-xs font-bold border border-white/10">Build <?php echo $buildNumber; ?></span>
+                    <span class="px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-bold border border-green-500/20"><?php echo __('stable'); ?></span>
+                    <span class="px-3 py-1 rounded-full bg-white/5 text-gray-400 text-xs font-bold border border-white/10"><?php echo __('build_text'); ?> <?php echo $buildNumber; ?></span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center border-t border-white/5 pt-6">
                     <div>
-                        <p class="text-gray-400 text-sm mb-1">رقم الإصدار</p>
+                        <p class="text-gray-400 text-sm mb-1"><?php echo __('version_number'); ?></p>
                         <p class="text-xl font-bold text-white"><?php echo $systemVersion; ?></p>
                     </div>
                     <div>
-                        <p class="text-gray-400 text-sm mb-1">تاريخ التحديث</p>
+                        <p class="text-gray-400 text-sm mb-1"><?php echo __('update_date'); ?></p>
                         <p class="text-xl font-bold text-white"><?php echo $releaseDate; ?></p>
                     </div>
                     <div>
-                        <p class="text-gray-400 text-sm mb-1">حالة الترخيص</p>
+                        <p class="text-gray-400 text-sm mb-1"><?php echo __('license_status'); ?></p>
                         <p class="text-xl font-bold text-accent flex items-center justify-center gap-1">
                             <span class="material-icons-round text-sm">verified</span>
-                            <span>نشط</span>
+                            <span><?php echo __('license_active'); ?></span>
                         </p>
                     </div>
                 </div>
@@ -61,7 +65,7 @@ $dbStatus = $conn->ping() ? 'متصل' : 'غير متصل';
                 <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                     <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
                         <span class="material-icons-round text-gray-400">memory</span>
-                        البيئة التشغيلية
+                        <?php echo __('operational_env'); ?>
                     </h3>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
@@ -70,25 +74,25 @@ $dbStatus = $conn->ping() ? 'متصل' : 'غير متصل';
                         </div>
                         <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
                             <span class="text-white font-mono text-sm truncate max-w-[200px]" title="<?php echo htmlspecialchars($serverSoftware); ?>">Apache/Linux</span>
-                            <span class="text-gray-400 text-sm">Server</span>
+                            <span class="text-gray-400 text-sm"><?php echo __('server_software'); ?></span>
                         </div>
                         <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
                             <span class="text-green-500 font-bold text-sm flex items-center gap-1">
                                 <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                                 <?php echo $dbStatus; ?>
                             </span>
-                            <span class="text-gray-400 text-sm">Database</span>
+                            <span class="text-gray-400 text-sm"><?php echo __('database'); ?></span>
                         </div>
                     </div>
                 </div>
 
                 <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel flex flex-col justify-center items-center text-center">
-                    <h3 class="text-lg font-bold text-white mb-2">التحقق من التحديثات</h3>
-                    <p class="text-gray-400 text-sm mb-6">تحقق مما إذا كان هناك إصدار جديد متوفر للنظام</p>
+                    <h3 class="text-lg font-bold text-white mb-2"><?php echo __('check_updates_title'); ?></h3>
+                    <p class="text-gray-400 text-sm mb-6"><?php echo __('check_updates_desc'); ?></p>
                     
                     <button id="check-update-btn" class="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all w-full flex items-center justify-center gap-2">
                         <span class="material-icons-round animate-spin hidden" id="update-spinner">sync</span>
-                        <span id="update-text">فحص الآن</span>
+                        <span id="update-text"><?php echo __('check_now_btn'); ?></span>
                     </button>
                     <p id="update-msg" class="text-xs text-gray-500 mt-3 h-4"></p>
                 </div>
@@ -97,25 +101,25 @@ $dbStatus = $conn->ping() ? 'متصل' : 'غير متصل';
             <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-gray-400">history</span>
-                    سجل التغييرات (Changelog)
+                    <?php echo __('changelog_title'); ?>
                 </h3>
                 
                 <div class="relative border-r border-white/10 mr-3 space-y-8 pr-8">
                     <div class="relative">
                         <div class="absolute -right-[37px] top-1 w-4 h-4 rounded-full bg-primary border-4 border-dark-surface"></div>
-                        <h4 class="text-white font-bold text-lg mb-1">v2.5.0 <span class="text-xs font-normal text-gray-500 mr-2">الإصدار الحالي</span></h4>
+                        <h4 class="text-white font-bold text-lg mb-1">v2.5.0 <span class="text-xs font-normal text-gray-500 mr-2"><?php echo __('current_version_tag'); ?></span></h4>
                         <ul class="space-y-2 mt-3">
                             <li class="flex items-start gap-2 text-sm text-gray-300">
                                 <span class="material-icons-round text-green-500 text-sm mt-0.5">check_circle</span>
-                                <span>إضافة نظام التنبيهات المتقدم للمخزون (Windows Notifications).</span>
+                                <span><?php echo __('changelog_1'); ?></span>
                             </li>
                             <li class="flex items-start gap-2 text-sm text-gray-300">
                                 <span class="material-icons-round text-green-500 text-sm mt-0.5">check_circle</span>
-                                <span>تحسين واجهة نقاط البيع (POS) ودعم الطباعة الحرارية.</span>
+                                <span><?php echo __('changelog_2'); ?></span>
                             </li>
                             <li class="flex items-start gap-2 text-sm text-gray-300">
                                 <span class="material-icons-round text-blue-500 text-sm mt-0.5">build</span>
-                                <span>تحسينات في أداء قاعدة البيانات وتسريع التقارير.</span>
+                                <span><?php echo __('changelog_3'); ?></span>
                             </li>
                         </ul>
                     </div>
@@ -126,11 +130,11 @@ $dbStatus = $conn->ping() ? 'متصل' : 'غير متصل';
                         <ul class="space-y-2 mt-3">
                             <li class="flex items-start gap-2 text-sm text-gray-400">
                                 <span class="material-icons-round text-gray-500 text-sm mt-0.5">check</span>
-                                <span>إضافة الوضع الليلي (Dark Mode) للنظام بالكامل.</span>
+                                <span><?php echo __('changelog_4'); ?></span>
                             </li>
                             <li class="flex items-start gap-2 text-sm text-gray-400">
                                 <span class="material-icons-round text-gray-500 text-sm mt-0.5">check</span>
-                                <span>دعم تعدد العملات والفواتير الضريبية.</span>
+                                <span><?php echo __('changelog_5'); ?></span>
                             </li>
                         </ul>
                     </div>
@@ -138,7 +142,7 @@ $dbStatus = $conn->ping() ? 'متصل' : 'غير متصل';
             </div>
 
             <div class="flex justify-center gap-6 pt-4">
-                <a href="license.php" class="text-sm text-gray-400 hover:text-white transition-colors border-b border-transparent hover:border-primary pb-0.5">اتفاقية الترخيص</a>
+                <a href="license.php" class="text-sm text-gray-400 hover:text-white transition-colors border-b border-transparent hover:border-primary pb-0.5"><?php echo __('license_agreement_link'); ?></a>
             </div>
             
             <div class="text-center text-xs text-gray-600 pb-4" dir="ltr">
@@ -159,18 +163,20 @@ $dbStatus = $conn->ping() ? 'متصل' : 'غير متصل';
         btn.disabled = true;
         btn.classList.add('opacity-75');
         spinner.classList.remove('hidden');
-        text.textContent = 'جاري التحقق...';
+        text.textContent = '<?php echo __('checking_updates'); ?>';
         msg.textContent = '';
         msg.className = 'text-xs text-gray-500 mt-3 h-4';
 
-        // محاكاة الاتصال بالسيرفر
+        // Simulate Server Connection
         setTimeout(() => {
             btn.disabled = false;
             btn.classList.remove('opacity-75');
             spinner.classList.add('hidden');
-            text.textContent = 'فحص الآن';
+            text.textContent = '<?php echo __('check_now_btn'); ?>';
             
-            msg.textContent = 'أنت تستخدم أحدث إصدار من النظام (v2.5.0)';
+            // Format message with version
+            const versionMsg = "<?php echo __('latest_version_msg'); ?>".replace('%s', 'v2.5.0');
+            msg.textContent = versionMsg;
             msg.className = 'text-xs text-green-500 mt-3 h-4 font-bold';
         }, 2000);
     });
