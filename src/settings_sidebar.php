@@ -4,14 +4,15 @@
 // وفي صفحة الإعدادات، يمكن تمرير $active_tab لإبراز القسم الحالي
 $active_tab = $active_tab ?? (isset($_GET['tab']) ? $_GET['tab'] : null);
 function tabClass($tab, $current_page, $active_tab) {
-    $base = 'tab-btn flex items-center gap-3 px-4 py-3 rounded-xl text-right transition-all group';
+    $base = 'tab-btn flex items-center gap-3 px-4 py-3 rounded-xl transition-all group';
+    $textAlign = get_dir() === 'rtl' ? 'text-right' : 'text-left';
     if ($current_page === 'settings.php' && $active_tab === $tab) {
-        return $base . ' active-tab';
+        return $base . ' ' . $textAlign . ' active-tab';
     }
-    return $base . ' text-gray-400 hover:text-white hover:bg-white/5';
+    return $base . ' ' . $textAlign . ' text-gray-400 hover:text-white hover:bg-white/5';
 }
 ?>
-<aside class="w-72 bg-dark-surface/30 backdrop-blur-md border-l border-white/5 flex flex-col shrink-0 py-6 px-4 gap-2 overflow-y-auto">
+<aside class="w-72 bg-dark-surface/30 backdrop-blur-md border-l border-white/5 flex flex-col shrink-0 py-6 px-4 gap-2 overflow-y-auto" dir="<?php echo get_dir(); ?>">
     <div class="text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2"><?php echo __('settings_sections_title'); ?></div>
 
     <a href="settings.php?tab=store" id="tab-btn-store" class="<?php echo tabClass('store', $current_page, $active_tab); ?>" data-tab="store">

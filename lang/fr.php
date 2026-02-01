@@ -11,6 +11,7 @@ return [
     'forgot_password' => 'Mot de passe oublié ?',
     'login_btn' => 'Se connecter',
     'system_version' => 'Système de gestion de magasin intelligent v1.0',
+    'products_page_title' => 'Produits',
     'invalid_password' => 'Mot de passe incorrect',
     'invalid_credentials' => 'Nom d\'utilisateur ou mot de passe incorrect',
     

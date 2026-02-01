@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once 'session.php';
 require_once 'db.php';
 require_once 'src/language.php';
@@ -167,15 +167,18 @@ function closeExpenseModal() {
 
 async function loadExpenses(page = 1) {
     try {
+        showLoadingOverlay(window.__('loading_expenses'));
         const response = await fetch(`api.php?action=getExpenses&page=${page}`);
         const result = await response.json();
         
         if (result.success) {
             displayExpenses(result.data);
             renderPagination(result.pagination);
+            hideLoadingOverlay();
         }
     } catch (error) {
         console.error('Error loading expenses:', error);
+        hideLoadingOverlay();
     }
 }
 
@@ -251,6 +254,7 @@ async function deleteExpense(id) {
 
     if (confirmed.isConfirmed) {
         try {
+            showLoadingOverlay(window.__('deleting_expense'));
             const response = await fetch('api.php?action=deleteExpense', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -258,13 +262,16 @@ async function deleteExpense(id) {
             });
             const result = await response.json();
             if (result.success) {
+                hideLoadingOverlay();
                 Swal.fire(window.__('deleted_successfully'), result.message, 'success');
                 loadExpenses(currentPage);
                 updateSummaries();
             } else {
+                hideLoadingOverlay();
                 Swal.fire(window.__('error'), result.message, 'error');
             }
         } catch (error) {
+            hideLoadingOverlay();
             Swal.fire(window.__('error'), window.__('unexpected_error'), 'error');
         }
     }
@@ -283,6 +290,7 @@ document.getElementById('expense-form').addEventListener('submit', async (e) => 
     };
     
     try {
+        showLoadingOverlay(window.__('adding_expense'));
         const response = await fetch('api.php?action=addExpense', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -291,14 +299,17 @@ document.getElementById('expense-form').addEventListener('submit', async (e) => 
         
         const result = await response.json();
         if (result.success) {
+            hideLoadingOverlay();
             closeExpenseModal();
             Swal.fire(window.__('done'), window.__('expense_added_successfully'), 'success');
             loadExpenses(1);
             updateSummaries();
         } else {
+            hideLoadingOverlay();
             Swal.fire(window.__('error'), result.message, 'error');
         }
     } catch (error) {
+        hideLoadingOverlay();
         Swal.fire(window.__('error'), window.__('unexpected_error'), 'error');
     }
 });
@@ -306,6 +317,7 @@ document.getElementById('expense-form').addEventListener('submit', async (e) => 
 // Load summaries properly (Total, Month, Today, and Cycle)
 async function updateSummaries() {
     try {
+        showLoadingOverlay(window.__('updating_data'));
         // Fetch cycle configuration from dashboard stats (efficient reuse)
         const statsRes = await fetch('api.php?action=getDashboardStats');
         const statsData = await statsRes.json();
@@ -364,9 +376,11 @@ async function updateSummaries() {
             document.getElementById('cycle-expenses').innerHTML = `${cycleTotal.toFixed(2)} <span class="text-sm text-gray-500 font-normal">${currency}</span>`;
             document.getElementById('month-expenses').innerHTML = `${monthTotal.toFixed(2)} <span class="text-sm text-gray-500 font-normal">${currency}</span>`;
             document.getElementById('total-expenses').innerHTML = `${grandTotal.toFixed(2)} <span class="text-sm text-gray-500 font-normal">${currency}</span>`;
+            hideLoadingOverlay();
         }
     } catch (e) {
         console.error('Error updating summaries:', e);
+        hideLoadingOverlay();
     }
 }
 
@@ -374,6 +388,35 @@ document.addEventListener('DOMContentLoaded', () => {
     loadExpenses();
     updateSummaries();
 });
+</script>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl p-12 border border-white/10 flex flex-col items-center gap-6">
+        <div class="relative w-20 h-20">
+            <div class="absolute inset-0 border-4 border-transparent border-t-primary border-r-primary rounded-full animate-spin"></div>
+            <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
+        </div>
+        <div class="text-center">
+            <h3 class="text-lg font-bold text-white mb-2"><?php echo __('loading'); ?></h3>
+            <p id="loading-message" class="text-sm text-gray-400"><?php echo __('please_wait'); ?></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // دوال إدارة شاشة التحميل
+    function showLoadingOverlay(message = '<?php echo __('processing'); ?>') {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingMessage = document.getElementById('loading-message');
+        loadingMessage.textContent = message;
+        loadingOverlay.classList.remove('hidden');
+    }
+
+    function hideLoadingOverlay() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        loadingOverlay.classList.add('hidden');
+    }
 </script>
 
 <style>

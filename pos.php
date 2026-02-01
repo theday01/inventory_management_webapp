@@ -1,5 +1,6 @@
 <?php
-$page_title = 'نقطة البيع';
+require_once 'src/language.php';
+$page_title = __('pos_title');
 $current_page = 'pos.php';
 require_once 'session.php';
 require_once 'src/header.php';

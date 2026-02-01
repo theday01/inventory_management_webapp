@@ -1,8 +1,9 @@
 <?php
+require_once 'src/language.php';
 require_once 'session.php';
 require_once 'db.php';
 
-$page_title = 'التقارير والتحليلات';
+$page_title = __('reports_title');
 $current_page = 'reports.php';
 
 require_once 'src/header.php';
@@ -635,6 +636,51 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         z-index: -1;
         animation: pulse-glow 2s infinite;
     }
+
+    /* Dark Mode Date Picker Styling */
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+        color-scheme: dark;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="time"]::-webkit-calendar-picker-indicator,
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(1.1);
+        cursor: pointer;
+    }
+
+    input[type="date"]::-webkit-outer-spin-button,
+    input[type="date"]::-webkit-inner-spin-button,
+    input[type="time"]::-webkit-outer-spin-button,
+    input[type="time"]::-webkit-inner-spin-button {
+        display: none;
+    }
+
+    /* Firefox support */
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+        background-color: #1f2937;
+        color: #ffffff;
+    }
+
+    /* Placeholder text styling */
+    input[type="date"]::placeholder,
+    input[type="time"]::placeholder,
+    input[type="datetime-local"]::placeholder {
+        color: #9ca3af;
+    }
+
+    /* Focus state styling */
+    input[type="date"]:focus,
+    input[type="time"]:focus,
+    input[type="datetime-local"]:focus {
+        background-color: #111827;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
 </style>
 
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark transition-all duration-300">
@@ -1240,14 +1286,14 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
 <!-- Start Day Modal -->
 <div id="start-day-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
     <div class="bg-dark-surface rounded-xl p-8 max-w-sm w-full">
-        <h2 class="text-xl font-bold text-white mb-4">بدء يوم عمل جديد</h2>
+        <h2 class="text-xl font-bold text-white mb-4"><?php echo __('start_day_modal_title'); ?></h2>
         <div class="mb-4">
-            <label for="opening-balance" class="block text-sm font-medium text-gray-400 mb-2">الرصيد الافتتاحي</label>
-            <input type="text" id="opening-balance" class="w-full bg-dark border border-white/10 text-white rounded-lg px-3 py-2" placeholder="أدخل المبلغ">
+            <label for="opening-balance" class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('opening_balance_label'); ?></label>
+            <input type="text" id="opening-balance" class="w-full bg-dark border border-white/10 text-white rounded-lg px-3 py-2" placeholder="<?php echo __('enter_amount_simple'); ?>">
         </div>
         <div class="flex justify-end gap-2">
-            <button id="cancel-start-day" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">إلغاء</button>
-            <button id="confirm-start-day" class="bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded">بدء اليوم</button>
+            <button id="cancel-start-day" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"><?php echo __('cancel'); ?></button>
+            <button id="confirm-start-day" class="bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded"><?php echo __('start_day_btn'); ?></button>
         </div>
     </div>
 </div>
@@ -2031,7 +2077,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                     <button id="start-day-btn" class="pulse-button bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded shadow-lg">
                         <span class="flex items-center gap-2">
                             <span class="material-icons-round">play_circle</span>
-                            بدء يوم عمل جديد
+                            <?php echo __('start_business_day_btn'); ?>
                         </span>
                     </button>`;
                 document.getElementById('start-day-btn').addEventListener('click', () => startDayModal.classList.remove('hidden'));
@@ -2041,7 +2087,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         async function handleStartDay() {
             const opening_balance = openingBalanceInput.value;
             if (!opening_balance) {
-                Swal.fire('خطأ', 'الرجاء إدخال الرصيد الافتتاحي', 'error');
+                Swal.fire(<?php echo json_encode(__('error')); ?>, <?php echo json_encode(__('enter_opening_balance_error')); ?>, 'error');
                 return;
             }
 
@@ -2051,14 +2097,14 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 const holidayData = await holidayRes.json();
                 if (holidayData.success && holidayData.is_holiday) {
                     const confirmHoliday = await Swal.fire({
-                        title: 'تنبيه: يوم عطلة',
-                        text: `اليوم مسجل كأحد أيام العطلة (${holidayData.holiday_name}) في إعدادات النظام، هل أنت متأكد من رغبتك في بدء يوم عمل جديد؟`,
+                        title: <?php echo json_encode(__('holiday_warning_title')); ?>,
+                        text: <?php echo json_encode(__('holiday_warning_text')); ?>.replace('%s', holidayData.holiday_name),
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#10B981',
                         cancelButtonColor: '#6B7280',
-                        confirmButtonText: 'نعم، ابدأ العمل',
-                        cancelButtonText: 'تراجع'
+                        confirmButtonText: <?php echo json_encode(__('confirm_start_work')); ?>,
+                        cancelButtonText: <?php echo json_encode(__('undo')); ?>
                     });
                     
                     if (!confirmHoliday.isConfirmed) {
@@ -2080,7 +2126,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 
                 if (result.success) {
                     startDayModal.classList.add('hidden');
-                    Swal.fire('تم بنجاح', 'تم بدء يوم عمل جديد بنجاح', 'success').then(() => {
+                    Swal.fire(<?php echo json_encode(__('success_title')); ?>, <?php echo json_encode(__('start_day_success')); ?>, 'success').then(() => {
                         location.reload();
                     });
                 } else if (result.code === 'business_day_open_exists') {

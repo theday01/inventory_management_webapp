@@ -11,6 +11,7 @@ return [
     'forgot_password' => 'نسيت كلمة المرور؟',
     'login_btn' => 'تسجيل الدخول',
     'system_version' => 'نظام إدارة المتاجر الذكي الإصدار 1.0',
+    'products_page_title' => 'المنتجات',
     'invalid_password' => 'كلمة المرور غير صحيحة',
     'invalid_credentials' => 'كلمة المرور أو اسم المستخدم غير صحيح',
     
