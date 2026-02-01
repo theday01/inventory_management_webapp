@@ -879,6 +879,105 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     </div>
                 </div>
 
+                <div id="tab-content-backup" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                        <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                            <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                                <span class="material-icons-round text-primary">backup</span>
+                                النسخ الاحتياطي لقاعدة البيانات
+                            </h3>
+                            <button type="button" onclick="createBackup()" id="btn-create-backup" class="bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-primary/20">
+                                <span class="material-icons-round text-lg">add_circle</span>
+                                <span>نسخ احتياطي فوري</span>
+                            </button>
+                        </div>
+
+                        <!-- Restore Section -->
+                        <div class="bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 border border-indigo-500/20 rounded-xl p-6 mb-8 relative overflow-hidden">
+                            <div class="flex items-center justify-between mb-4 relative z-10">
+                                <h4 class="text-base font-bold text-white flex items-center gap-2">
+                                    <span class="material-icons-round text-indigo-400">cloud_upload</span>
+                                    استعادة نسخة احتياطية
+                                </h4>
+                                <div class="flex gap-2">
+                                    <input type="file" id="restore-file-input" accept=".sql" class="hidden" onchange="handleRestoreUpload(this)">
+                                    <button type="button" onclick="document.getElementById('restore-file-input').click()" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                                        <span class="material-icons-round text-sm">upload_file</span>
+                                        رفع ملف واستعادة
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-4 relative z-10">يمكنك استعادة قاعدة البيانات من ملف .sql محفوظ لديك. سيتم حذف البيانات الحالية واستبدالها.</p>
+                            
+                            <!-- Progress Bar -->
+                            <div id="restore-progress-container" class="hidden relative z-10 bg-dark/50 rounded-xl p-4 border border-white/5">
+                                <div class="flex justify-between text-xs font-bold text-white mb-2">
+                                    <span id="restore-status-text">جاري الرفع...</span>
+                                    <span id="restore-percent">0%</span>
+                                </div>
+                                <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                                    <div id="restore-progress-bar" class="bg-indigo-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Auto Backup Settings -->
+                        <div class="bg-white/5 border border-white/5 rounded-xl p-6 mb-8">
+                            <h4 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                                <span class="material-icons-round text-blue-400">schedule</span>
+                                الجدولة التلقائية
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="text-sm text-gray-300">تفعيل النسخ التلقائي</label>
+                                        <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                            <input type="checkbox" id="backup_enabled" class="toggle-checkbox" <?php echo ($settings['backup_enabled'] ?? '0') === '1' ? 'checked' : ''; ?> />
+                                            <label for="backup_enabled" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
+                                        </div>
+                                    </div>
+                                    <label class="block text-xs font-bold text-gray-400 mb-2 mt-4">تكرار النسخ</label>
+                                    <select id="backup_frequency" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                                        <option value="daily" <?php echo ($settings['backup_frequency'] ?? 'daily') === 'daily' ? 'selected' : ''; ?>>يومي (كل 24 ساعة)</option>
+                                        <option value="weekly" <?php echo ($settings['backup_frequency'] ?? 'daily') === 'weekly' ? 'selected' : ''; ?>>أسبوعي (كل 7 أيام)</option>
+                                        <option value="monthly" <?php echo ($settings['backup_frequency'] ?? 'daily') === 'monthly' ? 'selected' : ''; ?>>شهري (كل 30 يوم)</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <button type="button" onclick="saveBackupSettings()" id="btn-save-backup-settings" class="w-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                                        <span class="material-icons-round text-sm">save</span>
+                                        <span>حفظ إعدادات الجدولة</span>
+                                    </button>
+                                    <p class="text-[10px] text-gray-500 text-center">
+                                        آخر نسخ تلقائي: <span class="text-primary dir-ltr"><?php echo !empty($settings['last_backup_run']) ? $settings['last_backup_run'] : 'لم يتم بعد'; ?></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Backup List -->
+                        <h4 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                            <span class="material-icons-round text-green-400">history</span>
+                            سجل النسخ الاحتياطية
+                        </h4>
+                        <div class="overflow-hidden rounded-xl border border-white/5">
+                            <table class="w-full text-right border-collapse">
+                                <thead>
+                                    <tr class="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
+                                        <th class="px-6 py-4 font-bold text-right">اسم الملف</th>
+                                        <th class="px-6 py-4 font-bold text-right">التاريخ</th>
+                                        <th class="px-6 py-4 font-bold text-center">الحجم</th>
+                                        <th class="px-6 py-4 font-bold text-center">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="backups-table-body" class="text-sm text-gray-300">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="tab-content-reset" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
                         <div class="text-center mb-8">
@@ -976,6 +1075,233 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         
         localStorage.setItem('activeSettingsTab', tabName);
         if(tabName === 'workdays') loadHolidays();
+        if(tabName === 'backup') loadBackups();
+    }
+
+    // Backup Functions
+    async function loadBackups() {
+        const tbody = document.getElementById('backups-table-body');
+        if(!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>';
+        
+        try {
+            const res = await fetch('api.php?action=getBackups');
+            const data = await res.json();
+            if (data.success && data.data.length > 0) {
+                let html = '';
+                data.data.forEach(b => {
+                    // Convert bytes to human readable
+                    let size = b.size;
+                    let unit = 'B';
+                    if(size > 1024) { size = size / 1024; unit = 'KB'; }
+                    if(size > 1024) { size = size / 1024; unit = 'MB'; }
+                    
+                    html += `
+                    <tr class="hover:bg-white/[0.02] border-b border-white/5 last:border-0">
+                        <td class="px-6 py-4 font-mono text-xs text-primary dir-ltr text-right">${b.name}</td>
+                        <td class="px-6 py-4 font-bold text-white dir-ltr text-right">${b.date}</td>
+                        <td class="px-6 py-4 text-center text-gray-400 dir-ltr">${size.toFixed(2)} ${unit}</td>
+                        <td class="px-6 py-4 text-center flex justify-center gap-2">
+                            <a href="api.php?action=downloadBackup&filename=${b.name}" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20" title="تحميل">
+                                <span class="material-icons-round text-sm">download</span>
+                            </a>
+                            <button type="button" onclick="restoreFromList('${b.name}')" class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg transition-colors hover:bg-indigo-500/20" title="استعادة">
+                                <span class="material-icons-round text-sm">settings_backup_restore</span>
+                            </button>
+                            <button type="button" onclick="deleteBackup('${b.name}')" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20" title="حذف">
+                                <span class="material-icons-round text-sm">delete</span>
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">لا توجد نسخ احتياطية محفوظة.</td></tr>';
+            }
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">فشل في تحميل البيانات</td></tr>';
+        }
+    }
+
+    async function createBackup() {
+        const btn = document.getElementById('btn-create-backup');
+        if(!confirm('هل تريد إنشاء نسخة احتياطية الآن؟')) return;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-icons-round animate-spin text-lg">sync</span> جاري الإنشاء...';
+        
+        try {
+            const res = await fetch('api.php?action=createBackup');
+            const data = await res.json();
+            if (data.success) {
+                if(typeof showToast === 'function') {
+                    showToast('تم إنشاء النسخة الاحتياطية بنجاح!', true);
+                } else {
+                    alert('تم إنشاء النسخة الاحتياطية بنجاح!');
+                }
+                loadBackups();
+            } else {
+                alert('خطأ: ' + data.message);
+            }
+        } catch (e) {
+            alert('خطأ في الاتصال بالخادم');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round text-lg">add_circle</span> <span>نسخ احتياطي فوري</span>';
+        }
+    }
+
+    async function deleteBackup(filename) {
+        if(!confirm('هل أنت متأكد من حذف هذه النسخة الاحتياطية؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+        
+        try {
+            const res = await fetch('api.php?action=deleteBackup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename })
+            });
+            const data = await res.json();
+            if (data.success) {
+                loadBackups();
+            } else {
+                alert('خطأ: ' + data.message);
+            }
+        } catch (e) {
+            alert('خطأ في الاتصال بالخادم');
+        }
+    }
+    
+    async function saveBackupSettings() {
+        const enabled = document.getElementById('backup_enabled').checked ? '1' : '0';
+        const frequency = document.getElementById('backup_frequency').value;
+        const btn = document.getElementById('btn-save-backup-settings');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-icons-round animate-spin text-sm">sync</span> جاري الحفظ...';
+
+        try {
+            const res = await fetch('api.php?action=updateSetting', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    settings: [
+                        { name: 'backup_enabled', value: enabled },
+                        { name: 'backup_frequency', value: frequency }
+                    ]
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if(typeof showToast === 'function') {
+                    showToast('تم حفظ إعدادات النسخ الاحتياطي', true);
+                } else {
+                    alert('تم حفظ الإعدادات بنجاح');
+                }
+            } else {
+                alert('خطأ: ' + data.message);
+            }
+        } catch (e) {
+            alert('خطأ في الاتصال');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round text-sm">save</span> <span>حفظ إعدادات الجدولة</span>';
+        }
+    }
+
+    // Restore Functions
+    function handleRestoreUpload(input) {
+        if (input.files && input.files[0]) {
+            startRestoreProcess(input.files[0]);
+        }
+    }
+
+    async function restoreFromList(filename) {
+        if(!confirm('هل أنت متأكد من استعادة النسخة: ' + filename + '؟\n⚠️ سيتم حذف جميع البيانات الحالية واستبدالها!')) return;
+        startRestoreProcess(null, filename);
+    }
+
+    function startRestoreProcess(file = null, filename = null) {
+        const container = document.getElementById('restore-progress-container');
+        const progressBar = document.getElementById('restore-progress-bar');
+        const statusText = document.getElementById('restore-status-text');
+        const percentText = document.getElementById('restore-percent');
+        
+        container.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        percentText.innerText = '0%';
+        statusText.innerText = file ? 'جاري رفع الملف...' : 'جاري التحضير...';
+
+        // Helper to update polling
+        let pollInterval;
+        const startPolling = () => {
+            pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch('api.php?action=getRestoreProgress');
+                    const data = await res.json();
+                    if (data.success) {
+                        progressBar.style.width = data.percent + '%';
+                        percentText.innerText = data.percent + '%';
+                        statusText.innerText = data.status;
+                        
+                        if (data.percent >= 100 && (data.status.includes('نجاح') || data.status.includes('خطأ'))) {
+                            clearInterval(pollInterval);
+                            setTimeout(() => {
+                                alert(data.status);
+                                container.classList.add('hidden');
+                                window.location.reload(); // Reload to reflect DB changes
+                            }, 1000);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Polling error', e);
+                }
+            }, 1000);
+        };
+
+        if (file) {
+            // Upload with progress
+            const formData = new FormData();
+            formData.append('backup_file', file);
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'api.php?action=restoreBackup', true);
+            
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 50; // Upload is first 50% visually
+                    progressBar.style.width = percentComplete + '%';
+                    percentText.innerText = Math.round(percentComplete) + '%';
+                }
+            };
+            
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    // Upload done, server processing started
+                    startPolling();
+                } else {
+                    alert('فشل الرفع');
+                    container.classList.add('hidden');
+                }
+            };
+            
+            xhr.onerror = () => {
+                alert('خطأ في الاتصال');
+                container.classList.add('hidden');
+            };
+            
+            xhr.send(formData);
+        } else {
+            // Restore existing file
+            fetch('api.php?action=restoreBackup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename })
+            }).then(() => startPolling())
+              .catch(() => {
+                  alert('فشل بدء الاستعادة');
+                  container.classList.add('hidden');
+              });
+        }
     }
 
     async function loadHolidays() {
@@ -1429,7 +1755,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     previewContainer.innerHTML = `<img src="${newImageUrl}" alt="Logo" class="w-full h-full object-cover">`;
                                         
                     // إظهار رسالة نجاح
-                    showToast('success', 'تم تحديث الشعار بنجاح!');
+                    showToast('تم تحديث الشعار بنجاح!', true);
                                         
                     // تحديث رابط الصورة في كل مكان آخر إذا لزم الأمر
                     // مثال: تحديث الشعار في الشريط الجانبي

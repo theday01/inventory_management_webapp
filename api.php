@@ -142,6 +142,7 @@ switch ($action) {
         break;
     case 'getNotifications':
         checkUpcomingHolidays($conn);
+        checkAutoBackup($conn); // Check for auto backup
         getNotifications($conn);
         break;
     case 'getHolidays':
@@ -243,6 +244,25 @@ switch ($action) {
         break;
     case 'getRefunds':
         getRefunds($conn);
+        break;
+    // Backup Actions
+    case 'createBackup':
+        createBackup($conn);
+        break;
+    case 'getBackups':
+        getBackups($conn);
+        break;
+    case 'deleteBackup':
+        deleteBackup($conn);
+        break;
+    case 'downloadBackup':
+        downloadBackup($conn);
+        break;
+    case 'restoreBackup':
+        restoreBackup($conn);
+        break;
+    case 'getRestoreProgress':
+        getRestoreProgress();
         break;
     default:
         echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
@@ -4028,6 +4048,330 @@ function getRefunds($conn) {
     $stmt->close();
 
     echo json_encode(['success' => true, 'data' => $refunds, 'total_refunds' => $total_refunds]);
+}
+
+function performDatabaseBackup($conn) {
+    // Get all tables
+    $tables = [];
+    $result = $conn->query("SHOW TABLES");
+    while ($row = $result->fetch_row()) {
+        $tables[] = $row[0];
+    }
+
+    $sqlScript = "-- Database Backup for Smart Shop\n";
+    $sqlScript .= "-- Date: " . date('Y-m-d H:i:s') . "\n\n";
+    $sqlScript .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+    foreach ($tables as $table) {
+        // Drop table
+        $sqlScript .= "DROP TABLE IF EXISTS `$table`;\n";
+        
+        // Create table
+        $row = $conn->query("SHOW CREATE TABLE `$table`")->fetch_row();
+        $sqlScript .= $row[1] . ";\n\n";
+        
+        // Insert data
+        $result = $conn->query("SELECT * FROM `$table`");
+        $columnCount = $result->field_count;
+
+        while ($row = $result->fetch_row()) {
+            $sqlScript .= "INSERT INTO `$table` VALUES(";
+            for ($j = 0; $j < $columnCount; $j++) {
+                $row[$j] = isset($row[$j]) ? $conn->real_escape_string($row[$j]) : null;
+                
+                if (isset($row[$j])) {
+                    $sqlScript .= '"' . $row[$j] . '"';
+                } else {
+                    $sqlScript .= 'NULL';
+                }
+                
+                if ($j < ($columnCount - 1)) {
+                    $sqlScript .= ',';
+                }
+            }
+            $sqlScript .= ");\n";
+        }
+        $sqlScript .= "\n";
+    }
+
+    $sqlScript .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
+    // Save to file
+    $backupDir = __DIR__ . '/backups/';
+    if (!is_dir($backupDir)) mkdir($backupDir, 0755, true);
+    
+    $filename = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
+    $filepath = $backupDir . $filename;
+    
+    if (file_put_contents($filepath, $sqlScript)) {
+        return ['success' => true, 'filename' => $filename, 'path' => $filepath, 'size' => filesize($filepath)];
+    } else {
+        return ['success' => false, 'message' => 'فشل في كتابة ملف النسخة الاحتياطية'];
+    }
+}
+
+function checkAutoBackup($conn) {
+    $res = $conn->query("SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('backup_enabled', 'backup_frequency', 'last_backup_run')");
+    $settings = [];
+    if($res) {
+        while($r = $res->fetch_assoc()) $settings[$r['setting_name']] = $r['setting_value'];
+    }
+
+    if (($settings['backup_enabled'] ?? '0') !== '1') return;
+
+    $freq = $settings['backup_frequency'] ?? 'daily';
+    $lastRun = $settings['last_backup_run'] ?? '';
+    
+    $shouldRun = false;
+    $now = time();
+    
+    if (empty($lastRun)) {
+        $shouldRun = true;
+    } else {
+        $lastTime = strtotime($lastRun);
+        $diff = $now - $lastTime;
+        
+        if ($freq === 'daily' && $diff >= 86400) $shouldRun = true;
+        elseif ($freq === 'weekly' && $diff >= 604800) $shouldRun = true;
+        elseif ($freq === 'monthly' && $diff >= 2592000) $shouldRun = true;
+    }
+
+    if ($shouldRun) {
+        // Prevent concurrent runs by updating timestamp immediately (basic lock)
+        $nowStr = date('Y-m-d H:i:s');
+        $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_backup_run', '$nowStr') ON DUPLICATE KEY UPDATE setting_value = '$nowStr'");
+        
+        $result = performDatabaseBackup($conn);
+        if ($result['success']) {
+            create_notification($conn, "تم إنشاء نسخة احتياطية تلقائية للنظام بنجاح.", "system_backup");
+        } else {
+             create_notification($conn, "فشل إنشاء النسخة الاحتياطية التلقائية.", "system_error");
+        }
+    }
+}
+
+function createBackup($conn) {
+    // Permission check
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+    
+    $result = performDatabaseBackup($conn);
+    if ($result['success']) {
+        echo json_encode(['success' => true, 'message' => 'تم إنشاء النسخة الاحتياطية بنجاح', 'filename' => $result['filename']]);
+    } else {
+        echo json_encode(['success' => false, 'message' => $result['message']]);
+    }
+}
+
+function getBackups($conn) {
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+    
+    $backupDir = __DIR__ . '/backups/';
+    $files = [];
+    
+    if (is_dir($backupDir)) {
+        $scanned_files = scandir($backupDir);
+        foreach ($scanned_files as $file) {
+            if ($file !== '.' && $file !== '..' && $file !== '.htaccess' && $file !== 'index.php' && strpos($file, '.sql') !== false) {
+                $path = $backupDir . $file;
+                $files[] = [
+                    'name' => $file,
+                    'size' => filesize($path),
+                    'date' => date('Y-m-d H:i:s', filemtime($path))
+                ];
+            }
+        }
+    }
+    
+    // Sort by date desc
+    usort($files, function($a, $b) {
+        return strtotime($b['date']) - strtotime($a['date']);
+    });
+    
+    echo json_encode(['success' => true, 'data' => $files]);
+}
+
+function deleteBackup($conn) {
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+    
+    $data = json_decode(file_get_contents('php://input'), true);
+    $filename = basename($data['filename'] ?? '');
+    
+    if (empty($filename)) {
+        echo json_encode(['success' => false, 'message' => 'اسم الملف مطلوب']);
+        return;
+    }
+    
+    $filepath = __DIR__ . '/backups/' . $filename;
+    
+    if (file_exists($filepath) && strpos($filename, '.sql') !== false) {
+        if (unlink($filepath)) {
+            echo json_encode(['success' => true, 'message' => 'تم حذف النسخة الاحتياطية بنجاح']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'فشل في حذف الملف']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'الملف غير موجود']);
+    }
+}
+
+function downloadBackup($conn) {
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+    
+    $filename = basename($_GET['filename'] ?? '');
+    $filepath = __DIR__ . '/backups/' . $filename;
+    
+    if (empty($filename) || !file_exists($filepath) || strpos($filename, '.sql') === false) {
+        echo json_encode(['success' => false, 'message' => 'الملف غير موجود']);
+        return;
+    }
+    
+    // Clear buffer
+    if (ob_get_length()) ob_clean();
+    
+    header('Content-Description: File Transfer');
+    header('Content-Type: application/octet-stream');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Expires: 0');
+    header('Cache-Control: must-revalidate');
+    header('Pragma: public');
+    header('Content-Length: ' . filesize($filepath));
+    
+    readfile($filepath);
+    exit;
+}
+
+function restoreBackup($conn) {
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'غير مصرح لك']);
+        return;
+    }
+
+    $backupDir = __DIR__ . '/backups/';
+    $filename = '';
+
+    // Case 1: Uploading a file
+    if (isset($_FILES['backup_file']) && $_FILES['backup_file']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['backup_file'];
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        if (strtolower($ext) !== 'sql') {
+            echo json_encode(['success' => false, 'message' => 'يجب أن يكون الملف بصيغة .sql']);
+            return;
+        }
+        $filename = 'restore_' . date('Y-m-d_H-i-s') . '_' . basename($file['name']);
+        if (!move_uploaded_file($file['tmp_name'], $backupDir . $filename)) {
+            echo json_encode(['success' => false, 'message' => 'فشل في رفع الملف']);
+            return;
+        }
+    } 
+    // Case 2: Using existing file
+    else {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $filename = $input['filename'] ?? $_POST['filename'] ?? '';
+    }
+
+    if (empty($filename)) {
+        echo json_encode(['success' => false, 'message' => 'لم يتم تحديد ملف']);
+        return;
+    }
+
+    $filepath = $backupDir . basename($filename);
+    if (!file_exists($filepath)) {
+        echo json_encode(['success' => false, 'message' => 'ملف النسخة الاحتياطية غير موجود']);
+        return;
+    }
+
+    // Start Restoration
+    // We use a session or file to track progress. Since session might be locked during execution, 
+    // we use a temp file for progress tracking.
+    $progressFile = sys_get_temp_dir() . '/restore_progress_' . session_id() . '.json';
+    file_put_contents($progressFile, json_encode(['percent' => 0, 'status' => 'بدء الاستعادة...']));
+
+    // Close session to allow polling requests
+    session_write_close();
+
+    // Set unlimited time
+    set_time_limit(0);
+    ignore_user_abort(true);
+
+    try {
+        $conn->query("SET FOREIGN_KEY_CHECKS = 0");
+        
+        $handle = fopen($filepath, "r");
+        if ($handle) {
+            $fileSize = filesize($filepath);
+            $bytesRead = 0;
+            $query = '';
+            
+            while (($line = fgets($handle)) !== false) {
+                $bytesRead += strlen($line);
+                
+                // Skip comments
+                if (substr(trim($line), 0, 2) == '--' || substr(trim($line), 0, 2) == '/*') {
+                    continue;
+                }
+                
+                $query .= $line;
+                
+                // If line ends with semicolon, execute query
+                if (substr(trim($line), -1, 1) == ';') {
+                    if (!$conn->query($query)) {
+                        // Log error but try to continue or stop?
+                        // For database integrity, usually stopping is better, but dumps might have glitches.
+                        // We will throw exception.
+                        throw new Exception("خطأ في قاعدة البيانات: " . $conn->error);
+                    }
+                    $query = '';
+                    
+                    // Update progress every ~1% or roughly
+                    $percent = ($bytesRead / $fileSize) * 100;
+                    file_put_contents($progressFile, json_encode([
+                        'percent' => round($percent, 1), 
+                        'status' => 'جاري استعادة البيانات (' . round($percent) . '%)'
+                    ]));
+                }
+            }
+            
+            fclose($handle);
+        } else {
+            throw new Exception("تعذر قراءة الملف");
+        }
+
+        $conn->query("SET FOREIGN_KEY_CHECKS = 1");
+        
+        file_put_contents($progressFile, json_encode(['percent' => 100, 'status' => 'تمت الاستعادة بنجاح']));
+        
+        // Re-open session to send response (optional, but good practice)
+        session_start();
+        echo json_encode(['success' => true, 'message' => 'تم استعادة قاعدة البيانات بنجاح']);
+
+    } catch (Exception $e) {
+        file_put_contents($progressFile, json_encode(['percent' => 100, 'status' => 'حدث خطأ']));
+        echo json_encode(['success' => false, 'message' => 'فشل الاستعادة: ' . $e->getMessage()]);
+    }
+}
+
+function getRestoreProgress() {
+    // Only need session id
+    $progressFile = sys_get_temp_dir() . '/restore_progress_' . session_id() . '.json';
+    
+    if (file_exists($progressFile)) {
+        $data = json_decode(file_get_contents($progressFile), true);
+        echo json_encode(['success' => true, 'percent' => $data['percent'], 'status' => $data['status']]);
+    } else {
+        echo json_encode(['success' => true, 'percent' => 0, 'status' => 'انتظار...']);
+    }
 }
 
 if (ob_get_length()) ob_end_flush();

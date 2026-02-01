@@ -357,6 +357,11 @@ $default_settings = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('expense_cycle', 'monthly') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('expense_cycle_last_change', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     
+    // Backup Settings
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('backup_enabled', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('backup_frequency', 'daily') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('last_backup_run', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+
     // Rental Settings (NEW SYSTEM) - Only added when user saves
     // No default values forced during installation
 ];

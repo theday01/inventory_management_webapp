@@ -81,6 +81,14 @@ function tabClass($tab, $current_page, $active_tab) {
         النظام
     </div>
 
+    <a href="settings.php?tab=backup" id="tab-btn-backup" class="<?php echo tabClass('backup', $current_page, $active_tab); ?>" data-tab="backup">
+        <span class="material-icons-round text-[20px] transition-colors">backup</span>
+        <div class="flex-1">
+            <span class="font-bold text-sm block">النسخ الاحتياطي</span>
+            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300">أرشفة وحماية البيانات</span>
+        </div>
+    </a>
+
     <a href="settings.php?tab=reset" id="tab-btn-reset" class="<?php echo tabClass('reset', $current_page, $active_tab); ?>" data-tab="reset">
         <span class="material-icons-round text-[20px] transition-colors">restart_alt</span>
         <div class="flex-1">
