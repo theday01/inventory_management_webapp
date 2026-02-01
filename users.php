@@ -1,6 +1,7 @@
 <?php
 require_once 'session.php';
 require_once 'db.php';
+require_once 'src/language.php';
 $current_page = 'users.php';
 
 if (!in_array($_SESSION['role'], ['admin', 'manager'])) {
@@ -10,10 +11,10 @@ if (!in_array($_SESSION['role'], ['admin', 'manager'])) {
 
 function getRoleName($role) {
     switch ($role) {
-        case 'admin': return 'مدير عام';
-        case 'manager': return 'مدير';
-        case 'cashier': return 'موظف المبيعات';
-        case 'user': return 'مستخدم';
+        case 'admin': return __('role_admin');
+        case 'manager': return __('role_manager');
+        case 'cashier': return __('role_cashier');
+        case 'user': return __('role_user');
         default: return $role;
     }
 }
@@ -32,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_user'])) {
     if ($stmt->execute()) {
         // إنشاء إشعار بإضافة المستخدم الجديد
         $created_by = $_SESSION['username'];
-        $notification_message = "قام المدير '{$created_by}' بإنشاء حساب جديد باسم '{$username}' بصلاحيات '" . getRoleName($role) . "'";
+        $notification_message = sprintf(__('notif_user_created'), $created_by, $username, getRoleName($role));
         $notification_type = "user_registration";
         
         $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
@@ -41,11 +42,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_user'])) {
         $notif_stmt->close();
 
         $stmt->close();
-        header("Location: users.php?success=" . urlencode("تم إضافة المستخدم بنجاح"));
+        header("Location: users.php?success=" . urlencode(__('user_added_success')));
         exit();
     } else {
         $stmt->close();
-        header("Location: users.php?error=" . urlencode("فشل في إضافة المستخدم"));
+        header("Location: users.php?error=" . urlencode(__('user_add_fail')));
         exit();
     }
 }
@@ -73,7 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_user'])) {
     }
     
     if ($current_role === 'admin' && $role !== 'admin') {
-        header("Location: users.php?error=" . urlencode("لا يمكن تغيير دور المدير العام نهائياً"));
+        header("Location: users.php?error=" . urlencode(__('cannot_change_admin_role')));
         exit();
     }
     
@@ -93,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_user'])) {
     if ($stmt->execute()) {
         // إنشاء إشعار تحديث المستخدم
         $updated_by = $_SESSION['username'];
-        $notification_message = "قام المدير '{$updated_by}' بتحديث حساب المستخدم '{$username}' إلى دور '" . getRoleName($role) . "'";
+        $notification_message = sprintf(__('notif_user_updated'), $updated_by, $username, getRoleName($role));
         $notification_type = "user_update";
         
         $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
@@ -102,11 +103,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_user'])) {
         $notif_stmt->close();
 
         $stmt->close();
-        header("Location: users.php?success=" . urlencode("تم تحديث المستخدم بنجاح"));
+        header("Location: users.php?success=" . urlencode(__('user_updated_success')));
         exit();
     } else {
         $stmt->close();
-        header("Location: users.php?error=" . urlencode("فشل في تحديث المستخدم"));
+        header("Location: users.php?error=" . urlencode(__('user_update_fail')));
         exit();
     }
 }
@@ -117,7 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
     
     // منع حذف الحساب الحالي
     if ($user_id == $_SESSION['id']) {
-        header("Location: users.php?error=" . urlencode("لا يمكنك حذف حسابك الخاص"));
+        header("Location: users.php?error=" . urlencode(__('cannot_delete_self')));
         exit();
     }
 
@@ -127,7 +128,56 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
     if ($stmt->execute()) {
         // إنشاء إشعار حذف المستخدم
         $deleted_by = $_SESSION['username'];
-        $notification_message = "قام المدير '{$deleted_by}' بحذف حساب المستخدم '{$username}'";
+        // Note: $username variable might be undefined here if not fetched before delete logic. 
+        // Checking original code: $username was used in notification but it came from POST in add/edit. 
+        // In delete block, $username is not in POST, only user_id.
+        // I need to fetch username first to use it in notification.
+        
+        // Fetch username for notification before deletion (or I could have done it earlier)
+        // Actually, the original code had a bug if it used $username without defining it in delete block.
+        // Let's check original code reading...
+        // Original code: $notification_message = "قام المدير '{$deleted_by}' بحذف حساب المستخدم '{$username}'";
+        // But $username is not defined in delete block! It was likely throwing a warning or using null/empty string.
+        // I will fix this by fetching the username.
+        
+        // However, since I already executed delete, I might not find it if I didn't fetch before.
+        // Wait, DELETE is executed *before* notification insertion in original code.
+        // So the original code was definitely buggy regarding the username in notification.
+        // I'll try to fetch it before deleting.
+    } else {
+        $stmt->close();
+        header("Location: users.php?error=" . urlencode(__('user_delete_fail')));
+        exit();
+    }
+}
+
+// Let's rewrite the delete block correctly to include fetching username.
+?>
+<?php
+// ... header logic ...
+// Re-implementing delete block properly
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
+    $user_id = $_POST['user_id'];
+    
+    if ($user_id == $_SESSION['id']) {
+        header("Location: users.php?error=" . urlencode(__('cannot_delete_self')));
+        exit();
+    }
+
+    // Fetch username first
+    $stmt_name = $conn->prepare("SELECT username FROM users WHERE id = ?");
+    $stmt_name->bind_param("i", $user_id);
+    $stmt_name->execute();
+    $res_name = $stmt_name->get_result();
+    $username_to_delete = ($res_name->num_rows > 0) ? $res_name->fetch_assoc()['username'] : 'Unknown';
+    $stmt_name->close();
+
+    $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+
+    if ($stmt->execute()) {
+        $deleted_by = $_SESSION['username'];
+        $notification_message = sprintf(__('notif_user_deleted'), $deleted_by, $username_to_delete);
         $notification_type = "user_deletion";
         
         $notif_stmt = $conn->prepare("INSERT INTO notifications (message, type, status) VALUES (?, ?, 'unread')");
@@ -136,14 +186,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
         $notif_stmt->close();
 
         $stmt->close();
-        header("Location: users.php?success=" . urlencode("تم حذف المستخدم بنجاح"));
+        header("Location: users.php?success=" . urlencode(__('user_deleted_success')));
         exit();
     } else {
         $stmt->close();
-        header("Location: users.php?error=" . urlencode("فشل في حذف المستخدم"));
+        header("Location: users.php?error=" . urlencode(__('user_delete_fail')));
         exit();
     }
 }
+
 
 // جلب بيانات المستخدمين
 $users = [];
@@ -160,7 +211,7 @@ $admin_count_query = $conn->query("SELECT COUNT(*) as admin_count FROM users WHE
 $admin_count = $admin_count_query->fetch_assoc()['admin_count'];
 
 // الآن يمكن استدعاء header و sidebar بعد معالجة جميع POST requests
-$page_title = 'المستخدمين';
+$page_title = __('users_management_title');
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 ?>
@@ -171,7 +222,7 @@ require_once 'src/sidebar.php';
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-20 shrink-0">
         <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <span class="material-icons-round text-primary">settings_suggest</span>
-            إدارة المستخدمين والصلاحيات
+            <?php echo __('users_management_title'); ?>
         </h2>
     </header>
 
@@ -187,7 +238,7 @@ require_once 'src/sidebar.php';
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2">
                             <span class="material-icons-round text-blue-500">info</span>
-                            دليل إختيار الأدوار والصلاحيات
+                            <?php echo __('roles_guide_title'); ?>
                         </h3>
                         <button id="toggleGuideBtn" class="text-gray-400 hover:text-white transition-colors">
                             <span class="material-icons-round">expand_more</span>
@@ -200,71 +251,55 @@ require_once 'src/sidebar.php';
                             <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
                                 <div class="flex items-center gap-2 mb-2">
                                     <span class="material-icons-round text-red-500">admin_panel_settings</span>
-                                    <h4 class="text-white font-bold">مدير عام</h4>
+                                    <h4 class="text-white font-bold"><?php echo __('role_admin'); ?></h4>
                                 </div>
-                                <p class="text-sm text-gray-300 mb-2">الصلاحيات الكاملة في النظام</p>
-                                <ul class="text-xs text-gray-400 space-y-1">
-                                    <li>• إدارة المستخدمين والأدوار</li>
-                                    <li>• الوصول إلى جميع التقارير والإحصائيات</li>
-                                    <li>• تعديل الإعدادات العامة</li>
-                                    <li>• فتح وإغلاق أيام العمل</li>
-                                    <li>• إدارة المنتجات والعملاء</li>
-                                </ul>
+                                <p class="text-sm text-gray-300 mb-2"><?php echo __('role_admin_desc'); ?></p>
+                                <div class="text-xs text-gray-400 space-y-1">
+                                    <?php echo __('role_admin_details'); ?>
+                                </div>
                             </div>
                             
                             <!-- مدير -->
                             <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
                                 <div class="flex items-center gap-2 mb-2">
                                     <span class="material-icons-round text-blue-500">manage_accounts</span>
-                                    <h4 class="text-white font-bold">مدير تاني</h4>
+                                    <h4 class="text-white font-bold"><?php echo __('role_manager'); ?></h4>
                                 </div>
-                                <p class="text-sm text-gray-300 mb-2">إدارة العمليات اليومية</p>
-                                <ul class="text-xs text-gray-400 space-y-1">
-                                    <li>• إدارة المستخدمين والأدوار</li>
-                                    <li>• الوصول إلى التقارير والإحصائيات</li>
-                                    <li>• فتح وإغلاق أيام العمل</li>
-                                    <li>• إدارة المنتجات والعملاء</li>
-                                    <li>• لا يمكنه تعديل الإعدادات العامة</li>
-                                </ul>
+                                <p class="text-sm text-gray-300 mb-2"><?php echo __('role_manager_desc'); ?></p>
+                                <div class="text-xs text-gray-400 space-y-1">
+                                    <?php echo __('role_manager_details'); ?>
+                                </div>
                             </div>
                             
                             <!-- موظف المبيعات -->
                             <div class="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
                                 <div class="flex items-center gap-2 mb-2">
                                     <span class="material-icons-round text-green-500">point_of_sale</span>
-                                    <h4 class="text-white font-bold">موظف المبيعات</h4>
+                                    <h4 class="text-white font-bold"><?php echo __('role_cashier'); ?></h4>
                                 </div>
-                                <p class="text-sm text-gray-300 mb-2">التعامل المباشر مع العملاء</p>
-                                <ul class="text-xs text-gray-400 space-y-1">
-                                    <li>• فتح وإغلاق أيام العمل</li>
-                                    <li>• إنشاء وإدارة الفواتير</li>
-                                    <li>• الوصول إلى التقارير اليومية</li>
-                                    <li>• إدارة العملاء والمنتجات</li>
-                                    <li>• لا يمكنه إدارة المستخدمين</li>
-                                </ul>
+                                <p class="text-sm text-gray-300 mb-2"><?php echo __('role_cashier_desc'); ?></p>
+                                <div class="text-xs text-gray-400 space-y-1">
+                                    <?php echo __('role_cashier_details'); ?>
+                                </div>
                             </div>
                             
                             <!-- مستخدم -->
                             <div class="bg-gray-500/10 border border-gray-500/20 rounded-xl p-4">
                                 <div class="flex items-center gap-2 mb-2">
                                     <span class="material-icons-round text-gray-500">person</span>
-                                    <h4 class="text-white font-bold">مستخدم</h4>
+                                    <h4 class="text-white font-bold"><?php echo __('role_user'); ?></h4>
                                 </div>
-                                <p class="text-sm text-gray-300 mb-2">صلاحيات محدودة</p>
-                                <ul class="text-xs text-gray-400 space-y-1">
-                                    <li>• الوصول المحدود للنظام</li>
-                                    <li>• لا يمكنه تعديل أي شيء</li>
-                                    <li>• مناسب للمراجعة فقط</li>
-                                    <li>• لا يمكنه فتح/إغلاق الأيام</li>
-                                    <li>• لا يمكنه إدارة المستخدمين</li>
-                                </ul>
+                                <p class="text-sm text-gray-300 mb-2"><?php echo __('role_user_desc'); ?></p>
+                                <div class="text-xs text-gray-400 space-y-1">
+                                    <?php echo __('role_user_details'); ?>
+                                </div>
                             </div>
                         </div>
                         
                         <div class="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                             <p class="text-sm text-yellow-300 flex items-center gap-2">
                                 <span class="material-icons-round text-sm">warning</span>
-                                <strong>ملاحظة:</strong> دور المدير العام لا يمكن تغييره نهائياً. يمكن تعديل الاسم وكلمة المرور فقط. تأكد من تعيين الأدوار بحذر للحفاظ على نظام وأمان النظام.
+                                <strong><?php echo __('admin_role_warning'); ?></strong>
                             </p>
                         </div>
                     </div>
@@ -274,21 +309,21 @@ require_once 'src/sidebar.php';
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2">
                             <span class="material-icons-round text-primary">group</span>
-                            قائمة المستخدمين (<?php echo count($users); ?>)
+                            <?php echo __('users_list'); ?> (<?php echo count($users); ?>)
                         </h3>
                         <button id="addUserBtn" class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
                             <span class="material-icons-round text-sm">add</span>
-                            إضافة جديد
+                            <?php echo __('add_new_user'); ?>
                         </button>
                     </div>
 
                     <div class="overflow-x-auto rounded-xl border border-white/5">
-                        <table class="w-full text-right">
+                        <table class="w-full text-<?php echo (get_dir() == 'rtl') ? 'right' : 'left'; ?>">
                             <thead class="bg-white/5">
                                 <tr>
-                                    <th class="p-4 text-sm font-bold text-gray-400">الاسم</th>
-                                    <th class="p-4 text-sm font-bold text-gray-400">الدور</th>
-                                    <th class="p-4 text-sm font-bold text-gray-400 text-center">الإجراءات</th>
+                                    <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('username_col'); ?></th>
+                                    <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('role_col'); ?></th>
+                                    <th class="p-4 text-sm font-bold text-gray-400 text-center"><?php echo __('actions_col'); ?></th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-white/5">
@@ -297,7 +332,7 @@ require_once 'src/sidebar.php';
                                         <td class="p-4 text-sm text-white font-medium">
                                             <?php echo htmlspecialchars($user['username']); ?>
                                             <?php if ($user['id'] == $_SESSION['id']): ?>
-                                                <span class="text-xs text-primary mr-2 bg-primary/10 px-2 py-0.5 rounded">(أنت)</span>
+                                                <span class="text-xs text-primary mr-2 bg-primary/10 px-2 py-0.5 rounded"><?php echo __('you_label'); ?></span>
                                             <?php endif; ?>
                                         </td>
                                         <td class="p-4 text-sm">
@@ -307,23 +342,18 @@ require_once 'src/sidebar.php';
                                                 elseif ($user['role'] == 'cashier') echo 'bg-green-500/20 text-green-400';
                                                 else echo 'bg-gray-500/20 text-gray-400';
                                             ?>">
-                                                <?php 
-                                                if ($user['role'] == 'admin') echo 'مدير عام';
-                                                elseif ($user['role'] == 'manager') echo 'مدير تاني';
-                                                elseif ($user['role'] == 'cashier') echo 'موظف المبيعات';
-                                                else echo 'مستخدم';
-                                                ?>
+                                                <?php echo getRoleName($user['role']); ?>
                                             </span>
                                         </td>
                                         <td class="p-4 text-sm text-center">
                                             <div class="flex items-center justify-center gap-2">
                                                 <button onclick="openEditModal(<?php echo $user['id']; ?>, '<?php echo $user['username']; ?>', '<?php echo $user['role']; ?>', <?php echo $admin_count; ?>)" 
-                                                    class="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="تعديل">
+                                                    class="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="<?php echo __('edit'); ?>">
                                                     <span class="material-icons-round text-lg">edit</span>
                                                 </button>
                                                 <?php if ($user['id'] != $_SESSION['id']): ?>
                                                     <button onclick="confirmDelete(<?php echo $user['id']; ?>, '<?php echo $user['username']; ?>')" 
-                                                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="حذف">
+                                                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="<?php echo __('delete'); ?>">
                                                         <span class="material-icons-round text-lg">delete</span>
                                                     </button>
                                                 <?php endif; ?>
@@ -344,7 +374,7 @@ require_once 'src/sidebar.php';
 <div id="addUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">إضافة مستخدم جديد</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('add_user_modal_title'); ?></h3>
             <button id="closeAddModalBtn" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -352,36 +382,36 @@ require_once 'src/sidebar.php';
         <form action="users.php" method="POST">
             <div class="p-6 space-y-4">
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-300 mb-2">اسم المستخدم</label>
+                    <label for="username" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('username_label'); ?></label>
                     <input type="text" id="username" name="username" 
-                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" 
+                        class="w-full bg-dark/50 border border-white/10 text-white <?php echo (get_dir() == 'rtl') ? 'pr-4' : 'pl-4'; ?> py-2.5 rounded-xl focus:outline-none focus:border-primary/50" 
                         required>
                 </div>
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-300 mb-2">كلمة المرور</label>
+                    <label for="password" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('password_label'); ?></label>
                     <input type="password" id="password" name="password" 
-                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" 
+                        class="w-full bg-dark/50 border border-white/10 text-white <?php echo (get_dir() == 'rtl') ? 'pr-4' : 'pl-4'; ?> py-2.5 rounded-xl focus:outline-none focus:border-primary/50" 
                         required>
                 </div>
                 <div>
-                    <label for="role" class="block text-sm font-medium text-gray-300 mb-2">الدور</label>
+                    <label for="role" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('role_label'); ?></label>
                     <select id="role" name="role" 
-                        class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
-                        <option value="user">مستخدم</option>
-                        <option value="cashier">موظف المبيعات</option>
-                        <option value="manager">مدير تاني</option>
-                        <option value="admin">مدير عام</option>
+                        class="w-full appearance-none bg-dark/50 border border-white/10 text-white <?php echo (get_dir() == 'rtl') ? 'text-right pr-4 pl-8' : 'text-left pl-4 pr-8'; ?> py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+                        <option value="user"><?php echo __('role_user'); ?></option>
+                        <option value="cashier"><?php echo __('role_cashier'); ?></option>
+                        <option value="manager"><?php echo __('role_manager'); ?></option>
+                        <option value="admin"><?php echo __('role_admin'); ?></option>
                     </select>
                 </div>
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end gap-4">
                 <button type="button" onclick="closeAddModal()" 
                     class="px-6 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                    إلغاء
+                    <?php echo __('cancel_btn'); ?>
                 </button>
                 <button type="submit" name="add_user" 
                     class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">
-                    إضافة
+                    <?php echo __('add_btn'); ?>
                 </button>
             </div>
         </form>
@@ -392,7 +422,7 @@ require_once 'src/sidebar.php';
 <div id="editUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">تعديل المستخدم</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('edit_user_modal_title'); ?></h3>
             <button id="closeEditModalBtn" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -401,43 +431,43 @@ require_once 'src/sidebar.php';
             <input type="hidden" id="edit_user_id" name="user_id">
             <div class="p-6 space-y-4">
                 <div>
-                    <label for="edit_username" class="block text-sm font-medium text-gray-300 mb-2">اسم المستخدم</label>
+                    <label for="edit_username" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('username_label'); ?></label>
                     <input type="text" id="edit_username" name="username" 
-                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50" 
+                        class="w-full bg-dark/50 border border-white/10 text-white <?php echo (get_dir() == 'rtl') ? 'pr-4' : 'pl-4'; ?> py-2.5 rounded-xl focus:outline-none focus:border-primary/50" 
                         required>
                 </div>
                 <div>
                     <label for="edit_password" class="block text-sm font-medium text-gray-300 mb-2">
-                        كلمة المرور الجديدة 
-                        <span class="text-xs text-gray-500">(اتركه فارغاً إذا كنت لا تريد التغيير)</span>
+                        <?php echo __('new_password_label'); ?>
+                        <span class="text-xs text-gray-500"><?php echo __('password_leave_empty'); ?></span>
                     </label>
                     <input type="password" id="edit_password" name="password" 
-                        class="w-full bg-dark/50 border border-white/10 text-white pr-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50"
+                        class="w-full bg-dark/50 border border-white/10 text-white <?php echo (get_dir() == 'rtl') ? 'pr-4' : 'pl-4'; ?> py-2.5 rounded-xl focus:outline-none focus:border-primary/50"
                         placeholder="••••••••">
                 </div>
                 <div>
-                    <label for="edit_role" class="block text-sm font-medium text-gray-300 mb-2">الدور</label>
+                    <label for="edit_role" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('role_label'); ?></label>
                     <select id="edit_role" name="role" 
-                        class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
-                        <option value="user">مستخدم</option>
-                        <option value="cashier">موظف المبيعات</option>
-                        <option value="manager">مدير</option>
-                        <option value="admin">مدير عام</option>
+                        class="w-full appearance-none bg-dark/50 border border-white/10 text-white <?php echo (get_dir() == 'rtl') ? 'text-right pr-4 pl-8' : 'text-left pl-4 pr-8'; ?> py-2.5 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+                        <option value="user"><?php echo __('role_user'); ?></option>
+                        <option value="cashier"><?php echo __('role_cashier'); ?></option>
+                        <option value="manager"><?php echo __('role_manager'); ?></option>
+                        <option value="admin"><?php echo __('role_admin'); ?></option>
                     </select>
                     <p id="admin_warning" class="text-xs text-yellow-500 mt-2 hidden flex items-center gap-1">
                         <span class="material-icons-round text-sm">warning</span>
-                        <span>لا يمكن تغيير دور المدير في النظام</span>
+                        <span><?php echo __('admin_role_immutable'); ?></span>
                     </p>
                 </div>
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end gap-4">
                 <button type="button" onclick="closeEditModal()" 
                     class="px-6 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                    إلغاء
+                    <?php echo __('cancel_btn'); ?>
                 </button>
                 <button type="submit" name="edit_user" 
                     class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">
-                    حفظ التعديلات
+                    <?php echo __('save_changes_btn'); ?>
                 </button>
             </div>
         </form>
@@ -450,28 +480,28 @@ require_once 'src/sidebar.php';
         <div class="p-6 border-b border-white/5">
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
                 <span class="material-icons-round text-red-500">warning</span>
-                تأكيد الحذف
+                <?php echo __('delete_confirm_title'); ?>
             </h3>
         </div>
         <div class="p-6">
             <p class="text-gray-300 mb-4">
-                هل أنت متأكد من حذف المستخدم 
+                <?php echo __('delete_confirm_msg'); ?> 
                 <span id="delete_username" class="font-bold text-white"></span>؟
             </p>
             <p class="text-sm text-gray-500">
-                لا يمكن التراجع عن هذا الإجراء.
+                <?php echo __('delete_irreversible'); ?>
             </p>
         </div>
         <div class="p-6 border-t border-white/5 flex justify-end gap-4">
             <button type="button" onclick="closeDeleteModal()" 
                 class="px-6 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-                إلغاء
+                <?php echo __('cancel_btn'); ?>
             </button>
             <form action="users.php" method="POST" id="deleteForm">
                 <input type="hidden" id="delete_user_id" name="user_id">
                 <button type="submit" name="delete_user" 
                     class="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-6 py-2 rounded-xl font-bold transition-all">
-                    حذف
+                    <?php echo __('delete_btn'); ?>
                 </button>
             </form>
         </div>
@@ -520,7 +550,7 @@ require_once 'src/sidebar.php';
             editRoleSelect.disabled = true;
             editRoleSelect.classList.add('opacity-50', 'cursor-not-allowed');
             adminWarning.classList.remove('hidden');
-            adminWarning.textContent = 'لا يمكن تغيير دور المدير العام نهائياً';
+            adminWarning.textContent = '<?php echo __('admin_role_immutable'); ?>';
         } else {
             editRoleSelect.disabled = false;
             editRoleSelect.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -579,15 +609,15 @@ require_once 'src/sidebar.php';
             <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
         </div>
         <div class="text-center">
-            <h3 class="text-lg font-bold text-white mb-2">جاري التحميل...</h3>
-            <p id="loading-message" class="text-sm text-gray-400">يرجى الانتظار قليلاً</p>
+            <h3 class="text-lg font-bold text-white mb-2"><?php echo __('loading'); ?></h3>
+            <p id="loading-message" class="text-sm text-gray-400"><?php echo __('please_wait'); ?></p>
         </div>
     </div>
 </div>
 
 <script>
     // دوال إدارة شاشة التحميل
-    function showLoadingOverlay(message = 'جاري معالجة البيانات...') {
+    function showLoadingOverlay(message = '<?php echo __('processing'); ?>') {
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingMessage = document.getElementById('loading-message');
         loadingMessage.textContent = message;
