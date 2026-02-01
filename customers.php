@@ -1,7 +1,8 @@
 <?php
-$page_title = 'إدارة العملاء';
-$current_page = 'customers.php';
 require_once 'session.php';
+require_once 'src/language.php';
+$page_title = __('customers_management');
+$current_page = 'customers.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 require_once 'db.php';
@@ -109,19 +110,19 @@ require_once 'db.php';
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
         <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <span class="material-icons-round text-primary">groups</span>
-            <span>إدارة العملاء</span>
+            <span><?php echo __('customers_management'); ?></span>
         </h2>
         
         <div class="flex items-center gap-3">
             <button id="export-excel-btn"
                 class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all hover:border-emerald-500/50">
                 <span class="material-icons-round text-sm">download</span>
-                <span>تصدير Excel</span>
+                <span><?php echo __('export_excel'); ?></span>
             </button>
             <button id="add-customer-btn"
                 class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">add</span>
-                <span>إضافة عميل</span>
+                <span><?php echo __('add_customer'); ?></span>
             </button>
         </div>
     </header>
@@ -129,9 +130,9 @@ require_once 'db.php';
     <div class="p-6 flex flex-col md:flex-row gap-4 items-center justify-between relative z-10 shrink-0">
         <div class="relative w-full md:w-96">
             <span class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
-            <input type="text" id="customer-search-input" placeholder="بحث عن اسم، هاتف، أو باركود..."
+            <input type="text" id="customer-search-input" placeholder="<?php echo __('search_customers_placeholder'); ?>"
                 class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-10 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-            <button type="button" id="camera-scan-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white transition-colors" title="مسح الباركود بالكاميرا">
+            <button type="button" id="camera-scan-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white transition-colors" title="<?php echo __('scan_barcode_camera'); ?>">
                 <span class="material-icons-round">qr_code_scanner</span>
             </button>
         </div>
@@ -143,11 +144,11 @@ require_once 'db.php';
                 <table class="w-full">
                     <thead class="sticky top-0 bg-dark-surface/95 backdrop-blur-sm z-10 border-b border-white/5">
                         <tr class="text-right">
-                            <th class="p-4 text-sm font-medium text-gray-300">الاسم</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">رقم الهاتف</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">البريد الإلكتروني</th>
-                            <th class="p-4 text-sm font-medium text-gray-300 w-1/4">العنوان</th> 
-                            <th class="p-4 text-sm font-medium text-gray-300 text-center w-40">الإجراءات</th> 
+                            <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('customer_name'); ?></th>
+                            <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('phone_number'); ?></th>
+                            <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('email_address'); ?></th>
+                            <th class="p-4 text-sm font-medium text-gray-300 w-1/4"><?php echo __('address'); ?></th> 
+                            <th class="p-4 text-sm font-medium text-gray-300 text-center w-40"><?php echo __('actions'); ?></th> 
                         </tr>
                     </thead>
                     <tbody id="customers-table-body" class="divide-y divide-white/5">
@@ -164,7 +165,7 @@ require_once 'db.php';
 <div id="customer-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 m-4 transform transition-all scale-100">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 id="customer-modal-title" class="text-lg font-bold text-white">إضافة عميل جديد</h3>
+            <h3 id="customer-modal-title" class="text-lg font-bold text-white"><?php echo __('add_new_customer_title'); ?></h3>
             <button id="close-customer-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -174,26 +175,26 @@ require_once 'db.php';
                 <input type="hidden" id="customer-id" name="id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="col-span-2 md:col-span-1">
-                        <label class="block text-sm font-medium text-gray-400 mb-2">اسم العميل <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('customer_name'); ?> <span class="text-red-500">*</span></label>
                         <input type="text" id="customer-name" name="name" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-colors" required>
                     </div>
                     <div class="col-span-2 md:col-span-1">
-                        <label class="block text-sm font-medium text-gray-400 mb-2">رقم الهاتف</label>
+                        <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('phone_number'); ?></label>
                         <input type="text" id="customer-phone" name="phone" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-colors">
                     </div>
                     <div class="col-span-2">
-                        <label class="block text-sm font-medium text-gray-400 mb-2">البريد الإلكتروني</label>
+                        <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('email_address'); ?></label>
                         <input type="email" id="customer-email" name="email" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-colors">
                     </div>
                     <div class="col-span-2">
-                        <label class="block text-sm font-medium text-gray-400 mb-2">العنوان</label>
+                        <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('address'); ?></label>
                         <textarea id="customer-address" name="address" rows="3" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-colors"></textarea>
                     </div>
                 </div>
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end gap-3">
-                <button type="button" class="px-6 py-2 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-colors" onclick="document.getElementById('close-customer-modal').click()">إلغاء</button>
-                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">حفظ</button>
+                <button type="button" class="px-6 py-2 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-colors" onclick="document.getElementById('close-customer-modal').click()"><?php echo __('cancel'); ?></button>
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all"><?php echo __('save'); ?></button>
             </div>
         </form>
     </div>
@@ -202,7 +203,7 @@ require_once 'db.php';
 <div id="customer-details-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-md border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">تفاصيل العميل</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('customer_details_title'); ?></h3>
             <button id="close-customer-details-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -215,7 +216,7 @@ require_once 'db.php';
 <div id="barcode-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-md border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">بطاقة العميل (Barcode)</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('customer_barcode_card'); ?></h3>
             <button id="close-barcode-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -226,16 +227,16 @@ require_once 'db.php';
             </div>
             <div class="text-center w-full">
                 <p id="barcode-text" class="text-lg font-mono text-white tracking-widest"></p>
-                <p class="text-sm text-gray-400 mt-1">امسح الكود للبحث عن العميل بسرعة</p>
+                <p class="text-sm text-gray-400 mt-1"><?php echo __('scan_code_to_search'); ?></p>
             </div>
             <div class="flex gap-3 w-full">
                 <button id="print-barcode-btn" class="bg-dark/50 hover:bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl font-medium flex-1 flex items-center justify-center gap-2 transition-all">
                     <span class="material-icons-round text-sm">print</span>
-                    <span>طباعة</span>
+                    <span><?php echo __('print'); ?></span>
                 </button>
                 <button id="download-barcode-btn" class="bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 flex-1 flex items-center justify-center gap-2 transition-all">
                     <span class="material-icons-round text-sm">download</span>
-                    <span>تحميل صورة</span>
+                    <span><?php echo __('download_image'); ?></span>
                 </button>
             </div>
         </div>
@@ -249,8 +250,8 @@ require_once 'db.php';
             <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
         </div>
         <div class="text-center">
-            <h3 class="text-lg font-bold text-white mb-2">جاري التحميل...</h3>
-            <p id="loading-message" class="text-sm text-gray-400">يرجى الانتظار قليلاً</p>
+            <h3 class="text-lg font-bold text-white mb-2"><?php echo __('loading_data'); ?></h3>
+            <p id="loading-message" class="text-sm text-gray-400"><?php echo __('please_wait'); ?></p>
         </div>
     </div>
 </div>
@@ -258,20 +259,20 @@ require_once 'db.php';
 <div id="export-options-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-md border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">خيارات التصدير</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('export_options_title'); ?></h3>
             <button id="close-export-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
         <div class="p-6 space-y-4">
-            <p class="text-gray-300 text-sm">اختر ما تريد تصديره:</p>
+            <p class="text-gray-300 text-sm"><?php echo __('choose_export_type'); ?></p>
             <button id="export-current-page" class="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 px-4 py-3 rounded-xl font-medium flex items-center gap-2 transition-all hover:border-blue-500/50">
                 <span class="material-icons-round text-sm">filter_list</span>
-                <span>البيانات المعروضة حالياً في الجدول فقط</span>
+                <span><?php echo __('export_current_view'); ?></span>
             </button>
             <button id="export-all-data" class="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-3 rounded-xl font-medium flex items-center gap-2 transition-all hover:border-emerald-500/50">
                 <span class="material-icons-round text-sm">cloud</span>
-                <span>جميع البيانات في النظام <em style="font-size: 12px">(قد يستغرق وقتاً طويلاً)</em></span>
+                <span><?php echo __('export_all_system_data'); ?> <em style="font-size: 12px"><?php echo __('may_take_long_time'); ?></em></span>
             </button>
         </div>
     </div>
@@ -280,7 +281,7 @@ require_once 'db.php';
 <div id="camera-scan-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">مسح الباركود</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('scan_barcode_title'); ?></h3>
             <button id="close-camera-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -292,11 +293,11 @@ require_once 'db.php';
                 <div class="absolute inset-0 border-2 border-primary/50 m-10 rounded-lg animate-pulse pointer-events-none"></div>
             </div>
             <div class="w-full text-center">
-                <p id="scan-status" class="text-sm text-gray-400">وجه الكاميرا نحو الباركود...</p>
+                <p id="scan-status" class="text-sm text-gray-400"><?php echo __('point_camera_barcode'); ?></p>
             </div>
             <button id="stop-camera-btn" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-6 py-2 rounded-xl font-medium transition-all w-full flex items-center gap-2 justify-center">
                 <span class="material-icons-round text-sm">stop_circle</span>
-                <span>إيقاف الكاميرا</span>
+                <span><?php echo __('stop_camera'); ?></span>
             </button>
         </div>
     </div>
@@ -338,7 +339,8 @@ require_once 'db.php';
     }
 
     // دوال إدارة شاشة التحميل
-    function showLoadingOverlay(message = 'جاري معالجة البيانات...') {
+    function showLoadingOverlay(message = null) {
+        if (!message) message = __('processing_data');
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingMessage = document.getElementById('loading-message');
         loadingMessage.textContent = message;
@@ -387,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadCustomers() {
         const searchQuery = searchInput.value;
         try {
-            showLoadingOverlay('جاري تحميل البيانات...');
+            showLoadingOverlay(__('loading_data'));
             const response = await fetch(`api.php?action=getCustomers&search=${searchQuery}&page=${currentPage}&limit=${customersPerPage}`);
             const result = await response.json();
             if (result.success) {
@@ -405,14 +407,14 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('Error loading customers:', error);
             hideLoadingOverlay();
-            customersTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-400">حدث خطأ في تحميل البيانات</td></tr>';
+            customersTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-400">${__('error_loading_data')}</td></tr>`;
         }
     }
 
     function displayCustomers(customers) {
         customersTableBody.innerHTML = '';
         if (customers.length === 0) {
-            customersTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-gray-500">لا يوجد عملاء مطابقين للبحث.</td></tr>';
+            customersTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-500">${__('no_matching_customers')}</td></tr>`;
             return;
         }
         customers.forEach(customer => {
@@ -436,15 +438,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 <td class="p-4">
                     <div class="flex items-center justify-center gap-2 opacity-90 group-hover:opacity-100 transition-opacity">
-                        <button class="view-barcode-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all" data-id="${customer.id}" data-name="${customer.name}" data-phone="${customer.phone}" title="عرض الباركود">
+                        <button class="view-barcode-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all" data-id="${customer.id}" data-name="${customer.name}" data-phone="${customer.phone}" title="${__('view_barcode')}">
                             <span class="material-icons-round text-[18px]">qr_code_2</span>
                         </button>
                         
-                        <button class="view-details-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-all" data-id="${customer.id}" title="عرض التفاصيل">
+                        <button class="view-details-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-all" data-id="${customer.id}" title="${__('view_details')}">
                             <span class="material-icons-round text-[18px]">visibility</span>
                         </button>
                         
-                        <button class="edit-customer-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all" data-id="${customer.id}" title="تعديل">
+                        <button class="edit-customer-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all" data-id="${customer.id}" title="${__('edit')}">
                             <span class="material-icons-round text-[18px]">edit</span>
                         </button>
                     </div>
@@ -512,7 +514,7 @@ document.addEventListener('DOMContentLoaded', function () {
     addCustomerBtn.addEventListener('click', () => {
         customerForm.reset();
         document.getElementById('customer-id').value = '';
-        document.getElementById('customer-modal-title').textContent = 'إضافة عميل جديد';
+        document.getElementById('customer-modal-title').textContent = __('add_new_customer_title');
         customerModal.classList.remove('hidden');
     });
 
@@ -529,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const url = customerId ? 'api.php?action=updateCustomer' : 'api.php?action=addCustomer';
         
         try {
-            showLoadingOverlay(customerId ? 'جاري تحديث بيانات العميل...' : 'جاري إضافة العميل الجديد...');
+            showLoadingOverlay(customerId ? __('updating_customer_data') : __('adding_new_customer'));
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -543,13 +545,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     const newCustomerId = result.id || result.data?.id;
                     generateBarcode(newCustomerId, customerData.name, customerData.phone);
                 } else {
-                     // If update, show simple toast or alert
-                     // alert('تم تحديث البيانات بنجاح');
+                     showToast(__('data_updated_success'), 'success');
                 }
                 loadCustomers();
             } else {
                 hideLoadingOverlay();
-                alert(result.message);
+                showToast(result.message, 'error');
             }
         } catch (error) {
             console.error('Error saving customer:', error);
@@ -577,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('customer-phone').value = customer.phone;
                 document.getElementById('customer-email').value = customer.email;
                 document.getElementById('customer-address').value = customer.address;
-                document.getElementById('customer-modal-title').textContent = 'تعديل بيانات العميل';
+                document.getElementById('customer-modal-title').textContent = __('edit_customer_title');
                 customerModal.classList.remove('hidden');
             }
         }
@@ -636,13 +637,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const svg = document.getElementById('barcode');
             const svgData = new XMLSerializer().serializeToString(svg);
             const printWindow = window.open('', '', 'height=400,width=600');
+            const dir = document.dir || 'rtl';
+            const lang = document.documentElement.lang || 'ar';
             
             printWindow.document.write(`
                 <!DOCTYPE html>
-                <html dir="rtl" lang="ar">
+                <html dir="${dir}" lang="${lang}">
                 <head>
                     <meta charset="UTF-8">
-                    <title>طباعة الباركود</title>
+                    <title>${__('print_barcode_labels')}</title>
                     <style>
                         body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
                         .barcode-container { text-align: center; }
@@ -665,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function generateBarcode(customerId, customerName, customerPhone) {
         if (!customerPhone) {
-            alert('الرجاء إدخال رقم الهاتف لإنشاء الباركود');
+            showToast(__('enter_phone_for_barcode'), 'warning');
             return;
         }
         const barcodeData = `${customerName}-${customerPhone}`;
@@ -682,13 +685,13 @@ document.addEventListener('DOMContentLoaded', function () {
             barcodeModal.classList.remove('hidden');
         } catch (error) {
             console.error('Error generating barcode:', error);
-            alert('حدث خطأ في إنشاء الباركود');
+            showToast(__('barcode_generation_error'), 'error');
         }
     }
 
     async function getCustomerDetails(id) {
         try {
-            showLoadingOverlay('جاري جلب التفاصيل...');
+            showLoadingOverlay(__('fetching_details'));
             const response = await fetch(`api.php?action=getCustomerDetails&id=${id}`);
             const result = await response.json();
             hideLoadingOverlay();
@@ -705,21 +708,21 @@ document.addEventListener('DOMContentLoaded', function () {
         content.innerHTML = `
             <div class="space-y-4">
                 <div class="bg-white/5 p-4 rounded-xl border border-white/5">
-                    <div class="text-xs text-gray-400 mb-1">الاسم الكامل</div>
+                    <div class="text-xs text-gray-400 mb-1">${__('full_name')}</div>
                     <div class="text-lg font-bold text-white">${customer.name}</div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                      <div class="bg-white/5 p-4 rounded-xl border border-white/5">
-                        <div class="text-xs text-gray-400 mb-1">الهاتف</div>
+                        <div class="text-xs text-gray-400 mb-1">${__('phone_number')}</div>
                         <div class="text-white font-mono dir-ltr">${customer.phone || '-'}</div>
                     </div>
                     <div class="bg-white/5 p-4 rounded-xl border border-white/5">
-                        <div class="text-xs text-gray-400 mb-1">البريد الإلكتروني</div>
+                        <div class="text-xs text-gray-400 mb-1">${__('email_address')}</div>
                         <div class="text-white truncate">${customer.email || '-'}</div>
                     </div>
                 </div>
                  <div class="bg-white/5 p-4 rounded-xl border border-white/5">
-                    <div class="text-xs text-gray-400 mb-1">العنوان</div>
+                    <div class="text-xs text-gray-400 mb-1">${__('address')}</div>
                     <div class="text-white leading-relaxed">${customer.address || '-'}</div>
                 </div>
             </div>
@@ -741,11 +744,11 @@ document.addEventListener('DOMContentLoaded', function () {
             cameraVideo.play();
             cameraModal.classList.remove('hidden');
             cameraActive = true;
-            scanStatus.textContent = 'جاري البحث عن الباركود...';
+            scanStatus.textContent = __('searching_barcode');
             startBarcodeScanning();
         } catch (error) {
             console.error('Error accessing camera:', error);
-            alert('لم يتمكن من الوصول إلى الكاميرا.');
+            showToast(__('camera_access_error'), 'error');
         }
     });
 
@@ -789,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Export Logic
     exportExcelBtn.addEventListener('click', () => {
         if (totalCustomersInSystem === 0) {
-            showToast('لا توجد بيانات موجودة لرفعها', 'warning');
+            showToast(__('no_data_to_export'), 'warning');
             return;
         }
         exportOptionsModal.classList.remove('hidden');
@@ -802,7 +805,7 @@ document.addEventListener('DOMContentLoaded', function () {
     exportCurrentPageBtn.addEventListener('click', async () => {
         const noDataMessage = document.querySelector('#customers-table-body .text-gray-500');
         if (noDataMessage && noDataMessage.closest('tr')) {
-            showToast('لا توجد بيانات في الصفحة الحالية لتصديرها', 'info');
+            showToast(__('no_data_on_current_page'), 'info');
             return;
         }
         await performExport('current_page');
@@ -821,8 +824,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // إظهار شاشة التحميل
             const loadingMsg = exportType === 'current_page' 
-                ? 'جاري تصدير البيانات المعروضة...' 
-                : 'جاري تصدير جميع البيانات...';
+                ? __('exporting_current_data') 
+                : __('exporting_all_data');
             showLoadingOverlay(loadingMsg);
 
             // إخفاء الزر المُطلب
@@ -842,7 +845,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // إنشاء رابط وتحميل الملف
             const link = document.createElement('a');
             link.href = url;
-            link.download = `عملاء_${new Date().getTime()}.xlsx`;
+            link.download = `customers_${new Date().getTime()}.xlsx`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -850,15 +853,15 @@ document.addEventListener('DOMContentLoaded', function () {
             // عرض رسالة النجاح وإخفاء التحميل
             setTimeout(() => {
                 hideLoadingOverlay();
-                const exportTypeText = exportType === 'current_page' ? 'البيانات المعروضة' : 'جميع البيانات';
-                showToast(`تم تصدير ${exportTypeText} بنجاح (يجب أن تنتظر قليلا قبل بدء التحميل الفعلي على جهازك)✓`, 'success');
+                const exportTypeText = exportType === 'current_page' ? __('current_view_data') : __('all_data');
+                showToast(__('export_success_wait').replace('%s', exportTypeText), 'success');
                 exportExcelBtn.disabled = false;
             }, 500);
 
         } catch (error) {
             console.error('Error exporting to Excel:', error);
             hideLoadingOverlay();
-            showToast('حدث خطأ في تصدير البيانات', 'error');
+            showToast(__('export_error'), 'error');
             exportExcelBtn.disabled = false;
         }
     }
