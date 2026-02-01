@@ -34,27 +34,27 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
         <div class="flex items-center gap-4">
             <button id="add-product-btn"
-                class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-rose-500/30 flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">add</span>
                 <span>منتج جديد</span>
             </button>
             <button id="bulk-add-btn"
-                class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-violet-500/20 to-purple-500/20 hover:from-violet-500/30 hover:to-purple-500/30 text-violet-300 border border-violet-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">playlist_add</span>
                 <span>إضافة جماعية للمنتجات</span>
             </button>
             <button id="manage-categories-btn"
-                class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-blue-300 border border-blue-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">category</span>
                 <span>إدارة الفئات</span>
             </button>
             <button id="export-csv-btn"
-                class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 text-orange-300 border border-orange-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">download</span>
                 <span>تصدير Excel</span>
             </button>
             <button id="import-excel-btn"
-                class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-teal-500/20 to-green-500/20 hover:from-teal-500/30 hover:to-green-500/30 text-teal-300 border border-teal-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">upload_file</span>
                 <span>استيراد من Excel</span>
             </button>
@@ -2184,7 +2184,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         <span class="material-icons-round text-sm">inventory</span>
         <span>فحص المخزون المنخفض</span>
     `;
-    checkStockBtn.className = 'bg-yellow-600 hover:bg-yellow-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:-translate-y-0.5';
+    checkStockBtn.className = 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5';
     checkStockBtn.onclick = async function() {
         const loadingScreen = document.getElementById('stock-check-loading');
         const stockModal = document.getElementById('stock-check-modal');
