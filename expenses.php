@@ -1,6 +1,7 @@
 <?php
 require_once 'session.php';
 require_once 'db.php';
+require_once 'src/language.php';
 
 // Only admin can access expenses
 if ($_SESSION['role'] !== 'admin') {
@@ -8,7 +9,7 @@ if ($_SESSION['role'] !== 'admin') {
     exit;
 }
 
-$page_title = 'إدارة المصاريف';
+$page_title = __('expenses_management');
 $current_page = 'expenses.php';
 
 require_once 'src/header.php';
@@ -25,14 +26,14 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <div>
                 <h2 class="text-2xl font-bold text-white flex items-center gap-2">
                     <span class="material-icons-round text-red-500">payments</span>
-                    إدارة المصاريف
+                    <?php echo __('expenses_management'); ?>
                 </h2>
-                <p class="text-sm text-gray-400 mt-1">تتبع وتسجيل جميع مصاريف المتجر</p>
+                <p class="text-sm text-gray-400 mt-1"><?php echo __('track_and_record_expenses'); ?></p>
             </div>
 
             <button onclick="openAddExpenseModal()" class="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
                 <span class="material-icons-round">add</span>
-                إضافة مصروف جديد
+                <?php echo __('add_new_expense'); ?>
             </button>
         </div>
     </header>
@@ -41,21 +42,21 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         <!-- Expenses Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-dark-surface/60 border border-white/5 p-6 rounded-2xl">
-                <p class="text-sm text-gray-400 mb-1">مصاريف اليوم</p>
+                <p class="text-sm text-gray-400 mb-1"><?php echo __('today_expenses'); ?></p>
                 <h3 id="today-expenses" class="text-2xl font-bold text-white">0.00 <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
             </div>
             <div class="bg-dark-surface/60 border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-1 h-full bg-primary/40 group-hover:bg-primary transition-all"></div>
-                <p id="cycle-label" class="text-sm text-primary font-bold mb-1">مصاريف الدورة الحالية</p>
+                <p id="cycle-label" class="text-sm text-primary font-bold mb-1"><?php echo __('current_cycle_expenses'); ?></p>
                 <h3 id="cycle-expenses" class="text-2xl font-bold text-white">0.00 <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
                 <p id="cycle-dates" class="text-[10px] text-gray-500 mt-1">-</p>
             </div>
             <div class="bg-dark-surface/60 border border-white/5 p-6 rounded-2xl">
-                <p class="text-sm text-gray-400 mb-1">مصاريف هذا الشهر</p>
+                <p class="text-sm text-gray-400 mb-1"><?php echo __('this_month_expenses'); ?></p>
                 <h3 id="month-expenses" class="text-2xl font-bold text-white">0.00 <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
             </div>
             <div class="bg-dark-surface/60 border border-white/5 p-6 rounded-2xl">
-                <p class="text-sm text-gray-400 mb-1">إجمالي المصاريف</p>
+                <p class="text-sm text-gray-400 mb-1"><?php echo __('total_expenses_label'); ?></p>
                 <h3 id="total-expenses" class="text-2xl font-bold text-white">0.00 <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
             </div>
         </div>
@@ -66,12 +67,12 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 <table class="w-full text-right border-collapse">
                     <thead>
                         <tr class="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
-                            <th class="px-6 py-4 font-bold">التاريخ</th>
-                            <th class="px-6 py-4 font-bold">العنوان</th>
-                            <th class="px-6 py-4 font-bold">الفئة</th>
-                            <th class="px-6 py-4 font-bold">المبلغ</th>
-                            <th class="px-6 py-4 font-bold">ملاحظات</th>
-                            <th class="px-6 py-4 font-bold text-left">إجراءات</th>
+                            <th class="px-6 py-4 font-bold"><?php echo __('date'); ?></th>
+                            <th class="px-6 py-4 font-bold"><?php echo __('title'); ?></th>
+                            <th class="px-6 py-4 font-bold"><?php echo __('category'); ?></th>
+                            <th class="px-6 py-4 font-bold"><?php echo __('amount'); ?></th>
+                            <th class="px-6 py-4 font-bold"><?php echo __('notes'); ?></th>
+                            <th class="px-6 py-4 font-bold text-left"><?php echo __('actions'); ?></th>
                         </tr>
                     </thead>
                     <tbody id="expenses-table-body" class="divide-y divide-white/5">
@@ -92,7 +93,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         <div class="p-6 border-b border-white/5 flex items-center justify-between">
             <h3 class="text-xl font-bold text-white flex items-center gap-2">
                 <span class="material-icons-round text-primary">add_circle</span>
-                إضافة مصروف جديد
+                <?php echo __('add_new_expense'); ?>
             </h3>
             <button onclick="closeExpenseModal()" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
@@ -101,50 +102,50 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         
         <form id="expense-form" class="p-6 space-y-4">
             <div>
-                <label class="block text-sm text-gray-400 mb-2">عنوان المصروف</label>
-                <input type="text" id="expense-title" required class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" placeholder="مثال: فاتورة الكهرباء">
+                <label class="block text-sm text-gray-400 mb-2"><?php echo __('expense_title'); ?></label>
+                <input type="text" id="expense-title" required class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" placeholder="<?php echo __('expense_title_placeholder'); ?>">
             </div>
             
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm text-gray-400 mb-2">المبلغ (<?php echo $currency; ?>)</label>
+                    <label class="block text-sm text-gray-400 mb-2"><?php echo __('amount'); ?> (<?php echo $currency; ?>)</label>
                     <input type="number" id="expense-amount" step="0.01" required class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" placeholder="0.00">
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-400 mb-2">التاريخ</label>
+                    <label class="block text-sm text-gray-400 mb-2"><?php echo __('date'); ?></label>
                     <input type="date" id="expense-date" required class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                 </div>
             </div>
             
             <div>
-                <label class="block text-sm text-gray-400 mb-2">الفئة</label>
+                <label class="block text-sm text-gray-400 mb-2"><?php echo __('category'); ?></label>
                 <select id="expense-category" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                    <option value="general">عام</option>
-                    <option value="utilities">فواتير (ماء، كهرباء، إنترنت)</option>
-                    <option value="rent">إيجار</option>
-                    <option value="salaries">رواتب</option>
-                    <option value="supplies">مستلزمات محددة</option>
-                    <option value="maintenance">صيانة</option>
-                    <option value="marketing">تسويق</option>
-                    <option value="other">أخرى</option>
+                    <option value="general"><?php echo __('cat_general'); ?></option>
+                    <option value="utilities"><?php echo __('cat_utilities'); ?></option>
+                    <option value="rent"><?php echo __('cat_rent'); ?></option>
+                    <option value="salaries"><?php echo __('cat_salaries'); ?></option>
+                    <option value="supplies"><?php echo __('cat_supplies'); ?></option>
+                    <option value="maintenance"><?php echo __('cat_maintenance'); ?></option>
+                    <option value="marketing"><?php echo __('cat_marketing'); ?></option>
+                    <option value="other"><?php echo __('cat_other'); ?></option>
                 </select>
             </div>
             
             <div>
-                <label class="block text-sm text-gray-400 mb-2">ملاحظات (اختياري)</label>
-                <textarea id="expense-notes" rows="3" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" placeholder="أي تفاصيل إضافية..."></textarea>
+                <label class="block text-sm text-gray-400 mb-2"><?php echo __('notes'); ?> (<?php echo __('optional'); ?>)</label>
+                <textarea id="expense-notes" rows="3" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" placeholder="<?php echo __('notes_placeholder'); ?>"></textarea>
             </div>
 
             <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
                 <input type="checkbox" id="expense-from-drawer" class="w-5 h-5 rounded border-gray-600 text-primary focus:ring-primary bg-dark/50">
                 <label for="expense-from-drawer" class="text-sm text-white cursor-pointer select-none">
-                    خصم المبلغ من الصندوق اليومي (Cash Drawer)
+                    <?php echo __('deduct_from_drawer'); ?>
                 </label>
             </div>
             
             <div class="pt-4 flex gap-3">
-                <button type="button" onclick="closeExpenseModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-all">إلغاء</button>
-                <button type="submit" class="flex-1 bg-primary hover:bg-primary-hover text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/20 transition-all">حفظ المصروف</button>
+                <button type="button" onclick="closeExpenseModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-all"><?php echo __('cancel'); ?></button>
+                <button type="submit" class="flex-1 bg-primary hover:bg-primary-hover text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/20 transition-all"><?php echo __('save_expense'); ?></button>
             </div>
         </form>
     </div>
@@ -183,19 +184,19 @@ function displayExpenses(expenses) {
     tbody.innerHTML = '';
     
     if (expenses.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-gray-500">لا توجد مصاريف مسجلة حالياً.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-500">${window.__('no_expenses_recorded')}</td></tr>`;
         return;
     }
     
     const categoryNames = {
-        'general': 'عام',
-        'utilities': 'فواتير',
-        'rent': 'إيجار',
-        'salaries': 'رواتب',
-        'supplies': 'مستلزمات',
-        'maintenance': 'صيانة',
-        'marketing': 'تسويق',
-        'other': 'أخرى'
+        'general': window.__('cat_general'),
+        'utilities': window.__('cat_utilities'),
+        'rent': window.__('cat_rent'),
+        'salaries': window.__('cat_salaries'),
+        'supplies': window.__('cat_supplies'),
+        'maintenance': window.__('cat_maintenance'),
+        'marketing': window.__('cat_marketing'),
+        'other': window.__('cat_other')
     };
 
     expenses.forEach(expense => {
@@ -238,14 +239,14 @@ function renderPagination(pagination) {
 
 async function deleteExpense(id) {
     const confirmed = await Swal.fire({
-        title: 'هل أنت متأكد؟',
-        text: "لا يمكنك التراجع عن حذف هذا المصروف!",
+        title: window.__('are_you_sure'),
+        text: window.__('delete_expense_warning'),
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#6b7280',
-        confirmButtonText: 'نعم، احذفه!',
-        cancelButtonText: 'إلغاء'
+        confirmButtonText: window.__('yes_delete'),
+        cancelButtonText: window.__('cancel')
     });
 
     if (confirmed.isConfirmed) {
@@ -257,14 +258,14 @@ async function deleteExpense(id) {
             });
             const result = await response.json();
             if (result.success) {
-                Swal.fire('تم الحذف!', result.message, 'success');
+                Swal.fire(window.__('deleted_successfully'), result.message, 'success');
                 loadExpenses(currentPage);
                 updateSummaries();
             } else {
-                Swal.fire('خطأ!', result.message, 'error');
+                Swal.fire(window.__('error'), result.message, 'error');
             }
         } catch (error) {
-            Swal.fire('خطأ!', 'حدث خطأ غير متوقع', 'error');
+            Swal.fire(window.__('error'), window.__('unexpected_error'), 'error');
         }
     }
 }
@@ -291,14 +292,14 @@ document.getElementById('expense-form').addEventListener('submit', async (e) => 
         const result = await response.json();
         if (result.success) {
             closeExpenseModal();
-            Swal.fire('تم!', 'تم تسجيل المصروف بنجاح', 'success');
+            Swal.fire(window.__('done'), window.__('expense_added_successfully'), 'success');
             loadExpenses(1);
             updateSummaries();
         } else {
-            Swal.fire('خطأ!', result.message, 'error');
+            Swal.fire(window.__('error'), result.message, 'error');
         }
     } catch (error) {
-        Swal.fire('خطأ!', 'حدث خطأ غير متوقع', 'error');
+        Swal.fire(window.__('error'), window.__('unexpected_error'), 'error');
     }
 });
 
@@ -335,21 +336,21 @@ async function updateSummaries() {
                 if (day <= 15) {
                     cycleStart = `${year}-${month}-01`;
                     cycleEnd = `${year}-${month}-15`;
-                    document.getElementById('cycle-label').textContent = 'دورة النصف الأول (1-15)';
+                    document.getElementById('cycle-label').textContent = window.__('cycle_first_half');
                 } else {
                     cycleStart = `${year}-${month}-16`;
                     const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
                     cycleEnd = `${year}-${month}-${lastDay}`;
-                    document.getElementById('cycle-label').textContent = 'دورة النصف الثاني (16-..)';
+                    document.getElementById('cycle-label').textContent = window.__('cycle_second_half');
                 }
             } else {
                 cycleStart = `${year}-${month}-01`;
                 const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
                 cycleEnd = `${year}-${month}-${lastDay}`;
-                document.getElementById('cycle-label').textContent = 'مصاريف الدورة الشهرية';
+                document.getElementById('cycle-label').textContent = window.__('monthly_cycle_expenses');
             }
             
-            document.getElementById('cycle-dates').textContent = `${cycleStart} إلى ${cycleEnd}`;
+            document.getElementById('cycle-dates').textContent = `${cycleStart} ${window.__('to')} ${cycleEnd}`;
             
             result.data.forEach(exp => {
                 const amount = parseFloat(exp.amount);

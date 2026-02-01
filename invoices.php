@@ -1,5 +1,6 @@
 <?php
-$page_title = 'الفواتير والضريبة';
+require_once 'src/language.php';
+$page_title = __('invoices_and_tax');
 $current_page = 'invoices.php';
 require_once 'session.php';
 require_once 'src/header.php';
@@ -482,7 +483,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
     <!-- Header -->
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
-        <h2 class="text-xl font-bold text-white">الفواتير والضريبة</h2>
+        <h2 class="text-xl font-bold text-white"><?php echo __('invoices_and_tax'); ?></h2>
     </header>
 
     <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
@@ -492,31 +493,31 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 <section class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                     <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                         <span class="material-icons-round text-primary">receipt</span>
-                        الفواتير الأخيرة
+                        <?php echo __('latest_invoices'); ?>
                     </h3>
 
                     <form id="invoice-search-form" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                         <div class="md:col-span-2">
-                            <label for="search-term" class="text-sm font-medium text-gray-300 mb-1 block">بحث</label>
+                            <label for="search-term" class="text-sm font-medium text-gray-300 mb-1 block"><?php echo __('search'); ?></label>
                             <div class="relative">
-                                <input type="text" id="search-term" name="search" class="w-full bg-dark-surface/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary" placeholder="رقم الفاتورة, اسم العميل, باركود...">
-                                <button type="button" id="scan-invoice-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white transition-colors" title="مسح باركود">
+                                <input type="text" id="search-term" name="search" class="w-full bg-dark-surface/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary" placeholder="<?php echo __('search_placeholder_invoices'); ?>">
+                                <button type="button" id="scan-invoice-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white transition-colors" title="<?php echo __('scan_barcode_modal'); ?>">
                                     <span class="material-icons-round">qr_code_scanner</span>
                                 </button>
                             </div>
                         </div>
                         <div>
-                            <label for="search-date" class="text-sm font-medium text-gray-300 mb-1 block">التاريخ</label>
+                            <label for="search-date" class="text-sm font-medium text-gray-300 mb-1 block"><?php echo __('date'); ?></label>
                             <input type="date" id="search-date" name="searchDate" class="w-full bg-dark-surface/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary" style="color-scheme: dark;">
                         </div>
                         <div class="md:col-span-3 flex justify-end gap-2 mt-2">
                             <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all">
                                 <span class="material-icons-round">search</span>
-                                <span>بحث</span>
+                                <span><?php echo __('search'); ?></span>
                             </button>
                             <button type="button" id="clear-search-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all">
                                 <span class="material-icons-round">clear</span>
-                                <span>مسح</span>
+                                <span><?php echo __('clear_search'); ?></span>
                             </button>
                         </div>
                     </form>
@@ -525,17 +526,17 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                         <table class="w-full text-right">
                             <thead>
                                 <tr class="border-b border-white/10">
-                                    <th class="p-4 text-sm font-bold text-gray-400">رقم الفاتورة</th>
-                                    <th class="p-4 text-sm font-bold text-gray-400">التاريخ</th>
-                                    <th class="p-4 text-sm font-bold text-gray-400">العميل</th>
-                                    <th class="p-4 text-sm font-bold text-gray-400">المبلغ</th>
+                                    <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('invoice_number'); ?></th>
+                                    <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('date'); ?></th>
+                                    <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('customer'); ?></th>
+                                    <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('amount'); ?></th>
                                     <th class="p-4 text-sm font-bold text-gray-400"></th>
                                 </tr>
                             </thead>
                             <tbody id="invoices-table-body">
                                 <tr>
                                     <td colspan="5" class="text-center py-4 text-gray-500">
-                                        جاري تحميل البيانات...
+                                        <?php echo __('loading_data'); ?>
                                     </td>
                                 </tr>
                             </tbody>
@@ -549,14 +550,14 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     <div id="invoice-barcode-scanner-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
         <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
             <div class="p-6 border-b border-white/5 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-white">مسح باركود الفاتورة</h3>
+                <h3 class="text-lg font-bold text-white"><?php echo __('scan_invoice_barcode'); ?></h3>
                 <button id="close-invoice-barcode-scanner-modal" class="text-gray-400 hover:text-white transition-colors">
                     <span class="material-icons-round">close</span>
                 </button>
             </div>
             <div class="p-6">
                 <video id="invoice-barcode-video" class="w-full h-auto rounded-lg"></video>
-                <p class="text-xs text-gray-400 mt-3 text-center">وجّه الكاميرا نحو باركود الفاتورة</p>
+                <p class="text-xs text-gray-400 mt-3 text-center"><?php echo __('point_camera_invoice'); ?></p>
             </div>
         </div>
     </div>
@@ -575,8 +576,8 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 <div class="flex items-center gap-3">
                     <span class="material-icons-round text-3xl">receipt_long</span>
                     <div>
-                        <h3 class="text-2xl font-bold">فاتورة ناجحة!</h3>
-                        <p class="text-sm opacity-90">تم إتمام عملية البيع بنجاح</p>
+                        <h3 class="text-2xl font-bold"><?php echo __('invoice_success'); ?></h3>
+                        <p class="text-sm opacity-90"><?php echo __('sale_completed'); ?></p>
                     </div>
                 </div>
                 <button id="close-invoice-modal" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
@@ -590,7 +591,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                             <!-- Header: Invoice Title and Logo -->
                 <div class="flex items-center justify-between pb-6 mb-6 border-b-2 border-gray-300">
                     <div>
-                        <h1 class="text-4xl font-extrabold text-green-600">فاتورة</h1>
+                        <h1 class="text-4xl font-extrabold text-green-600"><?php echo __('invoice_header'); ?></h1>
                     </div>
                     <?php if (!empty($shopLogoUrl)): ?>
                         <img src="<?php echo htmlspecialchars($shopLogoUrl); ?>" alt="Logo" class="w-16 h-16 rounded-full border border-gray-200 object-contain bg-white">
@@ -605,7 +606,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 mb-6 border-b border-gray-200">
                     <!-- Your Information (Shop Info) -->
                     <div>
-                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3">معلومات المحل</h3>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3"><?php echo __('shop_info'); ?></h3>
                         <div class="text-sm text-gray-700 space-y-1">
                             <p class="font-bold text-base"><?php echo htmlspecialchars($shopName); ?></p>
                             <?php if ($shopPhone): ?>
@@ -619,7 +620,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
                     <!-- Client Information -->
                     <div>
-                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3">معلومات العميل</h3>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3"><?php echo __('client_info'); ?></h3>
                         <div id="customer-info" class="text-sm text-gray-700 space-y-1"></div>
                     </div>
                 </div>
@@ -629,7 +630,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 <div class="grid grid-cols-3 gap-6 pb-6 mb-6 border-b border-gray-200 invoice-header-grid">
                         <!-- تاريخ الإصدار - يمين -->
                     <div class="text-right">
-                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">تاريخ الإصدار</h3>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2"><?php echo __('issue_date'); ?></h3>
                         <p class="text-base font-bold text-gray-900" id="invoice-date">-</p>
                         <p class="text-sm text-gray-600" id="invoice-time">-</p>
                     </div>
@@ -641,7 +642,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
                     <!-- رقم الفاتورة - يسار -->
                     <div class="text-left">
-                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">رقم الفاتورة</h3>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2"><?php echo __('invoice_no'); ?></h3>
                         <p class="text-2xl font-bold text-gray-900" id="invoice-number">-</p>
                     </div>
                 </div>
@@ -651,10 +652,10 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                         <table class="w-full text-sm invoice-items-container">
                             <thead class="bg-gray-100">
                                 <tr class="border-b-2 border-gray-300">
-                                    <th class="text-right py-3 px-4 font-bold text-gray-800 text-sm uppercase">المنتج</th>
-                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase">الكمية</th>
-                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase">السعر</th>
-                                    <th class="text-left py-3 px-4 font-bold text-gray-800 text-sm uppercase">الإجمالي</th>
+                                    <th class="text-right py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('product_col'); ?></th>
+                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('quantity_col'); ?></th>
+                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('price_col'); ?></th>
+                                    <th class="text-left py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('total_col'); ?></th>
                                 </tr>
                             </thead>
                             <tbody id="invoice-items"></tbody>
@@ -667,7 +668,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                     <div class="flex justify-end">
                         <div class="w-full md:w-96 space-y-3 text-sm rounded-2xl border-2 border-gray-300 p-6 bg-gradient-to-br from-gray-50 to-white shadow-lg">
                             <div class="flex justify-between items-center py-2 border-b border-gray-200">
-                                <span class="text-gray-600 font-semibold">المجموع الفرعي:</span>
+                                <span class="text-gray-600 font-semibold"><?php echo __('invoice_subtotal_label'); ?></span>
                                 <span class="font-bold text-gray-800 text-base" id="invoice-subtotal">-</span>
                             </div>
                             <div class="flex justify-between items-center py-2 border-b border-gray-200" id="invoice-tax-row">
@@ -675,7 +676,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                                 <span class="font-bold text-gray-800 text-base" id="invoice-tax-amount">-</span>
                             </div>
                             <div class="flex justify-between items-center text-2xl font-extrabold border-t-4 border-primary/30 pt-4 mt-2">
-                                <span class="text-gray-800">الإجمالي:</span>
+                                <span class="text-gray-800"><?php echo __('invoice_total_label'); ?></span>
                                 <span class="text-primary text-3xl" id="invoice-total">-</span>
                             </div>
                         </div>
@@ -683,8 +684,8 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 </div>
 
                 <div class="text-center mt-8 pt-6 border-t-2 border-gray-300">
-                    <p class="font-bold text-gray-800 mb-2" style="font-size: 18px;">شكراً لثقتكم بنا</p>
-                    <p class="text-gray-600 italic" style="font-size: 13px;">نسعد بخدمتكم دائماً ونتطلع لزيارتكم القادمة</p>
+                    <p class="font-bold text-gray-800 mb-2" style="font-size: 18px;"><?php echo __('thanks_for_trust'); ?></p>
+                    <p class="text-gray-600 italic" style="font-size: 13px;"><?php echo __('happy_to_serve'); ?></p>
                 </div>
             </div>
         </div>
@@ -692,19 +693,19 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         <div class="bg-gray-50 p-6 grid grid-cols-2 gap-3 no-print border-t shrink-0">
             <button id="print-invoice-btn" class="bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
                 <span class="material-icons-round text-lg">print</span>
-                طباعة مباشرة
+                <?php echo __('print_direct'); ?>
             </button>
             <button id="thermal-print-btn" class="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
                 <span class="material-icons-round text-lg">receipt_long</span>
-                طباعة حرارية
+                <?php echo __('thermal_print'); ?>
             </button>
             <button id="download-pdf-btn" class="bg-accent hover:bg-lime-500 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
                 <span class="material-icons-round text-lg">picture_as_pdf</span>
-                تحميل PDF
+                <?php echo __('download_pdf'); ?>
             </button>
             <button id="download-txt-btn" class="bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
                 <span class="material-icons-round text-lg">text_snippet</span>
-                تحميل TXT
+                <?php echo __('download_txt'); ?>
             </button>
         </div>
     </div>
@@ -741,6 +742,10 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     const shopAddress = '<?php echo addslashes($shopAddress); ?>';
     const shopCity = '<?php echo addslashes($shopCity); ?>';
     const userRole = '<?php echo $_SESSION['role']; ?>';
+    
+    // Localization from PHP
+    const currentLang = '<?php echo get_locale(); ?>';
+    const currentDir = '<?php echo get_dir(); ?>';
 
     function toEnglishNumbers(str) {
         const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -774,9 +779,9 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     }
 
     async function loadInvoices(searchTerm = '', searchDate = '') {
-        invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">جاري تحميل البيانات...</td></tr>';
+        invoicesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">${window.__('loading_data')}</td></tr>`;
         
-        showLoading('جاري تحميل الفواتير...');
+        showLoading(window.__('loading_invoices'));
         const params = new URLSearchParams({
             action: 'getInvoices',
             search: searchTerm,
@@ -793,11 +798,11 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 displayInvoices(result.data);
                 renderPagination(result.total_invoices);
             } else {
-                invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">فشل في تحميل الفواتير</td></tr>';
+                invoicesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">${window.__('failed_loading_invoices')}</td></tr>`;
             }
         } catch (error) {
             console.error('خطأ في تحميل الفواتير:', error);
-            invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">حدث خطأ في التحميل</td></tr>';
+            invoicesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">${window.__('error_loading')}</td></tr>`;
         } finally {
             hideLoading();
         }
@@ -861,7 +866,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         invoicesTableBody.innerHTML = '';
         
         if (invoices.length === 0) {
-            invoicesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">لم يتم العثور على فواتير تطابق البحث</td></tr>';
+            invoicesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">${window.__('no_invoices_found')}</td></tr>`;
             return;
         }
 
@@ -884,21 +889,21 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 <div class="flex items-center gap-2">
                     <button class="view-invoice-btn bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2" data-id="${invoice.id}">
                         <span class="material-icons-round text-base">visibility</span>
-                        عرض
+                        ${window.__('view')}
                     </button>`;
 
             if (userRole === 'admin') {
                 if (parseInt(invoice.is_refunded) === 1) {
                     actionButtons += `
-                    <button class="bg-gray-500/10 text-gray-500 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 cursor-not-allowed opacity-50" disabled title="تم استرجاع هذه الفاتورة">
+                    <button class="bg-gray-500/10 text-gray-500 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 cursor-not-allowed opacity-50" disabled title="${window.__('refunded')}">
                         <span class="material-icons-round text-base">assignment_return</span>
-                        تم الاسترجاع
+                        ${window.__('refunded')}
                     </button>`;
                 } else {
                     actionButtons += `
                         <button class="refund-invoice-btn bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2" data-id="${invoice.id}">
                             <span class="material-icons-round text-base">assignment_return</span>
-                            استرجاع
+                            ${window.__('refund')}
                         </button>`;
                 }
             }
@@ -908,7 +913,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             row.innerHTML = `
                 <td class="p-4 text-sm font-bold text-primary">#${String(invoice.id).padStart(6, '0')}</td>
                 <td class="p-4 text-sm text-gray-300">${formattedDate}</td>
-                <td class="p-4 text-sm text-gray-300">${invoice.customer_name || 'عميل نقدي'}</td>
+                <td class="p-4 text-sm text-gray-300">${invoice.customer_name || window.__('cash_customer')}</td>
                 <td class="p-4 text-sm font-bold text-white">${parseFloat(invoice.total).toFixed(2)} ${currency}</td>
                 <td class="p-4">
                     ${actionButtons}
@@ -935,20 +940,20 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
     async function handleRefund(invoiceId) {
         const { value: reason } = await Swal.fire({
-            title: 'استرجاع الفاتورة',
-            text: `هل أنت متأكد من رغبتك في استرجاع الفاتورة #${invoiceId}؟ سيتم إعادة المنتجات للمخزون وخصم المبلغ من الصندوق.`,
+            title: window.__('confirm_refund_title'),
+            text: window.__('confirm_refund_message').replace('%s', invoiceId),
             input: 'text',
-            inputLabel: 'سبب الاسترجاع (اختياري)',
-            inputPlaceholder: 'سبب الاسترجاع...',
+            inputLabel: window.__('refund_reason_label'),
+            inputPlaceholder: window.__('refund_reason_placeholder'),
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'نعم، استرجاع',
-            cancelButtonText: 'إلغاء'
+            confirmButtonText: window.__('confirm_refund_btn'),
+            cancelButtonText: window.__('cancel')
         });
 
         if (reason !== undefined) { // If confirmed (reason can be empty string)
-            showLoading('جاري معالجة الاسترجاع...');
+            showLoading(window.__('processing_refund'));
             try {
                 const response = await fetch('api.php?action=refund_invoice', {
                     method: 'POST',
@@ -958,14 +963,14 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 const result = await response.json();
                 
                 if (result.success) {
-                    Swal.fire('تم!', result.message, 'success');
+                    Swal.fire(window.__('done'), result.message, 'success');
                     loadInvoices(); // Reload table
                 } else {
-                    Swal.fire('خطأ!', result.message, 'error');
+                    Swal.fire(window.__('error'), result.message, 'error');
                 }
             } catch (error) {
                 console.error('Error refunding invoice:', error);
-                Swal.fire('خطأ!', 'حدث خطأ غير متوقع', 'error');
+                Swal.fire(window.__('error'), window.__('unexpected_error'), 'error');
             } finally {
                 hideLoading();
             }
@@ -983,11 +988,11 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 displayInvoiceDetails(currentInvoiceData);
                 invoiceModal.classList.remove('hidden');
             } else {
-                showToast(result.message || 'فشل في تحميل الفاتورة', false);
+                showToast(result.message || window.__('failed_loading_invoices'), false);
             }
         } catch (error) {
-            console.error('خطأ في تحميل الفاتورة:', error);
-            showToast('حدث خطأ في تحميل الفاتورة', false);
+            console.error('خطأ في تحميل الفواتير:', error);
+            showToast(window.__('error_loading'), false);
         }
     }
 
@@ -1019,7 +1024,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 ${data.customer_address ? `<p>${data.customer_address}</p>` : ''}
             `;
         } else {
-            customerInfo.innerHTML = '<p class="font-bold">عميل نقدي</p><p class="text-gray-500">افتراضي</p>';
+            customerInfo.innerHTML = `<p class="font-bold">${window.__('cash_customer')}</p><p class="text-gray-500">${window.__('default')}</p>`;
         }
         
         const itemsTable = document.getElementById('invoice-items');
@@ -1027,7 +1032,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         
         const itemsCountBadge = document.getElementById('items-count-badge');
         if (data.items.length > 10) {
-            itemsCountBadge.textContent = `إجمالي ${data.items.length} منتج في هذه الفاتورة`;
+            itemsCountBadge.textContent = window.__('items_count_badge').replace('%d', data.items.length);
             itemsCountBadge.classList.remove('hidden');
         } else {
             itemsCountBadge.classList.add('hidden');
@@ -1086,7 +1091,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             discountRow.id = 'invoice-discount-row';
             discountRow.className = 'flex justify-between items-center py-2 border-b border-gray-200';
             discountRow.innerHTML = `
-                <span class="text-gray-600 font-semibold">الخصم (<span id="invoice-discount-percent">${discountPercent.toFixed(2)}</span>%):</span>
+                <span class="text-gray-600 font-semibold">${window.__('discount')} (<span id="invoice-discount-percent">${discountPercent.toFixed(2)}</span>%):</span>
                 <span class="font-bold text-red-500 text-base">-${discountAmount.toFixed(2)} ${currency}</span>
             `;
             totalsContainer.insertBefore(discountRow, totalRow);
@@ -1105,7 +1110,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             receivedRow.id = 'invoice-received-row';
             receivedRow.className = 'flex justify-between items-center text-sm mt-2 pt-2 border-t border-dashed border-gray-300';
             receivedRow.innerHTML = `
-                <span class="text-gray-600 font-bold">المبلغ المستلم:</span>
+                <span class="text-gray-600 font-bold">${window.__('amount_received_label')}</span>
                 <span class="font-bold text-gray-800">${parseFloat(data.amount_received).toFixed(2)} ${currency}</span>
             `;
             totalsContainer.appendChild(receivedRow);
@@ -1114,7 +1119,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             changeRow.id = 'invoice-change-row';
             changeRow.className = 'flex justify-between items-center text-sm';
             changeRow.innerHTML = `
-                <span class="text-gray-600 font-bold">الباقي:</span>
+                <span class="text-gray-600 font-bold">${window.__('change_due_label')}</span>
                 <span class="font-bold text-gray-800">${parseFloat(data.change_due).toFixed(2)} ${currency}</span>
             `;
             totalsContainer.appendChild(changeRow);
@@ -1143,7 +1148,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         let locationText = [shopCity, shopAddress].filter(Boolean).join('، ');
 
         let thermalContent = `<!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html dir="${currentDir}" lang="${currentLang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=80mm">
@@ -1175,17 +1180,17 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         ${locationText ? `<div class="shop-info">📍 ${locationText}</div>` : ''}
     </div>
     <div class="invoice-info">
-        <div class="info-row"><span>رقم الفاتورة:</span><span>#${String(currentInvoiceData.id).padStart(6, '0')}</span></div>
-        <div class="info-row"><span>التاريخ:</span><span>${formattedDate}</span></div>
-        <div class="info-row"><span>الوقت:</span><span>${formattedTime}</span></div>
+        <div class="info-row"><span>${window.__('invoice_number')}:</span><span>#${String(currentInvoiceData.id).padStart(6, '0')}</span></div>
+        <div class="info-row"><span>${window.__('date')}:</span><span>${formattedDate}</span></div>
+        <div class="info-row"><span>${window.__('time')}:</span><span>${formattedTime}</span></div>
     </div>
     <div class="customer-section">
-        <div style="font-weight: bold;">العميل: ${currentInvoiceData.customer_name || 'عميل نقدي'}</div>
+        <div style="font-weight: bold;">${window.__('customer')}: ${currentInvoiceData.customer_name || window.__('cash_customer')}</div>
         ${currentInvoiceData.customer_phone ? `<div>📞 ${currentInvoiceData.customer_phone}</div>` : ''}
         ${currentInvoiceData.customer_address ? `<div>📍 ${currentInvoiceData.customer_address}</div>` : ''}
     </div>
     <div class="items-table">
-        <div class="items-header">المنتجات (${currentInvoiceData.items.length})</div>`;
+        <div class="items-header">${window.__('product_col')} (${currentInvoiceData.items.length})</div>`;
 
         let subtotal = 0;
         currentInvoiceData.items.forEach((item, index) => {
@@ -1206,7 +1211,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
         thermalContent += `</div>
             <div class="totals-section">
-                <div class="total-row"><span>المجموع:</span><span>${subtotal.toFixed(2)} ${currency}</span></div>`;
+                <div class="total-row"><span>${window.__('invoice_subtotal_label')}</span><span>${subtotal.toFixed(2)} ${currency}</span></div>`;
 
         if (taxEnabled) {
             thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${tax.toFixed(2)} ${currency}</span></div>`;
@@ -1214,19 +1219,19 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         
         // Add discount if applicable
         if (discountAmount > 0) {
-            thermalContent += `<div class="total-row"><span>الخصم (${discountPercent.toFixed(2)}%):</span><span>-${discountAmount.toFixed(2)} ${currency}</span></div>`;
+            thermalContent += `<div class="total-row"><span>${window.__('discount')} (${discountPercent.toFixed(2)}%):</span><span>-${discountAmount.toFixed(2)} ${currency}</span></div>`;
         }
         
-        thermalContent += `<div class="total-row grand-total"><span>الإجمالي:</span><span>${parseFloat(currentInvoiceData.total).toFixed(2)} ${currency}</span></div>`;
+        thermalContent += `<div class="total-row grand-total"><span>${window.__('invoice_total_label')}</span><span>${parseFloat(currentInvoiceData.total).toFixed(2)} ${currency}</span></div>`;
 
         if (currentInvoiceData.amount_received > 0) {
             thermalContent += `
             <div class="total-row" style="border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm;">
-                <span>المبلغ المستلم:</span>
+                <span>${window.__('amount_received_label')}</span>
                 <span>${parseFloat(currentInvoiceData.amount_received).toFixed(2)} ${currency}</span>
             </div>
             <div class="total-row">
-                <span>الباقي:</span>
+                <span>${window.__('change_due_label')}</span>
                 <span>${parseFloat(currentInvoiceData.change_due).toFixed(2)} ${currency}</span>
             </div>`;
         }
@@ -1234,8 +1239,8 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         thermalContent += `</div>
     <div style="text-align: center; margin: 5mm 0;"><svg id="barcode-thermal"></svg></div>
     <div class="footer">
-        <div style="font-weight: bold; margin-bottom: 2mm;">🌟 شكراً لثقتكم بنا 🌟</div>
-        <div>${shopName || 'نظام Smart Shop'}</div>
+        <div style="font-weight: bold; margin-bottom: 2mm;">🌟 ${window.__('thanks_for_trust')} 🌟</div>
+        <div>${shopName || window.__('smart_shop_system')}</div>
     </div>
 </body></html>`;
 
@@ -1266,7 +1271,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         const { jsPDF } = window.jspdf;
         
         try {
-            showToast('جاري إنشاء ملف PDF...', true);
+            showToast(window.__('generating_pdf'), true);
             
             // احفظ خصائص CSS الأصلية قبل التعديل
             const element = document.getElementById('invoice-print-area');
@@ -1358,10 +1363,10 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             }
             
             pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
-            showToast('تم تحميل الفاتورة بصيغة PDF', true);
+            showToast(window.__('pdf_downloaded'), true);
         } catch (error) {
             console.error('خطأ في تحميل PDF:', error);
-            showToast('فشل في تحميل PDF', false);
+            showToast(window.__('pdf_fail'), false);
         }
     });
 
@@ -1372,24 +1377,24 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         let txtContent = `${shopName}
 ${'='.repeat(50)}
 
-رقم الفاتورة: #${String(currentInvoiceData.id).padStart(6, '0')}
-التاريخ: ${formatDualDate(invoiceDate)}
+${window.__('invoice_number')}: #${String(currentInvoiceData.id).padStart(6, '0')}
+${window.__('date')}: ${formatDualDate(invoiceDate)}
 
 `;
         
         if (currentInvoiceData.customer_name) {
-            txtContent += `العميل: ${currentInvoiceData.customer_name}\n`;
-            if (currentInvoiceData.customer_phone) txtContent += `الهاتف: ${currentInvoiceData.customer_phone}\n`;
-            if (currentInvoiceData.customer_address) txtContent += `العنوان: ${currentInvoiceData.customer_address}\n`;
+            txtContent += `${window.__('customer')}: ${currentInvoiceData.customer_name}\n`;
+            if (currentInvoiceData.customer_phone) txtContent += `${window.__('phone_placeholder')}: ${currentInvoiceData.customer_phone}\n`;
+            if (currentInvoiceData.customer_address) txtContent += `${window.__('address_placeholder')}: ${currentInvoiceData.customer_address}\n`;
         } 
         
         else {
-            txtContent += `العميل: عميل نقدي\n`;
+            txtContent += `${window.__('customer')}: ${window.__('cash_customer')}\n`;
         }
         
         txtContent += `
 ${'-'.repeat(50)}
-المنتجات (${currentInvoiceData.items.length} منتج):
+${window.__('product_col')} (${currentInvoiceData.items.length} ${window.__('product')}):
 ${'-'.repeat(50)}
 
 `;
@@ -1398,39 +1403,39 @@ ${'-'.repeat(50)}
         currentInvoiceData.items.forEach((item, index) => {
             const itemTotal = item.price * item.quantity;
             subtotal += itemTotal;
-            txtContent += `${index + 1}. ${item.product_name}\n   الكمية: ${item.quantity} × ${parseFloat(item.price).toFixed(2)} ${currency} = ${itemTotal.toFixed(2)} ${currency}\n\n`;
+            txtContent += `${index + 1}. ${item.product_name}\n   ${window.__('quantity')}: ${item.quantity} × ${parseFloat(item.price).toFixed(2)} ${currency} = ${itemTotal.toFixed(2)} ${currency}\n\n`;
         });
         const tax = taxEnabled ? subtotal * taxRate : 0;
         const discountAmount = parseFloat(currentInvoiceData.discount_amount) || 0;
         const discountPercent = parseFloat(currentInvoiceData.discount_percent) || 0;
                 
-        txtContent += `${'-'.repeat(50)}\nالمجموع الفرعي: ${subtotal.toFixed(2)} ${currency}\n`;
+        txtContent += `${'-'.repeat(50)}\n${window.__('invoice_subtotal_label')} ${subtotal.toFixed(2)} ${currency}\n`;
         if (taxEnabled) txtContent += `${taxLabel} (${(taxRate * 100).toFixed(0)}%): ${tax.toFixed(2)} ${currency}\n`;
                 
         // Add discount if applicable
-        if (discountAmount > 0) txtContent += `الخصم (${discountPercent.toFixed(2)}%): -${discountAmount.toFixed(2)} ${currency}\n`;
+        if (discountAmount > 0) txtContent += `${window.__('discount')} (${discountPercent.toFixed(2)}%): -${discountAmount.toFixed(2)} ${currency}\n`;
                 
-        txtContent += `الإجمالي: ${parseFloat(currentInvoiceData.total).toFixed(2)} ${currency}
+        txtContent += `${window.__('invoice_total_label')} ${parseFloat(currentInvoiceData.total).toFixed(2)} ${currency}
 `;
 
         if (currentInvoiceData.amount_received > 0) {
-            txtContent += `المبلغ المستلم: ${parseFloat(currentInvoiceData.amount_received).toFixed(2)} ${currency}\n`;
-            txtContent += `الباقي: ${parseFloat(currentInvoiceData.change_due).toFixed(2)} ${currency}\n`;
+            txtContent += `${window.__('amount_received_label')} ${parseFloat(currentInvoiceData.amount_received).toFixed(2)} ${currency}\n`;
+            txtContent += `${window.__('change_due_label')} ${parseFloat(currentInvoiceData.change_due).toFixed(2)} ${currency}\n`;
         }
 
         txtContent += `${'='.repeat(50)}
 
-شكراً لثقتكم بنا
+${window.__('thanks_for_trust')}
 
 `;
         
         let loc = [shopCity, shopAddress].filter(Boolean).join('، ');
         if (shopName || shopPhone || loc) {
             if (shopName) txtContent += `${shopName}\n`;
-            if (shopPhone) txtContent += `هاتف: ${shopPhone}\n`;
+            if (shopPhone) txtContent += `${window.__('phone_placeholder')}: ${shopPhone}\n`;
             if (loc) txtContent += `${loc}\n`;
         } else {
-            txtContent += `تم تطويره بواسطة حمزة سعدي\nhttps://eagleshadow.technology\n`;
+            txtContent += `${window.__('developed_by')} حمزة سعدي\nhttps://eagleshadow.technology\n`;
         }
         
         const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
@@ -1438,7 +1443,7 @@ ${'-'.repeat(50)}
         link.href = URL.createObjectURL(blob);
         link.download = `invoice-${currentInvoiceData.id}.txt`;
         link.click();
-        showToast('تم تحميل الفاتورة بصيغة TXT', true);
+        showToast(window.__('txt_downloaded'), true);
     });
 
     invoiceSearchForm.addEventListener('submit', function(e) {
@@ -1472,7 +1477,7 @@ ${'-'.repeat(50)}
 
     async function startInvoiceBarcodeScanner() {
         if (typeof ZXing === 'undefined') {
-            showToast('خطأ: مكتبة المسح الضوئي غير محملة', false);
+            showToast(window.__('scanner_library_error'), false);
             return;
         }
         
@@ -1485,20 +1490,20 @@ ${'-'.repeat(50)}
                         searchTermInput.value = result.text;
                         stopInvoiceBarcodeScanner();
                         invoiceSearchForm.dispatchEvent(new Event('submit'));
-                        showToast('تم العثور على الباركود!', true);
+                        showToast(window.__('barcode_found'), true);
                     }
                     if (err && !(err instanceof ZXing.NotFoundException)) {
                         console.error('Barcode scan error:', err);
-                        showToast('حدث خطأ أثناء المسح', false);
+                        showToast(window.__('scan_error'), false);
                         stopInvoiceBarcodeScanner();
                     }
                 });
             } else {
-                showToast('لم يتم العثور على كاميرا', false);
+                showToast(window.__('camera_not_found'), false);
             }
         } catch (error) {
             console.error('Error starting barcode scanner:', error);
-            showToast('فشل في بدء تشغيل الماسح الضوئي', false);
+            showToast(window.__('scanner_start_fail'), false);
         }
     }
 
@@ -1520,8 +1525,8 @@ ${'-'.repeat(50)}
             <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
         </div>
         <div class="text-center">
-            <h3 class="text-lg font-bold text-white mb-2">جاري التحميل...</h3>
-            <p id="loading-message" class="text-sm text-gray-400">يرجى الانتظار قليلاً</p>
+            <h3 class="text-lg font-bold text-white mb-2"><?php echo __('loading'); ?></h3>
+            <p id="loading-message" class="text-sm text-gray-400"><?php echo __('please_wait'); ?></p>
         </div>
     </div>
 </div>
@@ -1530,7 +1535,7 @@ ${'-'.repeat(50)}
 
 <script>
     // دوال إدارة شاشة التحميل
-    function showLoadingOverlay(message = 'جاري معالجة البيانات...') {
+    function showLoadingOverlay(message = '<?php echo __('processing'); ?>') {
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingMessage = document.getElementById('loading-message');
         loadingMessage.textContent = message;

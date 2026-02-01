@@ -1,5 +1,6 @@
 <?php
-$page_title = 'الفواتير والمنتجات المسترجعة';
+require_once 'src/language.php';
+$page_title = __('refunds_page_title');
 $current_page = 'refunds.php';
 require_once 'session.php';
 require_once 'src/header.php';
@@ -17,7 +18,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
         <h2 class="text-xl font-bold text-white flex items-center gap-3">
             <span class="material-icons-round text-red-500">assignment_return</span>
-            سجل الفواتير والمنتجات المسترجعة
+            <?php echo __('refunds_history'); ?>
         </h2>
     </header>
 
@@ -27,19 +28,19 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
                 <form id="search-form" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div class="md:col-span-2">
-                        <label for="search-term" class="text-sm font-medium text-gray-300 mb-1 block">بحث</label>
+                        <label for="search-term" class="text-sm font-medium text-gray-300 mb-1 block"><?php echo __('search'); ?></label>
                         <div class="relative">
-                            <input type="text" id="search-term" name="search" class="w-full bg-dark-surface/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary" placeholder="رقم الفاتورة, اسم العميل, سبب الاسترجاع...">
+                            <input type="text" id="search-term" name="search" class="w-full bg-dark-surface/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary" placeholder="<?php echo __('refunds_search_placeholder'); ?>">
                         </div>
                     </div>
                     <div class="flex justify-end gap-2">
                         <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all">
                             <span class="material-icons-round">search</span>
-                            <span>بحث</span>
+                            <span><?php echo __('search'); ?></span>
                         </button>
                         <button type="button" id="clear-search-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all">
                             <span class="material-icons-round">clear</span>
-                            <span>مسح</span>
+                            <span><?php echo __('clear_search'); ?></span>
                         </button>
                     </div>
                 </form>
@@ -48,18 +49,18 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     <table class="w-full text-right">
                         <thead>
                             <tr class="border-b border-white/10">
-                                <th class="p-4 text-sm font-bold text-gray-400">التاريخ</th>
-                                <th class="p-4 text-sm font-bold text-gray-400">رقم الفاتورة</th>
-                                <th class="p-4 text-sm font-bold text-gray-400">العميل</th>
-                                <th class="p-4 text-sm font-bold text-gray-400 w-1/3">المنتجات المسترجعة</th>
-                                <th class="p-4 text-sm font-bold text-gray-400">المبلغ</th>
-                                <th class="p-4 text-sm font-bold text-gray-400">السبب</th>
+                                <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('date'); ?></th>
+                                <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('invoice_number'); ?></th>
+                                <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('customer'); ?></th>
+                                <th class="p-4 text-sm font-bold text-gray-400 w-1/3"><?php echo __('refunded_products'); ?></th>
+                                <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('amount'); ?></th>
+                                <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('reason'); ?></th>
                             </tr>
                         </thead>
                         <tbody id="refunds-table-body">
                             <tr>
                                 <td colspan="6" class="text-center py-4 text-gray-500">
-                                    جاري تحميل البيانات...
+                                    <?php echo __('loading_data'); ?>
                                 </td>
                             </tr>
                         </tbody>
@@ -98,7 +99,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         }
 
         async function loadRefunds(searchTerm = '') {
-            tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">جاري تحميل البيانات...</td></tr>';
+            tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">${window.__('loading_data')}</td></tr>`;
             
             const params = new URLSearchParams({
                 action: 'getRefunds',
@@ -115,11 +116,11 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     displayRefunds(result.data);
                     renderPagination(result.total_refunds);
                 } else {
-                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">فشل في تحميل البيانات</td></tr>';
+                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">${window.__('failed_loading_data')}</td></tr>`;
                 }
             } catch (error) {
                 console.error('Error loading refunds:', error);
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">حدث خطأ في التحميل</td></tr>';
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">${window.__('error_loading')}</td></tr>`;
             }
         }
 
@@ -127,7 +128,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             tableBody.innerHTML = '';
             
             if (refunds.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">لا توجد سجلات استرجاع</td></tr>';
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">${window.__('no_refunds_found')}</td></tr>`;
                 return;
             }
 
@@ -144,10 +145,10 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 row.innerHTML = `
                     <td class="p-4 text-sm text-gray-300" dir="ltr">${formattedDate}</td>
                     <td class="p-4 text-sm font-bold text-primary">#${String(refund.invoice_id).padStart(6, '0')}</td>
-                    <td class="p-4 text-sm text-gray-300">${refund.customer_name || 'عميل نقدي'}</td>
+                    <td class="p-4 text-sm text-gray-300">${refund.customer_name || window.__('cash_customer')}</td>
                     <td class="p-4 text-sm text-gray-300">
                         <div class="max-w-md truncate" title="${refund.items_summary || ''}">
-                            ${refund.items_summary || '<span class="italic opacity-50">لا توجد تفاصيل</span>'}
+                            ${refund.items_summary || `<span class="italic opacity-50">${window.__('no_refund_details')}</span>`}
                         </div>
                     </td>
                     <td class="p-4 text-sm font-bold text-white">${parseFloat(refund.amount).toFixed(2)} ${currency}</td>
