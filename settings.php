@@ -1,17 +1,17 @@
 <?php
 require_once 'session.php';
+require_once 'src/language.php';
 require_once 'db.php';
-require_once 'session.php';
 
-// التحقق من أن المستخدم admin فقط يمكنه التعديل
+// Check if user is admin
 $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
 
-// معالجة إعادة التهيئة - فقط للمدراء
+// Handle Reset - Admin Only
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_POST['reset_settings'])) {
-    // حذف جميع الإعدادات الحالية
+    // Delete all current settings
     $conn->query("DELETE FROM settings");
 
-    // القيم الافتراضية مع تعطيل الوحدة المفاتيح الوهمية
+    // Default settings
     $default_settings = [
         'shopName' => '',
         'shopPhone' => '',
@@ -55,8 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_POST['reset_set
     }
     $stmt->close();
 
-    // إضافة إشعار
-    $msg = "تم إعادة تهيئة النظام بنجاح. جميع الإعدادات تم إرجاعها إلى الحالة الأولية.";
+    // Add notification
+    $msg = __('action_success') . ". " . __('system_reset_subtitle');
     $notifStmt = $conn->prepare("INSERT INTO notifications (message, type) VALUES (?, ?)");
     $type = "system_reset";
     $notifStmt->bind_param("ss", $msg, $type);
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_POST['reset_set
     exit();
 }
 
-// معالجة حفظ البيانات - فقط للمدراء
+// Handle Save - Admin Only
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     $currentLogo = '';
     $resLogo = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopLogoUrl'");
@@ -137,7 +137,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
 
     foreach ($settings_to_save as $name => $value) {
-        // إذا تغيرت دورة المصاريف، نحدث تاريخ آخر تغيير
         if ($name === 'expense_cycle' && isset($existing['expense_cycle']) && $existing['expense_cycle'] !== $value) {
             $now = date('Y-m-d H:i:s');
             $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('expense_cycle_last_change', '$now') ON DUPLICATE KEY UPDATE setting_value = '$now'");
@@ -147,67 +146,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     }
 
     $stmt->close();
-    $labels = [
-        'shopName' => 'اسم المتجر',
-        'shopPhone' => 'رقم الهاتف',
-        'shopCity' => 'مدينة المتجر',
-        'shopAddress' => 'العنوان التفصيلي',
-        'shopLogoUrl' => 'شعار المتجر',
-        'invoiceShowLogo' => 'إظهار الشعار في الفواتير',
-        'darkMode' => 'الوضع الداكن',
-        'soundNotifications' => 'تنبيهات الصوت',
-        'currency' => 'العملة',
-        'taxEnabled' => 'تفعيل الضريبة',
-        'taxRate' => 'نسبة الضريبة',
-        'taxLabel' => 'وسم الضريبة',
-        'low_quantity_alert' => 'حد تنبيه الكمية المنخفضة',
-        'critical_quantity_alert' => 'حد الكمية الحرجة',
-        'deliveryHomeCity' => 'المدينة الرئيسية للمتجر',
-        'deliveryInsideCity' => 'سعر التوصيل داخل المدينة',
-        'deliveryOutsideCity' => 'سعر التوصيل خارج المدينة',
-        'stockAlertsEnabled' => 'تنبيهات المخزون التلقائية',
-        'stockAlertInterval' => 'تكرار فحص المخزون بالدقائق',
-        'rentalEnabled' => 'تفعيل تذكير الإيجار',
-        'rentalAmount' => 'مبلغ الإيجار',
-        'rentalPaymentDate' => 'تاريخ دفع الإيجار',
-        'rentalType' => 'نوع الإيجار',
-        'rentalReminderDays' => 'أيام التذكير قبل الموعد',
-        'rentalLandlordName' => 'اسم المالك',
-        'rentalLandlordPhone' => 'هاتف المالك',
-        'rentalNotes' => 'ملاحظات الإيجار',
-        'expense_cycle' => 'دورة حساب المصاريف',
-        'work_days_enabled' => 'تفعيل أيام العمل',
-        'holidays_enabled' => 'تفعيل العطل الرسمية',
-        'work_days' => 'أيام العمل',
-    ];
-    $changedLabels = [];
+    
+    // Check for changes
+    $changed = false;
     foreach ($settings_to_save as $name => $value) {
         $oldVal = isset($existing[$name]) ? (string)$existing[$name] : null;
         if ($oldVal === null || (string)$value !== $oldVal) {
-            $changedLabels[] = isset($labels[$name]) ? $labels[$name] : $name;
+            $changed = true;
+            break;
         }
     }
-    if (!empty($changedLabels)) {
-        $msg = "تم تحديث الإعدادات (" . count($changedLabels) . " عنصر): " . implode('، ', $changedLabels);
-        if (in_array('deliveryInsideCity', $changedLabels) || in_array('deliveryOutsideCity', $changedLabels)) {
-            $msg .= " | داخل المدينة " . ($settings_to_save['deliveryInsideCity'] ?? '') . "، خارج المدينة " . ($settings_to_save['deliveryOutsideCity'] ?? '');
-        }
+
+    if ($changed) {
+        $msg = __('settings_updated_success');
         $notifStmt = $conn->prepare("INSERT INTO notifications (message, type) VALUES (?, ?)");
         $type = "settings_update";
         $notifStmt->bind_param("ss", $msg, $type);
         $notifStmt->execute();
         $notifStmt->close();
     }
-    header("Location: settings.php?success=" . urlencode("تم حفظ التغييرات بنجاح"));
+    header("Location: settings.php?success=" . urlencode(__('changes_saved_success')));
     exit();
 }
 
-$page_title = 'إعدادات النظام';
+$page_title = __('settings_page_title');
 $current_page = 'settings.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
-// جلب الإعدادات
+// Fetch settings
 $result = $conn->query("SELECT * FROM settings");
 $settings = [];
 if ($result) {
@@ -216,7 +183,7 @@ if ($result) {
     }
 }
 
-// تحديد ما إذا كان يجب تعطيل الحقول
+// Disabled attributes
 $disabledAttr = $isAdmin ? '' : 'disabled';
 $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 ?>
@@ -232,18 +199,18 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     <span class="material-icons-round text-primary">settings</span>
                 </div>
                 <div>
-                    <h2 class="text-xl font-bold text-white">إعدادات النظام</h2>
-                    <p class="text-xs text-gray-400">تحكم كامل وسهل في إعدادات المتجر والعلامة التجارية</p>
+                    <h2 class="text-xl font-bold text-white"><?php echo __('settings_page_title'); ?></h2>
+                    <p class="text-xs text-gray-400"><?php echo __('settings_subtitle'); ?></p>
                     <div id="unsaved-changes-alert" class="hidden mt-2 text-xs bg-orange-500/10 text-orange-500 border border-orange-500/20 px-3 py-1 rounded-full font-bold flex items-center gap-1">
                         <span class="material-icons-round text-xs">warning</span>
-                        <span>تنبيه: لديك تغييرات غير محفوظة - احفظ التغييرات لتطبيقها</span>
+                        <span><?php echo __('unsaved_changes_warning'); ?></span>
                     </div>
                 </div>
                 
                 <?php if (!$isAdmin): ?>
                     <span class="mr-4 text-xs bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-3 py-1 rounded-full font-bold flex items-center gap-1">
                         <span class="material-icons-round text-sm">visibility</span>
-                        وضع القراءة فقط
+                        <?php echo __('read_only_mode'); ?>
                     </span>
                 <?php endif; ?>
             </div>
@@ -252,12 +219,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 <?php if ($isAdmin): ?>
                     <button type="submit" id="save-settings-btn" disabled class="bg-gray-500/50 text-gray-400 px-8 py-2.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 cursor-not-allowed">
                         <span class="material-icons-round text-sm">save</span>
-                        <span>حفظ التغييرات</span>
+                        <span><?php echo __('save_changes_btn'); ?></span>
                     </button>
                 <?php else: ?>
                     <div class="bg-gray-500/20 text-gray-400 px-6 py-2 rounded-xl font-bold flex items-center gap-2 cursor-not-allowed">
                         <span class="material-icons-round text-sm">lock</span>
-                        <span>غير مسموح بالتعديل</span>
+                        <span><?php echo __('editing_not_allowed'); ?></span>
                     </div>
                 <?php endif; ?>
             </div>
@@ -280,7 +247,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="p-2 bg-primary/10 rounded-lg text-primary">
                                     <span class="material-icons-round">storefront</span>
                                 </div>
-                                هوية المتجر والعلامة التجارية
+                                <?php echo __('store_identity_title'); ?>
                             </h3>
                         </div>
 
@@ -295,10 +262,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     <?php endif; ?>
                                 </div>
                                 <div class="text-center">
-                                    <p class="text-sm font-bold text-white mb-1">شعار المتجر</p>
-                                    <p class="text-[10px] text-gray-400 mb-3">تنسيق PNG أو JPG (مربع)</p>
+                                    <p class="text-sm font-bold text-white mb-1"><?php echo __('shop_logo'); ?></p>
+                                    <p class="text-[10px] text-gray-400 mb-3"><?php echo __('logo_format_info'); ?></p>
                                     <button type="button" onclick="document.getElementById('shopLogoFile').click();" class="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all <?php echo $disabledAttr; ?>">
-                                        تغيير الصورة
+                                        <?php echo __('change_photo_btn'); ?>
                                     </button>
                                 </div>
                                 <input type="file" name="shopLogoFile" id="shopLogoFile" accept="image/png,image/jpeg" class="absolute inset-0 opacity-0 cursor-pointer <?php echo $isAdmin ? '' : 'pointer-events-none'; ?>" title="">
@@ -308,16 +275,16 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <?php $hasLogo = !empty($settings['shopLogoUrl'] ?? ''); ?>
                                 <label class="inline-flex items-center gap-2 invoice-logo-checkbox <?php echo $hasLogo ? '' : 'hidden'; ?>">
                                     <input type="checkbox" name="invoiceShowLogo" value="1" <?php echo (($settings['invoiceShowLogo'] ?? '0') === '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?>>
-                                    <span class="text-xs font-bold text-gray-300">إضافة الشعار إلى الفواتير</span>
+                                    <span class="text-xs font-bold text-gray-300"><?php echo __('show_logo_on_invoice'); ?></span>
                                 </label>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">اسم المتجر (يظهر في الفواتير)</label>
+                                    <label class="block text-xs font-bold text-gray-400 mb-2 mr-1"><?php echo __('shop_name_label'); ?></label>
                                     <div class="relative group">
                                         <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors">
                                             <span class="material-icons-round text-lg">edit</span>
                                         </div>
                                         <input type="text" name="shopName" value="<?php echo htmlspecialchars($settings['shopName'] ?? ''); ?>"
-                                            placeholder="مثال: متجر الأناقة للأحذية"
+                                            placeholder="<?php echo __('shop_name_placeholder'); ?>"
                                             class="w-full bg-dark/50 border border-white/10 text-white text-right pr-12 pl-4 py-3.5 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all font-bold text-lg placeholder-gray-600 <?php echo $readonlyClass; ?>"
                                             <?php echo $disabledAttr; ?>>
                                     </div>
@@ -334,14 +301,14 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="p-2 bg-blue-500/10 rounded-lg text-blue-500">
                                     <span class="material-icons-round">contact_phone</span>
                                 </div>
-                                معلومات التواصل والموقع
+                                <?php echo __('contact_location_title'); ?>
                             </h3>
                         </div>
 
                         <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             
                             <div class="col-span-2 md:col-span-1">
-                                <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">رقم الهاتف الرسمي</label>
+                                <label class="block text-xs font-bold text-gray-400 mb-2 mr-1"><?php echo __('official_phone_label'); ?></label>
                                 <div class="relative group">
                                     <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors">
                                         <span class="material-icons-round text-lg">phone</span>
@@ -354,26 +321,26 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </div>
 
                             <div class="col-span-2 md:col-span-1">
-                                <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">المدينة</label>
+                                <label class="block text-xs font-bold text-gray-400 mb-2 mr-1"><?php echo __('city_label'); ?></label>
                                 <div class="relative group">
                                     <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors">
                                         <span class="material-icons-round text-lg">location_city</span>
                                     </div>
                                     <input type="text" name="shopCity" value="<?php echo htmlspecialchars($settings['shopCity'] ?? ''); ?>"
-                                        placeholder="الرباط، الدار البيضاء..."
+                                        placeholder="<?php echo __('home_city_placeholder'); ?>"
                                         class="w-full bg-dark/50 border border-white/10 text-white text-right pr-12 pl-4 py-3 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all <?php echo $readonlyClass; ?>"
                                         <?php echo $disabledAttr; ?>>
                                 </div>
                             </div>
 
                             <div class="col-span-2">
-                                <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">العنوان التفصيلي</label>
+                                <label class="block text-xs font-bold text-gray-400 mb-2 mr-1"><?php echo __('address_label'); ?></label>
                                 <div class="relative group">
                                     <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors">
                                         <span class="material-icons-round text-lg">place</span>
                                     </div>
                                     <input type="text" name="shopAddress" value="<?php echo htmlspecialchars($settings['shopAddress'] ?? ''); ?>"
-                                        placeholder="رقم 12، شارع محمد الخامس، حي الرياض..."
+                                        placeholder="<?php echo __('address_placeholder'); ?>"
                                         class="w-full bg-dark/50 border border-white/10 text-white text-right pr-12 pl-4 py-3 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all <?php echo $readonlyClass; ?>"
                                         <?php echo $disabledAttr; ?>>
                                 </div>
@@ -383,7 +350,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-xl p-4 border border-white/5 flex items-center gap-3 opacity-60">
                                     <span class="material-icons-round text-yellow-500">tips_and_updates</span>
                                     <p class="text-[10px] text-gray-400">
-                                        تأكد من صحة هذه البيانات، فهي ستظهر بشكل تلقائي في تذييل الفواتير (Footer) وعلى واجهة الطباعة الحرارية.
+                                        <?php echo __('contact_info_tip'); ?>
                                     </p>
                                 </div>
                             </div>
@@ -397,13 +364,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div class="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">local_shipping</span>
-                                إعدادات التوصيل
+                                <?php echo __('delivery_settings_title'); ?>
                             </h3>
                             <?php if ($isAdmin): ?>
                                 <button type="button" onclick="resetDeliveryPrices()" 
                                     class="text-xs flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
                                     <span class="material-icons-round text-sm">restart_alt</span>
-                                    <span>إعادة تعيين</span>
+                                    <span><?php echo __('reset_btn'); ?></span>
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -412,21 +379,21 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <div class="bg-white/5 border border-white/5 rounded-xl p-5">
                                 <label class="block text-sm font-bold text-white mb-2 flex items-center gap-2">
                                     <span class="material-icons-round text-primary text-sm">location_city</span>
-                                    المدينة الرئيسية للمتجر
+                                    <?php echo __('home_city_label'); ?>
                                 </label>
                                 <input type="text" name="deliveryHomeCity" 
                                     value="<?php echo htmlspecialchars($settings['deliveryHomeCity'] ?? ''); ?>"
-                                    placeholder="مثال: الرباط، الدار البيضاء..."
+                                    placeholder="<?php echo __('home_city_placeholder'); ?>"
                                     class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
                                     <?php echo $disabledAttr; ?>>
                                 <p class="text-xs text-gray-500 mt-2">
-                                    سيتم احتساب سعر "داخل المدينة" لأي طلب يتم شحنه لهذه المدينة، وسعر "خارج المدينة" لباقي المدن.
+                                    <?php echo __('home_city_tip'); ?>
                                 </p>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="bg-white/5 border border-white/5 rounded-xl p-5">
-                                    <label class="block text-sm font-medium text-gray-300 mb-3">تكلفة التوصيل داخل المدينة</label>
+                                    <label class="block text-sm font-medium text-gray-300 mb-3"><?php echo __('inside_city_cost_label'); ?></label>
                                     <div class="relative">
                                         <input type="number" id="deliveryInsideCity" name="deliveryInsideCity" step="0.01" min="0"
                                             value="<?php echo htmlspecialchars($settings['deliveryInsideCity'] ?? '0'); ?>"
@@ -436,7 +403,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     </div>
                                 </div>
                                 <div class="bg-white/5 border border-white/5 rounded-xl p-5">
-                                    <label class="block text-sm font-medium text-gray-300 mb-3">تكلفة التوصيل خارج المدينة</label>
+                                    <label class="block text-sm font-medium text-gray-300 mb-3"><?php echo __('outside_city_cost_label'); ?></label>
                                     <div class="relative">
                                         <input type="number" id="deliveryOutsideCity" name="deliveryOutsideCity" step="0.01" min="0"
                                             value="<?php echo htmlspecialchars($settings['deliveryOutsideCity'] ?? '0'); ?>"
@@ -456,10 +423,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">home_work</span>
-                                إدارة إيجار المحل
+                                <?php echo __('rental_management_title'); ?>
                             </h3>
                             <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                                <span class="text-sm text-gray-300">تفعيل نظام الإيجار</span>
+                                <span class="text-sm text-gray-300"><?php echo __('enable_rental_system'); ?></span>
                                 <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                     <input type="checkbox" name="rentalEnabled" id="toggle-rental" value="1"
                                         class="toggle-checkbox"
@@ -476,7 +443,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
                                 <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div class="bg-white/5 border border-white/5 rounded-xl p-5">
-                                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">مبلغ الإيجار</label>
+                                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider"><?php echo __('rental_amount_label'); ?></label>
                                         <div class="relative">
                                             <input type="number" name="rentalAmount" step="0.01" min="0"
                                                 value="<?php echo htmlspecialchars($settings['rentalAmount'] ?? '0'); ?>"
@@ -487,19 +454,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     </div>
 
                                     <div class="bg-white/5 border border-white/5 rounded-xl p-5">
-                                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">نظام الدفع</label>
+                                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider"><?php echo __('payment_system_label'); ?></label>
                                         <select name="rentalType"
                                             class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
                                             <?php echo $disabledAttr; ?>>
-                                            <option value="monthly" <?php echo (isset($settings['rentalType']) && $settings['rentalType'] == 'monthly') ? 'selected' : ''; ?>>شهري (كل شهر)</option>
-                                            <option value="yearly" <?php echo (isset($settings['rentalType']) && $settings['rentalType'] == 'yearly') ? 'selected' : ''; ?>>سنوي (كل سنة)</option>
+                                            <option value="monthly" <?php echo (isset($settings['rentalType']) && $settings['rentalType'] == 'monthly') ? 'selected' : ''; ?>><?php echo __('monthly_payment'); ?></option>
+                                            <option value="yearly" <?php echo (isset($settings['rentalType']) && $settings['rentalType'] == 'yearly') ? 'selected' : ''; ?>><?php echo __('yearly_payment'); ?></option>
                                         </select>
                                     </div>
 
                                     <div class="bg-white/5 border border-white/5 rounded-xl p-5 md:col-span-2">
                                         <div class="flex items-center justify-between mb-2">
-                                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider">تاريخ الاستحقاق القادم</label>
-                                            <span class="text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">يحدث تلقائياً عند الدفع</span>
+                                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider"><?php echo __('next_due_date_label'); ?></label>
+                                            <span class="text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded"><?php echo __('auto_update_tip'); ?></span>
                                         </div>
                                         <input type="date" name="rentalPaymentDate"
                                             value="<?php echo htmlspecialchars($settings['rentalPaymentDate'] ?? date('Y-m-01')); ?>"
@@ -513,16 +480,16 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     <div>
                                         <div class="flex items-center gap-2 mb-4 text-primary">
                                             <span class="material-icons-round">notifications_active</span>
-                                            <h4 class="font-bold">التنبيه المبكر</h4>
+                                            <h4 class="font-bold"><?php echo __('early_alert_title'); ?></h4>
                                         </div>
-                                        <label class="block text-sm text-gray-300 mb-2">تذكيري قبل الموعد بـ (أيام):</label>
+                                        <label class="block text-sm text-gray-300 mb-2"><?php echo __('reminder_days_label'); ?></label>
                                         <input type="number" name="rentalReminderDays" min="1" max="30"
                                             value="<?php echo htmlspecialchars($settings['rentalReminderDays'] ?? '7'); ?>"
                                             class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 font-bold text-xl <?php echo $readonlyClass; ?>"
                                             <?php echo $disabledAttr; ?>>
                                     </div>
                                     <div class="mt-4 text-xs text-gray-400 leading-relaxed bg-black/20 p-3 rounded-lg">
-                                        سيصلك إشعار داخل النظام، وإشعار Windows إذا كان مفعلاً، قبل الموعد المحدد أعلاه.
+                                        <?php echo __('notification_info_text'); ?>
                                     </div>
                                 </div>
                             </div>
@@ -531,18 +498,18 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="bg-white/5 border border-white/5 rounded-xl p-5">
                                     <h4 class="font-bold text-white mb-4 flex items-center gap-2">
                                         <span class="material-icons-round text-sm text-gray-400">person</span>
-                                        بيانات المالك (اختياري)
+                                        <?php echo __('landlord_data_title'); ?>
                                     </h4>
                                     <div class="space-y-4">
-                                        <input type="text" name="rentalLandlordName" placeholder="اسم المالك"
+                                        <input type="text" name="rentalLandlordName" placeholder="<?php echo __('landlord_name_placeholder'); ?>"
                                             value="<?php echo htmlspecialchars($settings['rentalLandlordName'] ?? ''); ?>"
                                             class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
                                             <?php echo $disabledAttr; ?>>
-                                        <input type="text" name="rentalLandlordPhone" placeholder="رقم الهاتف"
+                                        <input type="text" name="rentalLandlordPhone" placeholder="<?php echo __('landlord_phone_placeholder'); ?>"
                                             value="<?php echo htmlspecialchars($settings['rentalLandlordPhone'] ?? ''); ?>"
                                             class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>"
                                             <?php echo $disabledAttr; ?>>
-                                        <textarea name="rentalNotes" rows="2" placeholder="ملاحظات (رقم العقد، إلخ)"
+                                        <textarea name="rentalNotes" rows="2" placeholder="<?php echo __('rental_notes_placeholder'); ?>"
                                             class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all resize-none <?php echo $readonlyClass; ?>"
                                             <?php echo $disabledAttr; ?>><?php echo htmlspecialchars($settings['rentalNotes'] ?? ''); ?></textarea>
                                     </div>
@@ -555,19 +522,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                                 <span class="material-icons-round">verified</span>
                                             </div>
                                             <div>
-                                                <h4 class="font-bold text-white">إجراء سريع</h4>
-                                                <p class="text-xs text-green-400">تسجيل دفع إيجار الشهر الحالي</p>
+                                                <h4 class="font-bold text-white"><?php echo __('quick_action_title'); ?></h4>
+                                                <p class="text-xs text-green-400"><?php echo __('pay_current_month_label'); ?></p>
                                             </div>
                                         </div>
                                         <button type="button" id="btn-rental-paid" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-green-600/20 flex items-center justify-center gap-2 <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
-                                            <span>تأكيد الدفع الآن</span>
+                                            <span><?php echo __('confirm_payment_now_btn'); ?></span>
                                             <span class="material-icons-round text-sm">check</span>
                                         </button>
                                     </div>
 
                                     <button type="button" id="btn-rental-payments-log" class="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
                                         <span class="material-icons-round text-sm">history</span>
-                                        <span>عرض سجل المدفوعات السابق</span>
+                                        <span><?php echo __('view_payment_history_btn'); ?></span>
                                     </button>
                                 </div>
                             </div>
@@ -579,11 +546,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                         <div class="flex items-center gap-4">
                              <div class="p-3 bg-white/5 rounded-xl"><span class="material-icons-round text-yellow-500">currency_exchange</span></div>
-                            <div class="flex-1"><h3 class="text-lg font-bold text-white">عملة النظام</h3></div>
+                            <div class="flex-1"><h3 class="text-lg font-bold text-white"><?php echo __('system_currency_title'); ?></h3></div>
                             <div class="w-48">
                                 <select name="currency" class="w-full bg-dark border border-white/10 text-white text-right px-4 py-2.5 rounded-xl" <?php echo $disabledAttr; ?>>
-                                    <option value="MAD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'MAD') ? 'selected' : ''; ?>>الدرهم المغربي (MAD)</option>
-                                    <option value="USD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'USD') ? 'selected' : ''; ?>>دولار أمريكي (USD)</option>
+                                    <option value="MAD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'MAD') ? 'selected' : ''; ?>><?php echo __('currency_mad'); ?></option>
+                                    <option value="USD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'USD') ? 'selected' : ''; ?>><?php echo __('currency_usd'); ?></option>
                                     </select>
                             </div>
                         </div>
@@ -592,26 +559,26 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">update</span>
-                                دورة حساب المصاريف
+                                <?php echo __('expense_cycle_title'); ?>
                             </h3>
                             <div class="bg-orange-500/10 border border-orange-500/20 px-4 py-2 rounded-xl">
-                                <p class="text-[10px] text-orange-400 font-bold">⚠️ ننصح بتغيير هذه الإعدادات مرة واحدة سنوياً فقط</p>
+                                <p class="text-[10px] text-orange-400 font-bold"><?php echo __('expense_cycle_warning'); ?></p>
                             </div>
                         </div>
                         <div class="p-6 bg-white/5 rounded-2xl border border-white/5">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-400 mb-2">تحديد دورة الحساب</label>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('select_cycle_label'); ?></label>
                                     <select name="expense_cycle" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" <?php echo $disabledAttr; ?>>
-                                        <option value="monthly" <?php echo (isset($settings['expense_cycle']) && $settings['expense_cycle'] == 'monthly') ? 'selected' : ''; ?>>دورة شهرية (كل شهر)</option>
-                                        <option value="bi-monthly" <?php echo (isset($settings['expense_cycle']) && $settings['expense_cycle'] == 'bi-monthly') ? 'selected' : ''; ?>>دورة كل 15 يوماً (نصف شهرية)</option>
+                                        <option value="monthly" <?php echo (isset($settings['expense_cycle']) && $settings['expense_cycle'] == 'monthly') ? 'selected' : ''; ?>><?php echo __('monthly_cycle_option'); ?></option>
+                                        <option value="bi-monthly" <?php echo (isset($settings['expense_cycle']) && $settings['expense_cycle'] == 'bi-monthly') ? 'selected' : ''; ?>><?php echo __('bi_monthly_cycle_option'); ?></option>
                                     </select>
                                 </div>
                                 <div class="text-xs text-gray-500">
-                                    <p class="mb-2"><strong class="text-gray-300">الدورة الشهرية:</strong> يتم احتساب المصاريف من 1 إلى نهاية الشهر.</p>
-                                    <p><strong class="text-gray-300">دورة الـ 15 يوماً:</strong> يتم تقسيم الشهر لدورتين (من 1-15 ومن 16-نهاية الشهر).</p>
+                                    <p class="mb-2"><strong class="text-gray-300"><?php echo __('monthly'); ?>:</strong> <?php echo __('monthly_cycle_explanation'); ?></p>
+                                    <p><strong class="text-gray-300"><?php echo __('bi_monthly'); ?>:</strong> <?php echo __('bi_monthly_cycle_explanation'); ?></p>
                                     <?php if(!empty($settings['expense_cycle_last_change'] ?? '')): ?>
-                                        <p class="mt-3 text-primary">تاريخ آخر تغيير: <?php echo htmlspecialchars($settings['expense_cycle_last_change']); ?></p>
+                                        <p class="mt-3 text-primary"><?php echo __('last_change_date_label'); ?> <?php echo htmlspecialchars($settings['expense_cycle_last_change']); ?></p>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -620,9 +587,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
                      <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
                         <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-bold text-white flex items-center gap-3"><span class="material-icons-round text-primary">receipt</span>إعدادات الضريبة</h3>
+                            <h3 class="text-xl font-bold text-white flex items-center gap-3"><span class="material-icons-round text-primary">receipt</span><?php echo __('tax_settings_title'); ?></h3>
                              <div class="flex items-center gap-3">
-                                <span class="text-sm text-gray-400">تفعيل الضريبة</span>
+                                <span class="text-sm text-gray-400"><?php echo __('enable_tax_label'); ?></span>
                                 <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                     <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1" class="toggle-checkbox" <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
                                     <label for="toggle-tax" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
@@ -630,8 +597,8 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/5 rounded-2xl border border-white/5">
-                            <div><label class="block text-sm font-medium text-gray-400 mb-2">اسم الضريبة</label><input type="text" name="taxLabel" value="<?php echo htmlspecialchars($settings['taxLabel'] ?? 'TVA'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
-                            <div><label class="block text-sm font-medium text-gray-400 mb-2">نسبة الضريبة (%)</label><input type="number" name="taxRate" value="<?php echo htmlspecialchars($settings['taxRate'] ?? '20'); ?>" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
+                            <div><label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('tax_name_label'); ?></label><input type="text" name="taxLabel" value="<?php echo htmlspecialchars($settings['taxLabel'] ?? 'TVA'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
+                            <div><label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('tax_rate_label'); ?></label><input type="number" name="taxRate" value="<?php echo htmlspecialchars($settings['taxRate'] ?? '20'); ?>" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
                         </div>
                      </div>
                 </div>
@@ -640,16 +607,16 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                         <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                             <span class="material-icons-round text-primary">print</span>
-                            إعدادات الطباعة
+                            <?php echo __('print_settings_title'); ?>
                         </h3>
                         <div class="space-y-4">
                             <div>
-                                <label for="printMode" class="block text-sm font-medium text-gray-300 mb-2">نوع الطباعة الافتراضي</label>
+                                <label for="printMode" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('default_print_mode_label'); ?></label>
                                 <select id="printMode" name="printMode" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
-                                    <option value="normal" <?php echo ($settings['printMode'] ?? 'normal') == 'normal' ? 'selected' : ''; ?>>طباعة عادية (A4)</option>
-                                    <option value="thermal" <?php echo ($settings['printMode'] ?? 'normal') == 'thermal' ? 'selected' : ''; ?>>طباعة حرارية (Thermal)</option>
+                                    <option value="normal" <?php echo ($settings['printMode'] ?? 'normal') == 'normal' ? 'selected' : ''; ?>><?php echo __('normal_print_option'); ?></option>
+                                    <option value="thermal" <?php echo ($settings['printMode'] ?? 'normal') == 'thermal' ? 'selected' : ''; ?>><?php echo __('thermal_print_option'); ?></option>
                                 </select>
-                                <p class="text-xs text-gray-500 mt-2">اختر نوع الطباعة الذي سيظهر تلقائياً بعد إتمام عملية البيع. الطباعة الحرارية مخصصة للطابعات الحرارية الصغيرة.</p>
+                                <p class="text-xs text-gray-500 mt-2"><?php echo __('print_mode_info'); ?></p>
                             </div>
                         </div>
                     </div>
@@ -659,15 +626,15 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                         <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                             <span class="material-icons-round text-primary">palette</span>
-                            تفضيلات الواجهة والصوت
+                            <?php echo __('interface_sound_preferences'); ?>
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                                 <div class="flex items-center gap-3">
                                     <span class="material-icons-round text-gray-400">dark_mode</span>
                                     <div>
-                                        <h4 class="font-bold text-white text-sm">الوضع الليلي (ننصح به)</h4>
-                                        <p class="text-[10px] text-gray-400">تعتيم الواجهة لراحة العين</p>
+                                        <h4 class="font-bold text-white text-sm"><?php echo __('dark_mode_title'); ?></h4>
+                                        <p class="text-[10px] text-gray-400"><?php echo __('dark_mode_subtitle'); ?></p>
                                     </div>
                                 </div>
                                 <div class="relative inline-block w-10 align-middle select-none">
@@ -679,8 +646,8 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="flex items-center gap-3">
                                     <span class="material-icons-round text-gray-400">volume_up</span>
                                     <div>
-                                        <h4 class="font-bold text-white text-sm">أصوات النظام</h4>
-                                        <p class="text-[10px] text-gray-400">تشغيل صوت عند إتمام البيع</p>
+                                        <h4 class="font-bold text-white text-sm"><?php echo __('system_sounds_title'); ?></h4>
+                                        <p class="text-[10px] text-gray-400"><?php echo __('system_sounds_subtitle'); ?></p>
                                     </div>
                                 </div>
                                 <div class="relative inline-block w-10 align-middle select-none">
@@ -694,25 +661,25 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
                         <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                             <span class="material-icons-round text-primary">inventory</span>
-                            تنبيهات حدود المخزون
+                            <?php echo __('stock_alerts_title'); ?>
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="low_quantity_alert" class="block text-sm font-medium text-gray-300 mb-2">حد المخزون المنخفض</label>
+                                <label for="low_quantity_alert" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('low_stock_limit_label'); ?></label>
                                 <input type="number" id="low_quantity_alert" name="low_quantity_alert" value="<?php echo htmlspecialchars($settings['low_quantity_alert'] ?? '30'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl font-bold text-lg focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
-                                <p class="text-xs text-gray-500 mt-2">عندما تصل كمية المنتج لهذا العدد، سيتم تمييزه باللون <span class="text-orange-400 font-bold">البرتقالي</span> في صفحة إدارة المخزون ونقطة البيع</p>
+                                <p class="text-xs text-gray-500 mt-2"><?php echo __('low_stock_info_text'); ?></p>
                             </div>
                             <div>
-                                <label for="critical_quantity_alert" class="block text-sm font-medium text-gray-300 mb-2">حد المخزون الحرج</label>
+                                <label for="critical_quantity_alert" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('critical_stock_limit_label'); ?></label>
                                 <input type="number" id="critical_quantity_alert" name="critical_quantity_alert" value="<?php echo htmlspecialchars($settings['critical_quantity_alert'] ?? '10'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl font-bold text-lg focus:outline-none focus:border-primary/50 transition-all <?php echo $readonlyClass; ?>" <?php echo $disabledAttr; ?>>
-                                <p class="text-xs text-gray-500 mt-2">عندما تصل كمية المنتج لهذا العدد، سيتم تمييزه باللون <span class="text-red-500 font-bold">الأحمر</span> في صفحة إدارة المخزون ونقطة البيع</p>
+                                <p class="text-xs text-gray-500 mt-2"><?php echo __('critical_stock_info_text'); ?></p>
                             </div>
                         </div>
                     </div>
                     
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel" id="stock-alerts-container">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="material-icons-round text-primary">update</span>فحص المخزون التلقائي</h3>
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="material-icons-round text-primary">update</span><?php echo __('auto_stock_check_title'); ?></h3>
                              <div class="relative inline-block w-10 align-middle select-none">
                                 <input type="checkbox" name="stockAlertsEnabled" id="toggle-stock-alerts" value="1" class="toggle-checkbox" <?php echo (isset($settings['stockAlertsEnabled']) && $settings['stockAlertsEnabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> onchange="handleStockAlertToggle(this)" />
                                 <label for="toggle-stock-alerts" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
@@ -720,12 +687,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </div>
                          <div id="stock-alerts-settings" class="<?php echo (!isset($settings['stockAlertsEnabled']) || $settings['stockAlertsEnabled'] == '0') ? 'opacity-50 pointer-events-none' : ''; ?>">
                             <div class="flex items-end gap-4">
-                                <div class="flex-1"><label class="block text-sm font-medium text-gray-400 mb-2">تكرار الفحص (بالدقائق)</label><input type="number" name="stockAlertInterval" value="<?php echo htmlspecialchars($settings['stockAlertInterval'] ?? '20'); ?>" min="1" max="1440" step="1" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
-                                 <button type="button" onclick="openStockGuideModal()" class="px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-primary text-sm font-bold flex items-center gap-2 transition-all"><span class="material-icons-round text-sm">help_outline</span>كيف أختار؟</button>
+                                <div class="flex-1"><label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('check_interval_label'); ?></label><input type="number" name="stockAlertInterval" value="<?php echo htmlspecialchars($settings['stockAlertInterval'] ?? '20'); ?>" min="1" max="1440" step="1" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
+                                 <button type="button" onclick="openStockGuideModal()" class="px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-primary text-sm font-bold flex items-center gap-2 transition-all"><span class="material-icons-round text-sm">help_outline</span><?php echo __('how_to_choose_btn'); ?></button>
                             </div>
                         </div>
                          <div class="mt-6 pt-6 border-t border-white/5">
-                             <button type="button" id="enable-windows-notifications" onclick="enableStockNotifications()" class="w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/50 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"><span class="material-icons-round text-sm">notifications_active</span><span>تفعيل إشعارات سطح المكتب (Windows)</span></button>
+                             <button type="button" id="enable-windows-notifications" onclick="enableStockNotifications()" class="w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/50 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"><span class="material-icons-round text-sm">notifications_active</span><span><?php echo __('enable_windows_notifications_btn'); ?></span></button>
                         </div>
                      </div>
 
@@ -737,10 +704,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">calendar_month</span>
-                                أيام العمل الأسبوعية
+                                <?php echo __('weekly_work_days_title'); ?>
                             </h3>
                             <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                                <span class="text-sm text-gray-300">تفعيل أيام العمل</span>
+                                <span class="text-sm text-gray-300"><?php echo __('enable_work_days_label'); ?></span>
                                 <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                     <input type="checkbox" name="work_days_enabled" id="toggle-work-days" value="1"
                                         class="toggle-checkbox"
@@ -755,7 +722,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div id="work-days-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['work_days_enabled']) || $settings['work_days_enabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
                             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                                 <?php
-                                $days = ['monday' => 'الاثنين', 'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء', 'thursday' => 'الخميس', 'friday' => 'الجمعة', 'saturday' => 'السبت', 'sunday' => 'الأحد'];
+                                $days = ['monday' => __('day_monday'), 'tuesday' => __('day_tuesday'), 'wednesday' => __('day_wednesday'), 'thursday' => __('day_thursday'), 'friday' => __('day_friday'), 'saturday' => __('day_saturday'), 'sunday' => __('day_sunday')];
                                 $work_days = explode(',', $settings['work_days'] ?? 'monday,tuesday,wednesday,thursday,friday,saturday');
                                 foreach ($days as $en => $ar) {
                                     $checked = in_array($en, $work_days) ? 'checked' : '';
@@ -768,15 +735,14 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 }
                                 ?>
                             </div>
-                            <p class="text-xs text-gray-500 mt-4">حدد الأيام التي يعمل فيها المتجر. سيتم استخدام هذه الإعدادات في التقارير المستقبلية.</p>
+                            <p class="text-xs text-gray-500 mt-4"><?php echo __('work_days_info'); ?></p>
 
                             <div id="work-days-warning" class="mt-6 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3 transition-all duration-500">
                                 <span class="material-icons-round text-blue-400 mt-0.5">info</span>
                                 <div class="flex-1">
-                                    <h4 class="text-sm font-bold text-blue-400 mb-1">تنبيه بخصوص تغيير أيام العمل</h4>
+                                    <h4 class="text-sm font-bold text-blue-400 mb-1"><?php echo __('work_days_warning_title'); ?></h4>
                                     <p class="text-xs text-gray-300 leading-relaxed">
-                                        أي تغيير في أيام العمل سيبدأ تأثيره على التقارير والإحصائيات ابتداءً من المرة القادمة التي تقوم فيها ببدء يوم عمل جديد. 
-                                        النظام يحافظ على دقة التقارير السابقة كما هي؛ التغيير يشمل البيانات المستقبلية فقط.
+                                        <?php echo __('work_days_warning_text'); ?>
                                     </p>
                                 </div>
                             </div>
@@ -790,10 +756,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="flex items-center justify-between mb-2">
                                     <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                         <span class="material-icons-round text-primary">festival</span>
-                                        العطل الوطنية والدينية (المغرب)
+                                        <?php echo __('holidays_title'); ?>
                                     </h3>
                                     <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                                        <span class="text-sm text-gray-300">تفعيل ميزة العطل</span>
+                                        <span class="text-sm text-gray-300"><?php echo __('enable_holidays_label'); ?></span>
                                         <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                             <input type="checkbox" name="holidays_enabled" id="toggle-holidays" value="1"
                                                 class="toggle-checkbox"
@@ -804,12 +770,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         </div>
                                     </div>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">إدارة العطل الرسمية لضمان دقة التقارير والإحصائيات</p>
+                                <p class="text-xs text-gray-500 mt-1"><?php echo __('holidays_subtitle'); ?></p>
                                 <div class="flex items-center gap-2 mt-2">
                                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                    <span class="text-[10px] text-gray-400">آخر تحقق تلقائي: </span>
+                                    <span class="text-[10px] text-gray-400"><?php echo __('last_sync_label'); ?></span>
                                     <span id="last-sync-date" class="text-[10px] text-primary font-bold">
-                                        <?php echo !empty($settings['last_holiday_sync_date'] ?? '') ? htmlspecialchars($settings['last_holiday_sync_date']) : 'لم يتم التحقق بعد'; ?>
+                                        <?php echo !empty($settings['last_holiday_sync_date'] ?? '') ? htmlspecialchars($settings['last_holiday_sync_date']) : __('not_synced_yet'); ?>
                                     </span>
                                 </div>
                             </div>
@@ -817,11 +783,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <div class="flex items-center gap-3">
                                 <button type="button" onclick="syncMoroccanHolidays()" id="sync-holidays-btn" class="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
                                     <span class="material-icons-round text-sm">sync</span>
-                                    <span id="sync-btn-text">تحديث العطل الآن</span>
+                                    <span id="sync-btn-text"><?php echo __('update_holidays_now_btn'); ?></span>
                                 </button>
                                 <button type="button" onclick="openHolidayModal()" class="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
                                     <span class="material-icons-round text-sm">add</span>
-                                    إضافة عطلة مخصصة
+                                    <?php echo __('add_custom_holiday_btn'); ?>
                                 </button>
                             </div>
                             <?php endif; ?>
@@ -830,7 +796,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div id="holidays-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['holidays_enabled']) || $settings['holidays_enabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
                         <div class="flex items-center justify-between mb-6">
                             <div class="flex items-center gap-4">
-                                <label class="text-xs text-gray-400">عرض عطل سنة:</label>
+                                <label class="text-xs text-gray-400"><?php echo __('display_year_label'); ?></label>
                                 <select id="holiday-year-filter" onchange="loadHolidays()" class="bg-dark/50 border border-white/10 text-white text-xs px-3 py-1.5 rounded-lg">
                                     <?php
                                     $curYear = (int)date('Y');
@@ -844,11 +810,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <div class="flex items-center gap-2">
                                 <button type="button" onclick="syncInvoicesWithHolidays()" class="text-[10px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1 rounded-full border border-white/5 transition-all flex items-center gap-1">
                                     <span class="material-icons-round text-xs">history</span>
-                                    تحديث بيانات التقارير السابقة
+                                    <?php echo __('update_past_reports_btn'); ?>
                                 </button>
                                 <div id="online-status" class="flex items-center gap-2 text-[10px] text-gray-500 bg-white/5 px-3 py-1 rounded-full border border-white/5">
                                     <span class="material-icons-round text-xs">language</span>
-                                    <span id="status-text">جاري التحقق...</span>
+                                    <span id="status-text"><?php echo __('status_checking'); ?></span>
                                 </div>
                             </div>
                         </div>
@@ -857,9 +823,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <table class="w-full text-right border-collapse">
                                 <thead>
                                     <tr class="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
-                                        <th class="px-6 py-4 font-bold">التاريخ</th>
-                                        <th class="px-6 py-4 font-bold">اسم العطلة</th>
-                                        <th class="px-6 py-4 font-bold text-center">الإجراءات</th>
+                                        <th class="px-6 py-4 font-bold"><?php echo __('holiday_date_col'); ?></th>
+                                        <th class="px-6 py-4 font-bold"><?php echo __('holiday_name_col'); ?></th>
+                                        <th class="px-6 py-4 font-bold text-center"><?php echo __('actions'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody id="holidays-table-body" class="text-sm text-gray-300">
@@ -871,8 +837,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div class="mt-4 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3">
                             <span class="material-icons-round text-blue-400 text-sm mt-0.5">info</span>
                             <p class="text-[10px] text-gray-400 leading-relaxed">
-                                ملاحظة: التواريخ الدينية (مثل عيد الفطر وعيد الأضحى) هي تقديرات بناءً على التقويم الهجري العالمي. 
-                                يمكنك تعديل التاريخ يدوياً إذا اختلف يوم واحد حسب رؤية الهلال الرسمية بالمغرب.
+                                <?php echo __('religious_holidays_note'); ?>
                             </p>
                         </div>
                         </div> <!-- end holidays-settings-content -->
@@ -884,11 +849,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">backup</span>
-                                النسخ الاحتياطي لقاعدة البيانات
+                                <?php echo __('backup_title'); ?>
                             </h3>
                             <button type="button" onclick="createBackup()" id="btn-create-backup" class="bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-primary/20">
                                 <span class="material-icons-round text-lg">add_circle</span>
-                                <span>نسخ احتياطي فوري</span>
+                                <span><?php echo __('create_backup_btn'); ?></span>
                             </button>
                         </div>
 
@@ -897,22 +862,22 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <div class="flex items-center justify-between mb-4 relative z-10">
                                 <h4 class="text-base font-bold text-white flex items-center gap-2">
                                     <span class="material-icons-round text-indigo-400">cloud_upload</span>
-                                    استعادة نسخة احتياطية
+                                    <?php echo __('restore_backup_title'); ?>
                                 </h4>
                                 <div class="flex gap-2">
                                     <input type="file" id="restore-file-input" accept=".sql" class="hidden" onchange="handleRestoreUpload(this)">
                                     <button type="button" onclick="document.getElementById('restore-file-input').click()" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
                                         <span class="material-icons-round text-sm">upload_file</span>
-                                        رفع ملف واستعادة
+                                        <?php echo __('upload_restore_btn'); ?>
                                     </button>
                                 </div>
                             </div>
-                            <p class="text-xs text-gray-400 mb-4 relative z-10">يمكنك استعادة قاعدة البيانات من ملف .sql محفوظ لديك. سيتم حذف البيانات الحالية واستبدالها.</p>
+                            <p class="text-xs text-gray-400 mb-4 relative z-10"><?php echo __('restore_info_text'); ?></p>
                             
                             <!-- Progress Bar -->
                             <div id="restore-progress-container" class="hidden relative z-10 bg-dark/50 rounded-xl p-4 border border-white/5">
                                 <div class="flex justify-between text-xs font-bold text-white mb-2">
-                                    <span id="restore-status-text">جاري الرفع...</span>
+                                    <span id="restore-status-text"><?php echo __('uploading'); ?></span>
                                     <span id="restore-percent">0%</span>
                                 </div>
                                 <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
@@ -925,31 +890,31 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div class="bg-white/5 border border-white/5 rounded-xl p-6 mb-8">
                             <h4 class="text-base font-bold text-white mb-4 flex items-center gap-2">
                                 <span class="material-icons-round text-blue-400">schedule</span>
-                                الجدولة التلقائية
+                                <?php echo __('auto_schedule_title'); ?>
                             </h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                                 <div>
                                     <div class="flex items-center justify-between mb-2">
-                                        <label class="text-sm text-gray-300">تفعيل النسخ التلقائي</label>
+                                        <label class="text-sm text-gray-300"><?php echo __('enable_auto_backup_label'); ?></label>
                                         <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                             <input type="checkbox" id="backup_enabled" class="toggle-checkbox" <?php echo ($settings['backup_enabled'] ?? '0') === '1' ? 'checked' : ''; ?> />
                                             <label for="backup_enabled" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
                                         </div>
                                     </div>
-                                    <label class="block text-xs font-bold text-gray-400 mb-2 mt-4">تكرار النسخ</label>
+                                    <label class="block text-xs font-bold text-gray-400 mb-2 mt-4"><?php echo __('backup_frequency_label'); ?></label>
                                     <select id="backup_frequency" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                                        <option value="daily" <?php echo ($settings['backup_frequency'] ?? 'daily') === 'daily' ? 'selected' : ''; ?>>يومي (كل 24 ساعة)</option>
-                                        <option value="weekly" <?php echo ($settings['backup_frequency'] ?? 'daily') === 'weekly' ? 'selected' : ''; ?>>أسبوعي (كل 7 أيام)</option>
-                                        <option value="monthly" <?php echo ($settings['backup_frequency'] ?? 'daily') === 'monthly' ? 'selected' : ''; ?>>شهري (كل 30 يوم)</option>
+                                        <option value="daily" <?php echo ($settings['backup_frequency'] ?? 'daily') === 'daily' ? 'selected' : ''; ?>><?php echo __('daily_frequency'); ?></option>
+                                        <option value="weekly" <?php echo ($settings['backup_frequency'] ?? 'daily') === 'weekly' ? 'selected' : ''; ?>><?php echo __('weekly_frequency'); ?></option>
+                                        <option value="monthly" <?php echo ($settings['backup_frequency'] ?? 'daily') === 'monthly' ? 'selected' : ''; ?>><?php echo __('monthly_frequency'); ?></option>
                                     </select>
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <button type="button" onclick="saveBackupSettings()" id="btn-save-backup-settings" class="w-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
                                         <span class="material-icons-round text-sm">save</span>
-                                        <span>حفظ إعدادات الجدولة</span>
+                                        <span><?php echo __('save_schedule_btn'); ?></span>
                                     </button>
                                     <p class="text-[10px] text-gray-500 text-center">
-                                        آخر نسخ تلقائي: <span class="text-primary dir-ltr"><?php echo !empty($settings['last_backup_run']) ? $settings['last_backup_run'] : 'لم يتم بعد'; ?></span>
+                                        <?php echo __('last_auto_backup_label'); ?> <span class="text-primary dir-ltr"><?php echo !empty($settings['last_backup_run']) ? $settings['last_backup_run'] : __('not_done_yet'); ?></span>
                                     </p>
                                 </div>
                             </div>
@@ -958,16 +923,16 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <!-- Backup List -->
                         <h4 class="text-base font-bold text-white mb-4 flex items-center gap-2">
                             <span class="material-icons-round text-green-400">history</span>
-                            سجل النسخ الاحتياطية
+                            <?php echo __('backup_history_title'); ?>
                         </h4>
                         <div class="overflow-hidden rounded-xl border border-white/5">
                             <table class="w-full text-right border-collapse">
                                 <thead>
                                     <tr class="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
-                                        <th class="px-6 py-4 font-bold text-right">اسم الملف</th>
-                                        <th class="px-6 py-4 font-bold text-right">التاريخ</th>
-                                        <th class="px-6 py-4 font-bold text-center">الحجم</th>
-                                        <th class="px-6 py-4 font-bold text-center">الإجراءات</th>
+                                        <th class="px-6 py-4 font-bold text-right"><?php echo __('filename_col'); ?></th>
+                                        <th class="px-6 py-4 font-bold text-right"><?php echo __('date_label'); ?></th>
+                                        <th class="px-6 py-4 font-bold text-center"><?php echo __('size_col'); ?></th>
+                                        <th class="px-6 py-4 font-bold text-center"><?php echo __('actions'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody id="backups-table-body" class="text-sm text-gray-300">
@@ -984,31 +949,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <span class="material-icons-round text-red-500 text-3xl">warning</span>
                             </div>
-                            <h3 class="text-2xl font-bold text-white mb-2">إعادة تهيئة النظام</h3>
-                            <p class="text-gray-400">هذه العملية ستعيد ضبط جميع إعدادات النظام إلى الحالة الأولية</p>
+                            <h3 class="text-2xl font-bold text-white mb-2"><?php echo __('system_reset_title'); ?></h3>
+                            <p class="text-gray-400"><?php echo __('system_reset_subtitle'); ?></p>
                         </div>
 
                         <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-6 mb-6">
                             <h4 class="text-lg font-bold text-red-400 mb-4 flex items-center gap-2">
                                 <span class="material-icons-round">error_outline</span>
-                                تحذير هام
+                                <?php echo __('important_warning_title'); ?>
                             </h4>
                             <ul class="text-sm text-gray-300 space-y-2">
                                 <li class="flex items-start gap-2">
                                     <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
-                                    سيتم حذف جميع الإعدادات المخصصة (الاسم، العنوان، الشعار، إلخ)
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
-                                    سيتم تعطيل الوحدة المفاتيح الوهمية نهائياً
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
-                                    سيتم إعادة تعيين أسعار التوصيل والإيجار والضرائب إلى القيم الافتراضية
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
-                                    لا يمكن التراجع عن هذه العملية
+                                    <?php echo __('reset_warning_detail'); ?>
                                 </li>
                             </ul>
                         </div>
@@ -1016,20 +969,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-6 mb-6">
                             <h4 class="text-lg font-bold text-yellow-400 mb-4 flex items-center gap-2">
                                 <span class="material-icons-round">info</span>
-                                ما سيحدث بعد إعادة التهيئة
+                                <?php echo __('what_happens_reset_title'); ?>
                             </h4>
                             <ul class="text-sm text-gray-300 space-y-2">
                                 <li class="flex items-start gap-2">
                                     <span class="material-icons-round text-yellow-500 text-sm mt-0.5">check_circle</span>
-                                    سيتم إرجاع جميع الإعدادات إلى القيم الافتراضية
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="material-icons-round text-yellow-500 text-sm mt-0.5">check_circle</span>
-                                    الوحدة المفاتيح الوهمية ستكون معطلة
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="material-icons-round text-yellow-500 text-sm mt-0.5">check_circle</span>
-                                    سيتم تسجيل إشعار في سجل النظام
+                                    <?php echo __('system_reset_subtitle'); ?>
                                 </li>
                             </ul>
                         </div>
@@ -1037,9 +982,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div class="text-center">
                             <button type="button" onclick="openResetModal()" class="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-3 mx-auto">
                                 <span class="material-icons-round">restart_alt</span>
-                                إعادة تهيئة النظام
+                                <?php echo __('reset_system_btn'); ?>
                             </button>
-                            <p class="text-xs text-gray-500 mt-4">هذه العملية تتطلب تأكيد إضافي</p>
+                            <p class="text-xs text-gray-500 mt-4"><?php echo __('reset_confirm_hint'); ?></p>
                         </div>
                     </div>
                 </div>
@@ -1082,7 +1027,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     async function loadBackups() {
         const tbody = document.getElementById('backups-table-body');
         if(!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">' + window.__('loading_text') + '</td></tr>';
         
         try {
             const res = await fetch('api.php?action=getBackups');
@@ -1102,13 +1047,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <td class="px-6 py-4 font-bold text-white dir-ltr text-right">${b.date}</td>
                         <td class="px-6 py-4 text-center text-gray-400 dir-ltr">${size.toFixed(2)} ${unit}</td>
                         <td class="px-6 py-4 text-center flex justify-center gap-2">
-                            <a href="api.php?action=downloadBackup&filename=${b.name}" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20" title="تحميل">
+                            <a href="api.php?action=downloadBackup&filename=${b.name}" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20" title="${window.__('download_pdf')}">
                                 <span class="material-icons-round text-sm">download</span>
                             </a>
-                            <button type="button" onclick="restoreFromList('${b.name}')" class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg transition-colors hover:bg-indigo-500/20" title="استعادة">
+                            <button type="button" onclick="restoreFromList('${b.name}')" class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg transition-colors hover:bg-indigo-500/20" title="${window.__('restore_backup_title')}">
                                 <span class="material-icons-round text-sm">settings_backup_restore</span>
                             </button>
-                            <button type="button" onclick="deleteBackup('${b.name}')" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20" title="حذف">
+                            <button type="button" onclick="deleteBackup('${b.name}')" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20" title="${window.__('delete')}">
                                 <span class="material-icons-round text-sm">delete</span>
                             </button>
                         </td>
@@ -1116,43 +1061,43 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 });
                 tbody.innerHTML = html;
             } else {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">لا توجد نسخ احتياطية محفوظة.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">' + window.__('no_backups_found') + '</td></tr>';
             }
         } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">فشل في تحميل البيانات</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">' + window.__('failed_loading_data') + '</td></tr>';
         }
     }
 
     async function createBackup() {
         const btn = document.getElementById('btn-create-backup');
-        if(!confirm('هل تريد إنشاء نسخة احتياطية الآن؟')) return;
+        if(!confirm(window.__('confirm_action'))) return;
         
         btn.disabled = true;
-        btn.innerHTML = '<span class="material-icons-round animate-spin text-lg">sync</span> جاري الإنشاء...';
+        btn.innerHTML = '<span class="material-icons-round animate-spin text-lg">sync</span> ' + window.__('creating_backup_text');
         
         try {
             const res = await fetch('api.php?action=createBackup');
             const data = await res.json();
             if (data.success) {
                 if(typeof showToast === 'function') {
-                    showToast('تم إنشاء النسخة الاحتياطية بنجاح!', true);
+                    showToast(window.__('backup_created_success'), true);
                 } else {
-                    alert('تم إنشاء النسخة الاحتياطية بنجاح!');
+                    alert(window.__('backup_created_success'));
                 }
                 loadBackups();
             } else {
-                alert('خطأ: ' + data.message);
+                alert(window.__('error') + ': ' + data.message);
             }
         } catch (e) {
-            alert('خطأ في الاتصال بالخادم');
+            alert(window.__('server_connection_error'));
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-icons-round text-lg">add_circle</span> <span>نسخ احتياطي فوري</span>';
+            btn.innerHTML = '<span class="material-icons-round text-lg">add_circle</span> <span>' + window.__('create_backup_btn') + '</span>';
         }
     }
 
     async function deleteBackup(filename) {
-        if(!confirm('هل أنت متأكد من حذف هذه النسخة الاحتياطية؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+        if(!confirm(window.__('delete_backup_confirm'))) return;
         
         try {
             const res = await fetch('api.php?action=deleteBackup', {
@@ -1164,10 +1109,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             if (data.success) {
                 loadBackups();
             } else {
-                alert('خطأ: ' + data.message);
+                alert(window.__('error') + ': ' + data.message);
             }
         } catch (e) {
-            alert('خطأ في الاتصال بالخادم');
+            alert(window.__('server_connection_error'));
         }
     }
     
@@ -1177,7 +1122,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const btn = document.getElementById('btn-save-backup-settings');
         
         btn.disabled = true;
-        btn.innerHTML = '<span class="material-icons-round animate-spin text-sm">sync</span> جاري الحفظ...';
+        btn.innerHTML = '<span class="material-icons-round animate-spin text-sm">sync</span> ' + window.__('saving_text');
 
         try {
             const res = await fetch('api.php?action=updateSetting', {
@@ -1193,18 +1138,18 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             const data = await res.json();
             if (data.success) {
                 if(typeof showToast === 'function') {
-                    showToast('تم حفظ إعدادات النسخ الاحتياطي', true);
+                    showToast(window.__('settings_updated_success'), true);
                 } else {
-                    alert('تم حفظ الإعدادات بنجاح');
+                    alert(window.__('settings_updated_success'));
                 }
             } else {
-                alert('خطأ: ' + data.message);
+                alert(window.__('error') + ': ' + data.message);
             }
         } catch (e) {
-            alert('خطأ في الاتصال');
+            alert(window.__('server_connection_error'));
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-icons-round text-sm">save</span> <span>حفظ إعدادات الجدولة</span>';
+            btn.innerHTML = '<span class="material-icons-round text-sm">save</span> <span>' + window.__('save_schedule_btn') + '</span>';
         }
     }
 
@@ -1216,7 +1161,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     }
 
     async function restoreFromList(filename) {
-        if(!confirm('هل أنت متأكد من استعادة النسخة: ' + filename + '؟\n⚠️ سيتم حذف جميع البيانات الحالية واستبدالها!')) return;
+        if(!confirm(window.__('restore_confirm_start') + filename + '?\n' + window.__('restore_warning_end'))) return;
         startRestoreProcess(null, filename);
     }
 
@@ -1229,7 +1174,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         container.classList.remove('hidden');
         progressBar.style.width = '0%';
         percentText.innerText = '0%';
-        statusText.innerText = file ? 'جاري رفع الملف...' : 'جاري التحضير...';
+        statusText.innerText = file ? window.__('uploading') : window.__('processing');
 
         // Helper to update polling
         let pollInterval;
@@ -1243,7 +1188,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         percentText.innerText = data.percent + '%';
                         statusText.innerText = data.status;
                         
-                        if (data.percent >= 100 && (data.status.includes('نجاح') || data.status.includes('خطأ'))) {
+                        if (data.percent >= 100 && (data.status.includes('نجاح') || data.status.includes('success') || data.status.includes('خطأ') || data.status.includes('error'))) {
                             clearInterval(pollInterval);
                             setTimeout(() => {
                                 alert(data.status);
@@ -1279,13 +1224,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     // Upload done, server processing started
                     startPolling();
                 } else {
-                    alert('فشل الرفع');
+                    alert(window.__('upload_failed_text'));
                     container.classList.add('hidden');
                 }
             };
             
             xhr.onerror = () => {
-                alert('خطأ في الاتصال');
+                alert(window.__('server_connection_error'));
                 container.classList.add('hidden');
             };
             
@@ -1298,7 +1243,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 body: JSON.stringify({ filename })
             }).then(() => startPolling())
               .catch(() => {
-                  alert('فشل بدء الاستعادة');
+                  alert(window.__('action_failed'));
                   container.classList.add('hidden');
               });
         }
@@ -1308,7 +1253,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const year = document.getElementById('holiday-year-filter').value;
         const tbody = document.getElementById('holidays-table-body');
         if(!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">' + window.__('loading_text') + '</td></tr>';
         
         try {
             const res = await fetch(`api.php?action=getHolidays&year=${year}`);
@@ -1332,40 +1277,40 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 });
                 tbody.innerHTML = html;
             } else {
-                tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">لا توجد عطل مسجلة لهذا العام.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">' + window.__('no_holidays_found') + '</td></tr>';
             }
         } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-red-400">فشل في تحميل البيانات</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-red-400">' + window.__('failed_loading_data') + '</td></tr>';
         }
     }
 
     async function syncMoroccanHolidays() {
         await updateOnlineStatus();
         const statusText = document.getElementById('status-text');
-        if (statusText && statusText.innerText.includes('غير متصل')) {
-             alert('يرجى الاتصال بالإنترنت أولاً ليتمكن النظام من جلب العطل الدينية');
+        if (statusText && statusText.innerText.includes(window.__('status_offline'))) {
+             alert(window.__('server_connection_error')); // Reuse for offline
              return;
         }
         const year = document.getElementById('holiday-year-filter').value;
         const btn = document.getElementById('sync-holidays-btn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="material-icons-round animate-spin text-sm">sync</span> جاري التحديث...';
+        btn.innerHTML = '<span class="material-icons-round animate-spin text-sm">sync</span> ' + window.__('processing');
         
         try {
             const res = await fetch(`api.php?action=syncMoroccanHolidays&year=${year}`);
             const data = await res.json();
             if (data.success) {
-                alert(`تم تحديث ${data.count} عطلة بنجاح (تشمل العطل الوطنية والدينية)`);
+                alert(window.__('sync_holidays_success').replace('%d', data.count));
                 loadHolidays();
                 if(data.last_sync) document.getElementById('last-sync-date').innerText = data.last_sync;
             } else {
-                alert('فشل التحديث: ' + data.message);
+                alert(window.__('action_failed') + ': ' + data.message);
             }
         } catch (e) {
-            alert('خطأ في الاتصال بالخادم');
+            alert(window.__('server_connection_error'));
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-icons-round text-sm">sync</span> تحديث العطل الآن';
+            btn.innerHTML = '<span class="material-icons-round text-sm">sync</span> ' + window.__('update_holidays_now_btn');
         }
     }
 
@@ -1391,7 +1336,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const id = document.getElementById('holiday-id').value;
         const name = document.getElementById('holiday-name').value;
         const date = document.getElementById('holiday-date').value;
-        if (!name || !date) return alert('يرجى ملء اسم العطلة وتاريخها');
+        if (!name || !date) return alert(window.__('fill_all_fields_correctly'));
 
         const action = id ? 'updateHoliday' : 'addHoliday';
         const body = id ? { id, name, date } : { name, date };
@@ -1410,12 +1355,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 alert(data.message);
             }
         } catch (e) {
-            alert('خطأ أثناء الحفظ');
+            alert(window.__('server_connection_error'));
         }
     }
 
     async function deleteHoliday(id) {
-        if(!confirm('هل أنت متأكد من حذف هذه العطلة؟ قد يؤثر ذلك على تقارير المبيعات لهذا اليوم.')) return;
+        if(!confirm(window.__('delete_holiday_confirm'))) return;
         try {
             const res = await fetch('api.php?action=deleteHoliday', {
                 method: 'POST',
@@ -1425,7 +1370,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             const data = await res.json();
             if (data.success) loadHolidays();
         } catch (e) {
-            alert('خطأ أثناء الحذف');
+            alert(window.__('server_connection_error'));
         }
     }
 
@@ -1444,7 +1389,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         if (!statusText) return;
 
         if (!navigator.onLine) {
-            statusText.innerText = 'غير متصل';
+            statusText.innerText = window.__('status_offline');
             statusText.className = 'text-red-500';
             return;
         }
@@ -1460,10 +1405,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             });
             
             clearTimeout(timeoutId);
-            statusText.innerText = 'متصل بالإنترنت';
+            statusText.innerText = window.__('status_online');
             statusText.className = 'text-green-500';
         } catch (e) {
-            statusText.innerText = 'متصل محلياً (لا يوجد إنترنت)';
+            statusText.innerText = window.__('status_local');
             statusText.className = 'text-orange-500';
         }
     }
@@ -1489,19 +1434,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     });
 
     async function syncInvoicesWithHolidays() {
-        if (!confirm('سيقوم هذا بتحديث حالة "العطلة" في جميع الفواتير السابقة بناءً على قائمة العطلات الحالية. هل تريد الاستمرار؟')) return;
+        if (!confirm(window.__('sync_invoices_confirm'))) return;
         
-        showLoadingOverlay('جاري تحديث بيانات التقارير...');
+        showLoadingOverlay(window.__('processing'));
         try {
             const res = await fetch('api.php?action=syncInvoicesWithHolidays');
             const data = await res.json();
             if (data.success) {
-                alert('تم تحديث البيانات بنجاح. ستظهر التغييرات في التقارير الآن.');
+                alert(window.__('data_updated_success'));
             } else {
-                alert('حدث خطأ: ' + data.message);
+                alert(window.__('action_failed') + ': ' + data.message);
             }
         } catch (e) {
-            alert('خطأ في الاتصال');
+            alert(window.__('server_connection_error'));
         } finally {
             hideLoadingOverlay();
         }
@@ -1513,7 +1458,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     // ... (Same admin scripts) ...
     // ... (Reset Delivery, Toggle Rental, Notifications logic) ...
     function resetDeliveryPrices() {
-        if(confirm('هل أنت متأكد من إعادة تعيين أسعار التوصيل إلى القيم الافتراضية (20/40)؟\nيجب عليك حفظ التغييرات بعد ذلك.')) {
+        if(confirm(window.__('confirm_action'))) {
             const insideCity = document.getElementById('deliveryInsideCity');
             const outsideCity = document.getElementById('deliveryOutsideCity');
             insideCity.value = '20'; outsideCity.value = '40';
@@ -1524,7 +1469,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     function toggleRentalSettings(checkbox) {
         const content = document.getElementById('rental-settings-content');
         if (!checkbox.checked) {
-            if (confirm('⚠️ تنبيه!\n\nهل أنت متأكد من تعطيل ميزة تذكير الإيجار؟')) {
+            if (confirm('⚠️ ' + window.__('are_you_sure'))) {
                 content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
             } else {
                 checkbox.checked = true;
@@ -1537,7 +1482,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     function toggleHolidaysSettings(checkbox) {
         const content = document.getElementById('holidays-settings-content');
         if (!checkbox.checked) {
-            if (confirm('⚠️ تنبيه!\n\nهل أنت متأكد من تعطيل ميزة العطل الرسمية؟')) {
+            if (confirm('⚠️ ' + window.__('are_you_sure'))) {
                 content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
             } else {
                 checkbox.checked = true;
@@ -1550,7 +1495,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     function toggleWorkDaysSettings(checkbox) {
         const content = document.getElementById('work-days-settings-content');
         if (!checkbox.checked) {
-            if (confirm('⚠️ تنبيه!\n\nهل أنت متأكد من تعطيل أيام العمل الأسبوعية؟')) {
+            if (confirm('⚠️ ' + window.__('are_you_sure'))) {
                 content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
             } else {
                 checkbox.checked = true;
@@ -1563,7 +1508,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     function handleStockAlertToggle(checkbox) {
         const container = document.getElementById('stock-alerts-settings');
         if (!checkbox.checked) {
-            if (confirm(`⚠️ تنبيه هام!\n\nتعطيل تنبيهات المخزون قد يجعلك تفقد السيطرة على منتجاتك.\nهل أنت متأكد؟`)) {
+            if (confirm(`⚠️ ` + window.__('are_you_sure'))) {
                 container.classList.add('opacity-50', 'pointer-events-none');
             } else {
                 checkbox.checked = true;
@@ -1578,11 +1523,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const notifButton = document.getElementById('enable-windows-notifications');
         if (notifButton && 'Notification' in window) {
             if (Notification.permission === 'granted') {
-                notifButton.innerHTML = `<span class="material-icons-round text-sm">check_circle</span><span>إشعارات Windows مفعلة</span>`;
+                notifButton.innerHTML = `<span class="material-icons-round text-sm">check_circle</span><span>` + window.__('windows_notifications_enabled') + `</span>`;
                 notifButton.className = "w-full bg-green-500/10 text-green-500 border border-green-500/20 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-default";
                 notifButton.disabled = true;
             } else if (Notification.permission === 'denied') {
-                notifButton.innerHTML = `<span class="material-icons-round text-sm">block</span><span>الإشعارات محظورة من المتصفح</span>`;
+                notifButton.innerHTML = `<span class="material-icons-round text-sm">block</span><span>` + window.__('notifications_blocked_browser') + `</span>`;
                 notifButton.className = "w-full bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed";
             }
         }
@@ -1593,7 +1538,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const btn = document.getElementById('btn-rental-paid');
         if (btn) {
             btn.addEventListener('click', async function() {
-                if(!confirm('هل تريد تسجيل دفع إيجار هذا الشهر؟ سيتم تحديث تاريخ الاستحقاق تلقائياً.')) return;
+                if(!confirm(window.__('confirm_rental_payment_alert'))) return;
                 try {
                     btn.disabled = true;
                     btn.classList.add('opacity-70');
@@ -1603,12 +1548,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         const dateInput = document.querySelector('input[name="rentalPaymentDate"]');
                         if (dateInput && data.next_payment_date) dateInput.value = data.next_payment_date;
                         localStorage.removeItem('rental_notify_day');
-                        alert('✅ تم تسجيل الدفع بنجاح');
+                        alert(window.__('rental_paid_success_msg'));
                     } else {
-                        alert('❌ ' + (data.message || 'فشل التسجيل'));
+                        alert('❌ ' + (data.message || window.__('action_failed')));
                     }
                 } catch (e) {
-                    alert('خطأ في الاتصال');
+                    alert(window.__('server_connection_error'));
                 } finally {
                     btn.disabled = false;
                     btn.classList.remove('opacity-70');
@@ -1629,7 +1574,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             <div class="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between shrink-0">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
                     <span class="material-icons-round text-primary">receipt_long</span>
-                    سجل مدفوعات الإيجار
+                    <?php echo __('rental_management_title'); ?> - <?php echo __('view_payment_history_btn'); ?>
                 </h3>
                 <button onclick="closeRentalPaymentsModal()" class="text-gray-400 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"><span class="material-icons-round">close</span></button>
             </div>
@@ -1648,37 +1593,37 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             <div class="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between shrink-0">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
                     <span class="material-icons-round text-primary">tips_and_updates</span>
-                    دليل اختيار مدة التنبيهات
+                    <?php echo __('stock_guide_title'); ?>
                 </h3>
                 <button onclick="closeStockGuideModal()" class="text-gray-400 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"><span class="material-icons-round">close</span></button>
             </div>
             <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <h5 class="text-sm font-bold text-gray-400 mb-3 border-b border-white/5 pb-2">أمثلة مقترحة</h5>
+                        <h5 class="text-sm font-bold text-gray-400 mb-3 border-b border-white/5 pb-2"><?php echo __('stock_guide_examples'); ?></h5>
                         <div class="space-y-3">
                             <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                                <div class="flex justify-between text-white font-bold text-sm mb-1"><span>للمتاجر الصغيرة</span><span class="text-primary">30 دقيقة</span></div>
-                                <p class="text-xs text-gray-500">حركة بيع متوسطة، مخزون محدود.</p>
+                                <div class="flex justify-between text-white font-bold text-sm mb-1"><span><?php echo __('stock_guide_small_shops'); ?></span><span class="text-primary">30 <?php echo __('time_mins_short'); ?></span></div>
+                                <p class="text-xs text-gray-500"><?php echo __('stock_guide_small_desc'); ?></p>
                             </div>
                             <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                                <div class="flex justify-between text-white font-bold text-sm mb-1"><span>سوبر ماركت</span><span class="text-primary">60 دقيقة</span></div>
-                                <p class="text-xs text-gray-500">موازنة بين الأداء ودقة المخزون.</p>
+                                <div class="flex justify-between text-white font-bold text-sm mb-1"><span><?php echo __('stock_guide_supermarket'); ?></span><span class="text-primary">60 <?php echo __('time_mins_short'); ?></span></div>
+                                <p class="text-xs text-gray-500"><?php echo __('stock_guide_supermarket_desc'); ?></p>
                             </div>
                         </div>
                     </div>
                     <div>
-                         <h5 class="text-sm font-bold text-gray-400 mb-3 border-b border-white/5 pb-2">نصائح</h5>
+                         <h5 class="text-sm font-bold text-gray-400 mb-3 border-b border-white/5 pb-2"><?php echo __('stock_guide_tips_title'); ?></h5>
                          <ul class="space-y-2 text-xs text-gray-400 list-disc mr-4">
-                             <li>ابدأ بالقيمة الافتراضية (20 دقيقة).</li>
-                             <li>قلل الوقت في أوقات الذروة والأعياد.</li>
-                             <li>لا تستخدم أقل من 5 دقائق لتجنب بطء النظام.</li>
+                             <li><?php echo __('stock_guide_tip_1'); ?></li>
+                             <li><?php echo __('stock_guide_tip_2'); ?></li>
+                             <li><?php echo __('stock_guide_tip_3'); ?></li>
                          </ul>
                     </div>
                 </div>
             </div>
             <div class="px-6 py-4 border-t border-white/5 flex justify-end shrink-0">
-                <button onclick="closeStockGuideModal()" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold">فهمت</button>
+                <button onclick="closeStockGuideModal()" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-xl font-bold"><?php echo __('understood_thanks'); ?></button>
             </div>
         </div>
     </div>
@@ -1755,7 +1700,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     previewContainer.innerHTML = `<img src="${newImageUrl}" alt="Logo" class="w-full h-full object-cover">`;
                                         
                     // إظهار رسالة نجاح
-                    showToast('تم تحديث الشعار بنجاح!', true);
+                    showToast(window.__('logo_updated_success'), true);
                                         
                     // تحديث رابط الصورة في كل مكان آخر إذا لزم الأمر
                     // مثال: تحديث الشعار في الشريط الجانبي
@@ -1780,11 +1725,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 } else {
                     // إرجاع المحتوى الأصلي عند الفشل
                     previewContainer.innerHTML = originalContent;
-                    showToast('error', result.message || 'حدث خطأ غير متوقع');
+                    showToast(result.message || window.__('action_failed'), false);
                 }
             } catch (error) {
                 previewContainer.innerHTML = originalContent;
-                showToast('error', 'فشل الاتصال بالخادم');
+                showToast(window.__('server_connection_error'), false);
                 console.error('Error uploading logo:', error);
             }
         }
@@ -1794,17 +1739,17 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
     // Load Rental Data Logic (Simplified for brevity, same as original logic)
     function formatArDate(d) {
-        return new Date(d).toLocaleDateString('ar-MA', { year: 'numeric', month: 'long', day: 'numeric' });
+        return new Date(d).toLocaleDateString('<?php echo get_locale(); ?>', { year: 'numeric', month: 'long', day: 'numeric' });
     }
     async function loadRentalPayments(page = 1) {
         const table = document.getElementById('rentalPaymentsTable');
         const pag = document.getElementById('rentalPaymentsPagination');
-        table.innerHTML = '<div class="text-center py-8 text-gray-500">جاري التحميل...</div>';
+        table.innerHTML = '<div class="text-center py-8 text-gray-500">' + window.__('loading_text') + '</div>';
         try {
             const res = await fetch('api.php?action=getRentalPayments&page='+page+'&limit=20');
             const data = await res.json();
             if(!data.success || !data.data.length) {
-                table.innerHTML = '<div class="text-center py-8 text-gray-500">لا توجد مدفوعات مسجلة</div>';
+                table.innerHTML = '<div class="text-center py-8 text-gray-500">' + window.__('no_info') + '</div>';
                 pag.innerHTML = '';
                 return;
             }
@@ -1813,19 +1758,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 html += `
                 <div class="bg-white/5 border border-white/10 rounded-xl p-4 flex justify-between items-center">
                     <div>
-                        <div class="font-bold text-white text-sm">عن شهر: ${r.paid_month}</div>
+                        <div class="font-bold text-white text-sm">` + window.__('month') + `: ${r.paid_month}</div>
                         <div class="text-xs text-gray-400">${formatArDate(r.payment_date)}</div>
                     </div>
                     <div class="text-left">
                          <div class="font-bold text-primary">${parseFloat(r.amount).toFixed(2)} ${r.currency}</div>
-                         <div class="text-[10px] text-gray-500">${r.rental_type == 'yearly' ? 'سنوي' : 'شهري'}</div>
+                         <div class="text-[10px] text-gray-500">${r.rental_type == 'yearly' ? window.__('yearly_payment') : window.__('monthly_payment')}</div>
                     </div>
                 </div>`;
             });
             table.innerHTML = html;
             // Add simple pagination if needed based on data.pagination
         } catch(e) {
-            table.innerHTML = '<div class="text-center text-red-500">فشل في جلب البيانات</div>';
+            table.innerHTML = '<div class="text-center text-red-500">' + window.__('failed_loading_data') + '</div>';
         }
     }
 </script>
@@ -1901,7 +1846,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             <div class="px-6 py-4 bg-red-500/10 border-b border-red-500/20 flex items-center justify-between shrink-0">
                 <h3 class="text-lg font-bold text-red-400 flex items-center gap-2">
                     <span class="material-icons-round">warning</span>
-                    تأكيد إعادة التهيئة
+                    <?php echo __('confirm_reset_modal_title'); ?>
                 </h3>
                 <button onclick="closeResetModal()" class="text-gray-400 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"><span class="material-icons-round">close</span></button>
             </div>
@@ -1909,11 +1854,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span class="material-icons-round text-red-500 text-2xl">restart_alt</span>
                 </div>
-                <p class="text-white text-lg font-bold mb-2">هل أنت متأكد تماماً؟</p>
-                <p class="text-gray-400 text-sm mb-6">سيتم حذف جميع الإعدادات المخصصة وإرجاع النظام إلى الحالة الأولية. هذه العملية لا يمكن التراجع عنها.</p>
+                <p class="text-white text-lg font-bold mb-2"><?php echo __('are_you_sure_reset'); ?></p>
+                <p class="text-gray-400 text-sm mb-6"><?php echo __('reset_warning_detail'); ?></p>
                 <div class="flex gap-3">
-                    <button onclick="closeResetModal()" class="flex-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-300 border border-gray-500/30 px-4 py-3 rounded-xl font-bold transition-all">إلغاء</button>
-                    <button onclick="confirmReset()" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg shadow-red-500/20">تأكيد الإعادة</button>
+                    <button onclick="closeResetModal()" class="flex-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-300 border border-gray-500/30 px-4 py-3 rounded-xl font-bold transition-all"><?php echo __('cancel_btn'); ?></button>
+                    <button onclick="confirmReset()" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg shadow-red-500/20"><?php echo __('confirm_reset_btn'); ?></button>
                 </div>
             </div>
         </div>
@@ -1954,7 +1899,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     }
 
     // دوال إدارة شاشة التحميل
-    function showLoadingOverlay(message = 'جاري معالجة البيانات...') {
+    function showLoadingOverlay(message = window.__('loading_text')) {
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingMessage = document.getElementById('loading-message');
         loadingMessage.textContent = message;
@@ -1974,8 +1919,8 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
         </div>
         <div class="text-center">
-            <h3 class="text-lg font-bold text-white mb-2">جاري التحميل...</h3>
-            <p id="loading-message" class="text-sm text-gray-400">يرجى الانتظار قليلاً</p>
+            <h3 class="text-lg font-bold text-white mb-2"><?php echo __('loading_text'); ?></h3>
+            <p id="loading-message" class="text-sm text-gray-400">...</p>
         </div>
     </div>
 </div>
@@ -1987,23 +1932,23 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             <div class="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between shrink-0">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
                     <span class="material-icons-round text-primary">edit_calendar</span>
-                    إدارة العطلة
+                    <?php echo __('edit_holiday_title'); ?>
                 </h3>
                 <button onclick="closeHolidayModal()" class="text-gray-400 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"><span class="material-icons-round">close</span></button>
             </div>
             <div class="p-6 space-y-4">
                 <input type="hidden" id="holiday-id">
                 <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">اسم العطلة</label>
-                    <input type="text" id="holiday-name" placeholder="مثال: عيد الفطر، ذكرى المسيرة..." class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                    <label class="block text-xs font-bold text-gray-400 mb-2 mr-1"><?php echo __('holiday_name_col'); ?></label>
+                    <input type="text" id="holiday-name" placeholder="Ex: Eid..." class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-2 mr-1">التاريخ</label>
+                    <label class="block text-xs font-bold text-gray-400 mb-2 mr-1"><?php echo __('holiday_date_col'); ?></label>
                     <input type="date" id="holiday-date" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" style="color-scheme: dark;">
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeHolidayModal()" class="flex-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-300 px-4 py-3 rounded-xl font-bold transition-all">إلغاء</button>
-                    <button type="button" onclick="saveHoliday()" class="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20">حفظ العطلة</button>
+                    <button type="button" onclick="closeHolidayModal()" class="flex-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-300 px-4 py-3 rounded-xl font-bold transition-all"><?php echo __('cancel_btn'); ?></button>
+                    <button type="button" onclick="saveHoliday()" class="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20"><?php echo __('save_holiday_btn'); ?></button>
                 </div>
             </div>
         </div>
