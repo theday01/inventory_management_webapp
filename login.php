@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db.php';
+require_once 'src/language.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
@@ -32,10 +33,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             header("location: reports.php");
             exit;
         } else {
-            $login_err = "كلمة المرور غير صحيحة";
+            $login_err = __('invalid_password');
         }
     } else {
-        $login_err = "كلمة المرور أو اسم المستخدم غير صحيح";
+        $login_err = __('invalid_credentials');
     }
 
     $stmt->close();
@@ -43,12 +44,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="dark">
+<html lang="<?php echo get_locale(); ?>" dir="<?php echo get_dir(); ?>" class="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول</title>
+    <title><?php echo __('login_title'); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -116,6 +117,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </script>
 
 <script>
+    window.translations = <?php echo json_encode($translations); ?>;
+    window.__ = function(key) {
+        return window.translations[key] || key;
+    };
+
     function showToast(message, isSuccess) {
         // Smart detection for error messages if isSuccess is not explicitly provided
         if (typeof isSuccess === 'undefined') {
@@ -180,8 +186,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         class="w-full max-w-md bg-dark-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl p-8 relative z-10 glass-panel">
 
         <div class="text-center mb-10">
-            <h1 class="text-3xl font-bold text-white mb-2">مرحباً بك مجدداً 👋</h1>
-            <p class="text-gray-400">سجّل دخولك لإدارة متاجرك</p>
+            <h1 class="text-3xl font-bold text-white mb-2"><?php echo __('welcome_back'); ?></h1>
+            <p class="text-gray-400"><?php echo __('login_subtitle'); ?></p>
         </div>
 
         <form action="login.php" method="POST" class="space-y-6">
@@ -191,17 +197,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }        
             ?>
             <div>
-                <label for="username" class="block text-sm font-medium text-gray-300 mb-2">اسم المستخدم</label>
+                <label for="username" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('username'); ?></label>
                 <input type="text" id="username" name="username"
-                    class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
-                    placeholder="أدخل اسم المستخدم">
+                    class="w-full bg-dark/50 border border-dark-border text-white text-start placeholder-gray-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
+                    placeholder="<?php echo __('enter_username'); ?>">
             </div>
 
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-300 mb-2">كلمة المرور</label>
+                <label for="password" class="block text-sm font-medium text-gray-300 mb-2"><?php echo __('password'); ?></label>
                 <div class="relative">
                     <input type="password" id="password" name="password"
-                        class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
+                        class="w-full bg-dark/50 border border-dark-border text-white text-start placeholder-gray-500 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                         placeholder="••••••••">
                     <button type="button" onclick="togglePassword('password', 'togglePasswordIcon')" 
                         class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
@@ -215,22 +221,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input id="remember-me" name="remember-me" type="checkbox"
                         class="h-4 w-4 text-primary bg-dark border-gray-600 rounded focus:ring-primary cursor-pointer">
                     <label for="remember-me"
-                        class="mr-2 block text-sm text-gray-400 cursor-pointer select-none">تذكرني</label>
+                        class="mr-2 block text-sm text-gray-400 cursor-pointer select-none"><?php echo __('remember_me'); ?></label>
                 </div>
                 <div class="text-sm">
-                    <a href="password_reset.php" class="font-medium text-primary hover:text-primary-hover transition-colors">نسيت كلمة
-                        المرور؟</a>
+                    <a href="password_reset.php" class="font-medium text-primary hover:text-primary-hover transition-colors"><?php echo __('forgot_password'); ?></a>
                 </div>
             </div>
 
             <button type="submit"
                 class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/25 text-sm font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:-translate-y-0.5">
-                تسجيل الدخول
+                <?php echo __('login_btn'); ?>
             </button>
         </form>
 
         <div class="mt-6 text-center">
-            <p class="text-xs text-gray-500">نظام إدارة المتاجر الذكي الإصدار 1.0</p>
+            <p class="text-xs text-gray-500"><?php echo __('system_version'); ?></p>
+            <!-- Language Switcher -->
+            <div class="flex items-center justify-center gap-4 mt-4">
+                <?php
+                $currentParams = $_GET;
+                $currentParams['lang'] = 'ar';
+                $arLink = '?' . http_build_query($currentParams);
+                $currentParams['lang'] = 'fr';
+                $frLink = '?' . http_build_query($currentParams);
+                ?>
+               <a href="<?php echo htmlspecialchars($arLink); ?>" class="text-sm font-bold <?php echo get_locale() === 'ar' ? 'text-primary' : 'text-gray-500 hover:text-gray-300'; ?>"><?php echo __('arabic'); ?></a>
+               <a href="<?php echo htmlspecialchars($frLink); ?>" class="text-sm font-bold <?php echo get_locale() === 'fr' ? 'text-primary' : 'text-gray-500 hover:text-gray-300'; ?>"><?php echo __('french'); ?></a>
+            </div>
         </div>
     </div>
 

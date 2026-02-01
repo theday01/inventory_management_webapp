@@ -371,7 +371,7 @@ $sql_slowest_day = "
 ";
 $slowest_day_result = $conn->query($sql_slowest_day);
 $slowest_day = $slowest_day_result->fetch_assoc();
-$slowest_day_formatted = $slowest_day ? date('Y-m-d', strtotime($slowest_day['sale_date'])) : 'لا توجد بيانات';
+    $slowest_day_formatted = $slowest_day ? date('Y-m-d', strtotime($slowest_day['sale_date'])) : __('no_data');
 $slowest_day_orders = $slowest_day ? $slowest_day['order_count'] : 0;
 $slowest_day_sales = $slowest_day ? $slowest_day['total_sales'] : 0;
 
@@ -409,7 +409,7 @@ $stmt->bind_param("ss", $sql_start, $sql_end);
 $stmt->execute();
 $top_city_result = $stmt->get_result();
 $top_city = $top_city_result ? $top_city_result->fetch_assoc() : null;
-$top_city_name = $top_city ? $top_city['city'] : 'لا توجد بيانات';
+    $top_city_name = $top_city ? $top_city['city'] : __('no_data');
 $top_city_orders = $top_city ? $top_city['order_count'] : 0;
 $stmt->close();
 
@@ -648,34 +648,34 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div>
                 <h2 class="text-2xl font-bold text-white flex items-center gap-2">
                     <span class="material-icons-round text-pink-500">analytics</span>
-                    التقارير والتحليلات
+                    <?php echo __('reports_title'); ?>
                 </h2>
                 <p class="text-sm text-gray-400 mt-1">
-                    عرض البيانات من <span class="text-white font-bold"><?php echo $start_date; ?></span> إلى <span class="text-white font-bold"><?php echo $end_date; ?></span>
+                    <?php echo __('viewing_data_from'); ?> <span class="text-white font-bold"><?php echo $start_date; ?></span> <?php echo __('to'); ?> <span class="text-white font-bold"><?php echo $end_date; ?></span>
                 </p>
             </div>
 
             <div class="flex items-center gap-4">
             <?php if ($is_day_active): ?>
                 <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm">
-                    يوم عمل نشط حاليا.
+                    <?php echo __('active_business_day'); ?>
                 </div>
             <?php endif; ?>
             <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg">
                 <div class="flex gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
-                    <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>">اليوم</button>
-                    <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>">أمس</button>
-                    <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>">7 أيام</button>
-                    <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '30days' ? 'active' : ''; ?>">30 يوم</button>
-                    <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>">شهر</button>
+                    <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>"><?php echo __('today'); ?></button>
+                    <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>"><?php echo __('yesterday'); ?></button>
+                    <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>"><?php echo __('7_days'); ?></button>
+                    <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '30days' ? 'active' : ''; ?>"><?php echo __('30_days'); ?></button>
+                    <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>"><?php echo __('month'); ?></button>
                 </div>
                 
                 <div class="h-8 w-px bg-white/10"></div>
 
                 <div class="flex items-center gap-2">
-                    <span class="text-gray-400 text-xs">من</span>
+                    <span class="text-gray-400 text-xs"><?php echo __('from'); ?></span>
                     <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
-                    <span class="text-gray-400 text-xs">إلى</span>
+                    <span class="text-gray-400 text-xs"><?php echo __('to'); ?></span>
                     <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
                     <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
                         <span class="material-icons-round text-sm block">filter_alt</span>
@@ -683,7 +683,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 </div>
             </form>
             <button id="view-summary-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                عرض ملخص الفترة
+                <?php echo __('view_period_summary'); ?>
             </button>
             <div id="business-day-controls"></div>
             </div>
@@ -699,18 +699,20 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
                 <div class="relative z-10">
                     <h1 class="text-4xl font-bold text-white mb-3 leading-tight">
-                        مرحباً بك في <span class="gradient-text"><?php echo htmlspecialchars($shopName); ?></span> 👋
+                        <?php echo __('welcome_to'); ?> <span class="gradient-text"><?php echo htmlspecialchars($shopName); ?></span> 👋
                     </h1>
-                    <p class="text-gray-400 text-lg max-w-2xl">إليك نظرة عامة على أداء متجرك. لديك <span class="text-white font-bold" id="today-orders-count-banner">0</span> طلبات جديدة اليوم بقيمة إجمالية <span class="text-primary font-bold" id="today-revenue-banner">0</span></p>
+                    <p class="text-gray-400 text-lg max-w-2xl">
+                        <?php echo sprintf(__('store_performance_overview'), '<span class="text-white font-bold" id="today-orders-count-banner">0</span>', '<span class="text-primary font-bold" id="today-revenue-banner">0</span>'); ?>
+                    </p>
                     
                     <div class="mt-8 flex gap-4">
                         <a href="pos.php" class="action-btn group bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/25 flex items-center gap-3 hover:-translate-y-1 transition-all">
                             <span class="material-icons-round transition-transform">add_shopping_cart</span>
-                            بيع جديد
+                            <?php echo __('new_sale'); ?>
                         </a>
                         <a href="products.php" class="action-btn group bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-xl font-bold border border-white/10 flex items-center gap-3 hover:-translate-y-1 transition-all">
                             <span class="material-icons-round text-accent">inventory</span>
-                            إدارة المخزون والمنتجات
+                            <?php echo __('products_management'); ?>
                         </a>
                     </div>
                 </div>
@@ -722,29 +724,29 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                     <div class="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                         <span class="material-icons-round text-purple-500 text-2xl">people</span>
                     </div>
-                    <span class="text-white font-bold">العملاء</span>
-                    <span class="text-xs text-gray-500 mt-1">عرض السجل</span>
+                    <span class="text-white font-bold"><?php echo __('customers'); ?></span>
+                    <span class="text-xs text-gray-500 mt-1"><?php echo __('view_history'); ?></span>
                 </a>
                 <a href="invoices.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-accent/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
                     <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                         <span class="material-icons-round text-accent text-2xl">receipt_long</span>
                     </div>
-                    <span class="text-white font-bold">الفواتير</span>
-                    <span class="text-xs text-gray-500 mt-1">سجل المبيعات</span>
+                    <span class="text-white font-bold"><?php echo __('invoices'); ?></span>
+                    <span class="text-xs text-gray-500 mt-1"><?php echo __('sales_history'); ?></span>
                 </a>
                 <a href="settings.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-orange-500/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
                     <div class="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                         <span class="material-icons-round text-orange-500 text-2xl">settings</span>
                     </div>
-                    <span class="text-white font-bold">الإعدادات</span>
-                    <span class="text-xs text-gray-500 mt-1">تخصيص النظام</span>
+                    <span class="text-white font-bold"><?php echo __('settings'); ?></span>
+                    <span class="text-xs text-gray-500 mt-1"><?php echo __('system_customization'); ?></span>
                 </a>
                 <a href="reports.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-pink-500/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
                     <div class="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                         <span class="material-icons-round text-pink-500 text-2xl">analytics</span>
                     </div>
-                    <span class="text-white font-bold">التقارير</span>
-                    <span class="text-xs text-gray-500 mt-1">تحليل شامل</span>
+                    <span class="text-white font-bold"><?php echo __('reports_title'); ?></span>
+                    <span class="text-xs text-gray-500 mt-1"><?php echo __('comprehensive_analysis'); ?></span>
                 </a>
             </div>
         </div>
@@ -754,16 +756,16 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-icons-round text-6xl text-blue-500">payments</span>
                 </div>
-                <p class="text-sm text-gray-400 font-medium mb-1">صافي الإيرادات (بعد الاسترجاع)</p>
+                <p class="text-sm text-gray-400 font-medium mb-1"><?php echo __('net_revenue'); ?></p>
                 <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($total_net_revenue, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
                 <div class="mt-4 flex items-center gap-2">
                     <div class="text-xs text-blue-400 bg-blue-500/10 w-fit px-2 py-1 rounded-full border border-blue-500/10">
                         <span class="material-icons-round text-sm mr-1">receipt</span>
-                        <span><?php echo number_format($total_orders); ?> فاتورة</span>
+                        <span><?php echo sprintf(__('invoice_count'), number_format($total_orders)); ?></span>
                     </div>
                     <?php if($total_refunds > 0): ?>
                     <div class="text-xs text-red-400 bg-red-500/10 w-fit px-2 py-1 rounded-full border border-red-500/10">
-                        <span>مرجعات: -<?php echo number_format($total_refunds); ?></span>
+                        <span><?php echo sprintf(__('returns_count'), '-' . number_format($total_refunds)); ?></span>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -773,11 +775,11 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-icons-round text-6xl text-green-500">savings</span>
                 </div>
-                <p class="text-sm text-gray-400 font-medium mb-1">صافي الربح التقديري</p>
+                <p class="text-sm text-gray-400 font-medium mb-1"><?php echo __('estimated_net_profit'); ?></p>
                 <h3 class="text-3xl font-bold text-green-500 stat-value"><?php echo number_format($gross_profit, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
                 <div class="mt-4 flex items-center gap-3">
-                    <div class="text-xs text-gray-400">التكلفة الإجمالية: <span class="text-white"><?php echo number_format($total_cost, 2); ?></span></div>
-                    <div class="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/10">هامش الربح: <?php echo number_format($profit_markup, 1); ?>%</div>
+                    <div class="text-xs text-gray-400"><?php echo __('total_cost'); ?>: <span class="text-white"><?php echo number_format($total_cost, 2); ?></span></div>
+                    <div class="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/10"><?php echo __('profit_margin'); ?>: <?php echo number_format($profit_markup, 1); ?>%</div>
                 </div>
             </div>
 
@@ -785,7 +787,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-icons-round text-6xl text-purple-500">shopping_cart</span>
                 </div>
-                <p class="text-sm text-gray-400 font-medium mb-1">متوسط قيمة الطلب</p>
+                <p class="text-sm text-gray-400 font-medium mb-1"><?php echo __('avg_order_value'); ?></p>
                 <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($avg_order_value, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
                 <div class="mt-4 w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
                     <?php $avg_percentage = $max_order_value > 0 ? ($avg_order_value / $max_order_value) * 100 : 0; ?>
@@ -797,9 +799,9 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-icons-round text-6xl text-orange-500">local_shipping</span>
                 </div>
-                <p class="text-sm text-gray-400 font-medium mb-1">تكاليف التوصيل المحصلة</p>
+                <p class="text-sm text-gray-400 font-medium mb-1"><?php echo __('collected_delivery_costs'); ?></p>
                 <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($total_delivery, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
-                <p class="text-xs text-gray-500 mt-4">إجمالي رسوم التوصيل</p>
+                <p class="text-xs text-gray-500 mt-4"><?php echo __('total_delivery_fees'); ?></p>
             </div>
         </div>
 
@@ -809,11 +811,11 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-icons-round text-6xl text-red-500">map</span>
                 </div>
-                <p class="text-sm text-gray-400 font-medium mb-1">عدد الطلبات خارج المدينة</p>
+                <p class="text-sm text-gray-400 font-medium mb-1"><?php echo __('orders_outside_city'); ?></p>
                 <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($outside_city_orders); ?></h3>
                 <div class="mt-4 flex items-center text-xs text-red-400 bg-red-500/10 w-fit px-2 py-1 rounded-full border border-red-500/10">
                     <span class="material-icons-round text-sm mr-1">location_on</span>
-                    <span>المدينة الرئيسية: <?php echo htmlspecialchars($home_city ?: 'غير محددة'); ?></span>
+                    <span><?php echo __('main_city'); ?>: <?php echo htmlspecialchars($home_city ?: __('undefined_city')); ?></span>
                 </div>
             </div>
 
@@ -821,11 +823,11 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-icons-round text-6xl text-cyan-500">location_city</span>
                 </div>
-                <p class="text-sm text-gray-400 font-medium mb-1">المدينة الأكثر طلباً</p>
+                <p class="text-sm text-gray-400 font-medium mb-1"><?php echo __('top_city'); ?></p>
                 <h3 class="text-3xl font-bold text-white stat-value"><?php echo htmlspecialchars($top_city_name); ?></h3>
                 <div class="mt-4 flex items-center text-xs text-cyan-400 bg-cyan-500/10 w-fit px-2 py-1 rounded-full border border-cyan-500/10">
                     <span class="material-icons-round text-sm mr-1">shopping_cart</span>
-                    <span><?php echo number_format($top_city_orders); ?> طلب</span>
+                    <span><?php echo number_format($top_city_orders); ?> <?php echo __('order_unit'); ?></span>
                 </div>
             </div>
 
@@ -834,29 +836,29 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                     <span class="material-icons-round text-6xl text-yellow-500">celebration</span>
                 </div>
                 <div class="flex justify-between items-start mb-1">
-                    <p class="text-sm text-gray-400 font-medium">تحليل مبيعات العطلات</p>
+                    <p class="text-sm text-gray-400 font-medium"><?php echo __('holiday_sales_analysis'); ?></p>
                     <?php if ($holiday_performance_index > 100): ?>
-                        <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold">+<?php echo number_format($holiday_performance_index - 100, 1); ?>% نمو</span>
+                        <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold">+<?php echo number_format($holiday_performance_index - 100, 1); ?>% <?php echo __('growth'); ?></span>
                     <?php elseif ($holiday_performance_index > 0): ?>
-                        <span class="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold"><?php echo number_format(100 - $holiday_performance_index, 1); ?>%- أقل</span>
+                        <span class="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold"><?php echo number_format(100 - $holiday_performance_index, 1); ?>%- <?php echo __('less'); ?></span>
                     <?php endif; ?>
                 </div>
                 <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($holiday_revenue_range, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
                 
                 <div class="mt-4 grid grid-cols-2 gap-2">
                     <div class="bg-white/5 p-2 rounded-lg border border-white/5">
-                        <p class="text-[10px] text-gray-500">معدل البيع اليومي (عطلة)</p>
+                        <p class="text-[10px] text-gray-500"><?php echo __('daily_sales_rate_holiday'); ?></p>
                         <p class="text-xs font-bold text-yellow-500"><?php echo number_format($avg_rev_per_holiday, 2); ?></p>
                     </div>
                     <div class="bg-white/5 p-2 rounded-lg border border-white/5">
-                        <p class="text-[10px] text-gray-500">معدل البيع اليومي (عادي)</p>
+                        <p class="text-[10px] text-gray-500"><?php echo __('daily_sales_rate_normal'); ?></p>
                         <p class="text-xs font-bold text-gray-300"><?php echo number_format($avg_rev_per_regular, 2); ?></p>
                     </div>
                 </div>
 
                 <div class="mt-4 flex items-center text-xs text-yellow-400 bg-yellow-500/10 w-fit px-2 py-1 rounded-full border border-yellow-500/10">
                     <span class="material-icons-round text-sm mr-1">event</span>
-                    <span><?php echo number_format($holiday_orders_range); ?> طلب خلال <?php echo $actual_holiday_days; ?> أيام عطلة</span>
+                    <span><?php echo sprintf(__('holiday_orders_stats'), number_format($holiday_orders_range), $actual_holiday_days); ?></span>
                 </div>
 
                 <?php if ($holiday_orders_range > 0 && $holiday_breakdown->num_rows > 0): ?>
@@ -880,7 +882,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
                         <span class="material-icons-round text-blue-500">show_chart</span>
-                        تحليل المبيعات والطلبات
+                        <?php echo __('sales_orders_analysis'); ?>
                     </h3>
                 </div>
                 <div class="relative h-80 w-full">
@@ -891,13 +893,13 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div class="glass-card p-6 flex flex-col print-break-page">
                 <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
                     <span class="material-icons-round text-pink-500">pie_chart</span>
-                    المبيعات حسب الفئة
+                    <?php echo __('sales_by_category'); ?>
                 </h3>
                 <div class="relative flex-1 flex items-center justify-center h-64">
                     <canvas id="categoryChart"></canvas>
                 </div>
                 <div class="mt-4 text-center">
-                    <p class="text-xs text-gray-400">توزيع الإيرادات</p>
+                    <p class="text-xs text-gray-400"><?php echo __('revenue_distribution'); ?></p>
                 </div>
             </div>
         </div>
@@ -907,15 +909,15 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div class="glass-card p-6 print-break-page">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-yellow-500">emoji_events</span>
-                    المنتجات الأكثر مبيعاً
+                    <?php echo __('best_selling_products'); ?>
                 </h3>
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
                             <tr class="text-right border-b border-white/10 text-gray-400 text-xs uppercase">
-                                <th class="pb-3 w-1/2">المنتج</th>
-                                <th class="pb-3 text-center">الكمية</th>
-                                <th class="pb-3 text-left">الإجمالي</th>
+                                <th class="pb-3 w-1/2"><?php echo __('product'); ?></th>
+                                <th class="pb-3 text-center"><?php echo __('quantity'); ?></th>
+                                <th class="pb-3 text-left"><?php echo __('total'); ?></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5 text-sm">
@@ -937,7 +939,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             <?php 
                                 }
                             } else {
-                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">لا توجد بيانات</td></tr>';
+                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">' . __('no_data') . '</td></tr>';
                             }
                             ?>
                         </tbody>
@@ -948,15 +950,15 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div class="glass-card p-6 print-break-page">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-red-500">trending_down</span>
-                    المنتجات الأقل مبيعاً
+                    <?php echo __('least_selling_products'); ?>
                 </h3>
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
                             <tr class="text-right border-b border-white/10 text-gray-400 text-xs uppercase">
-                                <th class="pb-3 w-1/2">المنتج</th>
-                                <th class="pb-3 text-center">الكمية</th>
-                                <th class="pb-3 text-left">الإجمالي</th>
+                                <th class="pb-3 w-1/2"><?php echo __('product'); ?></th>
+                                <th class="pb-3 text-center"><?php echo __('quantity'); ?></th>
+                                <th class="pb-3 text-left"><?php echo __('total'); ?></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5 text-sm">
@@ -979,7 +981,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             <?php 
                                 }
                             } else {
-                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">لا توجد بيانات</td></tr>';
+                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">' . __('no_data') . '</td></tr>';
                             }
                             ?>
                         </tbody>
@@ -990,15 +992,15 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div class="glass-card p-6 print-break-page">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-purple-500">people</span>
-                    كبار العملاء
+                    <?php echo __('top_customers'); ?>
                 </h3>
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
                             <tr class="text-right border-b border-white/10 text-gray-400 text-xs uppercase">
-                                <th class="pb-3 w-1/2">العميل</th>
-                                <th class="pb-3 text-center">عدد الطلبات</th>
-                                <th class="pb-3 text-left">إجمالي المبيعات</th>
+                                <th class="pb-3 w-1/2"><?php echo __('customer'); ?></th>
+                                <th class="pb-3 text-center"><?php echo __('order_count'); ?></th>
+                                <th class="pb-3 text-left"><?php echo __('total_sales'); ?></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5 text-sm">
@@ -1020,7 +1022,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             <?php 
                                 }
                             } else {
-                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">لا توجد بيانات</td></tr>';
+                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">' . __('no_data') . '</td></tr>';
                             }
                             ?>
                         </tbody>
@@ -1031,15 +1033,15 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div class="glass-card p-6 print-break-page">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-blue-500">receipt_long</span>
-                    آخر الفواتير
+                    <?php echo __('latest_invoices'); ?>
                 </h3>
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
                             <tr class="text-right border-b border-white/10 text-gray-400 text-xs uppercase">
-                                <th class="pb-3 w-1/3">رقم الفاتورة</th>
-                                <th class="pb-3 w-1/3">العميل</th>
-                                <th class="pb-3 text-left">المبلغ</th>
+                                <th class="pb-3 w-1/3"><?php echo __('invoice_number'); ?></th>
+                                <th class="pb-3 w-1/3"><?php echo __('customer'); ?></th>
+                                <th class="pb-3 text-left"><?php echo __('amount'); ?></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5 text-sm">
@@ -1054,13 +1056,13 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                                         <span class="material-icons-round text-[14px] text-yellow-500 cursor-help" title="<?php echo htmlspecialchars($inv['holiday_name']); ?>">celebration</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="py-3 text-gray-300"><?php echo htmlspecialchars($inv['customer_name'] ?: 'عميل غير محدد'); ?></td>
+                                <td class="py-3 text-gray-300"><?php echo htmlspecialchars($inv['customer_name'] ?: __('undefined_customer')); ?></td>
                                 <td class="py-3 text-left text-primary font-bold"><?php echo number_format($inv['total'], 2); ?> <span class="text-xs text-gray-500 font-normal"><?php echo $currency; ?></span></td>
                             </tr>
                             <?php 
                                 }
                             } else {
-                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">لا توجد بيانات</td></tr>';
+                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">' . __('no_data') . '</td></tr>';
                             }
                             ?>
                         </tbody>
@@ -1071,13 +1073,13 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div class="glass-card p-6 lg:col-span-4">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-teal-500">dashboard</span>
-                    ملخص سريع
+                    <?php echo __('quick_summary'); ?>
                 </h3>
                 
                 <div class="mt-6 pt-6 border-t border-white/10 page-break-avoid">
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                          <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
-                             <p class="text-xs text-gray-500">أعلى يوم مبيعاً</p>
+                             <p class="text-xs text-gray-500"><?php echo __('best_selling_day'); ?></p>
                              <?php 
                                 $maxRev = 0;
                                 $maxDate = '-';
@@ -1091,43 +1093,43 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                                 }
                              ?>
                              <p class="text-white font-bold mt-1"><?php echo $maxDate; ?></p>
-                             <p class="text-xs text-gray-400 mt-1"><?php echo $maxOrdersCount; ?> طلب</p>
+                             <p class="text-xs text-gray-400 mt-1"><?php echo $maxOrdersCount; ?> <?php echo __('order_unit'); ?></p>
                          </div>
                          <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
-                             <p class="text-xs text-gray-500">أقل يوم مبيعاً</p>
+                             <p class="text-xs text-gray-500"><?php echo __('worst_selling_day'); ?></p>
                              <?php
                                 // If we only have 1 day of data, Best Day == Worst Day. This is confusing.
                                 // Logic: If total chart entries (days) <= 1, show '-' for worst day.
                                 if (count($chart_labels) <= 1) {
                                     echo '<p class="text-white font-bold mt-1">-</p>';
-                                    echo '<p class="text-xs text-gray-400 mt-1">غير متوفر</p>';
+                                    echo '<p class="text-xs text-gray-400 mt-1">' . __('not_available') . '</p>';
                                 } else {
                                     echo '<p class="text-white font-bold mt-1">' . $slowest_day_formatted . '</p>';
-                                    echo '<p class="text-xs text-gray-400 mt-1">' . $slowest_day_orders . ' طلب</p>';
+                                    echo '<p class="text-xs text-gray-400 mt-1">' . $slowest_day_orders . ' ' . __('order_unit') . '</p>';
                                 }
                              ?>
                          </div>
                          <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
-                             <p class="text-xs text-gray-500">متوسط عناصر السلة</p>
-                             <p class="text-[10px] text-gray-600 mb-1 leading-tight">متوسط عدد المنتجات لكل طلب<br>(إجمالي القطع ÷ عدد الطلبات)</p>
+                             <p class="text-xs text-gray-500"><?php echo __('avg_cart_items'); ?></p>
+                             <p class="text-[10px] text-gray-600 mb-1 leading-tight"><?php echo __('avg_products_per_order'); ?><br><?php echo __('avg_items_calculation'); ?></p>
                              <?php 
                                 $avgItems = $total_orders > 0 ? $total_items_sold / $total_orders : 0;
                              ?>
                              <p class="text-white font-bold mt-1"><?php echo number_format($avgItems, 1); ?></p>
                          </div>
                          <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
-                             <p class="text-xs text-gray-500">عدد العملاء الفريدين</p>
-                             <p class="text-[10px] text-gray-600 mb-1 leading-tight">إجمالي العملاء الذين قاموا بشراء</p>
+                             <p class="text-xs text-gray-500"><?php echo __('unique_customers_count'); ?></p>
+                             <p class="text-[10px] text-gray-600 mb-1 leading-tight"><?php echo __('total_buying_customers'); ?></p>
                              <p class="text-white font-bold mt-1"><?php echo number_format($unique_customers); ?></p>
                          </div>
                          <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
-                             <p class="text-xs text-gray-500">متوسط الإيرادات اليومية</p>
-                             <p class="text-[10px] text-gray-600 mb-1 leading-tight">متوسط المبيعات يومياً</p>
+                             <p class="text-xs text-gray-500"><?php echo __('avg_daily_revenue'); ?></p>
+                             <p class="text-[10px] text-gray-600 mb-1 leading-tight"><?php echo __('avg_daily_sales'); ?></p>
                              <p class="text-white font-bold mt-1"><?php echo number_format($avg_daily_revenue, 2); ?> <span class="text-xs text-gray-500"><?php echo $currency; ?></span></p>
                          </div>
                          <div class="bg-dark p-3 rounded-lg border border-white/5 text-center">
-                             <p class="text-xs text-gray-500">متوسط الطلبات اليومية</p>
-                             <p class="text-[10px] text-gray-600 mb-1 leading-tight">متوسط عدد الطلبات يومياً</p>
+                             <p class="text-xs text-gray-500"><?php echo __('avg_daily_orders'); ?></p>
+                             <p class="text-[10px] text-gray-600 mb-1 leading-tight"><?php echo __('avg_daily_orders_desc'); ?></p>
                              <p class="text-white font-bold mt-1"><?php echo number_format($avg_daily_orders, 1); ?></p>
                          </div>
                     </div>
@@ -1141,32 +1143,32 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div class="glass-card p-6">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-blue-500">summarize</span>
-                    عرض ملخص الفترة
+                    <?php echo __('period_summary_view'); ?>
                 </h3>
                 <div class="space-y-4">
                     <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
-                        <span class="text-gray-400">إجمالي المبيعات</span>
+                        <span class="text-gray-400"><?php echo __('total_sales'); ?></span>
                         <span class="text-green-400 font-bold text-lg"><?php echo number_format($total_revenue, 2); ?> <?php echo $currency; ?></span>
                     </div>
                     <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
-                        <span class="text-gray-400">إجمالي تكلفة البضاعة</span>
+                        <span class="text-gray-400"><?php echo __('total_cogs'); ?></span>
                         <span class="text-red-400 font-bold text-lg"><?php echo number_format($total_cogs, 2); ?> <?php echo $currency; ?></span>
                     </div>
                     <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
-                        <span class="text-gray-400">إجمالي المصاريف العامة</span>
+                        <span class="text-gray-400"><?php echo __('total_general_expenses'); ?></span>
                         <span class="text-orange-400 font-bold text-lg"><?php echo number_format($total_other_costs, 2); ?> <?php echo $currency; ?></span>
                     </div>
                     <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
-                        <span class="text-gray-400">صافي الربح</span>
+                        <span class="text-gray-400"><?php echo __('net_profit'); ?></span>
                         <span class="text-primary font-bold text-xl"><?php echo number_format($gross_profit, 2); ?> <?php echo $currency; ?></span>
                     </div>
                 </div>
                 <div class="mt-4 p-3 bg-white/5 rounded-xl border border-white/5 flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-primary text-sm">update</span>
-                        <span class="text-xs text-gray-400">نظام الدورة المالية:</span>
+                        <span class="text-xs text-gray-400"><?php echo __('financial_cycle_system'); ?>:</span>
                     </div>
-                    <span class="text-xs font-bold text-white"><?php echo $expenseCycleType === 'bi-monthly' ? 'كل 15 يوماً' : 'شهري'; ?></span>
+                    <span class="text-xs font-bold text-white"><?php echo $expenseCycleType === 'bi-monthly' ? __('bi_monthly') : __('monthly'); ?></span>
                 </div>
             </div>
 
@@ -1174,7 +1176,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div class="glass-card p-6">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-yellow-500">lightbulb</span>
-                    نصائح
+                    <?php echo __('tips'); ?>
                 </h3>
                 <div class="space-y-4">
                     <?php if ($total_orders > 0 && $days_diff <= 30): ?>    
@@ -1183,36 +1185,36 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
 
                     // Tip 1: Based on profit margin
                     if ($profit_margin < 10) {
-                        $tips[] = "هامش الربح منخفض (% " . number_format($profit_margin, 1) . "). ركز على زيادة الأسعار أو تقليل التكاليف.";
+                        $tips[] = sprintf(__('low_profit_margin_tip'), number_format($profit_margin, 1) . "%");
                     } elseif ($profit_margin > 30) {
-                        $tips[] = "هامش الربح جيد (% " . number_format($profit_margin, 1) . "). حافظ على هذا المستوى.";
+                        $tips[] = sprintf(__('good_profit_margin_tip'), number_format($profit_margin, 1) . "%");
                     }
 
                     // Tip 2: Delivery Cost Analysis (NEW)
                     if ($total_revenue > 0) {
                         $delivery_percentage = ($total_delivery / $total_revenue) * 100;
                         if ($total_delivery == 0 && $outside_city_orders > 0) {
-                            $tips[] = "لديك طلبات خارجية ولكن إيرادات التوصيل 0. تأكد من إعداد تكاليف التوصيل بشكل صحيح.";
+                            $tips[] = __('delivery_revenue_issue_tip');
                         } elseif ($delivery_percentage > 15) {
-                            $tips[] = "تكاليف التوصيل تشكل نسبة عالية (" . number_format($delivery_percentage, 1) . "%) من الإيرادات. راجع اتفاقياتك مع شركات الشحن.";
+                            $tips[] = sprintf(__('high_delivery_cost_tip'), number_format($delivery_percentage, 1) . "%");
                         }
                     }
 
                     // Tip 3: Based on average order value
                     if ($avg_order_value < 50) {
-                        $tips[] = "متوسط قيمة الطلب منخفض. حاول عمل عروض (Bundle) لزيادة حجم السلة.";
+                        $tips[] = __('low_avg_order_tip');
                     } elseif ($avg_order_value > 200) {
-                        $tips[] = "متوسط قيمة الطلب ممتاز (" . number_format($avg_order_value, 2) . " " . $currency . ").";
+                        $tips[] = sprintf(__('good_avg_order_tip'), number_format($avg_order_value, 2) . " " . $currency);
                     }
 
                     // Tip 4: Based on unique customers
                     if ($unique_customers < 10) {
-                        $tips[] = "عدد العملاء قليل. ركز على التسويق لجذب عملاء جدد.";
+                        $tips[] = __('low_customer_count_tip');
                     }
 
                     // If no specific tips
                     if (empty($tips)) {
-                        $tips[] = "أداء المتجر متوازن. استمر في مراقبة التقارير بانتظام.";
+                        $tips[] = __('balanced_store_tip');
                     }
 
                     // Display up to 3 tips
@@ -1226,7 +1228,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                     
                     <?php else: ?>
                     <div class="p-4 bg-gray-500/10 border border-gray-500/20 rounded-lg">
-                        <p class="text-gray-300 text-sm leading-relaxed">لا توجد توصيات محددة متاحة حالياً بناءً على البيانات المحددة. يرجى التأكد من وجود بيانات كافية أو اختيار فترة زمنية أقصر للحصول على تحليل أكثر دقة (لا تتجاوز 30 يوم)</p>
+                        <p class="text-gray-300 text-sm leading-relaxed"><?php echo __('no_specific_tips'); ?></p>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -1411,9 +1413,9 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
     </div>
 
     <div class="invoice-info">
-        <div class="info-row"><span>رقم الفاتورة:</span><span>#${String(data.id).padStart(6, '0')}</span></div>
-        <div class="info-row"><span>التاريخ:</span><span>${formattedDate}</span></div>
-        <div class="info-row"><span>الوقت:</span><span>${formattedTime}</span></div>
+        <div class="info-row"><span>${window.__('invoice_number')}:</span><span>#${String(data.id).padStart(6, '0')}</span></div>
+        <div class="info-row"><span>${window.__('date_label')}:</span><span>${formattedDate}</span></div>
+        <div class="info-row"><span>${window.__('time')}:</span><span>${formattedTime}</span></div>
     </div>
 
     ${data.customer ? `
@@ -1586,11 +1588,11 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                                         </div>
                                     </summary>
                                     <div class="mt-3 text-gray-300 text-sm space-y-1">
-                                        <p><strong>التاريخ:</strong> ${new Date(invoice.created_at).toLocaleString('ar')}</p>
-                                        <p><strong>الهاتف:</strong> ${invoice.customer_phone || 'غير محدد'}</p>
-                                        <p><strong>رسوم التوصيل:</strong> ${formatNumber(invoice.delivery_cost)} ${currency}</p>
-                                        <p><strong>المنتجات:</strong> ${invoice.items || 'لا توجد منتجات'}</p>
-                                        ${invoice.is_holiday == 1 ? `<p class="text-yellow-500 font-bold flex items-center gap-1"><span class="material-icons-round text-sm">celebration</span> تم في يوم عطلة: ${invoice.holiday_name || 'عطلة رسمية'}</p>` : ''}
+                                        <p><strong>${window.__('date_label')}:</strong> ${new Date(invoice.created_at).toLocaleString(document.documentElement.lang === 'ar' ? 'ar' : 'fr')}</p>
+                                        <p><strong>${window.__('phone_placeholder')}:</strong> ${invoice.customer_phone || window.__('undefined_customer')}</p>
+                                        <p><strong>${window.__('delivery')}:</strong> ${formatNumber(invoice.delivery_cost)} ${currency}</p>
+                                        <p><strong>${window.__('product_col')}:</strong> ${invoice.items || window.__('no_products_display')}</p>
+                                        ${invoice.is_holiday == 1 ? `<p class="text-yellow-500 font-bold flex items-center gap-1"><span class="material-icons-round text-sm">celebration</span> ${window.__('holiday_notification').replace(/<[^>]*>/g, '')}: ${invoice.holiday_name || window.__('official_holiday')}</p>` : ''}
                                     </div>
                                 </details>
                             `;
@@ -1781,7 +1783,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 labels: <?php echo json_encode($chart_labels); ?>,
                 datasets: [
                     {
-                        label: 'الإيرادات (<?php echo $currency; ?>)',
+                        label: '<?php echo sprintf(__('revenue_currency_label'), $currency); ?>',
                         data: <?php echo json_encode($chart_revenue); ?>,
                         borderColor: '#3B82F6',
                         backgroundColor: gradientRevenue,
@@ -1796,7 +1798,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         yAxisID: 'y'
                     },
                     {
-                        label: 'الطلبات',
+                        label: '<?php echo __('orders_label'); ?>',
                         data: <?php echo json_encode($chart_orders); ?>,
                         borderColor: '#10B981',
                         backgroundColor: gradientOrders,
@@ -1869,7 +1871,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         ticks: { color: '#9CA3AF', font: { family: 'Tajawal', size: 11 } },
                         title: {
                             display: true,
-                            text: 'التاريخ',
+                            text: '<?php echo __('date_label'); ?>',
                             color: '#9CA3AF',
                             font: { family: 'Tajawal', size: 12, weight: 'bold' }
                         }
@@ -1882,7 +1884,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         ticks: { color: '#9CA3AF', font: { family: 'Tajawal', size: 11 } },
                         title: {
                             display: true,
-                            text: 'الإيرادات (<?php echo $currency; ?>)',
+                            text: '<?php echo sprintf(__('revenue_currency_label'), $currency); ?>',
                             color: '#3B82F6',
                             font: { family: 'Tajawal', size: 12, weight: 'bold' }
                         }
@@ -1895,7 +1897,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         ticks: { color: '#10B981', font: { family: 'Tajawal', size: 11 } },
                         title: {
                             display: true,
-                            text: 'عدد الطلبات',
+                            text: '<?php echo __('orders_count_label'); ?>',
                             color: '#10B981',
                             font: { family: 'Tajawal', size: 12, weight: 'bold' }
                         }

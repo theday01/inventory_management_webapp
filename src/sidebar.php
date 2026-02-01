@@ -15,7 +15,7 @@ if (!isset($shopName)) {
             </div>
             <div>
                 <h1 class="text-lg font-bold text-white dark:text-white text-gray-900"><?php echo htmlspecialchars($shopName); ?></h1>
-                <p class="text-xs text-gray-400 dark:text-gray-400 text-gray-600">نظام إدارة المتاجر الذكي</p>
+                <p class="text-xs text-gray-400 dark:text-gray-400 text-gray-600"><?php echo __('smart_shop_system'); ?></p>
             </div>
         </div>
     </div>
@@ -26,46 +26,46 @@ if (!isset($shopName)) {
             <a href="reports.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'reports.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">bar_chart</span>
-                <span class="font-bold">الرئيسية</span>
+                <span class="font-bold"><?php echo __('dashboard'); ?></span>
             </a>
 
             <a href="pos.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'pos.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">point_of_sale</span>
-                <span class="font-bold">نقطة البيع</span>
+                <span class="font-bold"><?php echo __('pos'); ?></span>
             </a>
 
             <a href="invoices.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'invoices.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">receipt_long</span>
-                <span class="font-bold">الفواتير</span>
+                <span class="font-bold"><?php echo __('invoices'); ?></span>
             </a>
 
             <a href="refunds.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'refunds.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">assignment_return</span>
-                <span class="font-bold">المسترجعات</span>
+                <span class="font-bold"><?php echo __('refunds'); ?></span>
             </a>
 
             <?php if ($_SESSION['role'] === 'admin'): ?>
             <a href="expenses.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'expenses.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">payments</span>
-                <span class="font-bold">المصاريف</span>
+                <span class="font-bold"><?php echo __('expenses'); ?></span>
             </a>
             <?php endif; ?>
             
             <a href="products.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'products.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">inventory_2</span>
-                <span class="font-bold">إدارة المخزون والمنتجات</span>
+                <span class="font-bold"><?php echo __('products_management'); ?></span>
             </a>
 
 
             <a href="customers.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'customers.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">people</span>
-                <span class="font-bold">العملاء (الزبناء)</span>
+                <span class="font-bold"><?php echo __('customers'); ?></span>
             </a>
             
             <div class="my-2 mx-4 border-t border-white/10 dark:border-white/10 border-gray-200"></div>
@@ -73,13 +73,13 @@ if (!isset($shopName)) {
             <a href="removed_products.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'removed_products.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">auto_delete</span>
-                <span class="font-bold">منتجات محذوفة</span>
+                <span class="font-bold"><?php echo __('deleted_products'); ?></span>
             </a>
             
             <a href="zakat_calculator.php"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'zakat_calculator.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
                 <span class="material-icons-round text-xl">mosque</span>
-                <span class="font-bold">حساب الزكاة</span>
+                <span class="font-bold"><?php echo __('zakat_calculator'); ?></span>
             </a>
 
         </div>
@@ -90,7 +90,7 @@ if (!isset($shopName)) {
         <a href="notifications.php" class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'notifications.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
             <div class="flex items-center gap-3">
                 <span class="material-icons-round text-xl">notifications</span>
-                <span class="font-bold">الإشعارات</span>
+                <span class="font-bold"><?php echo __('notifications'); ?></span>
             </div>
             <span id="notification-count" class="px-2 py-0.5 text-xs font-bold text-white bg-green-500 rounded-full" style="display: none;">0</span>
         </a>
@@ -98,8 +98,27 @@ if (!isset($shopName)) {
         <a href="settings.php"
             class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page == 'settings.php') ? 'bg-primary/10 text-primary' : 'text-gray-400 dark:text-gray-400 text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-100'; ?>">
             <span class="material-icons-round text-xl">settings</span>
-            <span class="font-bold">الإعدادات</span>
+            <span class="font-bold"><?php echo __('settings'); ?></span>
         </a>
+
+        <!-- Language Switcher -->
+        <?php
+        $currentParams = $_GET;
+        $currentParams['lang'] = 'ar';
+        $arLink = '?' . http_build_query($currentParams);
+        $currentParams['lang'] = 'fr';
+        $frLink = '?' . http_build_query($currentParams);
+        ?>
+        <div class="py-2">
+            <div class="flex items-center gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/5">
+                <a href="<?php echo htmlspecialchars($arLink); ?>" class="flex-1 text-center py-1 rounded-md text-xs font-bold transition-all <?php echo get_locale() === 'ar' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10 dark:text-gray-400'; ?>">
+                    <?php echo __('arabic'); ?>
+                </a>
+                <a href="<?php echo htmlspecialchars($frLink); ?>" class="flex-1 text-center py-1 rounded-md text-xs font-bold transition-all <?php echo get_locale() === 'fr' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10 dark:text-gray-400'; ?>">
+                    <?php echo __('french'); ?>
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- User Profile -->
@@ -114,7 +133,7 @@ if (!isset($shopName)) {
             </div>
             <a href="logout.php"
                 class="p-2 text-gray-400 dark:text-gray-400 text-gray-600 hover:text-red-500 transition-colors"
-                title="تسجيل الخروج">
+                title="<?php echo __('logout'); ?>">
                 <span class="material-icons-round">logout</span>
             </a>
         </div>

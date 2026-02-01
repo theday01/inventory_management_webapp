@@ -1,6 +1,7 @@
 <?php
 // إضافة هذه الأسطر في بداية الملف قبل أي كود آخر
 session_start();
+require_once __DIR__ . '/src/language.php';
 
 // منع أي output قبل JSON
 ob_start();
@@ -16,7 +17,7 @@ if (ob_get_length()) ob_clean();
 // التحقق من تسجيل الدخول
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'يجب تسجيل الدخول أولاً']);
+    echo json_encode(['success' => false, 'message' => __('login_required')]);
     exit;
 }
 
@@ -265,7 +266,7 @@ switch ($action) {
         getRestoreProgress();
         break;
     default:
-        echo json_encode(['success' => false, 'message' => 'إجراء غير صالح']);
+        echo json_encode(['success' => false, 'message' => __('invalid_data')]);
         break;
 }
 
@@ -4354,11 +4355,11 @@ function restoreBackup($conn) {
         
         // Re-open session to send response (optional, but good practice)
         session_start();
-        echo json_encode(['success' => true, 'message' => 'تم استعادة قاعدة البيانات بنجاح']);
+        echo json_encode(['success' => true, 'message' => __('backup_success')]);
 
     } catch (Exception $e) {
         file_put_contents($progressFile, json_encode(['percent' => 100, 'status' => 'حدث خطأ']));
-        echo json_encode(['success' => false, 'message' => 'فشل الاستعادة: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('backup_failed') . ': ' . $e->getMessage()]);
     }
 }
 

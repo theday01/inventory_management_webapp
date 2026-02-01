@@ -802,30 +802,30 @@ html:not(.dark) .text-red-500 {
 <main class="flex-1 flex flex-col relative overflow-hidden">
     <div id="business-day-notification" class="hidden bg-yellow-500/10 text-yellow-400 p-6 text-center border-b border-yellow-500/20">
         <div class="flex flex-col items-center gap-4">
-            <p class="text-sm font-medium">يجب بدء يوم عمل جديد لتتمكن من تسجيل المبيعات.</p>
+            <p class="text-sm font-medium"><?php echo __('start_business_day_notification'); ?></p>
             <button id="start-day-banner-btn" class="bg-yellow-500 hover:bg-yellow-600 text-dark-surface font-bold py-3 px-8 rounded-lg shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 w-fit">
                 <span class="material-icons-round text-sm">flag</span>
-                <span>بدء يوم العمل الآن</span>
+                <span><?php echo __('start_business_day_btn'); ?></span>
             </button>
-            <p class="text-xs text-yellow-400/80">أو <a href="reports.php" class="underline hover:text-yellow-300">اذهب إلى صفحة التقارير</a></p>
+            <p class="text-xs text-yellow-400/80"><a href="reports.php" class="underline hover:text-yellow-300"><?php echo __('go_to_reports'); ?></a></p>
         </div>
     </div>
     <div id="holiday-notification" class="hidden bg-blue-500/10 text-blue-400 p-4 text-center border-b border-blue-500/20">
         <span class="material-icons-round text-sm align-middle mr-1">celebration</span>
-        اليوم عطلة رسمية: <span id="holiday-name" class="font-bold"></span>. يمكنك الاستمرار في تسجيل المبيعات بشكل عادي.
+        <?php echo __('holiday_notification'); ?>
     </div>
     <div class="flex-1 flex flex-row-reverse relative overflow-hidden">
     <!-- Cart Sidebar (Left) -->
     <aside class="w-96 bg-dark-surface border-r border-white/5 flex flex-col z-20 shadow-2xl">
         <div class="p-6 border-b border-white/5">
             <div class="flex items-center justify-between mb-2">
-                <h2 class="text-xl font-bold text-white">سلة المشتريات</h2>
+                <h2 class="text-xl font-bold text-white"><?php echo __('shopping_cart'); ?></h2>
             </div>
             <div id="customer-selection" class="flex items-center gap-2 mt-4 bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/10 transition-colors">
                 <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs" id="customer-avatar">A</div>
                 <div class="flex-1">
-                    <p class="text-sm font-bold text-white" id="customer-name-display">عميل نقدي</p>
-                    <p class="text-xs text-gray-400" id="customer-detail-display">افتراضي</p>
+                    <p class="text-sm font-bold text-white" id="customer-name-display"><?php echo __('cash_customer'); ?></p>
+                    <p class="text-xs text-gray-400" id="customer-detail-display"><?php echo __('default'); ?></p>
                 </div>
                 <span class="material-icons-round text-gray-400">arrow_drop_down</span>
             </div>
@@ -836,7 +836,7 @@ html:not(.dark) .text-red-500 {
         <div class="p-6 bg-dark-surface border-t border-white/5">
             <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
                 <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-400">التوصيل</span>
+                    <span class="text-sm text-gray-400"><?php echo __('delivery'); ?></span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="delivery-toggle" class="sr-only peer">
                         <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
@@ -846,14 +846,14 @@ html:not(.dark) .text-red-500 {
                     <div>
                         <label class="block text-xs text-gray-400 mb-2 flex items-center gap-1">
                             <span class="material-icons-round text-xs">route</span>
-                            نوع التوصيل
+                            <?php echo __('delivery_type'); ?>
                         </label>
                         <div class="grid grid-cols-2 gap-2">
                             <label class="relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
                                 <input type="radio" name="delivery-type" value="inside" class="sr-only peer">
                                 <div class="text-center">
                                     <span class="material-icons-round text-primary text-lg block mb-1">home</span>
-                                    <span class="text-xs font-bold text-white block">داخل المدينة</span>
+                                    <span class="text-xs font-bold text-white block"><?php echo __('inside_city'); ?></span>
                                     <span class="text-xs text-gray-400 block"><?php echo $deliveryInsideCity; ?> <?php echo $currency; ?></span>
                                 </div>
                             </label>
@@ -861,7 +861,7 @@ html:not(.dark) .text-red-500 {
                                 <input type="radio" name="delivery-type" value="outside" class="sr-only peer">
                                 <div class="text-center">
                                     <span class="material-icons-round text-orange-500 text-lg block mb-1">location_on</span>
-                                    <span class="text-xs font-bold text-white block">خارج المدينة</span>
+                                    <span class="text-xs font-bold text-white block"><?php echo __('outside_city'); ?></span>
                                     <span class="text-xs text-gray-400 block"><?php echo $deliveryOutsideCity; ?> <?php echo $currency; ?></span>
                                 </div>
                             </label>
@@ -872,14 +872,14 @@ html:not(.dark) .text-red-500 {
                     <div id="city-name-container">
                         <label class="block text-xs text-gray-400 mb-1.5 flex items-center gap-1">
                             <span class="material-icons-round text-xs">location_city</span>
-                            اسم المدينة
+                            <?php echo __('city_name'); ?>
                         </label>
                         <input type="text" id="delivery-city-input" readonly
-                            placeholder="اختر نوع التوصيل أولاً..."
-                            class="w-full bg-dark/50 border border-white/10 text-white text-right px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
+                            placeholder="<?php echo __('choose_delivery_type_placeholder'); ?>"
+                            class="w-full bg-dark/50 border border-white/10 text-white text-start px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
                         <p class="text-xs text-gray-500 mt-1 flex items-center gap-1" id="delivery-cost-info">
                             <span class="material-icons-round text-xs">info</span>
-                            <span>اختر نوع التوصيل</span>
+                            <span><?php echo __('choose_delivery_type_info'); ?></span>
                         </p>
                     </div>
                 </div>
@@ -888,7 +888,7 @@ html:not(.dark) .text-red-500 {
             <!-- قسم الخصم -->
             <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
                 <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-400">الخصم</span>
+                    <span class="text-sm text-gray-400"><?php echo __('discount'); ?></span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="discount-toggle" class="sr-only peer">
                         <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
@@ -897,8 +897,8 @@ html:not(.dark) .text-red-500 {
                 <div id="discount-options" class="hidden mt-3 space-y-3">
                     <div class="flex items-center gap-3">
                         <input type="text" id="discount-percent" min="0" max="100" step="0.1" 
-                            placeholder="نسبة الخصم %"
-                            class="flex-1 bg-dark/50 border border-white/10 text-white text-right px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
+                            placeholder="<?php echo __('discount_percent_placeholder'); ?>"
+                            class="flex-1 bg-dark/50 border border-white/10 text-white text-start px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
                     </div>
                     <div class="text-xs text-gray-500 flex items-center gap-1">
                         <span class="material-icons-round text-xs">info</span>
@@ -909,7 +909,7 @@ html:not(.dark) .text-red-500 {
 
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm text-gray-400">
-                    <span>المجموع الفرعي</span>
+                    <span><?php echo __('subtotal'); ?></span>
                     <span id="cart-subtotal">0 <?php echo $currency; ?></span>
                 </div>
                 <?php if ($taxEnabled == '1'): ?>
@@ -920,17 +920,17 @@ html:not(.dark) .text-red-500 {
                 <?php endif; ?>
                 
                 <div id="cart-delivery-row" class="flex justify-between text-sm text-gray-400 hidden">
-                    <span>التوصيل</span>
+                    <span><?php echo __('delivery'); ?></span>
                     <span id="cart-delivery-amount">0 <?php echo $currency; ?></span>
                 </div>
 
                 <div id="cart-discount-row" class="flex justify-between text-sm text-gray-400 hidden">
-                    <span>الخصم</span>
+                    <span><?php echo __('discount'); ?></span>
                     <span id="cart-discount-amount">0 <?php echo $currency; ?></span>
                 </div>
 
                 <div class="flex justify-between text-lg font-bold text-white pt-2 border-t border-white/5">
-                    <span>الإجمالي</span>
+                    <span><?php echo __('total'); ?></span>
                     <span id="cart-total" class="text-primary">0 <?php echo $currency; ?></span>
                 </div>
             </div>
@@ -938,12 +938,12 @@ html:not(.dark) .text-red-500 {
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <button id="clear-cart-btn" class="button-danger bg-red-500/10 hover:bg-red-500/20 text-red-500 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                     <span class="material-icons-round text-sm">delete_outline</span>
-                    إلغاء
+                    <?php echo __('cancel'); ?>
                 </button>
 
                 <button id="checkout-btn" class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
                     <span class="material-icons-round">payments</span>
-                    دفع
+                    <?php echo __('pay'); ?>
                 </button>
             </div>
         </div>
@@ -960,7 +960,7 @@ html:not(.dark) .text-red-500 {
                 </a>
                 <div class="relative flex-1 max-w-md">
                     <span class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
-                    <input type="text" id="product-search-input" placeholder="بحث عن منتج..." class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                    <input type="text" id="product-search-input" placeholder="<?php echo __('search_product'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-start pr-10 pl-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                     <button id="scan-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white">
                         <span class="material-icons-round">qr_code_scanner</span>
                     </button>
@@ -968,10 +968,10 @@ html:not(.dark) .text-red-500 {
             </div>
 
             <div class="flex items-center gap-3">
-                <label for="category-filter" class="text-sm text-gray-400">الفئة:</label>
+                <label for="category-filter" class="text-sm text-gray-400"><?php echo __('category'); ?>:</label>
                 <div class="relative min-w-[200px]">
-                    <select id="category-filter" class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-right pr-4 pl-8 py-2 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
-                        <option value="">جميع الفئات</option>
+                    <select id="category-filter" class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-start pr-4 pl-8 py-2 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+                        <option value=""><?php echo __('all_categories'); ?></option>
                     </select>
                     <span class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                 </div>
@@ -994,8 +994,8 @@ html:not(.dark) .text-red-500 {
                 <div class="flex items-center gap-3">
                     <span class="material-icons-round text-3xl">receipt_long</span>
                     <div>
-                        <h3 class="text-2xl font-bold">فاتورة ناجحة!</h3>
-                        <p class="text-sm opacity-90">تم إتمام عملية البيع بنجاح</p>
+                        <h3 class="text-2xl font-bold"><?php echo __('invoice_success'); ?></h3>
+                        <p class="text-sm opacity-90"><?php echo __('sale_completed'); ?></p>
                     </div>
                 </div>
                 <button id="close-invoice-modal" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
@@ -1009,7 +1009,7 @@ html:not(.dark) .text-red-500 {
                             <!-- Header: Invoice Title and Logo -->
                 <div class="flex items-center justify-between pb-6 mb-6 border-b-2 border-gray-300">
                     <div>
-                        <h1 class="text-4xl font-extrabold text-green-600">فاتورة</h1>
+                        <h1 class="text-4xl font-extrabold text-green-600"><?php echo __('invoice_header'); ?></h1>
                     </div>
                     <?php if (!empty($shopLogoUrl)): ?>
                         <img src="<?php echo htmlspecialchars($shopLogoUrl); ?>" alt="Logo" class="w-16 h-16 rounded-full border border-gray-200 object-contain bg-white">
@@ -1024,7 +1024,7 @@ html:not(.dark) .text-red-500 {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 mb-6 border-b border-gray-200">
                     <!-- Your Information (Shop Info) -->
                     <div>
-                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3">معلومات المحل</h3>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3"><?php echo __('shop_info'); ?></h3>
                         <div class="text-sm text-gray-700 space-y-1">
                             <p class="font-bold text-base"><?php echo htmlspecialchars($shopName); ?></p>
                             <?php if ($shopPhone): ?>
@@ -1038,7 +1038,7 @@ html:not(.dark) .text-red-500 {
 
                     <!-- Client Information -->
                     <div>
-                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3">معلومات العميل</h3>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-3"><?php echo __('client_info'); ?></h3>
                         <div id="customer-info" class="text-sm text-gray-700 space-y-1"></div>
                     </div>
                 </div>
@@ -1048,7 +1048,7 @@ html:not(.dark) .text-red-500 {
                 <div class="grid grid-cols-3 gap-6 pb-6 mb-6 border-b border-gray-200 invoice-header-grid">
                         <!-- تاريخ الإصدار - يمين -->
                     <div class="text-right">
-                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">تاريخ الإصدار</h3>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2"><?php echo __('issue_date'); ?></h3>
                         <p class="text-base font-bold text-gray-900" id="invoice-date">-</p>
                         <p class="text-sm text-gray-600" id="invoice-time">-</p>
                     </div>
@@ -1060,7 +1060,7 @@ html:not(.dark) .text-red-500 {
 
                     <!-- رقم الفاتورة - يسار -->
                     <div class="text-left">
-                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">رقم الفاتورة</h3>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2"><?php echo __('invoice_no'); ?></h3>
                         <p class="text-2xl font-bold text-gray-900" id="invoice-number">-</p>
                     </div>
                 </div>
@@ -1070,10 +1070,10 @@ html:not(.dark) .text-red-500 {
                         <table class="w-full text-sm invoice-items-container">
                             <thead class="bg-gray-100">
                                 <tr class="border-b-2 border-gray-300">
-                                    <th class="text-right py-3 px-4 font-bold text-gray-800 text-sm uppercase">المنتج</th>
-                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase">الكمية</th>
-                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase">السعر</th>
-                                    <th class="text-left py-3 px-4 font-bold text-gray-800 text-sm uppercase">الإجمالي</th>
+                                    <th class="text-start py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('product_col'); ?></th>
+                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('quantity_col'); ?></th>
+                                    <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('price_col'); ?></th>
+                                    <th class="text-end py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('total_col'); ?></th>
                                 </tr>
                             </thead>
                             <tbody id="invoice-items"></tbody>
@@ -1159,21 +1159,21 @@ html:not(.dark) .text-red-500 {
 <div id="quantity-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-sm border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">تعديل الكمية</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('edit_quantity_modal'); ?></h3>
             <button id="close-quantity-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
         <div class="p-6">
             <p class="text-gray-400 mb-4" id="quantity-product-name"></p>
-            <input type="text" id="quantity-input" class="w-full bg-dark/50 border border-white/10 text-white text-center text-2xl font-bold py-4 rounded-xl focus:outline-none focus:border-primary/50" value="1" inputmode="numeric" pattern="[0-9]*" placeholder="أدخل الكمية (أرقام فقط)">
+            <input type="text" id="quantity-input" class="w-full bg-dark/50 border border-white/10 text-white text-center text-2xl font-bold py-4 rounded-xl focus:outline-none focus:border-primary/50" value="1" inputmode="numeric" pattern="[0-9]*" placeholder="<?php echo __('enter_quantity_placeholder'); ?>">
         </div>
         <div class="p-6 border-t border-white/5 grid grid-cols-2 gap-3">
             <button id="cancel-quantity-btn" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold transition-all">
-                إلغاء
+                <?php echo __('cancel'); ?>
             </button>
             <button id="confirm-quantity-btn" class="bg-primary hover:bg-primary-hover text-white py-3 rounded-xl font-bold transition-all">
-                تأكيد
+                <?php echo __('confirm'); ?>
             </button>
         </div>
     </div>
@@ -1220,7 +1220,7 @@ html:not(.dark) .text-red-500 {
 <div id="barcode-scanner-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">مسح الباركود</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('scan_barcode_modal'); ?></h3>
             <button id="close-barcode-scanner-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -1241,10 +1241,10 @@ html:not(.dark) .text-red-500 {
             <p id="confirm-message" class="text-white text-lg mb-6"></p>
             <div class="flex gap-3 justify-center">
                 <button id="confirm-cancel-btn" class="px-6 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all duration-200 min-w-[100px]">
-                    إلغاء
+                    <?php echo __('cancel'); ?>
                 </button>
                 <button id="confirm-ok-btn" class="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-all duration-200 min-w-[100px]">
-                    موافق
+                    <?php echo __('ok'); ?>
                 </button>
             </div>
         </div>
@@ -1255,36 +1255,36 @@ html:not(.dark) .text-red-500 {
 <div id="payment-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 m-4 transform transition-all">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">طريقة الدفع</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('payment_method_modal'); ?></h3>
             <button id="close-payment-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
         <div class="p-6">
             <div class="mb-6">
-                <p class="text-gray-400 text-center mb-2">المبلغ الإجمالي</p>
+                <p class="text-gray-400 text-center mb-2"><?php echo __('total_amount_label'); ?></p>
                 <p id="payment-total-amount" class="text-white text-4xl font-bold text-center">0.00 <?php echo $currency; ?></p>
             </div>
 
 
             <div id="cash-payment-details" class="space-y-4">
                 <div>
-                    <label for="amount-received" class="block text-sm text-gray-400 mb-2">المبلغ المستلم</label>
-                    <input type="text" id="amount-received" placeholder="أدخل المبلغ (أرقام فقط)..." class="w-full bg-dark/50 border border-white/10 text-white text-center text-xl font-bold py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" inputmode="decimal" pattern="[0-9.]*">
+                    <label for="amount-received" class="block text-sm text-gray-400 mb-2"><?php echo __('received_amount_label'); ?></label>
+                    <input type="text" id="amount-received" placeholder="<?php echo __('enter_amount_placeholder'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center text-xl font-bold py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" inputmode="decimal" pattern="[0-9.]*">
                 </div>
                 <div class="bg-white/5 p-4 rounded-xl text-center">
-                    <p class="text-sm text-gray-400">الباقي</p>
+                    <p class="text-sm text-gray-400"><?php echo __('remaining_amount_label'); ?></p>
                     <p id="change-due" class="text-2xl font-bold text-accent">0.00 <?php echo $currency; ?></p>
                 </div>
             </div>
         </div>
         <div class="p-6 border-t border-white/5 grid grid-cols-2 gap-3">
              <button id="cancel-payment-btn" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 rounded-xl font-bold transition-all">
-                إلغاء
+                <?php echo __('cancel'); ?>
             </button>
             <button id="confirm-payment-btn" class="bg-accent hover:bg-lime-500 text-dark-surface py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
                  <span class="material-icons-round">check_circle</span>
-                تأكيد الدفع
+                <?php echo __('confirm_payment'); ?>
             </button>
         </div>
     </div>
@@ -1542,7 +1542,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         } catch (err) {
             console.error(err);
-            alert('لا يمكن الوصول للكاميرا. تأكد من السماح بالوصول للكاميرا في المتصفح.');
+            alert(window.__('camera_access_error'));
             barcodeScannerModal.classList.add('hidden');
         }
     }
@@ -1571,11 +1571,11 @@ document.addEventListener('DOMContentLoaded', function () {
             addProductToCart(exactMatch);
             searchInput.value = ''; // تفريغ البحث للاستعداد للمنتج التالي
             applyFilters(); // إعادة تعيين الشبكة
-            showToast(`تم إضافة "${exactMatch.name}" للسلة`, true);
+            showToast(window.__('added_to_cart').replace('%s', exactMatch.name), true);
         } else {
             // إذا لم نجد تطابق تام، نقوم بفلترة المنتجات لعرض النتائج المشابهة
             applyFilters();
-            showToast('لم يتم العثور على منتج بهذا الباركود', false);
+            showToast(window.__('product_not_found'), false);
         }
     }
 
@@ -1622,7 +1622,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch('api.php?action=getCategories');
             const result = await response.json();
             if (result.success) {
-                categoryFilter.innerHTML = '<option value="">جميع الفئات</option>';
+                categoryFilter.innerHTML = `<option value="">${window.__('all_categories')}</option>`;
                 result.data.forEach(category => {
                     const option = document.createElement('option');
                     option.value = category.id;
@@ -1650,7 +1650,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } catch (error) {
             console.error('خطأ في تحميل المنتجات:', error);
-            showToast('حدث خطأ في تحميل المنتجات', false);
+            showToast(window.__('loading_error'), false);
         } finally {
             hideLoading();
         }
@@ -1722,7 +1722,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayProducts(products) {
         productsGrid.innerHTML = '';
         if (products.length === 0) {
-            productsGrid.innerHTML = '<p class="text-center py-4 text-gray-500 col-span-full">لا توجد منتجات لعرضها.</p>';
+            productsGrid.innerHTML = `<p class="text-center py-4 text-gray-500 col-span-full">${window.__('no_products_display')}</p>`;
             return;
         }
         products.forEach(product => {
@@ -1746,7 +1746,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusBadge = `
                     <div class="absolute top-2 right-2 bg-gray-600 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
                         <span class="material-icons-round text-[12px]">block</span>
-                        <span>نفذ</span>
+                        <span>${window.__('out_of_stock_badge')}</span>
                     </div>`;
             } else if (quantity <= criticalAlert) {
                 // كمية حرجة (أحمر)
@@ -1756,7 +1756,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusBadge = `
                     <div class="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
                         <span class="material-icons-round text-[12px]">priority_high</span>
-                        <span>حرج</span>
+                        <span>${window.__('critical_stock_badge')}</span>
                     </div>`;
             } else if (quantity <= lowAlert) {
                 // كمية منخفضة (أصفر)
@@ -1766,7 +1766,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusBadge = `
                     <div class="absolute top-2 right-2 bg-yellow-600/20 text-yellow-500 border border-yellow-500/30 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
                         <span class="material-icons-round text-[12px]">low_priority</span>
-                        <span>منخفض</span>
+                        <span>${window.__('low_stock_badge')}</span>
                     </div>`;
             } else {
                 // كمية جيدة (أخضر/عادي)
@@ -1794,7 +1794,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 <div class="flex items-center justify-center gap-1.5 mt-3 py-1 px-3 rounded-lg bg-dark/30 ${quantityClass}">
                     <span class="material-icons-round text-sm">${quantityIcon}</span>
-                    <span class="text-xs">المخزون: ${quantity}</span>
+                    <span class="text-xs">${window.__('stock_label')} ${quantity}</span>
                 </div>
             `;
             
@@ -1802,7 +1802,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 productCard.addEventListener('click', () => addProductToCart(product));
             } else {
                 productCard.addEventListener('click', () => {
-                    showToast(`⚠️ المنتج "${product.name}" غير متوفر حالياً`, false);
+                    showToast(window.__('out_of_stock_msg'), false);
                     if (soundNotificationsEnabled) {
                         // صوت خطأ خفيف
                         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1827,7 +1827,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function addProductToCart(product) {
         const stockAvailable = parseInt(product.quantity);
         if (stockAvailable === 0) {
-            showToast('⚠️ عذراً، هذا المنتج نفذت كميته تماماً!', false);
+            showToast(window.__('out_of_stock_msg'), false);
             return;
         }
         
@@ -1836,7 +1836,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const currentCartQuantity = existingProduct ? existingProduct.quantity : 0;
 
         if (currentCartQuantity + 1 > stockAvailable) {
-            showToast(`نأسف، نفذت كمية هذا المنتج من المخزون! (متوفر: ${stockAvailable})`, false);
+            showToast(window.__('stock_limit_msg').replace('%d', stockAvailable), false);
             return; 
         }
 
@@ -1952,7 +1952,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         if (type === 'inside') {
             if (!homeCity) {
-                showToast('لم يتم تحديد مدينة المحل في الإعدادات', false);
+                showToast(window.__('shop_city_not_set'), false);
                 deliveryCityInput.value = '';
                 deliveryCityInput.readOnly = true;
                 deliveryCost = 0;
@@ -1962,19 +1962,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 deliveryCost = deliveryInsideCost;
                 deliveryCostInfo.innerHTML = `
                     <span class="material-icons-round text-xs">check_circle</span>
-                    <span>داخل المدينة: ${deliveryInsideCost} ${currency}</span>
+                    <span>${window.__('inside_city_cost').replace('%s', deliveryInsideCost + ' ' + currency)}</span>
                 `;
                 deliveryCostInfo.className = 'text-xs text-green-500 mt-1 flex items-center gap-1';
             }
         } else if (type === 'outside') {
             deliveryCityInput.value = '';
             deliveryCityInput.readOnly = false;
-            deliveryCityInput.placeholder = 'أدخل اسم المدينة...';
+            deliveryCityInput.placeholder = window.__('enter_city_placeholder');
             deliveryCityInput.focus();
             deliveryCost = deliveryOutsideCost;
             deliveryCostInfo.innerHTML = `
                 <span class="material-icons-round text-xs">location_on</span>
-                <span>خارج المدينة: ${deliveryOutsideCost} ${currency}</span>
+                <span>${window.__('outside_city_cost').replace('%s', deliveryOutsideCost + ' ' + currency)}</span>
             `;
             deliveryCostInfo.className = 'text-xs text-orange-500 mt-1 flex items-center gap-1';
         }
@@ -1995,7 +1995,7 @@ document.addEventListener('DOMContentLoaded', function () {
             deliveryCost = 0;
             deliveryCostInfo.innerHTML = `
                 <span class="material-icons-round text-xs">info</span>
-                <span>سيتم حساب التكلفة تلقائياً</span>
+                <span>${window.__('auto_delivery_cost')}</span>
             `;
             deliveryCostInfo.className = 'text-xs text-gray-500 mt-1 flex items-center gap-1';
         } else {
@@ -2003,7 +2003,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 deliveryCost = deliveryOutsideCost;
                 deliveryCostInfo.innerHTML = `
                     <span class="material-icons-round text-xs">warning</span>
-                    <span>لم يتم تحديد مدينة المحل، سيتم احتساب خارج المدينة: ${deliveryOutsideCost} ${currency}</span>
+                    <span>${window.__('shop_city_undefined_calculation').replace('%s', deliveryOutsideCost + ' ' + currency)}</span>
                 `;
                 deliveryCostInfo.className = 'text-xs text-yellow-500 mt-1 flex items-center gap-1';
             } else {
@@ -2014,14 +2014,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     deliveryCost = deliveryInsideCost;
                     deliveryCostInfo.innerHTML = `
                         <span class="material-icons-round text-xs">check_circle</span>
-                        <span>داخل المدينة: ${deliveryInsideCost} ${currency}</span>
+                        <span>${window.__('inside_city_cost').replace('%s', deliveryInsideCost + ' ' + currency)}</span>
                     `;
                     deliveryCostInfo.className = 'text-xs text-green-500 mt-1 flex items-center gap-1';
                 } else {
                     deliveryCost = deliveryOutsideCost;
                     deliveryCostInfo.innerHTML = `
                         <span class="material-icons-round text-xs">location_on</span>
-                        <span>خارج المدينة: ${deliveryOutsideCost} ${currency}</span>
+                        <span>${window.__('outside_city_cost').replace('%s', deliveryOutsideCost + ' ' + currency)}</span>
                     `;
                     deliveryCostInfo.className = 'text-xs text-orange-500 mt-1 flex items-center gap-1';
                 }
@@ -2111,7 +2111,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Validate discount percentage
         if (inputPercent < 0 || inputPercent > 100) {
-            showToast('الرجاء إدخال نسبة خصم صحيحة (0-100%)', false);
+            showToast(window.__('invalid_discount'), false);
             return;
         }
         
@@ -2154,7 +2154,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (action === 'increase') {
             // التحقق قبل الزيادة
             if (item.quantity + 1 > item.stock) {
-                showToast(`الكمية المتوفرة في المخزون هي ${item.stock} فقط`, false);
+                showToast(window.__('stock_limit_msg').replace('%d', item.stock), false);
                 return;
             }
             item.quantity++;
@@ -2166,11 +2166,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             updateCart();
         } else if (action === 'delete') {
-            showConfirm(`هل تريد حذف "${item.name}" من السلة؟`).then(confirmed => {
+            showConfirm(window.__('confirm_delete_item').replace('%s', item.name)).then(confirmed => {
                 if (confirmed) {
                     cart = cart.filter(product => product.id != id);
                     updateCart();
-                    showToast('تم حذف المنتج من السلة', true);
+                    showToast(window.__('removed_from_cart'), true);
                 }
             });
         }
@@ -2193,13 +2193,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (item) {
                 // التحقق من المخزون
                 if (newQuantity > item.stock) {
-                    showToast(`لا يمكنك طلب أكثر من ${item.stock} قطع`, false);
+                    showToast(window.__('stock_limit_msg').replace('%d', item.stock), false);
                     return; // إيقاف العملية
                 }
                 
                 item.quantity = newQuantity;
                 updateCart();
-                showToast('تم تحديث الكمية بنجاح', true);
+                showToast(window.__('quantity_updated'), true);
             }
         }
         quantityModal.classList.add('hidden');
@@ -2232,16 +2232,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     clearCartBtn.addEventListener('click', async () => {
-        if (cart.length > 0 && await showConfirm('هل أنت متأكد من إلغاء السلة؟')) {
+        if (cart.length > 0 && await showConfirm(window.__('confirm_delete_cart'))) {
             cart = [];
             updateCart();
-            showToast('تم إلغاء السلة', true);
+            showToast(window.__('cart_cleared'), true);
         }
     });
 
     async function processCheckout(paymentData) {
         if (cart.length === 0) {
-            showToast('السلة فارغة!', false);
+            showToast(window.__('empty_cart'), false);
             return;
         }
 
@@ -2252,7 +2252,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // التحقق من اختيار نوع التوصيل
             const selectedType = document.querySelector('input[name="delivery-type"]:checked');
             if (!selectedType) {
-                showToast('الرجاء اختيار نوع التوصيل (داخل/خارج المدينة)', false);
+                showToast(window.__('select_delivery_type'), false);
                 return;
             }
             
@@ -2261,9 +2261,9 @@ document.addEventListener('DOMContentLoaded', function () {
             // التحقق من إدخال اسم المدينة
             if (!cityInput || !cityInput.value.trim()) {
                 if (selectedType.value === 'inside') {
-                    showToast('لم يتم تحديد مدينة المحل في الإعدادات', false);
+                    showToast(window.__('shop_city_not_set'), false);
                 } else {
-                    showToast('الرجاء إدخال اسم المدينة للتوصيل', false);
+                    showToast(window.__('enter_delivery_city'), false);
                     cityInput.focus();
                 }
                 return;
@@ -2286,7 +2286,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const total = subtotal + tax + deliveryCostValue - discountAmount;
 
         try {
-            showLoading('جاري معالجة عملية البيع...');
+            showLoading(window.__('processing'));
             const response = await fetch('api.php?action=checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2335,8 +2335,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (deliveryCityInput) deliveryCityInput.value = '';
                 updateDeliveryState();
                 
-                customerNameDisplay.textContent = 'عميل نقدي';
-                customerDetailDisplay.textContent = 'افتراضي';
+                customerNameDisplay.textContent = window.__('cash_customer');
+                customerDetailDisplay.textContent = window.__('default');
                 customerAvatar.textContent = 'A';
                 updateCart();
                 
@@ -2350,19 +2350,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     invoiceModal.classList.remove('hidden');
                 }
             } else {
-                showToast(result.message || 'فشل في إنشاء الفاتورة', false);
+                showToast(result.message || window.__('action_failed'), false);
             }
 
         } catch (error) {
             console.error('خطأ في إنشاء الفاتورة:', error);
-            showToast('حدث خطأ أثناء إنشاء الفاتورة', false);
+            showToast(window.__('action_failed'), false);
         } finally {
             hideLoading();
         }
     }
     checkoutBtn.addEventListener('click', () => {
         if (cart.length === 0) {
-            showToast('السلة فارغة!', false);
+            showToast(window.__('empty_cart'), false);
             return;
         }
 
@@ -2416,7 +2416,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const amountReceived = parseFloat(amountReceivedInput.value) || 0;
 
             if (paymentMethod === 'cash' && amountReceived < total) {
-                showToast('المبلغ المستلم أقل من الإجمالي', false);
+                showToast(window.__('payment_less_total'), false);
                 return;
             }
 
@@ -2920,10 +2920,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             
             pdf.save(`invoice-${currentInvoiceData.id}.pdf`);
-            showToast('تم تحميل الفاتورة بصيغة PDF', true);
+            showToast(window.__('pdf_downloaded'), true);
         } catch (error) {
             console.error('خطأ في تحميل PDF:', error);
-            showToast('فشل في تحميل PDF', false);
+            showToast(window.__('action_failed'), false);
         }
     });
 
@@ -3009,7 +3009,7 @@ document.addEventListener('DOMContentLoaded', function () {
         link.download = `invoice-${currentInvoiceData.id}.txt`;
         link.click();
         
-        showToast('تم تحميل الفاتورة بصيغة TXT', true);
+        showToast(window.__('txt_downloaded'), true);
     });
     
     customerSelection.addEventListener('click', () => {
@@ -3040,7 +3040,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayCustomers(customers) {
         customerList.innerHTML = '';
         if (customers.length === 0) {
-            customerList.innerHTML = '<p class="text-gray-500">لم يتم العثور على عملاء.</p>';
+            customerList.innerHTML = `<p class="text-gray-500">${window.__('no_customers_found')}</p>`;
             return;
         }
         customers.forEach(customer => {
@@ -3052,7 +3052,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
                 <div>
                     <p class="text-white font-bold">${customer.name}</p>
-                    <p class="text-xs text-gray-400">${customer.phone || customer.email || 'لا توجد معلومات'}</p>
+                    <p class="text-xs text-gray-400">${customer.phone || customer.email || window.__('no_info')}</p>
                 </div>
             `;
             customerElement.addEventListener('click', () => selectCustomer(customer));
@@ -3063,10 +3063,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function selectCustomer(customer) {
         selectedCustomer = customer;
         customerNameDisplay.textContent = customer.name;
-        customerDetailDisplay.textContent = customer.phone || customer.email || 'لا توجد تفاصيل';
+        customerDetailDisplay.textContent = customer.phone || customer.email || window.__('no_details');
         customerAvatar.textContent = customer.name.charAt(0).toUpperCase();
         customerModal.classList.add('hidden');
-        showToast('تم اختيار العميل: ' + customer.name, true);
+        showToast(window.__('customer_selected').replace('%s', customer.name), true);
     }
 
     addCustomerForm.addEventListener('submit', async (e) => {
@@ -3079,7 +3079,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         if (!newCustomer.name) {
-            showToast('الرجاء إدخال اسم العميل', false);
+            showToast(window.__('enter_customer_name'), false);
             return;
         }
 
@@ -3094,13 +3094,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 newCustomer.id = result.id;
                 selectCustomer(newCustomer);
                 addCustomerForm.reset();
-                showToast(result.message || 'تم إضافة العميل بنجاح', true);
+                showToast(result.message || window.__('customer_added'), true);
             } else {
-                showToast(result.message || 'فشل في إضافة العميل', false);
+                showToast(result.message || window.__('action_failed'), false);
             }
         } catch (error) {
             console.error('خطأ في إضافة العميل:', error);
-            showToast('حدث خطأ أثناء إضافة العميل', false);
+            showToast(window.__('action_failed'), false);
         }
     });
 
@@ -3117,17 +3117,17 @@ document.addEventListener('DOMContentLoaded', function () {
     async function handleStartDayPOS() {
         // Promt for opening balance
         const { value: opening_balance } = await Swal.fire({
-            title: 'بدء يوم عمل جديد',
+            title: window.__('start_day_modal_title'),
             input: 'text',
-            inputLabel: 'الرصيد الافتتاحي',
-            inputPlaceholder: 'أدخل المبلغ...',
+            inputLabel: window.__('opening_balance_label'),
+            inputPlaceholder: window.__('enter_amount_placeholder'),
             showCancelButton: true,
-            confirmButtonText: 'بدء اليوم',
-            cancelButtonText: 'إلغاء',
+            confirmButtonText: window.__('start_day_btn'),
+            cancelButtonText: window.__('cancel'),
             confirmButtonColor: '#10B981',
             inputValidator: (value) => {
-                if (!value) return 'الرجاء إدخال الرصيد الافتتاحي';
-                if (isNaN(toEnglishNumbers(value))) return 'الرجاء إدخال رقم صحيح';
+                if (!value) return window.__('enter_opening_balance_error');
+                if (isNaN(toEnglishNumbers(value))) return window.__('enter_valid_number');
             }
         });
 
@@ -3139,14 +3139,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const holidayData = await holidayRes.json();
             if (holidayData.success && holidayData.is_holiday) {
                 const { isConfirmed } = await Swal.fire({
-                    title: 'تنبيه: يوم عطلة',
-                    text: `اليوم مسجل كأحد أيام العطلة (${holidayData.holiday_name}) في إعدادات النظام، هل أنت متأكد من رغبتك في بدء يوم عمل جديد؟`,
+                    title: window.__('holiday_warning_title'),
+                    text: window.__('holiday_warning_text').replace('%s', holidayData.holiday_name),
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#10B981',
                     cancelButtonColor: '#6B7280',
-                    confirmButtonText: 'نعم، ابدأ العمل',
-                    cancelButtonText: 'تراجع'
+                    confirmButtonText: window.__('confirm_start_work'),
+                    cancelButtonText: window.__('undo')
                 });
                 
                 if (!isConfirmed) return;
@@ -3154,7 +3154,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (e) { console.error(e); }
 
         try {
-            showLoading('جاري بدء يوم العمل...');
+            showLoading(window.__('starting_work_day'));
             const response = await fetch('api.php?action=start_day', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3164,19 +3164,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const result = await response.json();
             
             if (result.success) {
-                Swal.fire('تم بنجاح', 'تم بدء يوم عمل جديد بنجاح', 'success').then(() => {
+                Swal.fire(window.__('success_title'), window.__('start_day_success'), 'success').then(() => {
                     location.reload();
                 });
             } else if (result.code === 'business_day_open_exists' || result.code === 'business_day_closed_exists') {
                 const isClosed = result.code === 'business_day_closed_exists';
                 const { isConfirmed } = await Swal.fire({
-                    title: isClosed ? 'يوم عمل مغلق' : 'يوم عمل مفتوح بالفعل',
-                    html: `<p class="mb-4">${result.message}</p><p>هل تريد ${isClosed ? 'إعادة فتح' : 'تمديد'} يوم العمل الحالي بإضافة مبلغ <strong>${opening_balance} ${currency}</strong>؟</p>`,
+                    title: isClosed ? window.__('business_day_closed') : window.__('business_day_open_already'),
+                    html: `<p class="mb-4">${result.message}</p><p>${(isClosed ? window.__('reopen_day_question_html') : window.__('extend_day_question_html')).replace('%s', opening_balance + ' ' + currency)}</p>`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#10B981',
-                    confirmButtonText: 'نعم، تمديد',
-                    cancelButtonText: 'إلغاء'
+                    confirmButtonText: isClosed ? window.__('confirm_reopen') : window.__('confirm_extend'),
+                    cancelButtonText: window.__('cancel')
                 });
 
                 if (isConfirmed) {
@@ -3188,17 +3188,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                     const extResult = await extRes.json();
                     if (extResult.success) {
-                        Swal.fire('تم بنجاح', extResult.message, 'success').then(() => location.reload());
+                        Swal.fire(window.__('success_title'), extResult.message, 'success').then(() => location.reload());
                     } else {
-                        Swal.fire('خطأ', extResult.message, 'error');
+                        Swal.fire(window.__('toast_error') || 'Error', extResult.message, 'error');
                     }
                 }
             } else {
-                Swal.fire('خطأ', result.message, 'error');
+                Swal.fire(window.__('toast_error') || 'Error', result.message, 'error');
             }
         } catch (error) {
             console.error(error);
-            Swal.fire('خطأ', 'حدث خطأ في الاتصال', 'error');
+            Swal.fire(window.__('toast_error') || 'Error', window.__('connection_error'), 'error');
         } finally {
             hideLoading();
         }

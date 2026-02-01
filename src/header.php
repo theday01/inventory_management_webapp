@@ -1,6 +1,7 @@
 <?php
 require_once 'session.php';
 require_once 'db.php';
+require_once __DIR__ . '/language.php';
 
 // Get shop name setting
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopName'");
@@ -17,7 +18,7 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
 ?>
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="<?php echo $isDark ? 'dark' : ''; ?>">
+<html lang="<?php echo get_locale(); ?>" dir="<?php echo get_dir(); ?>" class="<?php echo $isDark ? 'dark' : ''; ?>">
 
 <head>
     <meta charset="UTF-8">
@@ -625,10 +626,15 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
     <!-- Global Loading Screen -->
     <div id="loading-screen">
         <div class="spinner"></div>
-        <p class="loading-text" id="loading-message">جاري المعالجة...</p>
+        <p class="loading-text" id="loading-message"><?php echo __('processing'); ?></p>
     </div>
 
     <script>
+        window.translations = <?php echo json_encode($translations); ?>;
+        window.__ = function(key) {
+            return window.translations[key] || key;
+        };
+
         window.showToast = function(message, isSuccess) {
             // Smart detection for error messages if isSuccess is not explicitly provided
             if (typeof isSuccess === 'undefined') {
@@ -671,7 +677,8 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
         }
 
         // Global Loading Functions
-        window.showLoading = function(message = 'جاري المعالجة...') {
+        window.showLoading = function(message = null) {
+            if (!message) message = window.__('processing');
             const loadingScreen = document.getElementById('loading-screen');
             const loadingMessage = document.getElementById('loading-message');
             if (loadingScreen && loadingMessage) {
@@ -733,13 +740,13 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
             function sendStockNotification(message, count) {
                 if ('Notification' in window && stockNotificationPermission === 'granted') {
                     try {
-                        const notification = new Notification('⚠️ تنبيه المخزون', {
+                        const notification = new Notification('⚠️ ' + window.__('stock_alert'), {
                             body: message,
                             icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">📦</text></svg>',
                             tag: 'stock-alert',
                             requireInteraction: count > 10,
-                            dir: 'rtl',
-                            lang: 'ar'
+                            dir: '<?php echo get_dir(); ?>',
+                            lang: '<?php echo get_locale(); ?>'
                         });
                         
                         notification.onclick = function() {
@@ -774,7 +781,7 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
                     const result = await response.json();
                     
                     if (result.success && result.count > 0) {
-                        const message = `يوجد ${result.count} منتج على وشك النفاد يرجى إعادة الطلب.`;
+                        const message = window.__('low_stock_msg').replace('%d', result.count);
                         localStorage.setItem(throttleKey, String(Date.now()));
                         
                         // عرض Toast
@@ -810,10 +817,10 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
                 if (stockNotificationPermission === 'granted') {
                     // إعادة تعيين التاريخ للسماح بالفحص
                     lastStockCheckDate = '';
-                    showToast('✅ تم تفعيل إشعارات المخزون', true);
+                    showToast('✅ ' + window.__('stock_notif_enabled'), true);
                     checkLowStock();
                 } else if (stockNotificationPermission === 'denied') {
-                    showToast('❌ تم رفض إذن الإشعارات', false);
+                    showToast('❌ ' + window.__('notif_perm_denied'), false);
                 }
             };
             
@@ -843,7 +850,7 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
                 if ('Notification' in window && rentalNotificationPermission === 'granted') {
                     try {
                         const icon = isUrgent ? '🚨' : '🏠';
-                        const title = isUrgent ? 'تنبيه عاجل - إيجار المتجر' : 'تذكير - إيجار المتجر';
+                        const title = isUrgent ? window.__('rental_urgent_alert') : window.__('rental_reminder');
                         
                         const notification = new Notification(title, {
                             body: message,
@@ -852,8 +859,8 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
                             tag: 'rental-reminder',
                             requireInteraction: isUrgent,
                             vibrate: isUrgent ? [300, 100, 300, 100, 300] : [200, 100, 200],
-                            dir: 'rtl',
-                            lang: 'ar'
+                            dir: '<?php echo get_dir(); ?>',
+                            lang: '<?php echo get_locale(); ?>'
                         });
                         
                         notification.onclick = function() {
@@ -1002,16 +1009,16 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
             window.enableRentalNotifications = async function() {
                 await requestRentalNotificationPermission();
                 if (rentalNotificationPermission === 'granted') {
-                    showToast('✅ تم تفعيل إشعارات الإيجار بنجاح', true);
+                    showToast('✅ ' + window.__('rental_notif_enabled'), true);
                     checkRentalDue();
                 } else if (rentalNotificationPermission === 'denied') {
-                    showToast('❌ تم رفض إذن إشعارات الإيجار. يرجى تفعيلها من إعدادات المتصفح', false);
+                    showToast('❌ ' + window.__('rental_notif_denied'), false);
                 }
             };
             
             // دالة لفحص الإيجار يدوياً
             window.checkRentalNow = function() {
-                showToast('جاري التحقق من موعد الإيجار...', true);
+                showToast(window.__('checking_rental'), true);
                 checkRentalDue();
             };
             
@@ -1090,7 +1097,7 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
         <div class="p-6 border-b border-white/5">
             <h3 id="global-confirm-title" class="text-xl font-bold text-white flex items-center gap-2">
                 <span class="material-icons-round text-yellow-500">warning</span>
-                تأكيد العملية
+                <?php echo __('confirm_action'); ?>
             </h3>
         </div>
         
@@ -1101,11 +1108,11 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
         <div class="p-6 border-t border-white/5 flex justify-end gap-3">
             <button id="global-cancel-btn" 
                     class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all hover:-translate-y-0.5">
-                إلغاء
+                <?php echo __('cancel'); ?>
             </button>
             <button id="global-confirm-btn" 
                     class="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5">
-                تأكيد
+                <?php echo __('confirm'); ?>
             </button>
         </div>
     </div>
