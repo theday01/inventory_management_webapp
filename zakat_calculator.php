@@ -315,11 +315,11 @@ function calculateZakat() {
 
     if (netAssets >= nisabValue) {
         zakatAmount = netAssets * ZAKAT_RATE;
-        const msg = window.translations.zakat_payable_msg || 'يجب عليك إخراج الزكاة بمقدار %s في مصارفها الشرعية الثمانية';
+        const msg = <?php echo json_encode(__('zakat_payable_msg')); ?>;
         statusMessage = msg.replace('%s', zakatAmount.toFixed(2) + ' <?php echo $currency; ?>');
         statusClass = 'bg-green-900/20 border-green-800 text-green-300';
     } else {
-        const msg = window.translations.zakat_not_payable_msg || 'لم يبلغ مالك النصاب الشرعي (%s)، لا زكاة عليك هذا العام';
+        const msg = <?php echo json_encode(__('zakat_not_payable_msg')); ?>;
         statusMessage = msg.replace('%s', nisabValue.toFixed(2) + ' <?php echo $currency; ?>');
         statusClass = 'bg-blue-900/20 border-blue-800 text-blue-300';
     }
