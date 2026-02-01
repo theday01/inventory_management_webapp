@@ -629,7 +629,18 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
     </div>
 
     <script>
-        window.showToast = function(message, isSuccess = true) {
+        window.showToast = function(message, isSuccess) {
+            // Smart detection for error messages if isSuccess is not explicitly provided
+            if (typeof isSuccess === 'undefined') {
+                const lowerMsg = String(message).toLowerCase();
+                const errorKeywords = [
+                    'error', 'fail', 'wrong', 'denied', 'unauthorized', // English
+                    'خطأ', 'فشل', 'مشكلة', 'تنبيه', 'عذراً', 'غير مصرح', 'مرفوض', 'تعذر', 'نفذت' // Arabic
+                ];
+                // Default to true (success), but switch to false (error) if keyword found
+                isSuccess = !errorKeywords.some(keyword => lowerMsg.includes(keyword));
+            }
+
             const toast = document.getElementById('toast-notification');
             const toastContent = document.getElementById('toast-content');
             const toastMessage = document.getElementById('toast-message');
@@ -639,11 +650,11 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
 
             if (isSuccess) {
                 toastContent.className =
-                    'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-green-500 text-white';
+                    'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-emerald-600 text-white border border-emerald-400/30';
                 toastIcon.textContent = 'check_circle';
             } else {
                 toastContent.className =
-                    'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-red-500 text-white';
+                    'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-rose-600 text-white border border-rose-400/30';
                 toastIcon.textContent = 'error';
             }
 
