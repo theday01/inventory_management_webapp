@@ -751,49 +751,50 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
                     <!-- Moroccan National and Religious Holidays -->
                     <div id="holidays-management-section" class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b border-white/5 pb-4 gap-4">
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h3 class="text-xl font-bold text-white flex items-center gap-3">
-                                        <span class="material-icons-round text-primary">festival</span>
-                                        <?php echo __('holidays_title'); ?>
-                                    </h3>
-                                    <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                                        <span class="text-sm text-gray-300"><?php echo __('enable_holidays_label'); ?></span>
-                                        <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
-                                            <input type="checkbox" name="holidays_enabled" id="toggle-holidays" value="1"
-                                                class="toggle-checkbox"
-                                                <?php echo (isset($settings['holidays_enabled']) && $settings['holidays_enabled'] == '1') ? 'checked' : ''; ?>
-                                                <?php echo $disabledAttr; ?>
-                                                onchange="toggleHolidaysSettings(this)" />
-                                            <label for="toggle-holidays" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                        </div>
-                                    </div>
+                        <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4 gap-4">
+                            <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                                <span class="material-icons-round text-primary">festival</span>
+                                <?php echo __('holidays_title'); ?>
+                            </h3>
+                            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                                <span class="text-sm text-gray-300"><?php echo __('enable_holidays_label'); ?></span>
+                                <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" name="holidays_enabled" id="toggle-holidays" value="1"
+                                        class="toggle-checkbox"
+                                        <?php echo (isset($settings['holidays_enabled']) && $settings['holidays_enabled'] == '1') ? 'checked' : ''; ?>
+                                        <?php echo $disabledAttr; ?>
+                                        onchange="toggleHolidaysSettings(this)" />
+                                    <label for="toggle-holidays" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1"><?php echo __('holidays_subtitle'); ?></p>
-                                <div class="flex items-center gap-2 mt-2">
+                            </div>
+                        </div>
+
+                        <div id="holidays-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['holidays_enabled']) || $settings['holidays_enabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
+                            
+                        <div class="mb-6">
+                            <p class="text-xs text-gray-500 mb-4"><?php echo __('holidays_subtitle'); ?></p>
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div id="holiday-sync-status" class="flex items-center gap-2">
                                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                                     <span class="text-[10px] text-gray-400"><?php echo __('last_sync_label'); ?></span>
                                     <span id="last-sync-date" class="text-[10px] text-primary font-bold">
                                         <?php echo !empty($settings['last_holiday_sync_date'] ?? '') ? htmlspecialchars($settings['last_holiday_sync_date']) : __('not_synced_yet'); ?>
                                     </span>
                                 </div>
+                                <?php if ($isAdmin): ?>
+                                <div id="holiday-action-buttons" class="flex items-center gap-3">
+                                    <button type="button" onclick="syncMoroccanHolidays()" id="sync-holidays-btn" class="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                                        <span class="material-icons-round text-sm">sync</span>
+                                        <span id="sync-btn-text"><?php echo __('update_holidays_now_btn'); ?></span>
+                                    </button>
+                                    <button type="button" onclick="openHolidayModal()" class="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                                        <span class="material-icons-round text-sm">add</span>
+                                        <?php echo __('add_custom_holiday_btn'); ?>
+                                    </button>
+                                </div>
+                                <?php endif; ?>
                             </div>
-                            <?php if ($isAdmin): ?>
-                            <div class="flex items-center gap-3">
-                                <button type="button" onclick="syncMoroccanHolidays()" id="sync-holidays-btn" class="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
-                                    <span class="material-icons-round text-sm">sync</span>
-                                    <span id="sync-btn-text"><?php echo __('update_holidays_now_btn'); ?></span>
-                                </button>
-                                <button type="button" onclick="openHolidayModal()" class="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
-                                    <span class="material-icons-round text-sm">add</span>
-                                    <?php echo __('add_custom_holiday_btn'); ?>
-                                </button>
-                            </div>
-                            <?php endif; ?>
                         </div>
-
-                        <div id="holidays-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['holidays_enabled']) || $settings['holidays_enabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
                         <div class="flex items-center justify-between mb-6">
                             <div class="flex items-center gap-4">
                                 <label class="text-xs text-gray-400"><?php echo __('display_year_label'); ?></label>
