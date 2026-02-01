@@ -1,5 +1,6 @@
 <?php
-$page_title = 'اتفاقية الترخيص';
+require_once 'src/language.php';
+$page_title = __('license_page_title');
 $current_page = 'license.php';
 require_once 'session.php';
 require_once 'src/header.php';
@@ -12,7 +13,7 @@ require_once 'src/sidebar.php';
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-20 shrink-0">
         <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <span class="material-icons-round text-primary">settings_suggest</span>
-            إتفاقيات الترخيص
+            <?php echo __('license_header'); ?>
         </h2>
     </header>
 
@@ -26,8 +27,8 @@ require_once 'src/sidebar.php';
                 <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden glass-panel">
                     <div class="p-8 border-b border-white/5 bg-white/5 flex justify-between items-start">
                         <div>
-                            <h1 class="text-2xl font-bold text-white mb-2">Smart Shop <span style="font-size: 14px;" class="text-primary">نظام إدارة المتاجر الذكي</span></h1>
-                            <p class="text-sm text-gray-400">اتفاقية ترخيص البرمجيات - الإصدار 2.0</p>
+                            <h1 class="text-2xl font-bold text-white mb-2">Smart Shop <span style="font-size: 14px;" class="text-primary"><?php echo __('smart_shop_title_sub'); ?></span></h1>
+                            <p class="text-sm text-gray-400"><?php echo __('license_agreement_version'); ?></p>
                         </div>
                         <span class="material-icons-round text-4xl text-white/10">gavel</span>
                     </div>
@@ -36,51 +37,51 @@ require_once 'src/sidebar.php';
                         
                         <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                                <span class="text-primary">1.</span> منح الترخيص
+                                <span class="text-primary">1.</span> <?php echo __('license_grant_title'); ?>
                             </h3>
-                            <p class="mb-2">تمنحك <strong class="text-white">Eagle Shadow Technology</strong> ("المرخص") ترخيصاً غير حصري، وغير قابل للتحويل، ومحدوداً لاستخدام هذا البرنامج ("Smart Shop") وفقاً للشروط المنصوص عليها في هذه الاتفاقية.</p>
-                            <p>يسمح لك هذا الترخيص بتثبيت واستخدام نسخة واحدة من البرنامج على جهاز خادم واحد أو شبكة محلية واحدة لغرض إدارة أنشطتك التجارية فقط.</p>
+                            <p class="mb-2"><?php echo __('license_grant_text_1'); ?></p>
+                            <p><?php echo __('license_grant_text_2'); ?></p>
                         </section>
 
                         <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                                <span class="text-primary">2.</span> حقوق الملكية الفكرية
+                                <span class="text-primary">2.</span> <?php echo __('ip_rights_title'); ?>
                             </h3>
-                            <p>البرنامج محمي بموجب قوانين حقوق النشر والمعاهدات الدولية للملكية الفكرية. تحتفظ Eagle Shadow Technology بجميع الحقوق والملكيات والمصالح في البرنامج (بما في ذلك الكود المصدري، التصميم، والخوارزميات).</p>
+                            <p><?php echo __('ip_rights_text'); ?></p>
                             <ul class="list-disc list-inside mt-2 space-y-1 text-gray-400">
-                                <li>لا يجوز لك تعديل، أو هندسة عكسية، أو فك تشفير البرنامج.</li>
-                                <li>لا يجوز لك تأجير، أو إقراض، أو إعادة بيع البرنامج لطرف ثالث.</li>
-                                <li>جميع العلامات التجارية والشعارات هي ملك لأصحابها المعنيين.</li>
+                                <li><?php echo __('ip_rights_list_1'); ?></li>
+                                <li><?php echo __('ip_rights_list_2'); ?></li>
+                                <li><?php echo __('ip_rights_list_3'); ?></li>
                             </ul>
                         </section>
 
                         <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                                <span class="text-primary">3.</span> حقوق الملكية الفكرية
+                                <span class="text-primary">3.</span> <?php echo __('ip_rights_title'); ?>
                             </h3>
-                            <p>البرنامج محمي بموجب قوانين حقوق النشر والمعاهدات الدولية للملكية الفكرية. تحتفظ Eagle Shadow Technology بجميع الحقوق والملكيات والمصالح في البرنامج (بما في ذلك الكود المصدري، التصميم، والخوارزميات).</p>
+                            <p><?php echo __('ip_rights_text'); ?></p>
                         </section>
 
                         <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                                <span class="text-primary">4.</span> الدعم والتحديثات
+                                <span class="text-primary">4.</span> <?php echo __('support_updates_title'); ?>
                             </h3>
-                            <p>قد توفر تحديثات دورية للبرنامج لتحسين الأداء أو إضافة ميزات جديدة. يخضع هذا الترخيص لأي تحديثات مستقبلية ما لم ترفق بشروط منفصلة.</p>
+                            <p><?php echo __('support_updates_text'); ?></p>
                         </section>
 
                         <div class="mt-8 pt-8 border-t border-white/5 text-center">
-                            <p class="text-xs text-gray-500">للاستفسارات القانونية: <span class="text-primary">support@eagleshadow.technology</span> أو عبر واتساب: <span style="color: rgb(59 130 246 / var(--tw-text-opacity, 1));;" dir="ltr">+212 700-979284</span></p>
+                            <p class="text-xs text-gray-500"><?php echo __('legal_inquiries'); ?> <span class="text-primary">support@eagleshadow.technology</span> <?php echo __('or_via_whatsapp'); ?> <span style="color: rgb(59 130 246 / var(--tw-text-opacity, 1));;" dir="ltr">+212 700-979284</span></p>
                         </div>
                     </div>
 
                     <div class="p-6 bg-white/5 border-t border-white/5 flex justify-between items-center">
                         <div class="text-xs text-gray-400 flex items-center gap-2">
                             <span class="material-icons-round text-green-500 text-sm">check_circle</span>
-                            استخدامك للنظام يعني موافقتك على هذه الشروط.
+                            <?php echo __('usage_consent'); ?>
                         </div>
                         <button onclick="window.print()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-surface border border-white/10 hover:bg-white/5 transition-colors text-sm text-white no-print">
                             <span class="material-icons-round text-sm">print</span>
-                            طباعة الوثيقة
+                            <?php echo __('print_document'); ?>
                         </button>
                     </div>
                 </div>

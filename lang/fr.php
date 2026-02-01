@@ -1020,4 +1020,23 @@ return [
     'changelog_3' => 'Améliorations des performances de la base de données et rapports plus rapides.',
     'changelog_4' => 'Ajout du mode sombre (Dark Mode) pour tout le système.',
     'changelog_5' => 'Support multi-devises et factures fiscales.',
+
+    // License Page
+    'license_page_title' => 'Contrat de licence',
+    'license_header' => 'Contrats de licence',
+    'license_agreement_version' => 'Contrat de licence logiciel - Version 2.0',
+    'license_grant_title' => 'Octroi de licence',
+    'license_grant_text_1' => '<strong class="text-white">Eagle Shadow Technology</strong> ("Le Concédant") vous accorde une licence non exclusive, non transférable et limitée pour utiliser ce logiciel ("Smart Shop") conformément aux termes énoncés dans le présent contrat.',
+    'license_grant_text_2' => 'Cette licence vous permet d\'installer et d\'utiliser une seule copie du logiciel sur un seul serveur ou réseau local uniquement à des fins de gestion de vos activités commerciales.',
+    'ip_rights_title' => 'Droits de propriété intellectuelle',
+    'ip_rights_text' => 'Le logiciel est protégé par les lois sur le droit d\'auteur et les traités internationaux de propriété intellectuelle. Eagle Shadow Technology conserve tous les droits, titres et intérêts sur le logiciel (y compris le code source, la conception et les algorithmes).',
+    'ip_rights_list_1' => 'Vous ne pouvez pas modifier, faire de l\'ingénierie inverse ou déchiffrer le logiciel.',
+    'ip_rights_list_2' => 'Vous ne pouvez pas louer, prêter ou revendre le logiciel à un tiers.',
+    'ip_rights_list_3' => 'Toutes les marques et logos sont la propriété de leurs propriétaires respectifs.',
+    'support_updates_title' => 'Support et mises à jour',
+    'support_updates_text' => 'Des mises à jour périodiques du logiciel peuvent être fournies pour améliorer les performances ou ajouter de nouvelles fonctionnalités. Cette licence s\'applique à toutes les mises à jour futures, sauf si elles sont accompagnées de conditions distinctes.',
+    'legal_inquiries' => 'Pour les demandes juridiques :',
+    'or_via_whatsapp' => 'ou via WhatsApp :',
+    'usage_consent' => 'Votre utilisation du système signifie que vous acceptez ces conditions.',
+    'print_document' => 'Imprimer le document',
 ];
