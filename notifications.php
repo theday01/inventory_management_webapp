@@ -1,7 +1,8 @@
 <?php
-$page_title = 'الإشعارات';
-$current_page = 'notifications.php';
 require_once 'session.php';
+require_once __DIR__ . '/src/language.php';
+$page_title = __('notifications_page_title');
+$current_page = 'notifications.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 ?>
@@ -60,27 +61,27 @@ require_once 'src/sidebar.php';
 
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
         <div class="flex items-center gap-4">
-            <h2 class="text-xl font-bold text-white">الإشعارات</h2>
+            <h2 class="text-xl font-bold text-white"><?= __('notifications_page_title') ?></h2>
             <div class="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-lg">
                 <span class="material-icons-round text-yellow-400 text-sm">info</span>
-                <span class="text-yellow-400 text-xs">يتم حذف الإشعارات تلقائياً بعد 30 يوماً</span>
+                <span class="text-yellow-400 text-xs"><?= __('notifications_auto_delete_msg') ?></span>
             </div>
             <div class="flex bg-white/5 p-1 rounded-xl border border-white/5 ml-4">
-                <button onclick="setFilter('all')" id="filter-all" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-primary text-white">الكل</button>
-                <button onclick="setFilter('unread')" id="filter-unread" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white">غير مقروء</button>
-                <button onclick="setFilter('read')" id="filter-read" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white">مقروء</button>
+                <button onclick="setFilter('all')" id="filter-all" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-primary text-white"><?= __('filter_all') ?></button>
+                <button onclick="setFilter('unread')" id="filter-unread" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white"><?= __('filter_unread') ?></button>
+                <button onclick="setFilter('read')" id="filter-read" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white"><?= __('filter_read') ?></button>
             </div>
         </div>
         
         <div class="flex items-center gap-3">
-            <span id="auto-refresh-indicator" class="text-xs text-primary/70 hidden transition-opacity">جاري التحديث...</span>
+            <span id="auto-refresh-indicator" class="text-xs text-primary/70 hidden transition-opacity"><?= __('auto_refreshing') ?></span>
             
-            <button onclick="markAllAsRead()" id="main-notification-btn" class="relative p-2 bg-white/5 hover:bg-green-500/20 rounded-full transition-all text-white" title="تحديد الكل كمقروء">
+            <button onclick="markAllAsRead()" id="main-notification-btn" class="relative p-2 bg-white/5 hover:bg-green-500/20 rounded-full transition-all text-white" title="<?= __('mark_all_read_title') ?>">
                 <span class="material-icons-round">done_all</span>
                 <span id="unread-dot" class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-dark-surface hidden"></span>
             </button>
 
-            <button onclick="loadNotifications(false)" class="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white" title="تحديث القائمة">
+            <button onclick="loadNotifications(false)" class="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white" title="<?= __('refresh_list_title') ?>">
                 <span class="material-icons-round">refresh</span>
             </button>
         </div>
@@ -92,7 +93,7 @@ require_once 'src/sidebar.php';
                 <div class="absolute w-full h-full rounded-full border-4 border-white/5"></div>
                 <div class="absolute w-full h-full rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
             </div>
-            <p class="mt-6 text-gray-400 text-sm animate-pulse">جاري جلب الإشعارات...</p>
+            <p class="mt-6 text-gray-400 text-sm animate-pulse"><?= __('fetching_notifications') ?></p>
         </div>
 
         <div id="notifications-container" class="space-y-4 hidden opacity-0 transition-opacity duration-300"></div>
@@ -111,12 +112,12 @@ require_once 'src/sidebar.php';
                 <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 ring-4 ring-primary/5">
                     <span class="material-icons-round text-3xl text-primary">priority_high</span>
                 </div>
-                <h3 class="text-xl font-bold text-white mb-2" id="confirm-title">تأكيد الإجراء</h3>
-                <p class="text-gray-400 mb-6 text-sm leading-relaxed" id="confirm-message">هل أنت متأكد من المتابعة؟</p>
+                <h3 class="text-xl font-bold text-white mb-2" id="confirm-title"><?= __('confirm_action_title') ?></h3>
+                <p class="text-gray-400 mb-6 text-sm leading-relaxed" id="confirm-message"><?= __('confirm_action_message') ?></p>
                 
                 <div class="flex items-center gap-3 justify-center">
-                    <button id="confirm-btn-yes" class="px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20 active:scale-95">نعم، تأكيد</button>
-                    <button id="confirm-btn-no" class="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl font-medium transition-all active:scale-95 border border-white/5">إلغاء</button>
+                    <button id="confirm-btn-yes" class="px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20 active:scale-95"><?= __('yes_confirm') ?></button>
+                    <button id="confirm-btn-no" class="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl font-medium transition-all active:scale-95 border border-white/5"><?= __('cancel') ?></button>
                 </div>
             </div>
         </div>
@@ -171,11 +172,11 @@ function testSound() {
             console.log("Audio test successful");
             soundEnabled = true; // تم تفعيل الصوت بنجاح
             // إظهار رسالة صغيرة للمستخدم
-            alert("تم تفعيل الصوت بنجاح!"); 
+            alert(window.__('sound_enabled_success')); 
         })
         .catch(error => {
             console.error("Audio playback failed:", error);
-            alert("فشل تشغيل الصوت. يرجى التحقق من إعدادات المتصفح للسماح للصوت.");
+            alert(window.__('sound_enable_failed'));
         });
 }
 
@@ -302,11 +303,11 @@ function renderNotifications(notifications, isBackgroundUpdate) {
                         </div>
                         <div class="flex items-center gap-2 self-end md:self-center">
                             ${isUnread ? `
-                                <button onclick="markAsRead(${notification.id})" class="p-2 text-green-400 bg-green-500/10 hover:bg-green-500/20 rounded-lg border border-green-500/20 transition-all" title="تحديد كمقروء">
+                                <button onclick="markAsRead(${notification.id})" class="p-2 text-green-400 bg-green-500/10 hover:bg-green-500/20 rounded-lg border border-green-500/20 transition-all" title="${window.__('mark_as_read_tooltip')}">
                                     <span class="material-icons-round text-base">done</span>
                                 </button>
                             ` : ''}
-                            <button onclick="deleteNotification(${notification.id})" class="p-2 text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20 transition-all" title="حذف">
+                            <button onclick="deleteNotification(${notification.id})" class="p-2 text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20 transition-all" title="${window.__('delete_tooltip')}">
                                 <span class="material-icons-round text-base">delete</span>
                             </button>
                         </div>
@@ -317,7 +318,7 @@ function renderNotifications(notifications, isBackgroundUpdate) {
         container.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20 text-gray-500">
                 <span class="material-icons-round text-6xl opacity-20 mb-4">notifications_off</span>
-                <p>لا توجد إشعارات في هذه القائمة</p>
+                <p>${window.__('no_notifications_in_list')}</p>
             </div>`;
     }
 }
@@ -428,21 +429,48 @@ fetch('api.php?action=checkExpiringProducts')
 function markAsRead(id) {
     fetch('api.php?action=markNotificationRead', { 
         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: id}) 
-    }).then(res => res.json()).then(data => { if(data.success) loadNotifications(true, currentPage); });
+    }).then(res => res.json()).then(data => { 
+        if(data.success) {
+            loadNotifications(true, currentPage);
+            if(typeof showToast === 'function') showToast(window.__('notification_marked_read'), true);
+        } else {
+            if(typeof showToast === 'function') showToast(data.message || window.__('action_failed'), false);
+        }
+    }).catch(err => {
+        if(typeof showToast === 'function') showToast(window.__('action_failed'), false);
+    });
 }
 
 function markAllAsRead() {
-    showConfirm('هل أنت متأكد من تحديد جميع الإشعارات كمقروءة؟', () => {
+    showConfirm(window.__('confirm_mark_all_read'), () => {
         fetch('api.php?action=markAllNotificationsRead', {method: 'POST'})
-        .then(res => res.json()).then(data => { if(data.success) loadNotifications(false, 1); });
+        .then(res => res.json()).then(data => { 
+            if(data.success) {
+                loadNotifications(false, 1);
+                if(typeof showToast === 'function') showToast(window.__('all_notifications_marked_read'), true);
+            } else {
+                if(typeof showToast === 'function') showToast(data.message || window.__('action_failed'), false);
+            }
+        }).catch(err => {
+            if(typeof showToast === 'function') showToast(window.__('action_failed'), false);
+        });
     });
 }
 
 function deleteNotification(id) {
-    showConfirm('هل أنت متأكد من حذف هذا الإشعار نهائياً؟', () => {
+    showConfirm(window.__('confirm_delete_notification'), () => {
         fetch('api.php?action=deleteNotification', { 
             method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: id}) 
-        }).then(res => res.json()).then(data => { if(data.success) loadNotifications(true, currentPage); });
+        }).then(res => res.json()).then(data => { 
+            if(data.success) {
+                loadNotifications(true, currentPage);
+                if(typeof showToast === 'function') showToast(window.__('notification_deleted'), true);
+            } else {
+                if(typeof showToast === 'function') showToast(data.message || window.__('action_failed'), false);
+            }
+        }).catch(err => {
+            if(typeof showToast === 'function') showToast(window.__('action_failed'), false);
+        });
     });
 }
 </script>
@@ -454,15 +482,15 @@ function deleteNotification(id) {
             <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
         </div>
         <div class="text-center">
-            <h3 class="text-lg font-bold text-white mb-2">جاري التحميل...</h3>
-            <p id="loading-message" class="text-sm text-gray-400">يرجى الانتظار قليلاً</p>
+            <h3 class="text-lg font-bold text-white mb-2"><?= __('loading_text') ?></h3>
+            <p id="loading-message" class="text-sm text-gray-400"><?= __('please_wait') ?></p>
         </div>
     </div>
 </div>
 
 <script>
     // دوال إدارة شاشة التحميل
-    function showLoadingOverlay(message = 'جاري معالجة البيانات...') {
+    function showLoadingOverlay(message = window.__('processing_data_msg')) {
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingMessage = document.getElementById('loading-message');
         loadingMessage.textContent = message;
