@@ -172,21 +172,10 @@ async function loadExpenses(page = 1) {
         if (result.success) {
             displayExpenses(result.data);
             renderPagination(result.pagination);
-            calculateSummaries(result.data); // This is just for the current page, better fetch actual summaries
-            fetchSummaries();
         }
     } catch (error) {
         console.error('Error loading expenses:', error);
     }
-}
-
-async function fetchSummaries() {
-    try {
-        // We reuse get_period_summary for today and month if we want, 
-        // but for now let's just use what we have or add a new API action.
-        // I'll calculate it from all expenses for now or just add it to api.php later.
-        // For simplicity, let's just fetch all for now and calculate.
-    } catch (e) {}
 }
 
 function displayExpenses(expenses) {
@@ -270,6 +259,7 @@ async function deleteExpense(id) {
             if (result.success) {
                 Swal.fire('تم الحذف!', result.message, 'success');
                 loadExpenses(currentPage);
+                updateSummaries();
             } else {
                 Swal.fire('خطأ!', result.message, 'error');
             }
@@ -303,6 +293,7 @@ document.getElementById('expense-form').addEventListener('submit', async (e) => 
             closeExpenseModal();
             Swal.fire('تم!', 'تم تسجيل المصروف بنجاح', 'success');
             loadExpenses(1);
+            updateSummaries();
         } else {
             Swal.fire('خطأ!', result.message, 'error');
         }
