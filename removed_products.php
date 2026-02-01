@@ -1,7 +1,8 @@
 <?php
-$page_title = 'المنتجات المحذوفة';
-$current_page = 'removed_products.php';
 require_once 'session.php';
+require_once 'src/language.php';
+$page_title = __('removed_products_title');
+$current_page = 'removed_products.php';
 require_once 'src/header.php';
 require_once 'src/sidebar.php';
 
@@ -66,9 +67,9 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
         <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <span class="material-icons-round text-red-500">delete_sweep</span>
-            <span>المنتجات المحذوفة</span>
+            <span><?php echo __('removed_products_title'); ?></span>
         </h2>
-        <p class="text-sm text-gray-400 justify-center">ملاحظة: بعد مرور تلاثين يومًا -شهر- على حذف المنتج سيتم حذفه نهائيًا من قاعدة البيانات ولا يمكن استعادته <br> سيتم عرض تنبيه قبل يوم واحد من الحذف النهائي</p>
+        <p class="text-sm text-gray-400 justify-center"><?php echo __('removed_products_note'); ?></p>
     </header>
 
     <!-- Filters & Actions -->
@@ -76,16 +77,16 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         <div id="bulk-actions-bar" class="hidden bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-center justify-between transition-all">
             <span id="selected-count" class="text-white font-bold"></span>
             <div class="flex items-center gap-2">
-                <button id="bulk-restore-btn" class="text-green-500 hover:bg-green-500/10 p-2 rounded-lg transition-colors" title="استعادة جماعية"><span class="material-icons-round">restore_from_trash</span></button>
-                <button id="bulk-delete-btn" class="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors" title="حذف نهائي جماعي"><span class="material-icons-round">delete_forever</span></button>
+                <button id="bulk-restore-btn" class="text-green-500 hover:bg-green-500/10 p-2 rounded-lg transition-colors" title="<?php echo __('bulk_restore'); ?>"><span class="material-icons-round">restore_from_trash</span></button>
+                <button id="bulk-delete-btn" class="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors" title="<?php echo __('bulk_permanent_delete'); ?>"><span class="material-icons-round">delete_forever</span></button>
             </div>
         </div>
         <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div class="relative w-full md:w-96">
                 <span class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
-                <input type="text" id="product-search-input" placeholder="بحث عن اسم المنتج، الباركود..."
+                <input type="text" id="product-search-input" placeholder="<?php echo __('search_removed_placeholder'); ?>"
                     class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                <button id="scan-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white" title="مسح باركود المنتج">
+                <button id="scan-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white" title="<?php echo __('scan_product_barcode'); ?>">
                     <span class="material-icons-round">qr_code_scanner</span>
                 </button>
             </div>
@@ -100,13 +101,13 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     <thead class="sticky top-0 bg-white/5 z-10">
                         <tr class="text-right">
                             <th class="p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
-                            <th class="p-4 text-sm font-medium text-gray-300">المنتج</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">الصورة</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">الفئة</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">السعر</th>
-                            <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="removed_at">تاريخ الحذف <span class="sort-icon opacity-30">▼</span></th>
-                            <th class="p-4 text-sm font-medium text-gray-300">تاريخ الحذف النهائي</th>
-                            <th class="p-4 text-sm font-medium text-gray-300">الإجراءات</th>
+                            <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('product'); ?></th>
+                            <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('product_image'); ?></th>
+                            <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('category'); ?></th>
+                            <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('price'); ?></th>
+                            <th class="p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="removed_at"><?php echo __('deleted_at_header'); ?> <span class="sort-icon opacity-30">▼</span></th>
+                            <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('permanent_delete_date_header'); ?></th>
+                            <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('actions'); ?></th>
                         </tr>
                     </thead>
                     <tbody id="products-table-body" class="divide-y divide-white/5">
@@ -132,7 +133,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         const productsPerPage = 200;
 
         // Show the global loading screen immediately when the page opens
-        if (typeof showLoading === 'function') showLoading('جاري تحميل المنتجات المحذوفة...');
+        if (typeof showLoading === 'function') showLoading(__('loading_removed_products'));
         loadProducts();
         fetch('api.php?action=checkExpiringProducts')
             .then(res => res.json())
@@ -143,7 +144,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             const searchQuery = searchInput.value;
 
             try {
-                showLoading('جاري تحميل المنتجات المحذوفة...');
+                showLoading(__('loading_removed_products'));
                 const response = await fetch(`api.php?action=getRemovedProducts&search=${searchQuery}&page=${currentPage}&limit=${productsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
                 const result = await response.json();
                 if (result.success) {
@@ -151,8 +152,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     renderPagination(result.total_products);
                 }
             } catch (error) {
-                console.error('خطأ في تحميل المنتجات:', error);
-                showToast('حدث خطأ في تحميل المنتجات المحذوفة', false);
+                console.error(__('error_loading_products'), error);
+                showToast(__('error_loading_removed_products_toast'), false);
             } finally {
                 hideLoading();
             }
@@ -161,7 +162,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         function displayProducts(products) {
             productsTableBody.innerHTML = '';
             if (products.length === 0) {
-                productsTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">لا توجد منتجات محذوفة لعرضها.</td></tr>';
+                productsTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-500">${__('no_removed_products')}</td></tr>`;
                 return;
             }
 
@@ -182,15 +183,15 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     const days = Math.floor(ms / (24*60*60*1000));
                     const hours = Math.floor((ms % (24*60*60*1000)) / (60*60*1000));
                     const mins = Math.floor((ms % (60*60*1000)) / (60*1000));
-                    if (days > 0) return `${days}d ${hours}h`;
-                    if (hours > 0) return `${hours}h ${mins}m`;
-                    return `${Math.ceil(ms/60000)}m`;
+                    if (days > 0) return `${days}${__('time_days_short')} ${hours}${__('time_hours_short')}`;
+                    if (hours > 0) return `${hours}${__('time_hours_short')} ${mins}${__('time_mins_short')}`;
+                    return `${Math.ceil(ms/60000)}${__('time_mins_short')}`;
                 }
 
                 let expiryBadge = '';
                 // Show warning when remaining time is within 1 day (24h)
                 if (remainingMs > 0 && remainingMs <= ONE_DAY_MS) {
-                    expiryBadge = `<div class="text-xs text-yellow-300">سيحذف نهائيًا بعد ${formatRemaining(remainingMs)}</div>`;
+                    expiryBadge = `<div class="text-xs text-yellow-300">${__('will_be_deleted_after').replace('%s', formatRemaining(remainingMs))}</div>`;
                     expiring.push({ name: product.name, remainingMs });
                 }
 
@@ -203,8 +204,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     <td class="p-4 text-sm text-gray-400">${removedAtStr}${expiryBadge}</td>
                     <td class="p-4 text-sm text-gray-300"><span class="text-red-400 font-bold">${new Date(expiryTimestamp).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span></td>
                     <td class="p-4 text-sm">
-                        <button class="restore-product-btn p-1.5 text-gray-400 hover:text-green-500 transition-colors" data-id="${product.id}" title="استعادة المنتج"><span class="material-icons-round text-lg">restore_from_trash</span></button>
-                        <button class="delete-product-btn p-1.5 text-gray-400 hover:text-red-500 transition-colors" data-id="${product.id}" title="حذف نهائي"><span class="material-icons-round text-lg">delete_forever</span></button>
+                        <button class="restore-product-btn p-1.5 text-gray-400 hover:text-green-500 transition-colors" data-id="${product.id}" title="${__('restore_product_tooltip')}"><span class="material-icons-round text-lg">restore_from_trash</span></button>
+                        <button class="delete-product-btn p-1.5 text-gray-400 hover:text-red-500 transition-colors" data-id="${product.id}" title="${__('permanent_delete_tooltip')}"><span class="material-icons-round text-lg">delete_forever</span></button>
                     </td>
                 `;
                 productsTableBody.appendChild(productRow);
@@ -212,7 +213,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
             if (expiring.length > 0) {
                 const msgs = expiring.map(e => `${e.name} (${formatRemaining(e.remainingMs)})`);
-                showToast(`تنبيه: ${msgs.join('، ')} سيتم حذفها نهائيًا خلال أقل من 24 ساعة.`, false);
+                showToast(__('expiring_soon_alert').replace('%s', msgs.join(', ')), false);
             }
         }
 
@@ -312,17 +313,17 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             const bar = document.getElementById('bulk-actions-bar');
             if (selectedCount > 0) {
                 bar.classList.remove('hidden');
-                document.getElementById('selected-count').textContent = `${selectedCount} منتجات محددة`;
+                document.getElementById('selected-count').textContent = __('selected_products_count').replace('%s', selectedCount);
             } else {
                 bar.classList.add('hidden');
             }
         }
 
         async function restoreProducts(ids) {
-            const confirmed = await showConfirmModal('استعادة المنتجات', `هل أنت متأكد من استعادة ${ids.length} منتج؟`);
+            const confirmed = await showConfirmModal(__('restore_products_title'), __('restore_products_confirm_msg').replace('%d', ids.length));
             if (confirmed) {
                 try {
-                    showLoading('جاري استعادة المنتجات...');
+                    showLoading(__('restoring_products'));
                     const response = await fetch('api.php?action=restoreProducts', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -333,10 +334,10 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                         showToast(result.message, true);
                         loadProducts();
                     } else {
-                        showToast(result.message || 'فشل في استعادة المنتجات', false);
+                        showToast(result.message || __('restore_products_failed'), false);
                     }
                 } catch (error) {
-                    showToast('حدث خطأ', false);
+                    showToast(__('error_occurred'), false);
                 } finally {
                     hideLoading();
                 }
@@ -344,10 +345,10 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         }
         
         async function permanentlyDeleteProducts(ids) {
-            const confirmed = await showConfirmModal('حذف نهائي', `هل أنت متأكد من الحذف النهائي لـ ${ids.length} منتج؟ هذا الإجراء لا يمكن التراجع عنه.`);
+            const confirmed = await showConfirmModal(__('confirm_permanent_delete_title'), __('permanent_delete_confirm_msg').replace('%d', ids.length));
             if (confirmed) {
                 try {
-                    showLoading('جاري الحذف النهائي...');
+                    showLoading(__('permanently_deleting'));
                     const response = await fetch('api.php?action=permanentlyDeleteProducts', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -358,10 +359,10 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                         showToast(result.message, true);
                         loadProducts();
                     } else {
-                        showToast(result.message || 'فشل في الحذف', false);
+                        showToast(result.message || __('permanent_delete_failed'), false);
                     }
                 } catch (error) {
-                    showToast('حدث خطأ', false);
+                    showToast(__('error_occurred'), false);
                 } finally {
                     hideLoading();
                 }
@@ -376,7 +377,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 <div id="barcode-scanner-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-md border border-white/10 m-4">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">مسح الباركود</h3>
+            <h3 class="text-lg font-bold text-white"><?php echo __('scan_barcode_title'); ?></h3>
             <button id="close-barcode-scanner-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -399,7 +400,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
         function openScanner() {
             if (!window.ZXing) {
-                showToast('مكتبة المسح غير متاحة', false);
+                showToast(__('scanner_library_unavailable'), false);
                 return;
             }
             scannerModal.classList.remove('hidden');
@@ -413,7 +414,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 }
             }).catch(err => {
                 console.error('Scanner error', err);
-                showToast('لم يتم تفعيل الكاميرا أو حدث خطأ في المسح', false);
+                showToast(__('camera_error_msg'), false);
                 hideScanner();
             });
         }
@@ -444,15 +445,16 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
         </div>
         <div class="text-center">
-            <h3 class="text-lg font-bold text-white mb-2">جاري التحميل...</h3>
-            <p id="loading-message" class="text-sm text-gray-400">يرجى الانتظار قليلاً</p>
+            <h3 class="text-lg font-bold text-white mb-2"><?php echo __('loading'); ?></h3>
+            <p id="loading-message" class="text-sm text-gray-400"><?php echo __('please_wait'); ?></p>
         </div>
     </div>
 </div>
 
 <script>
     // دوال إدارة شاشة التحميل
-    function showLoadingOverlay(message = 'جاري معالجة البيانات...') {
+    function showLoadingOverlay(message = null) {
+        if (!message) message = "<?php echo __('processing_data'); ?>";
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingMessage = document.getElementById('loading-message');
         loadingMessage.textContent = message;
