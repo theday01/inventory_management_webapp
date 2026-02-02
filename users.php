@@ -631,6 +631,6 @@ require_once 'src/sidebar.php';
 </script>
 
 <?php 
-$conn->close();
 require_once 'src/footer.php'; 
+$conn->close();
 ?>
