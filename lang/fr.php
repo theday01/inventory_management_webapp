@@ -892,6 +892,12 @@ return [
     'work_days_info' => 'Sélectionnez les jours où le magasin est ouvert. Ces paramètres seront utilisés dans les futurs rapports.',
     'work_days_warning_title' => 'Alerte concernant le changement des jours de travail',
     'work_days_warning_text' => 'Tout changement dans les jours de travail affectera les rapports et statistiques à partir de la prochaine fois que vous commencerez une nouvelle journée de travail. Le système conserve la précision des rapports précédents ; le changement ne concerne que les données futures.',
+    'end_of_day_reminder_title' => 'Rappel de fin de journée',
+    'enable_end_day_reminder' => 'Activer le rappel de clôture',
+    'day_start_time_label' => 'Heure de début',
+    'day_end_time_label' => 'Heure de fin',
+    'end_day_reminder_msg' => 'Attention : L\'heure actuelle dépasse l\'heure de fin de travail. Veuillez clôturer la journée en cours.',
+    'end_day_reminder_desc' => 'Le système vous alertera si le travail continue après l\'heure de fin définie sans clôture.',
     
     // Settings - Holidays Tab
     'holidays_title' => 'Jours fériés nationaux et religieux (Maroc)',
