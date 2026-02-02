@@ -722,11 +722,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div id="end-day-settings-content" class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-300 <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('day_start_time_label'); ?></label>
-                                <input type="time" lang="en" name="day_start_time" value="<?php echo htmlspecialchars($settings['day_start_time'] ?? '05:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: light;">
+                                <input type="time" lang="sv-SE" step="60" name="day_start_time" value="<?php echo htmlspecialchars($settings['day_start_time'] ?? '05:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: dark;">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('day_end_time_label'); ?></label>
-                                <input type="time" lang="en" name="day_end_time" value="<?php echo htmlspecialchars($settings['day_end_time'] ?? '00:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: light;">
+                                <input type="time" lang="sv-SE" step="60" name="day_end_time" value="<?php echo htmlspecialchars($settings['day_end_time'] ?? '00:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: dark;">
                             </div>
                             <div class="md:col-span-2">
                                 <p class="text-xs text-gray-500 bg-white/5 p-3 rounded-lg border border-white/5 flex items-center gap-2">
