@@ -1070,9 +1070,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     }
 
     async function createBackup() {
-        const btn = document.getElementById('btn-create-backup');
-        if(!confirm(window.__('confirm_action'))) return;
+        if (!await showConfirmModal(window.__('confirm_action'), window.__('confirm_action'))) return;
         
+        const btn = document.getElementById('btn-create-backup');
         btn.disabled = true;
         btn.innerHTML = '<span class="material-icons-round animate-spin text-lg">sync</span> ' + window.__('creating_backup_text');
         
@@ -1080,17 +1080,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             const res = await fetch('api.php?action=createBackup');
             const data = await res.json();
             if (data.success) {
-                if(typeof showToast === 'function') {
-                    showToast(window.__('backup_created_success'), true);
-                } else {
-                    alert(window.__('backup_created_success'));
-                }
+                showToast(window.__('backup_created_success'), true);
                 loadBackups();
             } else {
-                alert(window.__('error') + ': ' + data.message);
+                showToast(window.__('error') + ': ' + data.message, false);
             }
         } catch (e) {
-            alert(window.__('server_connection_error'));
+            showToast(window.__('server_connection_error'), false);
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<span class="material-icons-round text-lg">add_circle</span> <span>' + window.__('create_backup_btn') + '</span>';
@@ -1098,7 +1094,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     }
 
     async function deleteBackup(filename) {
-        if(!confirm(window.__('delete_backup_confirm'))) return;
+        if (!await showConfirmModal(window.__('confirm_action'), window.__('delete_backup_confirm'))) return;
         
         try {
             const res = await fetch('api.php?action=deleteBackup', {
@@ -1110,10 +1106,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             if (data.success) {
                 loadBackups();
             } else {
-                alert(window.__('error') + ': ' + data.message);
+                showToast(window.__('error') + ': ' + data.message, false);
             }
         } catch (e) {
-            alert(window.__('server_connection_error'));
+            showToast(window.__('server_connection_error'), false);
         }
     }
     
@@ -1138,16 +1134,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             });
             const data = await res.json();
             if (data.success) {
-                if(typeof showToast === 'function') {
-                    showToast(window.__('settings_updated_success'), true);
-                } else {
-                    alert(window.__('settings_updated_success'));
-                }
+                showToast(window.__('settings_updated_success'), true);
             } else {
-                alert(window.__('error') + ': ' + data.message);
+                showToast(window.__('error') + ': ' + data.message, false);
             }
         } catch (e) {
-            alert(window.__('server_connection_error'));
+            showToast(window.__('server_connection_error'), false);
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<span class="material-icons-round text-sm">save</span> <span>' + window.__('save_schedule_btn') + '</span>';
@@ -1162,7 +1154,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     }
 
     async function restoreFromList(filename) {
-        if(!confirm(window.__('restore_confirm_start') + filename + '?\n' + window.__('restore_warning_end'))) return;
+        if (!await showConfirmModal(window.__('confirm_action'), window.__('restore_confirm_start') + filename + '?\n' + window.__('restore_warning_end'))) return;
         startRestoreProcess(null, filename);
     }
 
@@ -1192,9 +1184,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         if (data.percent >= 100 && (data.status.includes('نجاح') || data.status.includes('success') || data.status.includes('خطأ') || data.status.includes('error'))) {
                             clearInterval(pollInterval);
                             setTimeout(() => {
-                                alert(data.status);
                                 container.classList.add('hidden');
-                                window.location.reload(); // Reload to reflect DB changes
+                                // Reload with success message to show toast after reload
+                                window.location.href = 'settings.php?tab=backup&success=' + encodeURIComponent(data.status);
                             }, 1000);
                         }
                     }
@@ -1225,13 +1217,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     // Upload done, server processing started
                     startPolling();
                 } else {
-                    alert(window.__('upload_failed_text'));
+                    showToast(window.__('upload_failed_text'), false);
                     container.classList.add('hidden');
                 }
             };
             
             xhr.onerror = () => {
-                alert(window.__('server_connection_error'));
+                showToast(window.__('server_connection_error'), false);
                 container.classList.add('hidden');
             };
             
@@ -1244,7 +1236,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 body: JSON.stringify({ filename })
             }).then(() => startPolling())
               .catch(() => {
-                  alert(window.__('action_failed'));
+                  showToast(window.__('action_failed'), false);
                   container.classList.add('hidden');
               });
         }
@@ -1289,7 +1281,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         await updateOnlineStatus();
         const statusText = document.getElementById('status-text');
         if (statusText && statusText.innerText.includes(window.__('status_offline'))) {
-             alert(window.__('server_connection_error')); // Reuse for offline
+             showToast(window.__('server_connection_error'), false); // Reuse for offline
              return;
         }
         const year = document.getElementById('holiday-year-filter').value;
@@ -1301,14 +1293,14 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             const res = await fetch(`api.php?action=syncMoroccanHolidays&year=${year}`);
             const data = await res.json();
             if (data.success) {
-                alert(window.__('sync_holidays_success').replace('%d', data.count));
+                showToast(window.__('sync_holidays_success').replace('%d', data.count), true);
                 loadHolidays();
                 if(data.last_sync) document.getElementById('last-sync-date').innerText = data.last_sync;
             } else {
-                alert(window.__('action_failed') + ': ' + data.message);
+                showToast(window.__('action_failed') + ': ' + data.message, false);
             }
         } catch (e) {
-            alert(window.__('server_connection_error'));
+            showToast(window.__('server_connection_error'), false);
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<span class="material-icons-round text-sm">sync</span> ' + window.__('update_holidays_now_btn');
@@ -1337,7 +1329,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const id = document.getElementById('holiday-id').value;
         const name = document.getElementById('holiday-name').value;
         const date = document.getElementById('holiday-date').value;
-        if (!name || !date) return alert(window.__('fill_all_fields_correctly'));
+        if (!name || !date) return showToast(window.__('fill_all_fields_correctly'), false);
 
         const action = id ? 'updateHoliday' : 'addHoliday';
         const body = id ? { id, name, date } : { name, date };
@@ -1352,16 +1344,17 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             if (data.success) {
                 closeHolidayModal();
                 loadHolidays();
+                showToast(window.__('action_success'), true);
             } else {
-                alert(data.message);
+                showToast(data.message, false);
             }
         } catch (e) {
-            alert(window.__('server_connection_error'));
+            showToast(window.__('server_connection_error'), false);
         }
     }
 
     async function deleteHoliday(id) {
-        if(!confirm(window.__('delete_holiday_confirm'))) return;
+        if (!await showConfirmModal(window.__('confirm_action'), window.__('delete_holiday_confirm'))) return;
         try {
             const res = await fetch('api.php?action=deleteHoliday', {
                 method: 'POST',
@@ -1369,9 +1362,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 body: JSON.stringify({ id })
             });
             const data = await res.json();
-            if (data.success) loadHolidays();
+            if (data.success) {
+                loadHolidays();
+                showToast(window.__('action_success'), true);
+            }
         } catch (e) {
-            alert(window.__('server_connection_error'));
+            showToast(window.__('server_connection_error'), false);
         }
     }
 
@@ -1435,19 +1431,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     });
 
     async function syncInvoicesWithHolidays() {
-        if (!confirm(window.__('sync_invoices_confirm'))) return;
+        if (!await showConfirmModal(window.__('confirm_action'), window.__('sync_invoices_confirm'))) return;
         
         showLoadingOverlay(window.__('processing'));
         try {
             const res = await fetch('api.php?action=syncInvoicesWithHolidays');
             const data = await res.json();
             if (data.success) {
-                alert(window.__('data_updated_success'));
+                showToast(window.__('data_updated_success'), true);
             } else {
-                alert(window.__('action_failed') + ': ' + data.message);
+                showToast(window.__('action_failed') + ': ' + data.message, false);
             }
         } catch (e) {
-            alert(window.__('server_connection_error'));
+            showToast(window.__('server_connection_error'), false);
         } finally {
             hideLoadingOverlay();
         }
@@ -1458,8 +1454,8 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 <script>
     // ... (Same admin scripts) ...
     // ... (Reset Delivery, Toggle Rental, Notifications logic) ...
-    function resetDeliveryPrices() {
-        if(confirm(window.__('confirm_action'))) {
+    async function resetDeliveryPrices() {
+        if (await showConfirmModal(window.__('confirm_action'), window.__('confirm_action'))) {
             const insideCity = document.getElementById('deliveryInsideCity');
             const outsideCity = document.getElementById('deliveryOutsideCity');
             insideCity.value = '20'; outsideCity.value = '40';
@@ -1467,10 +1463,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         }
     }
     
-    function toggleRentalSettings(checkbox) {
+    async function toggleRentalSettings(checkbox) {
         const content = document.getElementById('rental-settings-content');
         if (!checkbox.checked) {
-            if (confirm('⚠️ ' + window.__('are_you_sure'))) {
+            if (await showConfirmModal(window.__('confirm_action'), '⚠️ ' + window.__('are_you_sure'))) {
                 content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
             } else {
                 checkbox.checked = true;
@@ -1480,10 +1476,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         }
     }
 
-    function toggleHolidaysSettings(checkbox) {
+    async function toggleHolidaysSettings(checkbox) {
         const content = document.getElementById('holidays-settings-content');
         if (!checkbox.checked) {
-            if (confirm('⚠️ ' + window.__('are_you_sure'))) {
+            if (await showConfirmModal(window.__('confirm_action'), '⚠️ ' + window.__('are_you_sure'))) {
                 content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
             } else {
                 checkbox.checked = true;
@@ -1493,10 +1489,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         }
     }
 
-    function toggleWorkDaysSettings(checkbox) {
+    async function toggleWorkDaysSettings(checkbox) {
         const content = document.getElementById('work-days-settings-content');
         if (!checkbox.checked) {
-            if (confirm('⚠️ ' + window.__('are_you_sure'))) {
+            if (await showConfirmModal(window.__('confirm_action'), '⚠️ ' + window.__('are_you_sure'))) {
                 content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
             } else {
                 checkbox.checked = true;
@@ -1506,10 +1502,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         }
     }
 
-    function handleStockAlertToggle(checkbox) {
+    async function handleStockAlertToggle(checkbox) {
         const container = document.getElementById('stock-alerts-settings');
         if (!checkbox.checked) {
-            if (confirm(`⚠️ ` + window.__('are_you_sure'))) {
+            if (await showConfirmModal(window.__('confirm_action'), `⚠️ ` + window.__('are_you_sure'))) {
                 container.classList.add('opacity-50', 'pointer-events-none');
             } else {
                 checkbox.checked = true;
@@ -1539,7 +1535,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const btn = document.getElementById('btn-rental-paid');
         if (btn) {
             btn.addEventListener('click', async function() {
-                if(!confirm(window.__('confirm_rental_payment_alert'))) return;
+                if (!await showConfirmModal(window.__('confirm_action'), window.__('confirm_rental_payment_alert'))) return;
                 try {
                     btn.disabled = true;
                     btn.classList.add('opacity-70');
@@ -1549,12 +1545,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         const dateInput = document.querySelector('input[name="rentalPaymentDate"]');
                         if (dateInput && data.next_payment_date) dateInput.value = data.next_payment_date;
                         localStorage.removeItem('rental_notify_day');
-                        alert(window.__('rental_paid_success_msg'));
+                        showToast(window.__('rental_paid_success_msg'), true);
                     } else {
-                        alert('❌ ' + (data.message || window.__('action_failed')));
+                        showToast('❌ ' + (data.message || window.__('action_failed')), false);
                     }
                 } catch (e) {
-                    alert(window.__('server_connection_error'));
+                    showToast(window.__('server_connection_error'), false);
                 } finally {
                     btn.disabled = false;
                     btn.classList.remove('opacity-70');
