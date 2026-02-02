@@ -958,14 +958,14 @@ return [
     
     // Settings - Reset Tab
     'system_reset_title' => 'Réinitialisation du système',
-    'system_reset_subtitle' => 'Cette opération rétablira tous les paramètres du système à leur état initial',
+    'system_reset_subtitle' => 'Cette opération effacera toutes les données et rétablira le système à son état initial',
     'important_warning_title' => 'Avertissement important',
     'what_happens_reset_title' => 'Ce qui se passera après la réinitialisation',
     'reset_system_btn' => 'Réinitialiser le système',
     'reset_confirm_hint' => 'Cette opération nécessite une confirmation supplémentaire',
     'confirm_reset_modal_title' => 'Confirmation de réinitialisation',
     'are_you_sure_reset' => 'Êtes-vous vraiment sûr ?',
-    'reset_warning_detail' => 'Tous les paramètres personnalisés seront supprimés et le système sera rétabli à l\'état initial. Cette opération est irréversible.',
+    'reset_warning_detail' => 'Attention : Cette opération supprimera toutes les données du système, y compris : factures, produits, catégories, dépenses, clients, utilisateurs et paramètres. Cette opération est irréversible.',
     'cancel_btn' => 'Annuler',
     'confirm_reset_btn' => 'Confirmer la réinitialisation',
     

@@ -8,8 +8,29 @@ $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
 
 // Handle Reset - Admin Only
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_POST['reset_settings'])) {
+    // Disable FK checks
+    $conn->query("SET FOREIGN_KEY_CHECKS = 0");
+
+    // Tables to truncate (Wipe all data)
+    $tables_to_wipe = [
+        'invoices', 'invoice_items', 'products', 'categories', 'category_fields', 
+        'product_field_values', 'customers', 'expenses', 'refunds', 'rental_payments', 
+        'notifications', 'business_days', 'removed_products', 'media_gallery', 'holidays'
+    ];
+
+    foreach ($tables_to_wipe as $table) {
+        $conn->query("TRUNCATE TABLE `$table`");
+    }
+
+    // Delete all users except current admin to prevent lockout
+    $currentUserId = (int)$_SESSION['id'];
+    $conn->query("DELETE FROM users WHERE id != $currentUserId");
+
     // Delete all current settings
     $conn->query("DELETE FROM settings");
+    
+    // Re-enable FK checks
+    $conn->query("SET FOREIGN_KEY_CHECKS = 1");
 
     // Default settings
     $default_settings = [
