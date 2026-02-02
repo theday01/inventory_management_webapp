@@ -31,7 +31,11 @@ window.daySettings = <?php echo json_encode($endDaySettings); ?>;
         const startTime = startH * 60 + startM;
         
         const [endH, endM] = window.daySettings.end.split(':').map(Number);
-        const endTime = endH * 60 + endM;
+        let endTime = endH * 60 + endM;
+        
+        // Adjust for 2 minute reminder before closing
+        endTime -= 2;
+        if (endTime < 0) endTime += 1440;
 
         let inWindow = false;
         
@@ -78,13 +82,13 @@ window.daySettings = <?php echo json_encode($endDaySettings); ?>;
         }
     }
 
-    // Run check on load and every 5 minutes
+    // Run check on load and every 1 minute to ensure reminder accuracy
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => setTimeout(checkEndOfDay, 5000));
     } else {
         setTimeout(checkEndOfDay, 5000);
     }
-    setInterval(checkEndOfDay, 5 * 60 * 1000);
+    setInterval(checkEndOfDay, 60 * 1000);
 })();
 
 document.addEventListener('DOMContentLoaded', function() {
