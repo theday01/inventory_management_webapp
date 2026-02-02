@@ -1114,4 +1114,6 @@ return [
     'notification_marked_read' => 'Notification marquée comme lue',
     'all_notifications_marked_read' => 'Toutes les notifications ont été marquées comme lues',
     'notification_deleted' => 'Notification supprimée avec succès',
+
+    'access_denied' => 'Accès refusé',
 ];
