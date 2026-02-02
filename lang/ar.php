@@ -728,6 +728,7 @@ return [
     'products_deleted_permanently' => 'تم حذف %d منتج بشكل نهائي',
     'permanent_delete_error' => 'حدث خطأ أثناء الحذف النهائي',
     'permanent_delete_fail' => 'فشل الحذف النهائي',
+    'and_more_products' => '... و %d منتجات أخرى',
 
     // Zakat Calculator
     'zakat_calculator_title' => 'حساب الزكاة',

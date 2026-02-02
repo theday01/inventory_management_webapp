@@ -168,6 +168,15 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
             const expiring = [];
 
+            function formatRemaining(ms) {
+                const days = Math.floor(ms / (24*60*60*1000));
+                const hours = Math.floor((ms % (24*60*60*1000)) / (60*60*1000));
+                const mins = Math.floor((ms % (60*60*1000)) / (60*1000));
+                if (days > 0) return `${days}${__('time_days_short')} ${hours}${__('time_hours_short')}`;
+                if (hours > 0) return `${hours}${__('time_hours_short')} ${mins}${__('time_mins_short')}`;
+                return `${Math.ceil(ms/60000)}${__('time_mins_short')}`;
+            }
+
             products.forEach(product => {
                 const productRow = document.createElement('tr');
                 productRow.className = 'hover:bg-white/5 transition-colors';
@@ -178,15 +187,6 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
                 const expiryTimestamp = removedAt.getTime() + THIRTY_DAYS_MS; // 30 days after removal
                 const remainingMs = expiryTimestamp - Date.now();
-
-                function formatRemaining(ms) {
-                    const days = Math.floor(ms / (24*60*60*1000));
-                    const hours = Math.floor((ms % (24*60*60*1000)) / (60*60*1000));
-                    const mins = Math.floor((ms % (60*60*1000)) / (60*1000));
-                    if (days > 0) return `${days}${__('time_days_short')} ${hours}${__('time_hours_short')}`;
-                    if (hours > 0) return `${hours}${__('time_hours_short')} ${mins}${__('time_mins_short')}`;
-                    return `${Math.ceil(ms/60000)}${__('time_mins_short')}`;
-                }
 
                 let expiryBadge = '';
                 // Show warning when remaining time is within 1 day (24h)
@@ -212,8 +212,11 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             });
 
             if (expiring.length > 0) {
-                const msgs = expiring.map(e => `${e.name} (${formatRemaining(e.remainingMs)})`);
-                showToast(__('expiring_soon_alert').replace('%s', msgs.join(', ')), false);
+                let msg = `${expiring[0].name} (${formatRemaining(expiring[0].remainingMs)})`;
+                if (expiring.length > 1) {
+                    msg += ' ' + __('and_more_products').replace('%d', expiring.length - 1);
+                }
+                showToast(__('expiring_soon_alert').replace('%s', msg), 'info');
             }
         }
 

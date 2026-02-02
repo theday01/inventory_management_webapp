@@ -635,16 +635,21 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
             return window.translations[key] || key;
         };
 
-        window.showToast = function(message, isSuccess) {
-            // Smart detection for error messages if isSuccess is not explicitly provided
-            if (typeof isSuccess === 'undefined') {
+        window.showToast = function(message, type) {
+            // Backward compatibility: handle boolean input
+            if (typeof type === 'boolean') {
+                type = type ? 'success' : 'error';
+            }
+            
+            // Smart detection for error messages if type is not explicitly provided
+            if (typeof type === 'undefined') {
                 const lowerMsg = String(message).toLowerCase();
                 const errorKeywords = [
                     'error', 'fail', 'wrong', 'denied', 'unauthorized', // English
                     'خطأ', 'فشل', 'مشكلة', 'تنبيه', 'عذراً', 'غير مصرح', 'مرفوض', 'تعذر', 'نفذت' // Arabic
                 ];
-                // Default to true (success), but switch to false (error) if keyword found
-                isSuccess = !errorKeywords.some(keyword => lowerMsg.includes(keyword));
+                // Default to 'success', but switch to 'error' if keyword found
+                type = errorKeywords.some(keyword => lowerMsg.includes(keyword)) ? 'error' : 'success';
             }
 
             const toast = document.getElementById('toast-notification');
@@ -654,14 +659,23 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
 
             toastMessage.textContent = message;
 
-            if (isSuccess) {
-                toastContent.className =
-                    'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-emerald-600 text-white border border-emerald-400/30';
+            // Reset base classes
+            let baseClasses = 'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md text-white border';
+
+            if (type === 'success') {
+                toastContent.className = `${baseClasses} bg-emerald-600 border-emerald-400/30`;
                 toastIcon.textContent = 'check_circle';
-            } else {
-                toastContent.className =
-                    'flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md bg-rose-600 text-white border border-rose-400/30';
+            } else if (type === 'error') {
+                toastContent.className = `${baseClasses} bg-rose-600 border-rose-400/30`;
                 toastIcon.textContent = 'error';
+            } else if (type === 'info') {
+                // Orange/Yellow gradient for info/warning
+                toastContent.className = `${baseClasses} bg-gradient-to-r from-orange-500 to-yellow-500 border-orange-400/30`;
+                toastIcon.textContent = 'info';
+            } else {
+                // Default fallback (success)
+                toastContent.className = `${baseClasses} bg-emerald-600 border-emerald-400/30`;
+                toastIcon.textContent = 'check_circle';
             }
 
             toast.classList.remove('opacity-0', '-translate-y-10', 'pointer-events-none');
