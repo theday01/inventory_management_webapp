@@ -85,7 +85,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <div class="relative w-full md:w-96">
                 <span class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
                 <input type="text" id="product-search-input" placeholder="<?php echo __('search_removed_placeholder'); ?>"
-                    class="w-full bg-dark/50 border border-white/10 text-white text-right pr-10 pl-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
+                    class="w-full bg-dark/50 border border-white/10 text-white text-start pr-10 pl-4 py-2.5 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
                 <button id="scan-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white" title="<?php echo __('scan_product_barcode'); ?>">
                     <span class="material-icons-round">qr_code_scanner</span>
                 </button>
@@ -99,7 +99,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             <div class="flex-1 overflow-y-auto">
                 <table class="w-full">
                     <thead class="sticky top-0 bg-white/5 z-10">
-                        <tr class="text-right">
+                        <tr class="text-start">
                             <th class="p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
                             <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('product'); ?></th>
                             <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('product_image'); ?></th>
@@ -438,31 +438,3 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     })();
 </script>
 
-<div id="loading-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
-    <div class="bg-dark-surface rounded-2xl shadow-2xl p-12 border border-white/10 flex flex-col items-center gap-6">
-        <div class="relative w-20 h-20">
-            <div class="absolute inset-0 border-4 border-transparent border-t-primary border-r-primary rounded-full animate-spin"></div>
-            <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
-        </div>
-        <div class="text-center">
-            <h3 class="text-lg font-bold text-white mb-2"><?php echo __('loading'); ?></h3>
-            <p id="loading-message" class="text-sm text-gray-400"><?php echo __('please_wait'); ?></p>
-        </div>
-    </div>
-</div>
-
-<script>
-    // دوال إدارة شاشة التحميل
-    function showLoadingOverlay(message = null) {
-        if (!message) message = "<?php echo __('processing_data'); ?>";
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const loadingMessage = document.getElementById('loading-message');
-        loadingMessage.textContent = message;
-        loadingOverlay.classList.remove('hidden');
-    }
-
-    function hideLoadingOverlay() {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        loadingOverlay.classList.add('hidden');
-    }
-</script>
