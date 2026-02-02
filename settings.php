@@ -107,8 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'work_days_enabled' => isset($_POST['work_days_enabled']) ? '1' : '0',
         'holidays_enabled' => isset($_POST['holidays_enabled']) ? '1' : '0',
         'work_days' => isset($_POST['work_days']) ? implode(',', $_POST['work_days']) : '',
-        'day_start_time' => $_POST['day_start_time'] ?? '05:00',
-        'day_end_time' => $_POST['day_end_time'] ?? '00:00',
+        'day_start_time' => !empty($_POST['day_start_time']) ? date('H:i', strtotime($_POST['day_start_time'])) : '05:00',
+        'day_end_time' => !empty($_POST['day_end_time']) ? date('H:i', strtotime($_POST['day_end_time'])) : '00:00',
         'end_day_reminder_enabled' => isset($_POST['end_day_reminder_enabled']) ? '1' : '0',
     ];
 
@@ -699,6 +699,44 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </div>
                      </div>
 
+                    <!-- End of Day Reminder Settings -->
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel mt-6">
+                        <div class="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+                            <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                                <span class="material-icons-round text-yellow-500">access_alarm</span>
+                                <?php echo __('end_of_day_reminder_title'); ?>
+                            </h3>
+                            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                                <span class="text-sm text-gray-300"><?php echo __('enable_end_day_reminder'); ?></span>
+                                <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" name="end_day_reminder_enabled" id="toggle-end-day-reminder" value="1"
+                                        class="toggle-checkbox"
+                                        <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '1') ? 'checked' : ''; ?>
+                                        <?php echo $disabledAttr; ?>
+                                        onchange="toggleEndDaySettings(this)" />
+                                    <label for="toggle-end-day-reminder" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="end-day-settings-content" class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-300 <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('day_start_time_label'); ?></label>
+                                <input type="time" lang="en" name="day_start_time" value="<?php echo htmlspecialchars($settings['day_start_time'] ?? '05:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: light;">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('day_end_time_label'); ?></label>
+                                <input type="time" lang="en" name="day_end_time" value="<?php echo htmlspecialchars($settings['day_end_time'] ?? '00:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: light;">
+                            </div>
+                            <div class="md:col-span-2">
+                                <p class="text-xs text-gray-500 bg-white/5 p-3 rounded-lg border border-white/5 flex items-center gap-2">
+                                    <span class="material-icons-round text-sm">info</span>
+                                    <?php echo __('end_day_reminder_desc'); ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div id="tab-content-workdays" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
@@ -752,43 +790,6 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </div>
                     </div>
 
-                    <!-- End of Day Reminder Settings -->
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel mt-6">
-                        <div class="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-                            <h3 class="text-xl font-bold text-white flex items-center gap-3">
-                                <span class="material-icons-round text-yellow-500">access_alarm</span>
-                                <?php echo __('end_of_day_reminder_title'); ?>
-                            </h3>
-                            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                                <span class="text-sm text-gray-300"><?php echo __('enable_end_day_reminder'); ?></span>
-                                <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="end_day_reminder_enabled" id="toggle-end-day-reminder" value="1"
-                                        class="toggle-checkbox"
-                                        <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '1') ? 'checked' : ''; ?>
-                                        <?php echo $disabledAttr; ?>
-                                        onchange="toggleEndDaySettings(this)" />
-                                    <label for="toggle-end-day-reminder" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="end-day-settings-content" class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-300 <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('day_start_time_label'); ?></label>
-                                <input type="time" name="day_start_time" value="<?php echo htmlspecialchars($settings['day_start_time'] ?? '05:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: dark;">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('day_end_time_label'); ?></label>
-                                <input type="time" name="day_end_time" value="<?php echo htmlspecialchars($settings['day_end_time'] ?? '00:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: dark;">
-                            </div>
-                            <div class="md:col-span-2">
-                                <p class="text-xs text-gray-500 bg-white/5 p-3 rounded-lg border border-white/5 flex items-center gap-2">
-                                    <span class="material-icons-round text-sm">info</span>
-                                    <?php echo __('end_day_reminder_desc'); ?>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Moroccan National and Religious Holidays -->
                     <div id="holidays-management-section" class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">

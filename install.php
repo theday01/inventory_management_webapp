@@ -362,6 +362,11 @@ $default_settings = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('backup_frequency', 'daily') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('last_backup_run', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
 
+    // End of Day Reminder Settings
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('day_start_time', '05:00') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('day_end_time', '00:00') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('end_day_reminder_enabled', '1') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+
     // Rental Settings (NEW SYSTEM) - Only added when user saves
     // No default values forced during installation
 ];
