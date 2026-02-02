@@ -184,6 +184,7 @@ $sql_holidays = "CREATE TABLE IF NOT EXISTS holidays (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     date DATE NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
@@ -307,6 +308,20 @@ if ($result_exp_drawer && $result_exp_drawer->num_rows == 0) {
     }
 } else {
     echo "<div style='color: #fff3cd;'>ℹ️ Column 'paid_from_drawer' already exists in expenses table. Skipping.</div>";
+}
+
+// Add is_active column to holidays if it doesn't exist
+$check_holidays_active = "SHOW COLUMNS FROM `holidays` LIKE 'is_active'";
+$result_holidays_active = $conn->query($check_holidays_active);
+if ($result_holidays_active && $result_holidays_active->num_rows == 0) {
+    $alter_holidays = "ALTER TABLE holidays ADD COLUMN is_active BOOLEAN DEFAULT TRUE";
+    if ($conn->query($alter_holidays) === TRUE) {
+        echo "<div style='color: green;'>✓ Column 'is_active' successfully added to holidays table.</div>";
+    } else {
+        echo "<div style='color: red;'>✗ Error adding column 'is_active': " . $conn->error . "</div>";
+    }
+} else {
+    echo "<div style='color: #fff3cd;'>ℹ️ Column 'is_active' already exists in holidays table. Skipping.</div>";
 }
 
 // ======================================

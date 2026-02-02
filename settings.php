@@ -864,6 +864,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     <tr class="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
                                         <th class="px-6 py-4 font-bold"><?php echo __('holiday_date_col'); ?></th>
                                         <th class="px-6 py-4 font-bold"><?php echo __('holiday_name_col'); ?></th>
+                                        <th class="px-6 py-4 font-bold text-center"><?php echo __('adopt_holiday'); ?></th>
                                         <th class="px-6 py-4 font-bold text-center"><?php echo __('actions'); ?></th>
                                     </tr>
                                 </thead>
@@ -875,9 +876,14 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         
                         <div class="mt-4 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3">
                             <span class="material-icons-round text-blue-400 text-sm mt-0.5">info</span>
-                            <p class="text-[10px] text-gray-400 leading-relaxed">
-                                <?php echo __('religious_holidays_note'); ?>
-                            </p>
+                            <div class="flex-1">
+                                <p class="text-[10px] text-gray-400 leading-relaxed mb-2">
+                                    <?php echo __('religious_holidays_note'); ?>
+                                </p>
+                                <p class="text-[10px] text-gray-300 leading-relaxed pt-2 border-t border-blue-500/10">
+                                    <span class="font-bold text-primary"><?php echo __('adopt_holiday'); ?>:</span> <?php echo __('adopt_holiday_explanation'); ?>
+                                </p>
+                            </div>
                         </div>
                         </div> <!-- end holidays-settings-content -->
                     </div>
@@ -1284,7 +1290,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const year = document.getElementById('holiday-year-filter').value;
         const tbody = document.getElementById('holidays-table-body');
         if(!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">' + window.__('loading_text') + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">' + window.__('loading_text') + '</td></tr>';
         
         try {
             const res = await fetch(`api.php?action=getHolidays&year=${year}`);
@@ -1292,10 +1298,20 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             if (data.success && data.data.length > 0) {
                 let html = '';
                 data.data.forEach(h => {
+                    const isChecked = h.is_active == 1 ? 'checked' : '';
                     html += `
                     <tr class="hover:bg-white/[0.02] border-b border-white/5 last:border-0">
                         <td class="px-6 py-4 font-mono text-xs text-primary">${h.date}</td>
                         <td class="px-6 py-4 font-bold text-white">${h.name}</td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" id="holiday-toggle-${h.id}" 
+                                    class="toggle-checkbox" 
+                                    ${isChecked} 
+                                    onchange="toggleHolidayStatus(${h.id}, this)">
+                                <label for="holiday-toggle-${h.id}" class="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer"></label>
+                            </div>
+                        </td>
                         <td class="px-6 py-4 text-center flex justify-center gap-2">
                             <button type="button" onclick="openHolidayModal(${h.id}, '${h.name}', '${h.date}')" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20">
                                 <span class="material-icons-round text-sm">edit</span>
@@ -1308,10 +1324,31 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 });
                 tbody.innerHTML = html;
             } else {
-                tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">' + window.__('no_holidays_found') + '</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">' + window.__('no_holidays_found') + '</td></tr>';
             }
         } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-red-400">' + window.__('failed_loading_data') + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">' + window.__('failed_loading_data') + '</td></tr>';
+        }
+    }
+
+    async function toggleHolidayStatus(id, checkbox) {
+        const isActive = checkbox.checked ? 1 : 0;
+        try {
+            const res = await fetch('api.php?action=toggleHolidayActive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, is_active: isActive })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(window.__('action_success'), true);
+            } else {
+                checkbox.checked = !checkbox.checked; 
+                showToast(data.message || window.__('action_failed'), false);
+            }
+        } catch (e) {
+            checkbox.checked = !checkbox.checked;
+            showToast(window.__('server_connection_error'), false);
         }
     }
 

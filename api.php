@@ -158,6 +158,9 @@ switch ($action) {
     case 'deleteHoliday':
         deleteHoliday($conn);
         break;
+    case 'toggleHolidayActive':
+        toggleHolidayActive($conn);
+        break;
     case 'syncMoroccanHolidays':
         syncMoroccanHolidays($conn);
         break;
@@ -278,7 +281,7 @@ function isHoliday($conn, $date) {
 
     // 1. التحقق من جدول العطلات الرسمية (فقط إذا كانت ميزة العطل مفعلة)
     if (($settings['holidays_enabled'] ?? '0') === '1') {
-        $stmt = $conn->prepare("SELECT name FROM holidays WHERE date = ?");
+        $stmt = $conn->prepare("SELECT name FROM holidays WHERE date = ? AND is_active = 1");
         if ($stmt) {
             $stmt->bind_param("s", $date);
             $stmt->execute();
@@ -1284,6 +1287,30 @@ function bulkUpdateProducts($conn) {
         echo json_encode(['success' => true, 'message' => __('bulk_update_success')]);
     } else {
         echo json_encode(['success' => false, 'message' => __('bulk_update_fail')]);
+    }
+    $stmt->close();
+}
+
+function toggleHolidayActive($conn) {
+    if ($_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        return;
+    }
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (empty($data['id'])) {
+        echo json_encode(['success' => false, 'message' => __('holiday_id_required')]);
+        return;
+    }
+    
+    $isActive = isset($data['is_active']) && $data['is_active'] ? 1 : 0;
+    
+    $stmt = $conn->prepare("UPDATE holidays SET is_active = ? WHERE id = ?");
+    $stmt->bind_param("ii", $isActive, $data['id']);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => __('action_success')]);
+    } else {
+        echo json_encode(['success' => false, 'message' => __('update_fail')]);
     }
     $stmt->close();
 }

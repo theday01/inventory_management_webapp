@@ -914,6 +914,8 @@ return [
     'status_checking' => 'Vérification...',
     'holiday_name_col' => 'Nom du jour férié',
     'holiday_date_col' => 'Date',
+    'adopt_holiday' => 'Activer',
+    'adopt_holiday_explanation' => 'En activant cette option, ce jour sera considéré comme un jour férié par le système. Vous recevrez un rappel et il sera exclu des jours ouvrables dans les rapports.',
     'no_holidays_found' => 'Aucun jour férié enregistré pour cette année.',
     'religious_holidays_note' => 'Remarque : Les dates religieuses (comme Aïd al-Fitr et Aïd al-Adha) sont des estimations basées sur le calendrier hégirien mondial. Vous pouvez modifier la date manuellement si elle diffère d\'un jour selon l\'observation officielle du croissant au Maroc.',
     'sync_holidays_success' => '%d jours fériés mis à jour avec succès (y compris nationaux et religieux)',
