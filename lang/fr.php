@@ -908,7 +908,6 @@ return [
     'update_holidays_now_btn' => 'Mettre à jour les jours fériés maintenant',
     'add_custom_holiday_btn' => 'Ajouter un jour férié personnalisé',
     'display_year_label' => 'Afficher année :',
-    'update_past_reports_btn' => 'Mettre à jour les rapports précédents',
     'status_online' => 'Connecté à Internet',
     'status_local' => 'Connexion locale seulement',
     'status_offline' => 'Hors ligne',
@@ -918,7 +917,6 @@ return [
     'no_holidays_found' => 'Aucun jour férié enregistré pour cette année.',
     'religious_holidays_note' => 'Remarque : Les dates religieuses (comme Aïd al-Fitr et Aïd al-Adha) sont des estimations basées sur le calendrier hégirien mondial. Vous pouvez modifier la date manuellement si elle diffère d\'un jour selon l\'observation officielle du croissant au Maroc.',
     'sync_holidays_success' => '%d jours fériés mis à jour avec succès (y compris nationaux et religieux)',
-    'sync_invoices_confirm' => 'Cela mettra à jour le statut "Jour férié" dans toutes les factures précédentes en fonction de la liste actuelle des jours fériés. Voulez-vous continuer ?',
     
     // Settings - Backup Tab
     'backup_title' => 'Sauvegarde de la base de données',

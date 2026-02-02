@@ -161,10 +161,6 @@ switch ($action) {
     case 'syncMoroccanHolidays':
         syncMoroccanHolidays($conn);
         break;
-    case 'syncInvoicesWithHolidays':
-        syncInvoicesWithHolidays($conn);
-        echo json_encode(['success' => true, 'message' => __('invoices_synced_success')]);
-        break;
     case 'cleanOldNotifications':
         cleanOldNotifications($conn);
         echo json_encode(['success' => true]);
@@ -3145,7 +3141,6 @@ function addHoliday($conn) {
     $stmt = $conn->prepare("INSERT INTO holidays (name, date) VALUES (?, ?)");
     $stmt->bind_param("ss", $data['name'], $data['date']);
     if ($stmt->execute()) {
-        syncInvoicesWithHolidays($conn);
         echo json_encode(['success' => true, 'message' => __('holiday_added_success')]);
     } else {
         echo json_encode(['success' => false, 'message' => __('holiday_add_fail') . ': ' . $conn->error]);
@@ -3166,7 +3161,6 @@ function updateHoliday($conn) {
     $stmt = $conn->prepare("UPDATE holidays SET name = ?, date = ? WHERE id = ?");
     $stmt->bind_param("ssi", $data['name'], $data['date'], $data['id']);
     if ($stmt->execute()) {
-        syncInvoicesWithHolidays($conn);
         echo json_encode(['success' => true, 'message' => __('holiday_updated_success')]);
     } else {
         echo json_encode(['success' => false, 'message' => __('update_fail')]);
@@ -3222,7 +3216,6 @@ function syncMoroccanHolidays($conn) {
     if ($results['success']) {
         $today = date('Y-m-d H:i');
         $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_holiday_sync_date', '$today') ON DUPLICATE KEY UPDATE setting_value = '$today'");
-        syncInvoicesWithHolidays($conn);
         echo json_encode(['success' => true, 'message' => __('holidays_synced_success'), 'count' => $results['count']]);
     } else {
         echo json_encode(['success' => false, 'message' => $results['message']]);
@@ -3337,22 +3330,6 @@ function syncHolidaysInternal($conn, $year, $force = false) {
     return ['success' => true, 'count' => $count];
 }
 
-function syncInvoicesWithHolidays($conn) {
-    // 1. Reset all non-weekly holidays
-    $conn->query("UPDATE invoices SET is_holiday = 0, holiday_name = NULL WHERE holiday_name IS NOT NULL AND holiday_name NOT LIKE 'عطلة أسبوعية%'");
-    
-    // 2. Fetch all current holidays
-    $res = $conn->query("SELECT name, date FROM holidays");
-    if ($res) {
-        $stmt = $conn->prepare("UPDATE invoices SET is_holiday = 1, holiday_name = ? WHERE DATE(created_at) = ?");
-        while ($h = $res->fetch_assoc()) {
-            $stmt->bind_param("ss", $h['name'], $h['date']);
-            $stmt->execute();
-        }
-        $stmt->close();
-    }
-}
-
 function checkUpcomingHolidays($conn) {
     // Only check if we haven't checked today
     $today = date('Y-m-d');
@@ -3373,7 +3350,6 @@ function checkUpcomingHolidays($conn) {
             $now = date('Y-m-d H:i');
             $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_holiday_sync_date', '$now') ON DUPLICATE KEY UPDATE setting_value = '$now'");
             $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_holiday_sync_auto_date', '$today') ON DUPLICATE KEY UPDATE setting_value = '$today'");
-            syncInvoicesWithHolidays($conn);
         } else {
             // If failed (likely no internet), we don't update last_holiday_sync_auto_date 
             // so it tries again on next request.

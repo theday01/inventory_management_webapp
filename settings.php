@@ -851,10 +851,6 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 </select>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button type="button" onclick="syncInvoicesWithHolidays()" class="text-[10px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1 rounded-full border border-white/5 transition-all flex items-center gap-1">
-                                    <span class="material-icons-round text-xs">history</span>
-                                    <?php echo __('update_past_reports_btn'); ?>
-                                </button>
                                 <div id="online-status" class="flex items-center gap-2 text-[10px] text-gray-500 bg-white/5 px-3 py-1 rounded-full border border-white/5">
                                     <span class="material-icons-round text-xs">language</span>
                                     <span id="status-text"><?php echo __('status_checking'); ?></span>
@@ -1472,24 +1468,6 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         if (initialTab === 'workdays') loadHolidays();
     });
 
-    async function syncInvoicesWithHolidays() {
-        if (!await showConfirmModal(window.__('confirm_action'), window.__('sync_invoices_confirm'))) return;
-        
-        showLoadingOverlay(window.__('processing'));
-        try {
-            const res = await fetch('api.php?action=syncInvoicesWithHolidays');
-            const data = await res.json();
-            if (data.success) {
-                showToast(window.__('data_updated_success'), true);
-            } else {
-                showToast(window.__('action_failed') + ': ' + data.message, false);
-            }
-        } catch (e) {
-            showToast(window.__('server_connection_error'), false);
-        } finally {
-            hideLoadingOverlay();
-        }
-    }
 </script>
 
 <?php if ($isAdmin): ?>
