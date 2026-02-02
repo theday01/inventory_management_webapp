@@ -3169,6 +3169,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     location.reload();
                 });
             } else if (result.code === 'business_day_open_exists' || result.code === 'business_day_closed_exists') {
+                hideLoading();
                 const isClosed = result.code === 'business_day_closed_exists';
                 const { isConfirmed } = await Swal.fire({
                     title: isClosed ? window.__('business_day_closed') : window.__('business_day_open_already'),

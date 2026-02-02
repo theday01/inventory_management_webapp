@@ -101,6 +101,10 @@ return [
     'category_id_required' => 'ID catégorie requis',
     'category_name_required_msg' => 'Nom de la catégorie requis',
     'no_image_sent' => 'Aucune image envoyée',
+    'shopping_cart' => 'Panier',
+    'notification_business_day_started' => 'Nouvelle journée de travail commencée avec un solde d\'ouverture',
+    'notification_business_day_ended' => 'La journée de travail est terminée',
+    'notification_business_day_reopened' => 'La journée de travail a été rouverte',
     
     // POS (subset)
     'shopping_cart' => 'Panier',
@@ -377,6 +381,13 @@ return [
     'enter_valid_number' => 'Veuillez saisir un nombre valide',
     'reopen_day_question_html' => 'Voulez-vous réouvrir la journée actuelle en ajoutant le montant <strong>%s</strong> ?',
     'extend_day_question_html' => 'Voulez-vous prolonger la journée actuelle en ajoutant le montant <strong>%s</strong> ?',
+    'starting_work_day' => 'Démarrage de la journée de travail...',
+    'business_day_closed' => 'Journée de travail fermée',
+    'business_day_closed_exists' => 'Cette journée de travail est déjà fermée.',
+    'business_day_open_exists' => 'La journée de travail est déjà ouverte.',
+    'business_day_open_already' => 'Journée de travail déjà ouverte',
+    'business_day_reopen_success' => 'Journée de travail rouverte avec succès',
+
     'reopen' => 'Réouvrir',
     'extend' => 'Prolonger',
     'ok' => 'OK',
@@ -971,7 +982,7 @@ return [
     'print_tab_title' => 'Paramètres d\'impression',
     'print_tab_desc' => 'Imprimantes et factures',
     'system_tab_title' => 'Système et alertes',
-    'system_tab_desc' => 'Mode sombre et stock',
+    'system_tab_desc' => 'Mode sombre et stock et fin de journée',
     'workdays_tab_title' => 'Jours de travail et fériés',
     'workdays_tab_desc' => 'Définir les horaires',
     'users_link' => 'Utilisateurs',
