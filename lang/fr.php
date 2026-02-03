@@ -805,6 +805,10 @@ return [
     'city_label' => 'Ville',
     'address_label' => 'Adresse détaillée',
     'contact_info_tip' => 'Assurez-vous que ces données sont correctes, elles apparaîtront automatiquement en bas des factures (Footer) et sur l\'interface d\'impression thermique.',
+    'delete_logo' => 'Supprimer le logo',
+    'delete_logo_confirm' => 'Êtes-vous sûr de vouloir supprimer le logo du magasin et le favicon ? Les fichiers seront supprimés définitivement.',
+    'logo_deleted_success' => 'Logo supprimé avec succès',
+    'delete_logo_fail' => 'Échec de la suppression du logo',
     
     // Settings - Delivery Tab
     'delivery_settings_title' => 'Paramètres de livraison',

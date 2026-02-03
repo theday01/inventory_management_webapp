@@ -806,6 +806,10 @@ return [
     'city_label' => 'المدينة',
     'address_label' => 'العنوان التفصيلي',
     'contact_info_tip' => 'تأكد من صحة هذه البيانات، فهي ستظهر بشكل تلقائي في تذييل الفواتير (Footer) وعلى واجهة الطباعة الحرارية.',
+    'delete_logo' => 'حذف الشعار',
+    'delete_logo_confirm' => 'هل أنت متأكد من حذف شعار المتجر وأيقونة الموقع؟ سيتم حذف الملفات نهائياً.',
+    'logo_deleted_success' => 'تم حذف الشعار بنجاح',
+    'delete_logo_fail' => 'فشل حذف الشعار',
     
     // Settings - Delivery Tab
     'delivery_settings_title' => 'إعدادات التوصيل',

@@ -224,6 +224,9 @@ switch ($action) {
     case 'updateShopFavicon':
         updateShopFavicon($conn);
         break;
+    case 'deleteShopLogo':
+        deleteShopLogo($conn);
+        break;
     case 'update_first_login':
         updateFirstLogin($conn);
         break;
@@ -4665,6 +4668,51 @@ function getRestoreProgress() {
     } else {
         echo json_encode(['success' => true, 'percent' => 0, 'status' => __('waiting')]);
     }
+}
+
+function deleteShopLogo($conn) {
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        return;
+    }
+
+    $res = $conn->query("SELECT setting_name, setting_value FROM settings WHERE setting_name IN ('shopLogoUrl', 'shopFavicon')");
+    $settings = [];
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $settings[$row['setting_name']] = $row['setting_value'];
+        }
+    }
+
+    $logoUrl = $settings['shopLogoUrl'] ?? '';
+    $faviconUrl = $settings['shopFavicon'] ?? '';
+
+    // Delete Logo File
+    if (!empty($logoUrl) && strpos($logoUrl, 'src/uploads/') !== false) {
+        // Adjust path separator
+        $logoPath = __DIR__ . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $logoUrl);
+        if (file_exists($logoPath)) {
+            @unlink($logoPath);
+        }
+    }
+
+    // Delete Favicon File
+    if (!empty($faviconUrl) && strpos($faviconUrl, 'src/uploads/') !== false) {
+        $faviconPath = __DIR__ . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $faviconUrl);
+        if (file_exists($faviconPath)) {
+            @unlink($faviconPath);
+        }
+    }
+
+    // Update Database
+    // Note: We use ON DUPLICATE KEY UPDATE logic usually, but here we want to set them empty.
+    // If rows don't exist, we don't care (they are effectively empty).
+    // But if they exist, we must update them.
+    $stmt = $conn->prepare("UPDATE settings SET setting_value = '' WHERE setting_name IN ('shopLogoUrl', 'shopFavicon')");
+    $stmt->execute();
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'message' => __('logo_deleted_success')]);
 }
 
 if (ob_get_length()) ob_end_flush();

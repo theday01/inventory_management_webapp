@@ -289,9 +289,14 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="text-center">
                                     <p class="text-sm font-bold text-white mb-1"><?php echo __('shop_logo'); ?></p>
                                     <p class="text-[10px] text-gray-400 mb-3"><?php echo __('logo_format_info'); ?></p>
-                                    <button type="button" onclick="document.getElementById('shopLogoFile').click();" class="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all <?php echo $disabledAttr; ?>">
-                                        <?php echo __('change_photo_btn'); ?>
-                                    </button>
+                                    <div class="flex items-center justify-center gap-2 relative z-10">
+                                        <button type="button" onclick="document.getElementById('shopLogoFile').click();" class="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all <?php echo $disabledAttr; ?>">
+                                            <?php echo __('change_photo_btn'); ?>
+                                        </button>
+                                        <button type="button" id="btn-delete-logo" onclick="deleteShopLogo()" class="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-all <?php echo empty($settings['shopLogoUrl'] ?? '') ? 'hidden' : ''; ?> <?php echo $disabledAttr; ?>" title="<?php echo __('delete_logo'); ?>">
+                                            <span class="material-icons-round text-sm">delete</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <input type="file" name="shopLogoFile" id="shopLogoFile" accept="image/png,image/jpeg" class="absolute inset-0 opacity-0 cursor-pointer <?php echo $isAdmin ? '' : 'pointer-events-none'; ?>" title="">
                             </div>
@@ -1936,6 +1941,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             }, 10);
                         }, 10);
                     }
+
+                    // Show delete button
+                    const deleteBtn = document.getElementById('btn-delete-logo');
+                    if(deleteBtn) deleteBtn.classList.remove('hidden');
                     
                 } else {
                     previewContainer.innerHTML = originalContent;
@@ -1988,6 +1997,49 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     });
     // === End Logo/Favicon Code ===
 
+    async function deleteShopLogo() {
+        if (!await showConfirmModal(window.__('confirm_action'), window.__('delete_logo_confirm'))) return;
+        
+        showLoadingOverlay();
+
+        try {
+            const res = await fetch('api.php?action=deleteShopLogo');
+            const data = await res.json();
+            
+            if (data.success) {
+                // Update Logo UI
+                const previewContainer = document.querySelector('.w-32.h-32.rounded-full');
+                previewContainer.innerHTML = '<span class="material-icons-round text-5xl text-gray-500 group-hover:scale-110 transition-transform duration-300">add_a_photo</span>';
+                
+                // Update Favicon UI (if it exists)
+                const faviconContainer = document.querySelector('.w-16.h-16.rounded-xl');
+                if (faviconContainer) {
+                    faviconContainer.innerHTML = '<span class="material-icons-round text-3xl text-gray-500">api</span>';
+                }
+
+                // Hide delete button
+                const deleteBtn = document.getElementById('btn-delete-logo');
+                if(deleteBtn) deleteBtn.classList.add('hidden');
+                
+                // Hide invoice logo checkbox
+                const invoiceCheckboxContainer = document.querySelector('.invoice-logo-checkbox');
+                if(invoiceCheckboxContainer) invoiceCheckboxContainer.classList.add('hidden');
+
+                // Update sidebar logo if exists to default (optional, usually hard to revert to default without reload, but let's try hiding it or setting to transparent)
+                // Actually if deleted, sidebar logo might be broken image. 
+                // Best is to reload or set to default placeholder? 
+                // The settings page logo is main concern.
+                
+                showToast(window.__('logo_deleted_success'), true);
+            } else {
+                showToast(data.message || window.__('delete_logo_fail'), false);
+            }
+        } catch (e) {
+            showToast(window.__('server_connection_error'), false);
+        } finally {
+            hideLoadingOverlay();
+        }
+    }
 
     // Load Rental Data Logic (Simplified for brevity, same as original logic)
     function formatArDate(d) {
