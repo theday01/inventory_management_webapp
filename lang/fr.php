@@ -1139,4 +1139,8 @@ return [
     'total_amount' => 'Total Final',
     'thank_you_visit' => 'Merci de votre visite! Bonne journée',
     'tax' => 'TVA',
+
+    // Virtual Keyboard
+    'virtual_keyboard_title' => 'Clavier Virtuel',
+    'virtual_keyboard_subtitle' => 'Activer le clavier à l\'écran pour les appareils tactiles',
 ];

@@ -1139,4 +1139,8 @@ return [
     'total_amount' => 'الإجمالي النهائي',
     'thank_you_visit' => 'شكراً لزيارتكم! نتمنى لكم يوماً سعيداً',
     'tax' => 'الضريبة',
+
+    // Virtual Keyboard
+    'virtual_keyboard_title' => 'لوحة المفاتيح الافتراضية',
+    'virtual_keyboard_subtitle' => 'تفعيل لوحة مفاتيح على الشاشة للأجهزة التي تعمل باللمس',
 ];

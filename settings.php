@@ -131,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'day_start_time' => !empty($_POST['day_start_time']) ? date('H:i', strtotime($_POST['day_start_time'])) : '05:00',
         'day_end_time' => !empty($_POST['day_end_time']) ? date('H:i', strtotime($_POST['day_end_time'])) : '00:00',
         'end_day_reminder_enabled' => isset($_POST['end_day_reminder_enabled']) ? '1' : '0',
+        'keyboard_enabled' => isset($_POST['keyboard_enabled']) ? '1' : '0',
     ];
 
     if (isset($_FILES['shopLogoFile']) && $_FILES['shopLogoFile']['error'] === UPLOAD_ERR_OK) {
@@ -677,6 +678,21 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="relative inline-block w-10 align-middle select-none">
                                     <input type="checkbox" name="soundNotifications" id="toggle-sound" value="1" class="toggle-checkbox" <?php echo (isset($settings['soundNotifications']) && $settings['soundNotifications'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
                                     <label for="toggle-sound" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                </div>
+                            </div>
+
+                            <!-- Virtual Keyboard Option -->
+                            <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-icons-round text-gray-400">keyboard</span>
+                                    <div>
+                                        <h4 class="font-bold text-white text-sm"><?php echo __('virtual_keyboard_title'); ?></h4>
+                                        <p class="text-[10px] text-gray-400"><?php echo __('virtual_keyboard_subtitle'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="relative inline-block w-10 align-middle select-none">
+                                    <input type="checkbox" name="keyboard_enabled" id="toggle-keyboard" value="1" class="toggle-checkbox" <?php echo $isAdmin ? 'onchange="this.form.submit()"' : ''; ?> <?php echo (isset($settings['keyboard_enabled']) && $settings['keyboard_enabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
+                                    <label for="toggle-keyboard" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
                                 </div>
                             </div>
                         </div>

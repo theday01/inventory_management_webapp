@@ -2610,3 +2610,5 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         loadingOverlay.classList.add('hidden');
     }
 </script>
+
+<?php require_once 'src/footer.php'; ?>
