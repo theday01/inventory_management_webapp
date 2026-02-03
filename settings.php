@@ -296,7 +296,26 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <input type="file" name="shopLogoFile" id="shopLogoFile" accept="image/png,image/jpeg" class="absolute inset-0 opacity-0 cursor-pointer <?php echo $isAdmin ? '' : 'pointer-events-none'; ?>" title="">
                             </div>
 
-                            <div class="lg:col-span-8 space-y-6">
+                            <!-- Favicon Section -->
+                            <div class="lg:col-span-2 flex flex-col items-center justify-center p-6 border border-dashed border-white/10 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors group relative">
+                                <div class="w-16 h-16 rounded-xl bg-gradient-to-tr from-gray-800 to-gray-700 flex items-center justify-center mb-4 shadow-lg overflow-hidden relative">
+                                    <?php if (!empty($settings['shopFavicon'] ?? '')): ?>
+                                        <img src="<?php echo htmlspecialchars($settings['shopFavicon']); ?>" alt="Favicon" class="w-full h-full object-contain p-2">
+                                    <?php else: ?>
+                                        <span class="material-icons-round text-3xl text-gray-500">api</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-sm font-bold text-white mb-1"><?php echo __('shop_favicon'); ?></p>
+                                    <p class="text-[10px] text-gray-400 mb-3"><?php echo __('favicon_auto_generated'); ?></p>
+                                    <button type="button" onclick="document.getElementById('shopFaviconFile').click();" class="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-bold text-white transition-all <?php echo $disabledAttr; ?>">
+                                        <?php echo __('upload_manual'); ?>
+                                    </button>
+                                </div>
+                                <input type="file" name="shopFaviconFile" id="shopFaviconFile" accept="image/png,image/jpeg,image/x-icon" class="absolute inset-0 opacity-0 cursor-pointer <?php echo $isAdmin ? '' : 'pointer-events-none'; ?>" title="">
+                            </div>
+
+                            <div class="lg:col-span-6 space-y-6">
                                 <?php $hasLogo = !empty($settings['shopLogoUrl'] ?? ''); ?>
                                 <label class="inline-flex items-center gap-2 invoice-logo-checkbox <?php echo $hasLogo ? '' : 'hidden'; ?>">
                                     <input type="checkbox" name="invoiceShowLogo" value="1" <?php echo (($settings['invoiceShowLogo'] ?? '0') === '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?>>
@@ -1869,7 +1888,6 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
             // عرض مؤشر التحميل
             const previewContainer = document.querySelector('.w-32.h-32.rounded-full');
-            const previewImage = previewContainer.querySelector('img');
             const originalContent = previewContainer.innerHTML;
             previewContainer.innerHTML = `
                 <div class="w-full h-full flex items-center justify-center bg-dark/50">
@@ -1888,23 +1906,28 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
                 if (result.success && result.logoUrl) {
                     // تحديث الصورة في الواجهة
-                    const newImageUrl = result.logoUrl + '?t=' + new Date().getTime(); // لمنع التخزين المؤقت
+                    const newImageUrl = result.logoUrl + '?t=' + new Date().getTime();
                     previewContainer.innerHTML = `<img src="${newImageUrl}" alt="Logo" class="w-full h-full object-cover">`;
                                         
-                    // إظهار رسالة نجاح
+                    // Reload page to show generated favicon or update favicon preview specifically if we want to be fancy
+                    // For now, let's just show success
                     showToast(window.__('logo_updated_success'), true);
-                                        
-                    // تحديث رابط الصورة في كل مكان آخر إذا لزم الأمر
-                    // مثال: تحديث الشعار في الشريط الجانبي
+                    
+                    // Update favicon preview if it exists
+                    const faviconContainer = document.querySelector('.w-16.h-16.rounded-xl');
+                    if (faviconContainer) {
+                         // We assume favicon.png is generated
+                         const faviconUrl = 'src/uploads/favicon.png?t=' + new Date().getTime();
+                         faviconContainer.innerHTML = `<img src="${faviconUrl}" alt="Favicon" class="w-full h-full object-contain p-2">`;
+                    }
+
+                    // Update sidebar logo
                     const sidebarLogo = document.querySelector('.sidebar-logo');
                     if(sidebarLogo) sidebarLogo.src = newImageUrl;
                                                              
-                    // جعل خانة "إضافة الشعار إلى الفواتير" مرئية تلقائيًا
-                    // نبحث عن عنصر checkbox ونجعله مرئيًا
                     const invoiceCheckboxContainer = document.querySelector('.invoice-logo-checkbox');
                     if(invoiceCheckboxContainer) {
                         invoiceCheckboxContainer.classList.remove('hidden');
-                        // تحسين الظهور باستخدام fade in
                         setTimeout(() => {
                             invoiceCheckboxContainer.style.opacity = '0';
                             invoiceCheckboxContainer.style.transition = 'opacity 0.3s ease-in-out';
@@ -1915,18 +1938,55 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     }
                     
                 } else {
-                    // إرجاع المحتوى الأصلي عند الفشل
                     previewContainer.innerHTML = originalContent;
                     showToast(result.message || window.__('action_failed'), false);
                 }
             } catch (error) {
                 previewContainer.innerHTML = originalContent;
                 showToast(window.__('server_connection_error'), false);
-                console.error('Error uploading logo:', error);
             }
         }
     });
-    // === نهاية كود الحفظ التلقائي للشعار ===
+
+    // === Manual Favicon Upload ===
+    document.getElementById('shopFaviconFile').addEventListener('change', async function(event) {
+        if (event.target.files && event.target.files[0]) {
+            const file = event.target.files[0];
+            const formData = new FormData();
+            formData.append('shopFaviconFile', file);
+
+            const previewContainer = document.querySelector('.w-16.h-16.rounded-xl');
+            const originalContent = previewContainer.innerHTML;
+            previewContainer.innerHTML = `
+                <div class="w-full h-full flex items-center justify-center bg-dark/50">
+                    <svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>`;
+
+            try {
+                const response = await fetch('api.php?action=updateShopFavicon', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success && result.faviconUrl) {
+                    const newImageUrl = result.faviconUrl + '?t=' + new Date().getTime();
+                    previewContainer.innerHTML = `<img src="${newImageUrl}" alt="Favicon" class="w-full h-full object-contain p-2">`;
+                    showToast(window.__('action_success'), true);
+                } else {
+                    previewContainer.innerHTML = originalContent;
+                    showToast(result.message || window.__('action_failed'), false);
+                }
+            } catch (error) {
+                previewContainer.innerHTML = originalContent;
+                showToast(window.__('server_connection_error'), false);
+            }
+        }
+    });
+    // === End Logo/Favicon Code ===
 
 
     // Load Rental Data Logic (Simplified for brevity, same as original logic)

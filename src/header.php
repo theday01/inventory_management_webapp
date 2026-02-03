@@ -20,6 +20,10 @@ $isDark = ($darkMode == '1');
 // Get stock alert interval setting
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'stockAlertInterval'");
 $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '20';
+
+// Get shop favicon
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopFavicon'");
+$shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 ?>
 
 <!DOCTYPE html>
@@ -28,6 +32,9 @@ $stockAlertInterval = ($result && $result->num_rows > 0) ? $result->fetch_assoc(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php if (!empty($shopFavicon)): ?>
+    <link rel="icon" href="<?php echo htmlspecialchars($shopFavicon); ?>">
+    <?php endif; ?>
     <title><?php echo $page_title ?? 'Smart Shop'; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>

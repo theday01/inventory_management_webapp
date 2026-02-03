@@ -173,6 +173,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->close();
     }
 }
+
+// Get shop favicon
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopFavicon'");
+$shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
@@ -180,6 +184,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php if (!empty($shopFavicon)): ?>
+    <link rel="icon" href="<?php echo htmlspecialchars($shopFavicon); ?>">
+    <?php endif; ?>
     <title>تسجيل حساب جديد</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>

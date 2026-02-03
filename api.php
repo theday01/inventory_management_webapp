@@ -221,6 +221,9 @@ switch ($action) {
     case 'updateShopLogo':
         updateShopLogo($conn);
         break;
+    case 'updateShopFavicon':
+        updateShopFavicon($conn);
+        break;
     case 'update_first_login':
         updateFirstLogin($conn);
         break;
@@ -946,6 +949,134 @@ function end_day($conn) {
     }
 }
 
+function createFavicon($source, $destination) {
+    list($width, $height, $type) = getimagesize($source);
+    
+    $newWidth = 64;
+    $newHeight = 64;
+    
+    $thumb = imagecreatetruecolor($newWidth, $newHeight);
+    
+    // Handle transparency
+    imagealphablending($thumb, false);
+    imagesavealpha($thumb, true);
+    $transparent = imagecolorallocatealpha($thumb, 255, 255, 255, 127);
+    imagefilledrectangle($thumb, 0, 0, $newWidth, $newHeight, $transparent);
+    
+    switch ($type) {
+        case IMAGETYPE_JPEG:
+            $sourceImage = imagecreatefromjpeg($source);
+            break;
+        case IMAGETYPE_PNG:
+            $sourceImage = imagecreatefrompng($source);
+            break;
+        case IMAGETYPE_GIF:
+            $sourceImage = imagecreatefromgif($source);
+            break;
+        default:
+            return false;
+    }
+    
+    // Resize maintaining aspect ratio but fitting in 64x64 square (centering)
+    $aspect = $width / $height;
+    if ($aspect >= 1) {
+        $dstW = 64;
+        $dstH = 64 / $aspect;
+        $dstX = 0;
+        $dstY = (64 - $dstH) / 2;
+    } else {
+        $dstW = 64 * $aspect;
+        $dstH = 64;
+        $dstX = (64 - $dstW) / 2;
+        $dstY = 0;
+    }
+    
+    imagecopyresampled($thumb, $sourceImage, (int)$dstX, (int)$dstY, 0, 0, (int)$dstW, (int)$dstH, $width, $height);
+    
+    // Save as PNG
+    $result = imagepng($thumb, $destination);
+    
+    imagedestroy($thumb);
+    imagedestroy($sourceImage);
+    return $result;
+}
+
+function updateShopFavicon($conn) {
+    // فقط المدير يمكنه تغيير الفافيكون
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        return;
+    }
+
+    if (isset($_FILES['shopFaviconFile']) && $_FILES['shopFaviconFile']['error'] === UPLOAD_ERR_OK) {
+        $allowed = ['png', 'jpg', 'jpeg', 'ico'];
+        $ext = strtolower(pathinfo($_FILES['shopFaviconFile']['name'], PATHINFO_EXTENSION));
+        if ($ext === 'jpeg') $ext = 'jpg';
+
+        if (in_array($ext, $allowed)) {
+            $uploadDir = __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'uploads';
+            if (!is_dir($uploadDir)) {
+                if (!@mkdir($uploadDir, 0755, true)) {
+                    echo json_encode(['success' => false, 'message' => __('upload_dir_fail')]);
+                    return;
+                }
+            }
+
+            $filename = 'favicon.png'; // Always save as png for consistency in head
+            $destFs = $uploadDir . DIRECTORY_SEPARATOR . $filename;
+            $destUrl = 'src/uploads/' . $filename;
+
+            // If it's already a PNG or we want to process it to ensure it's square/small
+            // Let's always process it to 64x64 unless it's an .ico which GD might not handle well for reading
+            // But if user uploads .ico, we might just want to save it. 
+            // However, our createFavicon handles jpg/png/gif. 
+            // If user uploads .ico, we can just move it if we supported .ico output, but we settled on .png for compatibility.
+            // Let's try to convert if image, else just move if it's really an icon? 
+            // Modern browsers support PNG favicons. Let's enforce PNG via createFavicon for consistency.
+            
+            $source = $_FILES['shopFaviconFile']['tmp_name'];
+            if ($ext === 'ico') {
+                // GD doesn't support reading ICO easily. Just move it and rename to favicon.ico?
+                // But we promised consistent path. Let's stick to PNG.
+                // If user uploads ICO, we might just save it as favicon.ico and update DB.
+                // But the user asked for "auto convert".
+                // Let's assume standard image upload.
+                if (move_uploaded_file($source, $destFs)) {
+                     // Update DB
+                    $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('shopFavicon', ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+                    $stmt->bind_param("ss", $destUrl, $destUrl);
+                    if ($stmt->execute()) {
+                        echo json_encode(['success' => true, 'message' => __('action_success'), 'faviconUrl' => $destUrl]);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => __('db_update_fail')]);
+                    }
+                    $stmt->close();
+                    return;
+                }
+            }
+
+            if (createFavicon($source, $destFs)) {
+                // Update DB
+                $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('shopFavicon', ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+                $stmt->bind_param("ss", $destUrl, $destUrl);
+                
+                if ($stmt->execute()) {
+                    echo json_encode(['success' => true, 'message' => __('action_success'), 'faviconUrl' => $destUrl]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => __('db_update_fail')]);
+                }
+                $stmt->close();
+            } else {
+                echo json_encode(['success' => false, 'message' => __('image_process_fail')]);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => __('invalid_file_type')]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => __('no_file_uploaded')]);
+    }
+}
+
 function updateShopLogo($conn) {
     // فقط المدير يمكنه تغيير الشعار
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
@@ -988,6 +1119,18 @@ function updateShopLogo($conn) {
                 $stmt->bind_param("ss", $destUrl, $destUrl);
                 
                 if ($stmt->execute()) {
+                    // Auto-generate favicon from the new logo
+                    $faviconFilename = 'favicon.png';
+                    $faviconDestFs = $uploadDir . DIRECTORY_SEPARATOR . $faviconFilename;
+                    $faviconUrl = 'src/uploads/' . $faviconFilename;
+                    
+                    if (createFavicon($destFs, $faviconDestFs)) {
+                        $stmtFavicon = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('shopFavicon', ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+                        $stmtFavicon->bind_param("ss", $faviconUrl, $faviconUrl);
+                        $stmtFavicon->execute();
+                        $stmtFavicon->close();
+                    }
+
                     echo json_encode(['success' => true, 'message' => __('logo_update_success'), 'logoUrl' => $destUrl]);
                 } else {
                     echo json_encode(['success' => false, 'message' => __('db_update_fail')]);

@@ -14,6 +14,9 @@ $shopName = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopLogoUrl'");
 $shopLogoUrl = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
 
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopFavicon'");
+$shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '';
+
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 
@@ -24,6 +27,9 @@ $page_title = __('customer_display_title') ?? 'شاشة العميل';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php if (!empty($shopFavicon)): ?>
+    <link rel="icon" href="<?php echo htmlspecialchars($shopFavicon); ?>">
+    <?php endif; ?>
     <title><?php echo $page_title; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
