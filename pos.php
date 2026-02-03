@@ -1494,8 +1494,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const downloadPdfBtn = document.getElementById('download-pdf-btn');
     const downloadTxtBtn = document.getElementById('download-txt-btn');
 
-    const deliveryInsideCost = <?php echo $deliveryInsideCity; ?>;
-    const deliveryOutsideCost = <?php echo $deliveryOutsideCity; ?>;
+    const deliveryInsideCost = <?php echo (float)$deliveryInsideCity; ?>;
+    const deliveryOutsideCost = <?php echo (float)$deliveryOutsideCity; ?>;
     const homeCity = '<?php echo addslashes(!empty($deliveryHomeCity) ? $deliveryHomeCity : $deliveryHomeCity); ?>';
 
     const lowAlert = <?php echo $lowAlert; ?>;       // الكمية المنخفضة (أصفر)
@@ -1537,8 +1537,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 1;
     const productsPerPage = 500;
     
-    const taxEnabled = <?php echo $taxEnabled; ?> == 1;
-    const taxRate = <?php echo $taxRate; ?> / 100;
+    const taxEnabled = <?php echo (int)$taxEnabled; ?> == 1;
+    const taxRate = <?php echo (float)$taxRate; ?> / 100;
     const taxLabel = '<?php echo addslashes($taxLabel); ?>';
     const shopLogoUrl = "<?php echo htmlspecialchars($shopLogoUrl); ?>";
     const currency = '<?php echo $currency; ?>';
