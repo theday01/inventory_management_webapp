@@ -1,6 +1,7 @@
 <?php
 // إضافة هذه الأسطر في بداية الملف قبل أي كود آخر
 session_start();
+require_once 'db.php';
 require_once __DIR__ . '/src/language.php';
 
 // منع أي output قبل JSON
@@ -22,7 +23,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 }
 
 header('Content-Type: application/json');
-require_once 'db.php';
 require_once 'vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;

@@ -1,7 +1,7 @@
 <?php
 require_once 'session.php';
-require_once 'src/language.php';
 require_once 'db.php';
+require_once 'src/language.php';
 
 // Check if user is admin
 $isAdmin = ($_SESSION['role'] ?? '') === 'admin';
@@ -760,6 +760,62 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
                 </div>
 
+                <div id="tab-content-language" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-3 mb-6">
+                            <span class="material-icons-round text-primary">translate</span>
+                            <?php echo __('system_language_title'); ?>
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Arabic Option -->
+                            <div onclick="setSystemLanguage('ar')" class="relative group cursor-pointer block">
+                                <div class="absolute inset-0 bg-primary/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity <?php echo get_locale() === 'ar' ? 'opacity-100' : ''; ?>"></div>
+                                <div class="relative bg-white/5 border <?php echo get_locale() === 'ar' ? 'border-primary' : 'border-white/10 group-hover:border-primary/50'; ?> rounded-2xl p-6 flex items-center gap-4 transition-all">
+                                    <div class="w-16 h-16 rounded-full overflow-hidden shadow-inner border border-white/10">
+                                        <svg class="w-full h-full object-cover" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+                                            <rect width="900" height="600" fill="#c1272d"/>
+                                            <path fill="none" stroke="#006233" stroke-width="30" d="M450,191.6 L361.8,462.6 L591.8,295.6 L308.2,295.6 L538.2,462.6 Z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-xl font-bold text-white mb-1"><?php echo __('arabic'); ?></h4>
+                                        <p class="text-sm text-gray-400">اللغة العربية</p>
+                                    </div>
+                                    <?php if(get_locale() === 'ar'): ?>
+                                        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
+                                            <span class="material-icons-round">check</span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <!-- French Option -->
+                            <div onclick="setSystemLanguage('fr')" class="relative group cursor-pointer block">
+                                 <div class="absolute inset-0 bg-primary/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity <?php echo get_locale() === 'fr' ? 'opacity-100' : ''; ?>"></div>
+                                <div class="relative bg-white/5 border <?php echo get_locale() === 'fr' ? 'border-primary' : 'border-white/10 group-hover:border-primary/50'; ?> rounded-2xl p-6 flex items-center gap-4 transition-all">
+                                     <div class="w-16 h-16 rounded-full overflow-hidden shadow-inner border border-white/10">
+                                        <svg class="w-full h-full object-cover" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+                                            <rect width="300" height="600" fill="#0055A4"/>
+                                            <rect x="300" width="300" height="600" fill="#FFFFFF"/>
+                                            <rect x="600" width="300" height="600" fill="#EF4135"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-xl font-bold text-white mb-1"><?php echo __('french'); ?></h4>
+                                        <p class="text-sm text-gray-400">Français</p>
+                                    </div>
+                                    <?php if(get_locale() === 'fr'): ?>
+                                        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
+                                            <span class="material-icons-round">check</span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="tab-content-workdays" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
                     <!-- Work Days Settings -->
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
@@ -1067,6 +1123,42 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 </style>
 
 <script>
+    // Language Switching Logic
+    async function setSystemLanguage(lang) {
+        if (!await showConfirmModal(window.__('confirm_action'), window.__('confirm_language_change'))) return;
+        
+        showLoadingOverlay();
+        
+        try {
+            // 1. Update Database
+            const res = await fetch('api.php?action=updateSetting', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    settings: [
+                        { name: 'system_language', value: lang }
+                    ]
+                })
+            });
+            
+            const data = await res.json();
+            
+            if (data.success) {
+                // 2. Set Cookie (to ensure immediate effect)
+                document.cookie = "lang=" + lang + "; path=/; max-age=" + (86400 * 30);
+                
+                // 3. Reload Page
+                window.location.href = 'settings.php?tab=language&success=' + encodeURIComponent(window.__('settings_updated_success'));
+            } else {
+                hideLoadingOverlay();
+                showToast(window.__('error') + ': ' + data.message, false);
+            }
+        } catch (e) {
+            hideLoadingOverlay();
+            showToast(window.__('server_connection_error'), false);
+        }
+    }
+
     // Tab Switching Logic
     function switchTab(tabName) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));

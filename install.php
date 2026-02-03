@@ -331,6 +331,7 @@ echo "<h3>Configuring Default Settings...</h3>";
 
 $default_settings = [
     // Basic Settings
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('system_language', 'ar') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('currency', 'MAD') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('darkMode', '1') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('shopCity', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",

@@ -3,6 +3,11 @@ require_once 'session.php';
 require_once 'db.php';
 require_once __DIR__ . '/language.php';
 
+// Force language reload to respect system settings if needed
+if (function_exists('reload_language')) {
+    reload_language($conn);
+}
+
 // Get shop name setting
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'shopName'");
 $shopName = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'Smart Shop';

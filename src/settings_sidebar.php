@@ -63,6 +63,14 @@ function tabClass($tab, $current_page, $active_tab) {
         </div>
     </a>
 
+    <a href="settings.php?tab=language" id="tab-btn-language" class="<?php echo tabClass('language', $current_page, $active_tab); ?>" data-tab="language">
+        <span class="material-icons-round text-[20px] transition-colors">translate</span>
+        <div class="flex-1">
+            <span class="font-bold text-sm block"><?php echo __('system_language_title'); ?></span>
+            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300"><?php echo __('system_language_desc'); ?></span>
+        </div>
+    </a>
+
     <a href="settings.php?tab=workdays" id="tab-btn-workdays" class="<?php echo tabClass('workdays', $current_page, $active_tab); ?>" data-tab="workdays">
         <span class="material-icons-round text-[20px] transition-colors">event_available</span>
         <div class="flex-1">

@@ -33,6 +33,29 @@ if (file_exists($langFile)) {
     $translations = require $langFile;
 }
 
+function reload_language($conn) {
+    global $lang, $translations;
+    // Only if user hasn't set a preference via cookie or GET
+    if (!isset($_COOKIE['lang']) && !isset($_GET['lang'])) {
+         $res = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'system_language'");
+         if ($res && $res->num_rows > 0) {
+            $sysLang = $res->fetch_assoc()['setting_value'];
+            if ($sysLang && in_array($sysLang, ['ar', 'fr']) && $sysLang !== $lang) {
+                $lang = $sysLang;
+                $langFile = __DIR__ . '/../lang/' . $lang . '.php';
+                if (file_exists($langFile)) {
+                    $translations = require $langFile;
+                }
+            }
+         }
+    }
+}
+
+// Try to run it immediately if $conn exists (e.g. in api.php)
+if (isset($conn) && $conn instanceof mysqli) {
+    reload_language($conn);
+}
+
 function __($key) {
     global $translations;
     return $translations[$key] ?? $key;

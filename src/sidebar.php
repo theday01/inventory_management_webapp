@@ -101,24 +101,6 @@ if (!isset($shopName)) {
             <span class="font-bold"><?php echo __('settings'); ?></span>
         </a>
 
-        <!-- Language Switcher -->
-        <?php
-        $currentParams = $_GET;
-        $currentParams['lang'] = 'ar';
-        $arLink = '?' . http_build_query($currentParams);
-        $currentParams['lang'] = 'fr';
-        $frLink = '?' . http_build_query($currentParams);
-        ?>
-        <div class="py-2">
-            <div class="flex items-center gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/5">
-                <a href="<?php echo htmlspecialchars($arLink); ?>" class="flex-1 text-center py-1 rounded-md text-xs font-bold transition-all <?php echo get_locale() === 'ar' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10 dark:text-gray-400'; ?>">
-                    <?php echo __('arabic'); ?>
-                </a>
-                <a href="<?php echo htmlspecialchars($frLink); ?>" class="flex-1 text-center py-1 rounded-md text-xs font-bold transition-all <?php echo get_locale() === 'fr' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10 dark:text-gray-400'; ?>">
-                    <?php echo __('french'); ?>
-                </a>
-            </div>
-        </div>
     </div>
 
     <!-- User Profile -->
