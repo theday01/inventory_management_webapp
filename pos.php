@@ -1593,30 +1593,91 @@ document.addEventListener('DOMContentLoaded', function () {
     // متغيرات للمسح الضوئي السريع
     let barcodeBuffer = '';
     let barcodeBufferTimeout;
-    const BARCODE_DELAY = 100; // ms - زيادة الوقت قليلاً لضمان التوافق مع مختلف الماسحات
+    const BARCODE_DELAY = 300; // ms - زيادة الوقت لضمان استيعاب الماسحات البطيئة أو اللاغ
 
     // 3. معالجة الكود الممسوح (Async updated)
-    async function handleScannedCode(code) {
+    async function handleScannedCode(rawCode) {
+        console.group('🔍 Barcode Debug Info');
+        console.log('📥 Raw Input received:', rawCode);
+        
+        // تحويل الأرقام للعربية وتظيف المسافات
+        const code = toEnglishNumbers(rawCode.trim());
+        // إنشاء نسخة بديلة مع تبديل الحروف (AZERTY <-> QWERTY)
+        const altCode = swapQwertyAzerty(code);
+        // إنشاء نسخة بديلة لتحويل تخطيط لوحة المفاتيح العربية إلى الإنجليزية
+        const arabicLayoutCode = convertArabicLayoutToEnglish(rawCode.trim());
+        
+        console.log('⚙️ Processed Code:', code);
+        console.log('🔄 Alt Code (Layout Swap):', altCode);
+        console.log('⌨️ Arabic Layout Code:', arabicLayoutCode);
+
+        if (!code) {
+            console.warn('❌ Empty code after processing');
+            console.groupEnd();
+            return;
+        }
+
         // تشغيل صوت
         beepSound.play().catch(e => {});
 
         // محاولة البحث محلياً أولاً (أسرع)
-        let product = allProducts.find(p => p.barcode === code);
+        console.log('🔎 Searching in local products...');
+        let product = allProducts.find(p => {
+            if (!p.barcode) return false;
+            const pCode = toEnglishNumbers(p.barcode.trim());
+            // نقارن مع الكود الأصلي أو الكود المبدل أو كود التخطيط العربي
+            const match = (pCode === code || pCode === altCode || pCode === arabicLayoutCode);
+            if (match) console.log('✅ Match found locally:', p.name, 'with barcode:', pCode);
+            return match;
+        });
         
         // إذا لم نجد المنتج محلياً، نبحث عنه في السيرفر
         if (!product) {
+            console.log('☁️ Not found locally. Searching on server...');
             try {
+                // نرسل الكود الأصلي، والسيرفر سيقوم بالمحاولة الذكية أيضاً
+                const apiUrl = `api.php?action=getProductByBarcode&barcode=${encodeURIComponent(code)}`;
+                console.log('🌐 API Request:', apiUrl);
+                
                 // عرض مؤشر تحميل صغير أو مجرد انتظار
-                const res = await fetch(`api.php?action=getProductByBarcode&barcode=${encodeURIComponent(code)}`);
+                const res = await fetch(apiUrl);
                 const result = await res.json();
+                console.log('📥 API Response:', result);
                 
                 if (result.success && result.data) {
                     product = result.data;
+                    console.log('✅ Product found on server:', product.name);
+                } else {
+                    console.warn('❌ Product not found on server');
+                    
+                    // محاولة أخيرة: البحث بالكود البديل صراحة إذا فشل السيرفر في التخمين
+                    if (code !== altCode) {
+                        console.log('🔄 Trying alt code on server:', altCode);
+                        const res2 = await fetch(`api.php?action=getProductByBarcode&barcode=${encodeURIComponent(altCode)}`);
+                        const result2 = await res2.json();
+                        if (result2.success && result2.data) {
+                            product = result2.data;
+                            console.log('✅ Product found on server with alt code:', product.name);
+                        }
+                    }
+
+                    // محاولة إضافية: البحث بالكود المحول من التخطيط العربي
+                    if (!product && code !== arabicLayoutCode && altCode !== arabicLayoutCode) {
+                         console.log('⌨️ Trying Arabic layout code on server:', arabicLayoutCode);
+                         const res3 = await fetch(`api.php?action=getProductByBarcode&barcode=${encodeURIComponent(arabicLayoutCode)}`);
+                         const result3 = await res3.json();
+                         if (result3.success && result3.data) {
+                             product = result3.data;
+                             console.log('✅ Product found on server with Arabic layout code:', product.name);
+                         }
+                    }
                 }
             } catch (e) {
-                console.error("Error fetching product by barcode:", e);
+                console.error("❌ Error fetching product by barcode:", e);
             }
         }
+
+        console.groupEnd();
 
         if (product) {
             // إذا وجدنا المنتج (محلياً أو من السيرفر)
@@ -1625,9 +1686,6 @@ document.addEventListener('DOMContentLoaded', function () {
             // تفريغ خانة البحث إذا كان الكود قد كُتب فيها
             if (searchInput.value === code) {
                 searchInput.value = '';
-                // لا نحتاج لإعادة تحميل الفلاتر إذا أضفنا المنتج مباشرة، 
-                // لكن إذا أردنا عرض المنتجات في الشبكة يمكننا ذلك.
-                // حالياً نفضل السرعة وعدم تشتيت الكاشير
             }
             
             showToast(window.__('added_to_cart').replace('%s', product.name), true);
@@ -1657,18 +1715,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // تجميع الأحرف
         if (e.key.length === 1) {
-            barcodeBuffer += e.key;
+            const char = toEnglishNumbers(e.key);
+            console.log(`🎹 Key Pressed: "${e.key}" -> Converted: "${char}"`);
+            barcodeBuffer += char;
             
             // إعادة ضبط المؤقت
             clearTimeout(barcodeBufferTimeout);
             barcodeBufferTimeout = setTimeout(() => {
                 // إذا مر وقت طويل دون ضغط زر آخر، نعتبره كتابة يدوية بطيئة ونفرغ البفر
-                barcodeBuffer = '';
+                if (barcodeBuffer.length > 0) {
+                    console.log('⏱️ Buffer timeout - clearing buffer. Content was:', barcodeBuffer);
+                    barcodeBuffer = '';
+                }
             }, BARCODE_DELAY);
-        } else if (e.key === 'Enter') {
-            // عند ضغط Enter (نهاية الباركود عادة)
+        } else if (e.key === 'Enter' || e.key === 'Tab') {
+            console.log('↵ Enter/Tab pressed. Buffer content:', barcodeBuffer);
+            // عند ضغط Enter أو Tab (نهاية الباركود عادة)
             if (barcodeBuffer.length > 0) {
-                // نمنع السلوك الافتراضي لزر Enter (مثل فتح رابط أو تفعيل زر)
+                // نمنع السلوك الافتراضي (مثل فتح رابط أو تفعيل زر أو الانتقال لعنصر آخر)
                 e.preventDefault();
                 
                 // معالجة الكود
@@ -1690,15 +1754,71 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function toEnglishNumbers(str) {
+        // تحويل الأرقام العربية
         const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
         const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
         
+        // تحويل رموز لوحة المفاتيح AZERTY (عندما تكون اللغة فرنسية والماسح يرسل رموزاً بدلاً من أرقام)
+        const azertyMap = {
+            '&': '1',
+            'é': '2',
+            '"': '3',
+            "'": '4',
+            '(': '5',
+            '-': '6',
+            'è': '7',
+            '_': '8',
+            'ç': '9',
+            'à': '0'
+        };
+
         let result = str.toString();
+        
+        // استبدال الأرقام العربية
         for (let i = 0; i < 10; i++) {
             result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
         }
+        
+        // استبدال رموز AZERTY
+        for (const [char, num] of Object.entries(azertyMap)) {
+            result = result.split(char).join(num);
+        }
+        
         return result;
     }
+
+    function swapQwertyAzerty(str) {
+        const map = {
+            'a': 'q', 'q': 'a',
+            'z': 'w', 'w': 'z',
+            'A': 'Q', 'Q': 'A',
+            'Z': 'W', 'W': 'Z',
+            'm': ';', ';': 'm',
+            'M': ';', // M might come as ; or , depending on layout details
+            ',': 'm', // comma might be m
+        };
+        
+        return str.split('').map(char => map[char] || char).join('');
+    }
+
+    function convertArabicLayoutToEnglish(str) {
+        // Standard Arabic 101/102 Keyboard mapping to QWERTY
+        const map = {
+            'ض': 'q', 'ص': 'w', 'ث': 'e', 'ق': 'r', 'ف': 't', 'غ': 'y', 'ع': 'u', 'ه': 'i', 'خ': 'o', 'ح': 'p', 'ج': '[', 'د': ']',
+            'ش': 'a', 'س': 's', 'ي': 'd', 'ب': 'f', 'ل': 'g', 'ا': 'h', 'ت': 'j', 'ن': 'k', 'م': 'l', 'ك': ';', 'ط': "'",
+            'ئ': 'z', 'ء': 'x', 'ؤ': 'c', 'ر': 'v', 'لا': 'b', 'ى': 'n', 'ة': 'm', 'و': ',', 'ز': '.', 'ظ': '/',
+            // Shifted characters (if scanner sends them, though rare for basic barcode)
+            'َ': 'Q', 'ً': 'W', 'ُ': 'E', 'ٌ': 'R', 'لإ': 'T', 'إ': 'Y', '‘': 'U', '÷': 'I', '×': 'O', '؛': 'P', '<': '{', '>': '}',
+            'ِ': 'A', 'ٍ': 'S', ']': 'D', '[': 'F', 'لأ': 'G', 'أ': 'H', 'ـ': 'J', '،': 'K', '/': 'L', ':': ':', '"': '"',
+            '~': 'Z', 'ْ': 'X', '}': 'C', '{': 'V', 'لآ': 'B', 'آ': 'N', '’': 'M', ',': '<', '.': '>', '؟': '?'
+        };
+        
+        // Handle "لا" ligature if it appears as single char
+        let result = str.replace(/\uFEFB/g, 'b'); 
+        
+        return result.split('').map(char => map[char] || char).join('');
+    }
+
 
     function formatDualDate(date) {
         const gregorianDate = date.toLocaleDateString('en-US', {

@@ -2103,6 +2103,45 @@ function getProductDetails($conn) {
     echo json_encode(['success' => true, 'data' => $product]);
 }
 
+function swapQwertyAzerty($str) {
+    $map = [
+        'a' => 'q', 'q' => 'a',
+        'z' => 'w', 'w' => 'z',
+        'A' => 'Q', 'Q' => 'A',
+        'Z' => 'W', 'W' => 'Z',
+        'm' => ';', ';' => 'm',
+        'M' => ';', // M might come as ; or , depending on layout details
+        ',' => 'm', // comma might be m
+    ];
+    
+    $result = '';
+    $length = mb_strlen($str);
+    for ($i = 0; $i < $length; $i++) {
+        $char = mb_substr($str, $i, 1);
+        $result .= isset($map[$char]) ? $map[$char] : $char;
+    }
+    return $result;
+}
+
+function convertArabicLayoutToEnglish($str) {
+    $map = [
+        'ض' => 'q', 'ص' => 'w', 'ث' => 'e', 'ق' => 'r', 'ف' => 't', 'غ' => 'y', 'ع' => 'u', 'ه' => 'i', 'خ' => 'o', 'ح' => 'p', 'ج' => '[', 'د' => ']',
+        'ش' => 'a', 'س' => 's', 'ي' => 'd', 'ب' => 'f', 'ل' => 'g', 'ا' => 'h', 'ت' => 'j', 'ن' => 'k', 'م' => 'l', 'ك' => ';', 'ط' => "'",
+        'ئ' => 'z', 'ء' => 'x', 'ؤ' => 'c', 'ر' => 'v', 'لا' => 'b', 'ى' => 'n', 'ة' => 'm', 'و' => ',', 'ز' => '.', 'ظ' => '/',
+        'َ' => 'Q', 'ً' => 'W', 'ُ' => 'E', 'ٌ' => 'R', 'لإ' => 'T', 'إ' => 'Y', '‘' => 'U', '÷' => 'I', '×' => 'O', '؛' => 'P', '<' => '{', '>' => '}',
+        'ِ' => 'A', 'ٍ' => 'S', ']' => 'D', '[' => 'F', 'لأ' => 'G', 'أ' => 'H', 'ـ' => 'J', '،' => 'K', '/' => 'L', ':' => ':', '"' => '"',
+        '~' => 'Z', 'ْ' => 'X', '}' => 'C', '{' => 'V', 'لآ' => 'B', 'آ' => 'N', '’' => 'M', ',' => '<', '.' => '>', '؟' => '?'
+    ];
+    
+    $result = '';
+    $length = mb_strlen($str);
+    for ($i = 0; $i < $length; $i++) {
+        $char = mb_substr($str, $i, 1);
+        $result .= isset($map[$char]) ? $map[$char] : $char;
+    }
+    return $result;
+}
+
 function getProductByBarcode($conn) {
     $barcode = isset($_GET['barcode']) ? trim($_GET['barcode']) : '';
 
@@ -2111,7 +2150,7 @@ function getProductByBarcode($conn) {
         return;
     }
 
-    // البحث عن تطابق تام للباركود
+    // 1. محاولة البحث الدقيق أولاً (أسرع)
     $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
                            FROM products p 
                            LEFT JOIN categories c ON p.category_id = c.id 
@@ -2121,6 +2160,79 @@ function getProductByBarcode($conn) {
     $result = $stmt->get_result();
     $product = $result->fetch_assoc();
     $stmt->close();
+
+    // 2. إذا لم يتم العثور، نحاول البحث مع تجاهل المسافات (للبيانات غير النظيفة)
+    if (!$product) {
+        $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
+                               FROM products p 
+                               LEFT JOIN categories c ON p.category_id = c.id 
+                               WHERE TRIM(p.barcode) = ? LIMIT 1");
+        $stmt->bind_param("s", $barcode);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $product = $result->fetch_assoc();
+        $stmt->close();
+    }
+
+    // 3. محاولة البحث مع تبديل الأحرف (QWERTY <-> AZERTY)
+    if (!$product) {
+        $swappedBarcode = swapQwertyAzerty($barcode);
+        
+        // بحث دقيق بالكود المبدل
+        $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
+                               FROM products p 
+                               LEFT JOIN categories c ON p.category_id = c.id 
+                               WHERE p.barcode = ? LIMIT 1");
+        $stmt->bind_param("s", $swappedBarcode);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $product = $result->fetch_assoc();
+        $stmt->close();
+        
+        // بحث مع تجاهل المسافات بالكود المبدل
+        if (!$product) {
+            $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
+                                   FROM products p 
+                                   LEFT JOIN categories c ON p.category_id = c.id 
+                                   WHERE TRIM(p.barcode) = ? LIMIT 1");
+            $stmt->bind_param("s", $swappedBarcode);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $product = $result->fetch_assoc();
+            $stmt->close();
+        }
+    }
+
+    // 4. محاولة البحث مع تحويل تخطيط لوحة المفاتيح العربية (Arabic Layout -> QWERTY)
+    if (!$product) {
+        $arabicLayoutCode = convertArabicLayoutToEnglish($barcode);
+        
+        if ($arabicLayoutCode !== $barcode) {
+             // بحث دقيق بالكود المحول
+            $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
+                                   FROM products p 
+                                   LEFT JOIN categories c ON p.category_id = c.id 
+                                   WHERE p.barcode = ? LIMIT 1");
+            $stmt->bind_param("s", $arabicLayoutCode);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $product = $result->fetch_assoc();
+            $stmt->close();
+
+            // بحث مع تجاهل المسافات بالكود المحول
+            if (!$product) {
+                $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
+                                       FROM products p 
+                                       LEFT JOIN categories c ON p.category_id = c.id 
+                                       WHERE TRIM(p.barcode) = ? LIMIT 1");
+                $stmt->bind_param("s", $arabicLayoutCode);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $product = $result->fetch_assoc();
+                $stmt->close();
+            }
+        }
+    }
 
     if ($product) {
         echo json_encode(['success' => true, 'data' => $product]);
