@@ -1590,35 +1590,101 @@ document.addEventListener('DOMContentLoaded', function () {
         barcodeScannerModal.classList.add('hidden');
     }
 
-    // 3. معالجة الكود الممسوح (سواء بالكاميرا أو القارئ اليدوي)
-    function handleScannedCode(code) {
+    // متغيرات للمسح الضوئي السريع
+    let barcodeBuffer = '';
+    let barcodeBufferTimeout;
+    const BARCODE_DELAY = 100; // ms - زيادة الوقت قليلاً لضمان التوافق مع مختلف الماسحات
+
+    // 3. معالجة الكود الممسوح (Async updated)
+    async function handleScannedCode(code) {
         // تشغيل صوت
         beepSound.play().catch(e => {});
 
-        // وضع الكود في خانة البحث
-        searchInput.value = code;
+        // محاولة البحث محلياً أولاً (أسرع)
+        let product = allProducts.find(p => p.barcode === code);
         
-        // البحث عن تطابق تام لإضافته للسلة فوراً
-        const exactMatch = allProducts.find(p => p.barcode === code);
-        
-        if (exactMatch) {
-            // إذا وجدنا المنتج، نضيفه للسلة مباشرة
-            addProductToCart(exactMatch);
-            searchInput.value = ''; // تفريغ البحث للاستعداد للمنتج التالي
-            applyFilters(); // إعادة تعيين الشبكة
-            showToast(window.__('added_to_cart').replace('%s', exactMatch.name), true);
+        // إذا لم نجد المنتج محلياً، نبحث عنه في السيرفر
+        if (!product) {
+            try {
+                // عرض مؤشر تحميل صغير أو مجرد انتظار
+                const res = await fetch(`api.php?action=getProductByBarcode&barcode=${encodeURIComponent(code)}`);
+                const result = await res.json();
+                
+                if (result.success && result.data) {
+                    product = result.data;
+                }
+            } catch (e) {
+                console.error("Error fetching product by barcode:", e);
+            }
+        }
+
+        if (product) {
+            // إذا وجدنا المنتج (محلياً أو من السيرفر)
+            addProductToCart(product);
+            
+            // تفريغ خانة البحث إذا كان الكود قد كُتب فيها
+            if (searchInput.value === code) {
+                searchInput.value = '';
+                // لا نحتاج لإعادة تحميل الفلاتر إذا أضفنا المنتج مباشرة، 
+                // لكن إذا أردنا عرض المنتجات في الشبكة يمكننا ذلك.
+                // حالياً نفضل السرعة وعدم تشتيت الكاشير
+            }
+            
+            showToast(window.__('added_to_cart').replace('%s', product.name), true);
         } else {
-            // إذا لم نجد تطابق تام، نقوم بفلترة المنتجات لعرض النتائج المشابهة
+            // إذا لم يتم العثور على المنتج نهائياً
+            // نضع الكود في خانة البحث ونفلتر (ربما يكون اسم منتج وليس باركود)
+            searchInput.value = code;
             applyFilters();
             showToast(window.__('product_not_found'), false);
         }
     }
 
-    // 4. تحسين البحث ليعمل مع قارئ الباركود اليدوي (USB Scanner)
-    // أجهزة الباركود عادة ما تضغط "Enter" بعد قراءة الكود
+    // 4. مستمع عالمي للوحة المفاتيح (Global Listener)
+    // هذا يسمح بالمسح الضوئي دون الحاجة للتركيز على خانة البحث
+    document.addEventListener('keydown', (e) => {
+        const target = e.target;
+        
+        // إذا كان التركيز على خانة إدخال (ما عدا خانة البحث إذا أردنا تخصيصها)
+        // نترك السلوك الطبيعي للمتصفح (كتابة الأرقام في الخانة)
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+            // إذا كان التركيز على خانة البحث، المستمع الخاص بها سيتولى الأمر عند ضغط Enter
+            return;
+        }
+
+        // تجاهل مفاتيح التحكم
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+        // تجميع الأحرف
+        if (e.key.length === 1) {
+            barcodeBuffer += e.key;
+            
+            // إعادة ضبط المؤقت
+            clearTimeout(barcodeBufferTimeout);
+            barcodeBufferTimeout = setTimeout(() => {
+                // إذا مر وقت طويل دون ضغط زر آخر، نعتبره كتابة يدوية بطيئة ونفرغ البفر
+                barcodeBuffer = '';
+            }, BARCODE_DELAY);
+        } else if (e.key === 'Enter') {
+            // عند ضغط Enter (نهاية الباركود عادة)
+            if (barcodeBuffer.length > 0) {
+                // نمنع السلوك الافتراضي لزر Enter (مثل فتح رابط أو تفعيل زر)
+                e.preventDefault();
+                
+                // معالجة الكود
+                handleScannedCode(barcodeBuffer);
+                
+                // تفريغ البفر
+                barcodeBuffer = '';
+                clearTimeout(barcodeBufferTimeout);
+            }
+        }
+    });
+
+    // 5. مستمع خاص لخانة البحث (للحالات التي يكون فيها التركيز عليها)
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && searchInput.value.trim() !== '') {
-            e.preventDefault(); // منع إعادة تحميل الصفحة
+            e.preventDefault(); 
             handleScannedCode(searchInput.value.trim());
         }
     });

@@ -63,6 +63,9 @@ switch ($action) {
     case 'getProductDetails':
         getProductDetails($conn);
         break;
+    case 'getProductByBarcode':
+        getProductByBarcode($conn);
+        break;
     case 'getCategoryFields':
         getCategoryFields($conn);
         break;
@@ -2098,6 +2101,32 @@ function getProductDetails($conn) {
     $product['custom_fields'] = $fields;
 
     echo json_encode(['success' => true, 'data' => $product]);
+}
+
+function getProductByBarcode($conn) {
+    $barcode = isset($_GET['barcode']) ? trim($_GET['barcode']) : '';
+
+    if (empty($barcode)) {
+        echo json_encode(['success' => false, 'message' => __('barcode_required')]);
+        return;
+    }
+
+    // البحث عن تطابق تام للباركود
+    $stmt = $conn->prepare("SELECT p.id, p.name, p.price, p.quantity, p.image, p.category_id, p.barcode, c.name as category_name 
+                           FROM products p 
+                           LEFT JOIN categories c ON p.category_id = c.id 
+                           WHERE p.barcode = ? LIMIT 1");
+    $stmt->bind_param("s", $barcode);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $product = $result->fetch_assoc();
+    $stmt->close();
+
+    if ($product) {
+        echo json_encode(['success' => true, 'data' => $product]);
+    } else {
+        echo json_encode(['success' => false, 'message' => __('product_not_found')]);
+    }
 }
 
 function getCategoryFields($conn) {
