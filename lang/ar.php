@@ -1130,4 +1130,13 @@ return [
     'notif_user_updated' => "قام المدير '%s' بتحديث بيانات المستخدم '%s' إلى صلاحية '%s'",
     'notif_user_deleted' => "قام المدير '%s' بحذف المستخدم '%s'",
     'access_denied' => 'تم رفض الوصول',
+
+    // Customer Display
+    'customer_display_title' => 'شاشة العميل',
+    'open_customer_screen' => 'شاشة العميل',
+    'welcome_message' => 'مرحباً بكم',
+    'waiting_for_items' => 'بانتظار إضافة المنتجات...',
+    'total_amount' => 'الإجمالي النهائي',
+    'thank_you_visit' => 'شكراً لزيارتكم! نتمنى لكم يوماً سعيداً',
+    'tax' => 'الضريبة',
 ];

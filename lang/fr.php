@@ -1130,4 +1130,13 @@ return [
     'notification_deleted' => 'Notification supprimée avec succès',
 
     'access_denied' => 'Accès refusé',
+
+    // Customer Display
+    'customer_display_title' => 'Écran Client',
+    'open_customer_screen' => 'Écran Client',
+    'welcome_message' => 'Bienvenue',
+    'waiting_for_items' => 'En attente de produits...',
+    'total_amount' => 'Total Final',
+    'thank_you_visit' => 'Merci de votre visite! Bonne journée',
+    'tax' => 'TVA',
 ];

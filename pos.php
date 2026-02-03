@@ -956,9 +956,12 @@ html:not(.dark) .text-red-500 {
 
         <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-10 shrink-0">
             <div class="flex items-center gap-4 flex-1">
-                <a href="reports.php" class="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+                <a href="reports.php" class="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors" title="<?php echo __('reports'); ?>">
                     <span class="material-icons-round">arrow_forward</span>
                 </a>
+                <button id="open-customer-screen-btn" class="p-2 text-primary hover:text-white bg-primary/10 hover:bg-primary rounded-xl transition-colors" title="<?php echo __('open_customer_screen') ?? 'شاشة العميل'; ?>">
+                    <span class="material-icons-round">dvr</span>
+                </button>
                 <div class="relative flex-1 max-w-md">
                     <span class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
                     <input type="text" id="product-search-input" placeholder="<?php echo __('search_product'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-start pr-10 pl-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
@@ -1299,6 +1302,9 @@ html:not(.dark) .text-red-500 {
 <script>
     const soundNotificationsEnabled = <?php echo ($soundEnabled == '1') ? 'true' : 'false'; ?>;
     const printMode = '<?php echo $printMode; ?>';
+
+    // Customer Display Channel
+    const customerDisplayChannel = new BroadcastChannel('pos_display');
     
     // Custom Confirmation Modal Function
     function showConfirm(message) {
@@ -1487,6 +1493,34 @@ document.addEventListener('DOMContentLoaded', function () {
     const criticalAlert = <?php echo $criticalAlert; ?>; // الكمية الحرجة (أحمر)
 
     let cart = [];
+    
+    // Customer Display Logic
+    document.getElementById('open-customer-screen-btn').addEventListener('click', () => {
+        const width = 1200;
+        const height = 800;
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+        window.open('customer_display.php', 'CustomerDisplay', `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`);
+    });
+
+    function broadcastCartUpdate(action = 'update_cart', extraData = {}) {
+        const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        const tax = taxEnabled ? subtotal * taxRate : 0;
+        const total = subtotal + tax + deliveryCost - discountAmount;
+
+        customerDisplayChannel.postMessage({
+            action: action,
+            cart: cart,
+            totals: {
+                subtotal: subtotal,
+                tax: tax,
+                delivery: deliveryCost,
+                discount: discountAmount,
+                total: total
+            },
+            ...extraData
+        });
+    }
     let allProducts = [];
     let selectedCustomer = null;
     let currentInvoiceData = null;
@@ -2081,6 +2115,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         cartTotal.textContent = `${total.toFixed(2)} ${currency}`;
+        
+        broadcastCartUpdate();
     }
     
     function updateDiscountState() {
@@ -2307,6 +2343,10 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const result = await response.json();
             if (result.success) {
+                broadcastCartUpdate('checkout_complete', { 
+                    change_due: paymentData.changeDue 
+                });
+
                 currentInvoiceData = {
                     id: result.invoice_id,
                     customer: selectedCustomer,
