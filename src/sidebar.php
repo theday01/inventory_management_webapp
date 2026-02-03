@@ -6,7 +6,7 @@ if (!isset($shopName)) {
 }
 ?>
 <!-- Sidebar -->
-<aside class="w-72 bg-dark-surface border-l border-white/5 dark:bg-dark-surface dark:border-white/5 bg-white border-gray-200 flex flex-col shrink-0 z-30 transition-colors duration-200">
+<aside class="hidden md:flex w-72 bg-dark-surface border-l border-white/5 dark:bg-dark-surface dark:border-white/5 bg-white border-gray-200 flex-col shrink-0 z-30 transition-colors duration-200">
     <!-- Logo -->
     <div class="h-20 flex items-center justify-center px-6 border-b border-white/5 dark:border-white/5 border-gray-200">
         <div class="flex items-center gap-3">

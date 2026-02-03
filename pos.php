@@ -815,9 +815,9 @@ html:not(.dark) .text-red-500 {
         <span class="material-icons-round text-sm align-middle mr-1">celebration</span>
         <?php echo __('holiday_notification'); ?>
     </div>
-    <div class="flex-1 flex flex-row-reverse relative overflow-hidden">
+    <div class="flex-1 flex flex-col md:flex-row-reverse relative overflow-hidden">
     <!-- Cart Sidebar (Left) -->
-    <aside class="w-96 bg-dark-surface border-r border-white/5 flex flex-col z-20 shadow-2xl">
+    <aside class="w-full md:w-96 h-[50vh] md:h-full bg-dark-surface border-b md:border-b-0 md:border-r border-white/5 flex flex-col z-20 shadow-2xl shrink-0">
         <div class="p-6 border-b border-white/5">
             <div class="flex items-center justify-between mb-2">
                 <h2 class="text-xl font-bold text-white"><?php echo __('shopping_cart'); ?></h2>
@@ -832,82 +832,91 @@ html:not(.dark) .text-red-500 {
             </div>
         </div>
 
-        <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+        <!-- Main Scrollable Area (Items + Options) -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <!-- Cart Items -->
+            <div id="cart-items" class="p-4 space-y-3"></div>
 
-        <div class="p-6 bg-dark-surface border-t border-white/5">
-            <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-400"><?php echo __('delivery'); ?></span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="delivery-toggle" class="sr-only peer">
-                        <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                    </label>
-                </div>
-                <div id="delivery-options" class="hidden mt-3 space-y-3">
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-2 flex items-center gap-1">
-                            <span class="material-icons-round text-xs">route</span>
-                            <?php echo __('delivery_type'); ?>
+            <!-- Options Section (Delivery & Discount) -->
+            <div class="px-6 pb-2">
+                <!-- Delivery -->
+                <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-400"><?php echo __('delivery'); ?></span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="delivery-toggle" class="sr-only peer">
+                            <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
                         </label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <label class="relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
-                                <input type="radio" name="delivery-type" value="inside" class="sr-only peer">
-                                <div class="text-center">
-                                    <span class="material-icons-round text-primary text-lg block mb-1">home</span>
-                                    <span class="text-xs font-bold text-white block"><?php echo __('inside_city'); ?></span>
-                                    <span class="text-xs text-gray-400 block"><?php echo $deliveryInsideCity; ?> <?php echo $currency; ?></span>
-                                </div>
+                    </div>
+                    <div id="delivery-options" class="hidden mt-3 space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-2 flex items-center gap-1">
+                                <span class="material-icons-round text-xs">route</span>
+                                <?php echo __('delivery_type'); ?>
                             </label>
-                            <label class="relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
-                                <input type="radio" name="delivery-type" value="outside" class="sr-only peer">
-                                <div class="text-center">
-                                    <span class="material-icons-round text-orange-500 text-lg block mb-1">location_on</span>
-                                    <span class="text-xs font-bold text-white block"><?php echo __('outside_city'); ?></span>
-                                    <span class="text-xs text-gray-400 block"><?php echo $deliveryOutsideCity; ?> <?php echo $currency; ?></span>
-                                </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
+                                    <input type="radio" name="delivery-type" value="inside" class="sr-only peer">
+                                    <div class="text-center">
+                                        <span class="material-icons-round text-primary text-lg block mb-1">home</span>
+                                        <span class="text-xs font-bold text-white block"><?php echo __('inside_city'); ?></span>
+                                        <span class="text-xs text-gray-400 block"><?php echo $deliveryInsideCity; ?> <?php echo $currency; ?></span>
+                                    </div>
+                                </label>
+                                <label class="relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10 border-white/10 hover:border-primary/30">
+                                    <input type="radio" name="delivery-type" value="outside" class="sr-only peer">
+                                    <div class="text-center">
+                                        <span class="material-icons-round text-orange-500 text-lg block mb-1">location_on</span>
+                                        <span class="text-xs font-bold text-white block"><?php echo __('outside_city'); ?></span>
+                                        <span class="text-xs text-gray-400 block"><?php echo $deliveryOutsideCity; ?> <?php echo $currency; ?></span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- حقل اسم المدينة -->
+                        <div id="city-name-container">
+                            <label class="block text-xs text-gray-400 mb-1.5 flex items-center gap-1">
+                                <span class="material-icons-round text-xs">location_city</span>
+                                <?php echo __('city_name'); ?>
                             </label>
+                            <input type="text" id="delivery-city-input" readonly
+                                placeholder="<?php echo __('choose_delivery_type_placeholder'); ?>"
+                                class="w-full bg-dark/50 border border-white/10 text-white text-start px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
+                            <p class="text-xs text-gray-500 mt-1 flex items-center gap-1" id="delivery-cost-info">
+                                <span class="material-icons-round text-xs">info</span>
+                                <span><?php echo __('choose_delivery_type_info'); ?></span>
+                            </p>
                         </div>
                     </div>
-                    
-                    <!-- حقل اسم المدينة -->
-                    <div id="city-name-container">
-                        <label class="block text-xs text-gray-400 mb-1.5 flex items-center gap-1">
-                            <span class="material-icons-round text-xs">location_city</span>
-                            <?php echo __('city_name'); ?>
+                </div>
+
+                <!-- Discount -->
+                <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-400"><?php echo __('discount'); ?></span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="discount-toggle" class="sr-only peer">
+                            <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
                         </label>
-                        <input type="text" id="delivery-city-input" readonly
-                            placeholder="<?php echo __('choose_delivery_type_placeholder'); ?>"
-                            class="w-full bg-dark/50 border border-white/10 text-white text-start px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
-                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1" id="delivery-cost-info">
+                    </div>
+                    <div id="discount-options" class="hidden mt-3 space-y-3">
+                        <div class="flex items-center gap-3">
+                            <input type="text" id="discount-percent" min="0" max="100" step="0.1" 
+                                placeholder="<?php echo __('discount_percent_placeholder'); ?>"
+                                class="flex-1 bg-dark/50 border border-white/10 text-white text-start px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
+                        </div>
+                        <div class="text-xs text-gray-500 flex items-center gap-1">
                             <span class="material-icons-round text-xs">info</span>
-                            <span><?php echo __('choose_delivery_type_info'); ?></span>
-                        </p>
+                            <span id="discount-amount-display">0.00 <?php echo $currency; ?></span>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- قسم الخصم -->
-            <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-400"><?php echo __('discount'); ?></span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="discount-toggle" class="sr-only peer">
-                        <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                    </label>
-                </div>
-                <div id="discount-options" class="hidden mt-3 space-y-3">
-                    <div class="flex items-center gap-3">
-                        <input type="text" id="discount-percent" min="0" max="100" step="0.1" 
-                            placeholder="<?php echo __('discount_percent_placeholder'); ?>"
-                            class="flex-1 bg-dark/50 border border-white/10 text-white text-start px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-all">
-                    </div>
-                    <div class="text-xs text-gray-500 flex items-center gap-1">
-                        <span class="material-icons-round text-xs">info</span>
-                        <span id="discount-amount-display">0.00 <?php echo $currency; ?></span>
-                    </div>
-                </div>
-            </div>
-
+        <!-- Fixed Footer (Totals & Buttons) -->
+        <div class="p-6 bg-dark-surface border-t border-white/5 shrink-0 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm text-gray-400">
                     <span><?php echo __('subtotal'); ?></span>
@@ -936,14 +945,14 @@ html:not(.dark) .text-red-500 {
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 mb-3">
-                <button id="clear-cart-btn" class="button-danger bg-red-500/10 hover:bg-red-500/20 text-red-500 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                    <span class="material-icons-round text-sm">delete_outline</span>
+            <div class="grid grid-cols-2 gap-2 md:gap-3 mb-2 md:mb-3">
+                <button id="clear-cart-btn" class="button-danger bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 md:py-4 rounded-xl font-bold flex items-center justify-center gap-1 md:gap-2 transition-all text-sm md:text-base">
+                    <span class="material-icons-round text-sm md:text-base">delete_outline</span>
                     <?php echo __('cancel'); ?>
                 </button>
 
-                <button id="checkout-btn" class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-4 rounded-xl font-bold text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
-                    <span class="material-icons-round">payments</span>
+                <button id="checkout-btn" class="w-full bg-accent hover:bg-lime-500 text-dark-surface py-3 md:py-4 rounded-xl font-bold text-base md:text-lg shadow-lg shadow-accent/20 flex items-center justify-center gap-1 md:gap-2 transition-all hover:scale-[1.02]">
+                    <span class="material-icons-round text-lg md:text-xl">payments</span>
                     <?php echo __('pay'); ?>
                 </button>
             </div>
@@ -2106,18 +2115,18 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             cart.forEach(item => {
                 const cartItem = document.createElement('div');
-                cartItem.className = 'flex items-center justify-between bg-white/5 p-3 rounded-xl';
+                cartItem.className = 'flex items-center justify-between bg-white/5 p-2 md:p-3 rounded-xl';
                 cartItem.innerHTML = `
-                    <div class="flex-1">
-                        <p class="text-sm font-bold text-white">${item.name}</p>
-                        <p class="text-xs text-gray-400">${item.price} ${currency}</p>
+                    <div class="flex-1 min-w-0 pr-2">
+                        <p class="text-xs md:text-sm font-bold text-white truncate">${item.name}</p>
+                        <p class="text-[10px] md:text-xs text-gray-400">${item.price} ${currency}</p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button class="quantity-btn w-8 h-8 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors" data-id="${item.id}" data-action="decrease">-</button>
-                        <span class="text-white font-bold min-w-[30px] text-center cursor-pointer hover:text-primary transition-colors" data-id="${item.id}" data-action="edit">${item.quantity}</span>
-                        <button class="quantity-btn w-8 h-8 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors" data-id="${item.id}" data-action="increase">+</button>
-                        <button class="w-8 h-8 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-all flex items-center justify-center ml-2" data-id="${item.id}" data-action="delete" title="حذف المنتج">
-                            <span class="material-icons-round text-sm">delete</span>
+                    <div class="flex items-center gap-1 md:gap-2 shrink-0">
+                        <button class="quantity-btn w-7 h-7 md:w-8 md:h-8 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors flex items-center justify-center" data-id="${item.id}" data-action="decrease">-</button>
+                        <span class="text-white font-bold min-w-[20px] md:min-w-[30px] text-center text-sm md:text-base cursor-pointer hover:text-primary transition-colors" data-id="${item.id}" data-action="edit">${item.quantity}</span>
+                        <button class="quantity-btn w-7 h-7 md:w-8 md:h-8 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors flex items-center justify-center" data-id="${item.id}" data-action="increase">+</button>
+                        <button class="w-7 h-7 md:w-8 md:h-8 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-all flex items-center justify-center ml-1 md:ml-2" data-id="${item.id}" data-action="delete" title="حذف المنتج">
+                            <span class="material-icons-round text-sm md:text-base">delete</span>
                         </button>
                     </div>
                 `;
