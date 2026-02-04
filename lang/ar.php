@@ -1166,6 +1166,7 @@ return [
     'archive_year_tip_btn' => 'أرشفة التحليل',
     'archive_year_tip_success' => 'تم أرشفة تحليل السنة بنجاح.',
     'yearly_advice_expiry_notice' => 'تنبيه: سيتم أرشفة هذا التحليل تلقائياً في 1 مارس %s',
+    'archive_advice' => 'أرشفة النصيحة',
     'month_january' => 'يناير',
     'month_february' => 'فبراير',
     'month_march' => 'مارس',

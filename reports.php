@@ -1284,23 +1284,23 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         <!-- Yearly Advice Section -->
         <div id="yearly-advice-container" class="mt-8 mb-8 hidden animate-enter">
             <div class="relative group">
-                <div class="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-yellow-200 to-yellow-400 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                <div class="glass-card p-8 relative rounded-2xl border border-yellow-500/30 bg-dark-surface/90 backdrop-blur-xl">
+                <div id="advice-glow" class="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-yellow-200 to-yellow-400 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+                <div id="advice-card" class="glass-card p-8 relative rounded-2xl border border-yellow-500/30 bg-dark-surface/90 backdrop-blur-xl">
                     <div class="flex flex-col md:flex-row gap-8 items-start">
                         <!-- Left: Score & Verdict -->
                         <div class="w-full md:w-1/3 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-l border-white/10 pb-6 md:pb-0 md:pl-6">
-                            <div class="w-32 h-32 rounded-full border-4 border-yellow-500/50 flex items-center justify-center relative mb-4 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
-                                <div class="absolute inset-0 rounded-full border-4 border-t-yellow-400 animate-spin" style="animation-duration: 3s;"></div>
+                            <div id="score-circle" class="w-32 h-32 rounded-full border-4 border-yellow-500/50 flex items-center justify-center relative mb-4 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
+                                <div id="score-spinner" class="absolute inset-0 rounded-full border-4 border-t-yellow-400 animate-spin" style="animation-duration: 3s;"></div>
                                 <span id="financial-score" class="text-4xl font-bold text-white drop-shadow-md">--</span>
                             </div>
-                            <h3 class="text-xl font-bold text-yellow-400 mb-1"><?php echo __('financial_health_score'); ?></h3>
+                            <h3 id="score-title" class="text-xl font-bold text-yellow-400 mb-1"><?php echo __('financial_health_score'); ?></h3>
                             <div id="financial-verdict" class="text-sm text-gray-300 font-medium px-4 py-1.5 bg-white/5 rounded-full mt-2 border border-white/10">--</div>
                         </div>
                         
                         <!-- Right: Detailed Advice -->
                         <div class="w-full md:w-2/3">
                             <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
-                                <span class="material-icons-round text-yellow-400 text-3xl">psychology</span>
+                                <span id="advice-icon" class="material-icons-round text-yellow-400 text-3xl">psychology</span>
                                 <?php echo __('yearly_advice_title'); ?>
                             </h3>
                             <div id="advice-list" class="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -1704,21 +1704,66 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
 
             // Show expiry notice if displaying previous year's data (Jan/Feb)
             const currentYear = new Date().getFullYear();
+            let noticeEl = document.getElementById('yearly-advice-expiry-notice');
+            if (noticeEl) noticeEl.remove(); // Reset notice
+
             if (data.year < currentYear) {
                 const noticeText = window.__('yearly_advice_expiry_notice').replace('%s', currentYear);
-                let noticeEl = document.getElementById('yearly-advice-expiry-notice');
-                if (!noticeEl) {
-                    noticeEl = document.createElement('div');
-                    noticeEl.id = 'yearly-advice-expiry-notice';
-                    noticeEl.className = 'mb-4 p-3 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm rounded-lg flex items-center gap-2';
-                    noticeEl.innerHTML = `<span class="material-icons-round text-base">info</span> <span>${noticeText}</span>`;
-                    // Insert before the main content grid
-                    const contentGrid = container.querySelector('.glass-card > div');
-                    if (contentGrid) {
-                        contentGrid.parentNode.insertBefore(noticeEl, contentGrid);
-                    } else {
-                        container.querySelector('.glass-card').prepend(noticeEl);
-                    }
+                const archiveBtnText = window.__('archive_advice');
+                
+                noticeEl = document.createElement('div');
+                noticeEl.id = 'yearly-advice-expiry-notice';
+                noticeEl.className = 'mb-4 p-3 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm rounded-lg flex items-center justify-between gap-2';
+                noticeEl.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-base">info</span> 
+                        <span>${noticeText}</span>
+                    </div>
+                    <button id="archive-advice-btn" class="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded transition-colors font-bold shadow-sm">
+                        ${archiveBtnText}
+                    </button>
+                `;
+                // Insert before the main content grid
+                const contentGrid = container.querySelector('.glass-card > div');
+                if (contentGrid) {
+                    contentGrid.parentNode.insertBefore(noticeEl, contentGrid);
+                } else {
+                    container.querySelector('.glass-card').prepend(noticeEl);
+                }
+
+                // Attach event listener directly
+                const btn = noticeEl.querySelector('#archive-advice-btn');
+                if (btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: window.__('confirm_action'),
+                            text: window.__('archive_year_tip_notification'),
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: window.__('archive_year_tip_btn'),
+                            cancelButtonText: window.__('cancel')
+                        }).then((res) => {
+                            if (res.isConfirmed) {
+                                fetch('api.php?action=archive_year_tip', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ year: data.year })
+                                }).then(r => r.json()).then(resp => {
+                                    if(resp.success) {
+                                        Swal.fire(window.__('toast_success'), window.__('archive_year_tip_success'), 'success');
+                                        document.getElementById('yearly-advice-container').classList.add('hidden');
+                                        // loadYearlyAdvice();
+                                    } else {
+                                        Swal.fire(window.__('toast_error'), resp.message || window.__('action_failed'), 'error');
+                                    }
+                                }).catch(err => {
+                                    console.error(err);
+                                    Swal.fire(window.__('toast_error'), window.__('action_failed'), 'error');
+                                });
+                            }
+                        });
+                    });
                 }
             }
             
@@ -1727,16 +1772,83 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             const targetScore = data.score !== undefined ? data.score : 0;
             scoreEl.textContent = '0/10';
             
+            // Define Themes
+            const themes = {
+                red: {
+                    text: 'text-red-500',
+                    border: 'border-red-500',
+                    glow: 'from-red-400 via-red-200 to-red-400',
+                    shadow: 'rgba(239,68,68,0.2)', // Tailwind red-500 hex approx #ef4444
+                    bg_border: 'border-red-500/30',
+                    text_light: 'text-red-400',
+                    spinner_border: 'border-t-red-400'
+                },
+                orange: {
+                    text: 'text-orange-500',
+                    border: 'border-orange-500',
+                    glow: 'from-orange-400 via-orange-200 to-orange-400',
+                    shadow: 'rgba(249,115,22,0.2)', // Tailwind orange-500 hex approx #f97316
+                    bg_border: 'border-orange-500/30',
+                    text_light: 'text-orange-400',
+                    spinner_border: 'border-t-orange-400'
+                },
+                green: {
+                    text: 'text-green-500',
+                    border: 'border-green-500',
+                    glow: 'from-green-400 via-green-200 to-green-400',
+                    shadow: 'rgba(34,197,94,0.2)', // Tailwind green-500 hex approx #22c55e
+                    bg_border: 'border-green-500/30',
+                    text_light: 'text-green-400',
+                    spinner_border: 'border-t-green-400'
+                }
+            };
+
+            let theme = themes.green; // Default
+            if (targetScore < 5) theme = themes.red;
+            else if (targetScore < 8) theme = themes.orange;
+
+            // Apply Theme to Container Elements
+            const adviceGlow = document.getElementById('advice-glow');
+            const adviceCard = document.getElementById('advice-card');
+            const scoreCircle = document.getElementById('score-circle');
+            const scoreSpinner = document.getElementById('score-spinner');
+            const scoreTitle = document.getElementById('score-title');
+            const adviceIcon = document.getElementById('advice-icon');
+
+            // Reset Classes
+            // Note: We replace classes based on pattern or hard reset
+            
+            // Update Glow
+            adviceGlow.className = `absolute -inset-1 bg-gradient-to-r ${theme.glow} rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-pulse`;
+            
+            // Update Card Border
+            adviceCard.classList.remove('border-yellow-500/30');
+            adviceCard.className = adviceCard.className.replace(/border-[a-z]+-500\/30/g, ''); // Safety cleanup
+            adviceCard.classList.add(theme.bg_border);
+
+            // Update Circle
+            scoreCircle.classList.remove('border-yellow-500/50');
+            scoreCircle.className = scoreCircle.className.replace(/border-[a-z]+-500\/50/g, '');
+            scoreCircle.classList.add(`${theme.border}/50`);
+            scoreCircle.style.boxShadow = `0 0 30px ${theme.shadow}`;
+
+            // Update Spinner
+            scoreSpinner.classList.remove('border-t-yellow-400');
+            scoreSpinner.className = scoreSpinner.className.replace(/border-t-[a-z]+-400/g, '');
+            scoreSpinner.classList.add(theme.spinner_border);
+
+            // Update Titles/Icons
+            scoreTitle.className = `text-xl font-bold ${theme.text_light} mb-1`;
+            adviceIcon.className = `material-icons-round ${theme.text_light} text-3xl`;
+
             const scoreInterval = setInterval(() => {
                 if (currentScore >= targetScore) {
                     clearInterval(scoreInterval);
                     scoreEl.textContent = targetScore + '/10';
                     
-                    // Color code the score
-                    scoreEl.classList.remove('text-white', 'text-red-500', 'text-yellow-400', 'text-green-500');
-                    if(targetScore < 5) scoreEl.classList.add('text-red-500');
-                    else if(targetScore < 8) scoreEl.classList.add('text-yellow-400');
-                    else scoreEl.classList.add('text-green-500');
+                    // Color code the score text
+                    scoreEl.classList.remove('text-white', 'text-red-500', 'text-yellow-400', 'text-green-500', 'text-orange-500');
+                    scoreEl.classList.add(theme.text);
                     
                 } else {
                     currentScore++;

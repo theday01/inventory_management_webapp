@@ -1166,6 +1166,7 @@ return [
     'archive_year_tip_notification' => 'Deux mois se sont écoulés depuis le début de la nouvelle année. Souhaitez-vous archiver l\'analyse de l\'année dernière ?',
     'archive_year_tip_btn' => 'Archiver l\'analyse',
     'archive_year_tip_success' => 'L\'analyse de l\'année a été archivée avec succès.',
+    'archive_advice' => 'Archiver le conseil',
     'month_january' => 'Janvier',
     'month_february' => 'Février',
     'month_march' => 'Mars',

@@ -4687,7 +4687,7 @@ function archive_year_tip($conn) {
 
     $user_id = $_SESSION['id'] ?? 0;
 
-    $stmt = $conn->prepare("INSERT INTO year_tips_archive (year, user_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)");
+    $stmt = $conn->prepare("INSERT INTO year_tips_archive (year, user_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE archived_at = NOW()");
     $stmt->bind_param("ii", $year, $user_id);
     
     if ($stmt->execute()) {
@@ -4865,7 +4865,7 @@ function get_yearly_advice($conn) {
         'verdict' => $verdict_key,
         'is_expired' => $isExpired,
         'is_archived' => $isArchived,
-        'should_hide' => ($isExpired && $isArchived),
+        'should_hide' => $isArchived,
         'should_notify' => ($isExpired && !$isArchived)
     ];
     
