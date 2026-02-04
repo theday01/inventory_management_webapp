@@ -230,6 +230,9 @@ switch ($action) {
     case 'get_yearly_advice':
         get_yearly_advice($conn);
         break;
+    case 'archive_year_tip':
+        archive_year_tip($conn);
+        break;
     case 'update_first_login':
         updateFirstLogin($conn);
         break;
@@ -4673,8 +4676,53 @@ function getRestoreProgress() {
     }
 }
 
+function archive_year_tip($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $year = isset($data['year']) ? intval($data['year']) : 0;
+    
+    if ($year == 0) {
+        echo json_encode(['success' => false, 'message' => __('invalid_data')]);
+        return;
+    }
+
+    $user_id = $_SESSION['id'] ?? 0;
+
+    $stmt = $conn->prepare("INSERT INTO year_tips_archive (year, user_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)");
+    $stmt->bind_param("ii", $year, $user_id);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => __('archive_year_tip_success')]);
+    } else {
+        echo json_encode(['success' => false, 'message' => __('action_failed')]);
+    }
+    $stmt->close();
+}
+
 function get_yearly_advice($conn) {
     $year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+    
+    // Check expiry and archive status
+    $currentDate = date('Y-m-d');
+    $cutoffDate = ($year + 1) . '-03-01'; // March 1st of the next year
+    
+    $isExpired = ($currentDate >= $cutoffDate);
+    $isArchived = false;
+
+    if ($isExpired) {
+        $stmt = $conn->prepare("SELECT id FROM year_tips_archive WHERE year = ?");
+        $stmt->bind_param("i", $year);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($res->num_rows > 0) {
+            $isArchived = true;
+        }
+        $stmt->close();
+    }
+
+    // If expired and archived, we might not need to calculate everything, 
+    // but the frontend might still want data if they forcefully request it.
+    // However, the requirement is "must disappear".
+    // We will return flags to let frontend decide, or simply return empty/hidden status.
     
     // 1. Financial Overview
     $start_date = "$year-01-01 00:00:00";
@@ -4814,7 +4862,11 @@ function get_yearly_advice($conn) {
         'total_orders' => $sales_data['total_orders'],
         'advice' => $advice_list,
         'score' => $score,
-        'verdict' => $verdict_key
+        'verdict' => $verdict_key,
+        'is_expired' => $isExpired,
+        'is_archived' => $isArchived,
+        'should_hide' => ($isExpired && $isArchived),
+        'should_notify' => ($isExpired && !$isArchived)
     ];
     
     echo json_encode(['success' => true, 'data' => $data]);

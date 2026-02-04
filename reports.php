@@ -1627,89 +1627,166 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
 
         async function loadYearlyAdvice() {
             try {
-                const currentYear = new Date().getFullYear();
-                const response = await fetch(`api.php?action=get_yearly_advice&year=${currentYear}`);
+                let targetYear = new Date().getFullYear();
+                const month = new Date().getMonth() + 1; // 1-12
+                
+                // For Jan/Feb, show previous year's analysis if not archived/expired
+                if (month <= 2) {
+                    targetYear = targetYear - 1;
+                }
+                
+                const response = await fetch(`api.php?action=get_yearly_advice&year=${targetYear}`);
                 const result = await response.json();
                 
                 if (result.success) {
                     const data = result.data;
-                    const container = document.getElementById('yearly-advice-container');
-                    const adviceList = document.getElementById('advice-list');
-                    const scoreEl = document.getElementById('financial-score');
-                    const verdictEl = document.getElementById('financial-verdict');
                     
-                    // Only show if we have data or explicit "no data" advice
-                    container.classList.remove('hidden');
-                    
-                    // Animate Score
-                    let currentScore = 0;
-                    const targetScore = data.score !== undefined ? data.score : 0;
-                    scoreEl.textContent = '0/10';
-                    
-                    const scoreInterval = setInterval(() => {
-                        if (currentScore >= targetScore) {
-                            clearInterval(scoreInterval);
-                            scoreEl.textContent = targetScore + '/10';
-                            
-                            // Color code the score
-                            scoreEl.classList.remove('text-white', 'text-red-500', 'text-yellow-400', 'text-green-500');
-                            if(targetScore < 5) scoreEl.classList.add('text-red-500');
-                            else if(targetScore < 8) scoreEl.classList.add('text-yellow-400');
-                            else scoreEl.classList.add('text-green-500');
-                            
-                        } else {
-                            currentScore++;
-                            scoreEl.textContent = currentScore + '/10';
+                    // Case 1: Expired AND Archived -> Hide (or switch to current year)
+                    if (data.should_hide) {
+                        // If we were showing previous year, try loading current year instead
+                        if (targetYear < new Date().getFullYear()) {
+                             const currentYearRes = await fetch(`api.php?action=get_yearly_advice&year=${new Date().getFullYear()}`);
+                             const currentData = await currentYearRes.json();
+                             if(currentData.success) {
+                                 renderAdvice(currentData.data);
+                             }
+                             return;
                         }
-                    }, 100);
-                    
-                    // Set Verdict
-                    const verdictText = window.__(data.verdict) || data.verdict;
-                    verdictEl.textContent = verdictText;
-                    
-                    // Render Advice
-                    adviceList.innerHTML = '';
-                    if (data.advice && data.advice.length > 0) {
-                        data.advice.forEach(item => {
-                            let icon = 'info';
-                            let colorClass = 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-                            
-                            if (item.type === 'critical') {
-                                icon = 'warning';
-                                colorClass = 'text-red-400 bg-red-500/10 border-red-500/20';
-                            } else if (item.type === 'warning') {
-                                icon = 'priority_high';
-                                colorClass = 'text-orange-400 bg-orange-500/10 border-orange-500/20';
-                            } else if (item.type === 'success') {
-                                icon = 'check_circle';
-                                colorClass = 'text-green-400 bg-green-500/10 border-green-500/20';
-                            }
-                            
-                            let message = window.__(item.key);
-                            if (message && item.value) {
-                                let val = item.value;
-                                if (item.is_translatable_value) {
-                                    val = window.__(item.value) || item.value;
-                                }
-                                message = message.replace('%s', val);
-                            } else if (!message) {
-                                message = item.key;
-                            }
-                            
-                            const div = document.createElement('div');
-                            div.className = `p-4 rounded-xl border flex items-start gap-3 ${colorClass} transition-all hover:translate-x-1`;
-                            div.innerHTML = `
-                                <span class="material-icons-round mt-0.5 text-lg">${icon}</span>
-                                <p class="text-sm font-medium leading-relaxed">${message}</p>
-                            `;
-                            adviceList.appendChild(div);
-                        });
-                    } else {
-                        adviceList.innerHTML = `<div class="text-center text-gray-500 py-4">${window.__('verdict_no_data')}</div>`;
+                        
+                        document.getElementById('yearly-advice-container').classList.add('hidden');
+                        return;
                     }
+
+                    // Case 2: Expired but NOT Archived -> Show Notification
+                    if (data.should_notify) {
+                        Swal.fire({
+                            title: 'تنبيه',
+                            text: window.__('archive_year_tip_notification'),
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: window.__('archive_year_tip_btn'),
+                            cancelButtonText: window.__('cancel')
+                        }).then((res) => {
+                            if (res.isConfirmed) {
+                                fetch('api.php?action=archive_year_tip', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ year: data.year })
+                                }).then(r => r.json()).then(resp => {
+                                    if(resp.success) {
+                                        Swal.fire(window.__('toast_success'), window.__('archive_year_tip_success'), 'success');
+                                        loadYearlyAdvice(); // Reload to switch to next state/year
+                                    }
+                                });
+                            }
+                        });
+                        // Hide container while waiting for action
+                        document.getElementById('yearly-advice-container').classList.add('hidden');
+                        return;
+                    }
+
+                    // Case 3: Normal -> Render Advice
+                    renderAdvice(data);
                 }
             } catch (error) {
                 console.error('Error loading yearly advice:', error);
+            }
+        }
+
+        function renderAdvice(data) {
+            const container = document.getElementById('yearly-advice-container');
+            const adviceList = document.getElementById('advice-list');
+            const scoreEl = document.getElementById('financial-score');
+            const verdictEl = document.getElementById('financial-verdict');
+            
+            // Only show if we have data or explicit "no data" advice
+            container.classList.remove('hidden');
+
+            // Show expiry notice if displaying previous year's data (Jan/Feb)
+            const currentYear = new Date().getFullYear();
+            if (data.year < currentYear) {
+                const noticeText = window.__('yearly_advice_expiry_notice').replace('%s', currentYear);
+                let noticeEl = document.getElementById('yearly-advice-expiry-notice');
+                if (!noticeEl) {
+                    noticeEl = document.createElement('div');
+                    noticeEl.id = 'yearly-advice-expiry-notice';
+                    noticeEl.className = 'mb-4 p-3 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm rounded-lg flex items-center gap-2';
+                    noticeEl.innerHTML = `<span class="material-icons-round text-base">info</span> <span>${noticeText}</span>`;
+                    // Insert before the main content grid
+                    const contentGrid = container.querySelector('.glass-card > div');
+                    if (contentGrid) {
+                        contentGrid.parentNode.insertBefore(noticeEl, contentGrid);
+                    } else {
+                        container.querySelector('.glass-card').prepend(noticeEl);
+                    }
+                }
+            }
+            
+            // Animate Score
+            let currentScore = 0;
+            const targetScore = data.score !== undefined ? data.score : 0;
+            scoreEl.textContent = '0/10';
+            
+            const scoreInterval = setInterval(() => {
+                if (currentScore >= targetScore) {
+                    clearInterval(scoreInterval);
+                    scoreEl.textContent = targetScore + '/10';
+                    
+                    // Color code the score
+                    scoreEl.classList.remove('text-white', 'text-red-500', 'text-yellow-400', 'text-green-500');
+                    if(targetScore < 5) scoreEl.classList.add('text-red-500');
+                    else if(targetScore < 8) scoreEl.classList.add('text-yellow-400');
+                    else scoreEl.classList.add('text-green-500');
+                    
+                } else {
+                    currentScore++;
+                    scoreEl.textContent = currentScore + '/10';
+                }
+            }, 100);
+            
+            // Set Verdict
+            const verdictText = window.__(data.verdict) || data.verdict;
+            verdictEl.textContent = verdictText;
+            
+            // Render Advice
+            adviceList.innerHTML = '';
+            if (data.advice && data.advice.length > 0) {
+                data.advice.forEach(item => {
+                    let icon = 'info';
+                    let colorClass = 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+                    
+                    if (item.type === 'critical') {
+                        icon = 'warning';
+                        colorClass = 'text-red-400 bg-red-500/10 border-red-500/20';
+                    } else if (item.type === 'warning') {
+                        icon = 'priority_high';
+                        colorClass = 'text-orange-400 bg-orange-500/10 border-orange-500/20';
+                    } else if (item.type === 'success') {
+                        icon = 'check_circle';
+                        colorClass = 'text-green-400 bg-green-500/10 border-green-500/20';
+                    }
+                    
+                    let message = window.__(item.key);
+                    if (message && item.value) {
+                        let val = item.value;
+                        if (item.is_translatable_value) {
+                            val = window.__(item.value) || item.value;
+                        }
+                        message = message.replace('%s', val);
+                    } else if (!message) {
+                        message = item.key;
+                    }
+                    
+                    const div = document.createElement('div');
+                    div.className = `p-4 rounded-xl border flex items-start gap-3 ${colorClass} transition-all hover:translate-x-1`;
+                    div.innerHTML = `
+                        <span class="material-icons-round mt-0.5 text-lg">${icon}</span>
+                        <p class="text-sm font-medium leading-relaxed">${message}</p>
+                    `;
+                    adviceList.appendChild(div);
+                });
+            } else {
+                adviceList.innerHTML = `<div class="text-center text-gray-500 py-4">${window.__('verdict_no_data')}</div>`;
             }
         }
 
@@ -2244,6 +2321,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             }
             
             try {
+                showLoadingOverlay();
                 const response = await fetch('api.php?action=start_day', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2251,6 +2329,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 });
                 
                 const result = await response.json();
+                hideLoadingOverlay();
                 
                 if (result.success) {
                     startDayModal.classList.add('hidden');
@@ -2274,6 +2353,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                     });
 
                     if (isConfirmed) {
+                        showLoadingOverlay();
                         // User wants to extend the day
                         const extendResponse = await fetch('api.php?action=extend_day', {
                             method: 'POST',
@@ -2284,6 +2364,8 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             })
                         });
                         const extendResult = await extendResponse.json();
+                        hideLoadingOverlay();
+
                         if (extendResult.success) {
                             Swal.fire('تم التمديد', 'تم تمديد يوم العمل بنجاح.', 'success').then(() => {
                                 location.reload();
@@ -2309,6 +2391,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                     });
 
                     if (isConfirmed) {
+                        showLoadingOverlay();
                         const reopenResponse = await fetch('api.php?action=reopen_day', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -2318,6 +2401,8 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             })
                         });
                         const reopenResult = await reopenResponse.json();
+                        hideLoadingOverlay();
+
                         if (reopenResult.success) {
                             Swal.fire('تمت إعادة الفتح', 'تم إعادة فتح يوم العمل بنجاح.', 'success').then(() => {
                                 location.reload();
@@ -2337,6 +2422,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                     });
                 }
             } catch (error) {
+                hideLoadingOverlay();
                 console.error('Error details:', error);
                 Swal.fire({
                     title: 'خطأ في الاتصال',
@@ -2378,8 +2464,10 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             // If user confirms, proceed with ending the day
             if (confirmed.isConfirmed) {
                 try {
+                    showLoadingOverlay();
                     const response = await fetch('api.php?action=end_day', { method: 'POST' });
                     const result = await response.json();
+                    hideLoadingOverlay();
                     
                     if (result.success) {
                         const summary = result.data.summary;
@@ -2411,6 +2499,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         throw new Error(result.message || 'حدث خطأ أثناء محاولة إغلاق يوم العمل');
                     }
                 } catch (error) {
+                    hideLoadingOverlay();
                     console.error('Error details:', error);
                     Swal.fire({
                         title: '!حدث خطأ',
@@ -2734,6 +2823,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function updateDeviceSetting(type) {
+        showLoadingOverlay();
         const settings = [
             { name: 'deviceType', value: type }
         ];
@@ -2751,6 +2841,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            hideLoadingOverlay();
             if (data.success) {
                 deviceFeedback.textContent = 'تم حفظ الإعدادات بنجاح!';
                 deviceFeedback.classList.remove('text-red-400');
@@ -2769,6 +2860,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
+            hideLoadingOverlay();
             console.error('Error:', error);
             deviceFeedback.textContent = 'حدث خطأ.';
             deviceFeedback.classList.remove('text-green-400');
@@ -2787,15 +2879,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="absolute inset-2 border-4 border-transparent border-b-primary/50 rounded-full animate-spin" style="animation-direction: reverse;"></div>
         </div>
         <div class="text-center">
-            <h3 class="text-lg font-bold text-white mb-2">جاري التحميل...</h3>
-            <p id="loading-message" class="text-sm text-gray-400">يرجى الانتظار قليلاً</p>
+            <h3 class="text-lg font-bold text-white mb-2"><?php echo __('loading'); ?></h3>
+            <p id="loading-message" class="text-sm text-gray-400"><?php echo __('please_wait'); ?></p>
         </div>
     </div>
 </div>
 
 <script>
     // دوال إدارة شاشة التحميل
-    function showLoadingOverlay(message = 'جاري معالجة البيانات...') {
+    function showLoadingOverlay(message = '<?php echo __('processing'); ?>') {
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingMessage = document.getElementById('loading-message');
         loadingMessage.textContent = message;
