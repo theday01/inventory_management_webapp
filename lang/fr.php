@@ -1179,4 +1179,13 @@ return [
     'month_october' => 'Octobre',
     'month_november' => 'Novembre',
     'month_december' => 'Décembre',
+
+    // Annual Tips
+    'annual_tips' => 'Conseils annuels',
+    'yearly_tips_title' => 'Archives des conseils annuels',
+    'click_to_view_details' => 'Cliquez pour voir les détails',
+    'annual_tips_tab_desc' => 'Conseils archivés des années précédentes',
+    'no_archived_tips' => 'Aucun conseil archivé',
+    'select_year_tip_placeholder' => 'Sélectionnez une année pour voir son conseil',
+    'year_label' => 'Année',
 ];

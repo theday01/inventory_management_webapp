@@ -78,6 +78,14 @@ function tabClass($tab, $current_page, $active_tab) {
             <span class="text-[10px] text-gray-400 block group-hover:text-gray-300"><?php echo __('workdays_tab_desc'); ?></span>
         </div>
     </a>
+
+    <a href="settings.php?tab=annual_tips" id="tab-btn-annual_tips" class="<?php echo tabClass('annual_tips', $current_page, $active_tab); ?>" data-tab="annual_tips">
+        <span class="material-icons-round text-[20px] transition-colors">tips_and_updates</span>
+        <div class="flex-1">
+            <span class="font-bold text-sm block"><?php echo __('annual_tips'); ?></span>
+            <span class="text-[10px] text-gray-400 block group-hover:text-gray-300"><?php echo __('annual_tips_tab_desc'); ?></span>
+        </div>
+    </a>
     
     <div class="my-2 border-t border-white/5"></div>
     <a href="users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page === 'users.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">

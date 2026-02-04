@@ -233,6 +233,9 @@ switch ($action) {
     case 'archive_year_tip':
         archive_year_tip($conn);
         break;
+    case 'get_archived_years':
+        get_archived_years($conn);
+        break;
     case 'update_first_login':
         updateFirstLogin($conn);
         break;
@@ -4696,6 +4699,20 @@ function archive_year_tip($conn) {
         echo json_encode(['success' => false, 'message' => __('action_failed')]);
     }
     $stmt->close();
+}
+
+function get_archived_years($conn) {
+    $user_id = $_SESSION['id'] ?? 0;
+    $stmt = $conn->prepare("SELECT DISTINCT year FROM year_tips_archive WHERE user_id = ? ORDER BY year DESC");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $years = [];
+    while ($row = $result->fetch_assoc()) {
+        $years[] = $row['year'];
+    }
+    $stmt->close();
+    echo json_encode(['success' => true, 'data' => $years]);
 }
 
 function get_yearly_advice($conn) {

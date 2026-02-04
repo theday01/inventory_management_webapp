@@ -1179,4 +1179,13 @@ return [
     'month_october' => 'أكتوبر',
     'month_november' => 'نوفمبر',
     'month_december' => 'ديسمبر',
+
+    // Annual Tips
+    'annual_tips' => 'النصائح السنوية',
+    'yearly_tips_title' => 'أرشيف النصائح السنوية',
+    'click_to_view_details' => 'اضغط لعرض التفاصيل',
+    'annual_tips_tab_desc' => 'النصائح المؤرشفة للسنوات السابقة',
+    'no_archived_tips' => 'لا توجد نصائح مؤرشفة',
+    'select_year_tip_placeholder' => 'اختر سنة لعرض نصيحتها',
+    'year_label' => 'سنة',
 ];
