@@ -227,6 +227,9 @@ switch ($action) {
     case 'deleteShopLogo':
         deleteShopLogo($conn);
         break;
+    case 'get_yearly_advice':
+        get_yearly_advice($conn);
+        break;
     case 'update_first_login':
         updateFirstLogin($conn);
         break;
@@ -4668,6 +4671,153 @@ function getRestoreProgress() {
     } else {
         echo json_encode(['success' => true, 'percent' => 0, 'status' => __('waiting')]);
     }
+}
+
+function get_yearly_advice($conn) {
+    $year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+    
+    // 1. Financial Overview
+    $start_date = "$year-01-01 00:00:00";
+    $end_date = "$year-12-31 23:59:59";
+    
+    // Sales & Refunds
+    $stmt = $conn->prepare("
+        SELECT 
+            COALESCE(SUM(total), 0) as total_revenue,
+            COUNT(id) as total_orders,
+            COALESCE(SUM(delivery_cost), 0) as total_delivery
+        FROM invoices 
+        WHERE created_at BETWEEN ? AND ?
+    ");
+    $stmt->bind_param("ss", $start_date, $end_date);
+    $stmt->execute();
+    $sales_data = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    
+    $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_refunds FROM refunds WHERE created_at BETWEEN ? AND ?");
+    $stmt->bind_param("ss", $start_date, $end_date);
+    $stmt->execute();
+    $refunds_data = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    
+    // COGS
+    $stmt = $conn->prepare("
+        SELECT COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs
+        FROM invoice_items ii
+        JOIN invoices i ON ii.invoice_id = i.id
+        WHERE i.created_at BETWEEN ? AND ?
+    ");
+    $stmt->bind_param("ss", $start_date, $end_date);
+    $stmt->execute();
+    $cogs_data = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    
+    // Expenses
+    $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses WHERE expense_date BETWEEN ? AND ?");
+    $start_date_only = "$year-01-01";
+    $end_date_only = "$year-12-31";
+    $stmt->bind_param("ss", $start_date_only, $end_date_only);
+    $stmt->execute();
+    $expenses_data = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    
+    // Rent
+    $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_rent FROM rental_payments WHERE payment_date BETWEEN ? AND ?");
+    $stmt->bind_param("ss", $start_date_only, $end_date_only);
+    $stmt->execute();
+    $rent_data = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    
+    // Monthly Trends
+    $stmt = $conn->prepare("
+        SELECT MONTH(created_at) as month, SUM(total) as revenue 
+        FROM invoices 
+        WHERE created_at BETWEEN ? AND ?
+        GROUP BY MONTH(created_at)
+        ORDER BY revenue DESC
+    ");
+    $stmt->bind_param("ss", $start_date, $end_date);
+    $stmt->execute();
+    $monthly_res = $stmt->get_result();
+    $months_data = [];
+    while($row = $monthly_res->fetch_assoc()) {
+        $months_data[] = $row;
+    }
+    $stmt->close();
+    
+    // Calculations
+    $net_revenue = $sales_data['total_revenue'] - $refunds_data['total_refunds'];
+    $total_expenses = $expenses_data['total_expenses'] + $rent_data['total_rent'];
+    // Profit: Net Revenue - COGS - Expenses.
+    $net_profit = $net_revenue - $cogs_data['total_cogs'] - $total_expenses;
+    
+    $profit_margin = $net_revenue > 0 ? ($net_profit / $net_revenue) * 100 : 0;
+    
+    // Analysis & Advice Generation
+    $advice_list = [];
+    $score = 10;
+
+    // 1. Profitability
+    if ($net_revenue == 0) {
+        $advice_list[] = ['type' => 'neutral', 'key' => 'advice_no_sales', 'value' => ''];
+        $score = 0;
+    } else {
+        if ($profit_margin < 5) {
+            $score -= 3;
+            $advice_list[] = ['type' => 'critical', 'key' => 'advice_margin_critical', 'value' => number_format($profit_margin, 1) . '%'];
+        } elseif ($profit_margin < 15) {
+            $score -= 1;
+            $advice_list[] = ['type' => 'warning', 'key' => 'advice_margin_low', 'value' => number_format($profit_margin, 1) . '%'];
+        } else {
+            $advice_list[] = ['type' => 'success', 'key' => 'advice_margin_good', 'value' => number_format($profit_margin, 1) . '%'];
+        }
+    }
+    
+    // 2. Expenses Ratio
+    if ($net_revenue > 0) {
+        $expense_ratio = ($total_expenses / $net_revenue) * 100;
+        if ($expense_ratio > 40) {
+            $score -= 2;
+            $advice_list[] = ['type' => 'warning', 'key' => 'advice_high_expenses', 'value' => number_format($expense_ratio, 1) . '%'];
+        }
+    }
+    
+    // 3. Seasonality
+    if (!empty($months_data)) {
+        $best_month = $months_data[0];
+        $month_names = [
+            1 => 'month_january', 2 => 'month_february', 3 => 'month_march', 4 => 'month_april',
+            5 => 'month_may', 6 => 'month_june', 7 => 'month_july', 8 => 'month_august',
+            9 => 'month_september', 10 => 'month_october', 11 => 'month_november', 12 => 'month_december'
+        ];
+        $month_key = isset($month_names[$best_month['month']]) ? $month_names[$best_month['month']] : 'unknown';
+        $advice_list[] = ['type' => 'info', 'key' => 'advice_best_month', 'value' => $month_key, 'is_translatable_value' => true];
+    }
+
+    // 4. Refund Rate
+    $refund_rate = $sales_data['total_revenue'] > 0 ? ($refunds_data['total_refunds'] / $sales_data['total_revenue']) * 100 : 0;
+    if ($refund_rate > 5) {
+        $score -= 2;
+        $advice_list[] = ['type' => 'critical', 'key' => 'advice_high_refunds', 'value' => number_format($refund_rate, 1) . '%'];
+    }
+
+    $verdict_key = 'verdict_excellent';
+    if ($score < 5) $verdict_key = 'verdict_needs_attention';
+    elseif ($score < 8) $verdict_key = 'verdict_good';
+    elseif ($net_revenue == 0) $verdict_key = 'verdict_no_data';
+    
+    $data = [
+        'year' => $year,
+        'net_revenue' => $net_revenue,
+        'net_profit' => $net_profit,
+        'profit_margin' => $profit_margin,
+        'total_orders' => $sales_data['total_orders'],
+        'advice' => $advice_list,
+        'score' => $score,
+        'verdict' => $verdict_key
+    ];
+    
+    echo json_encode(['success' => true, 'data' => $data]);
 }
 
 function deleteShopLogo($conn) {

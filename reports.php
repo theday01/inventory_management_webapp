@@ -1280,6 +1280,45 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 </div>
             </div>
         </div>  
+
+        <!-- Yearly Advice Section -->
+        <div id="yearly-advice-container" class="mt-8 mb-8 hidden animate-enter">
+            <div class="relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-yellow-200 to-yellow-400 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+                <div class="glass-card p-8 relative rounded-2xl border border-yellow-500/30 bg-dark-surface/90 backdrop-blur-xl">
+                    <div class="flex flex-col md:flex-row gap-8 items-start">
+                        <!-- Left: Score & Verdict -->
+                        <div class="w-full md:w-1/3 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-l border-white/10 pb-6 md:pb-0 md:pl-6">
+                            <div class="w-32 h-32 rounded-full border-4 border-yellow-500/50 flex items-center justify-center relative mb-4 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
+                                <div class="absolute inset-0 rounded-full border-4 border-t-yellow-400 animate-spin" style="animation-duration: 3s;"></div>
+                                <span id="financial-score" class="text-4xl font-bold text-white drop-shadow-md">--</span>
+                            </div>
+                            <h3 class="text-xl font-bold text-yellow-400 mb-1"><?php echo __('financial_health_score'); ?></h3>
+                            <div id="financial-verdict" class="text-sm text-gray-300 font-medium px-4 py-1.5 bg-white/5 rounded-full mt-2 border border-white/10">--</div>
+                        </div>
+                        
+                        <!-- Right: Detailed Advice -->
+                        <div class="w-full md:w-2/3">
+                            <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
+                                <span class="material-icons-round text-yellow-400 text-3xl">psychology</span>
+                                <?php echo __('yearly_advice_title'); ?>
+                            </h3>
+                            <div id="advice-list" class="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                <!-- Advice items will be injected here -->
+                                <div class="animate-pulse flex space-x-4">
+                                    <div class="flex-1 space-y-4 py-1">
+                                        <div class="h-4 bg-white/10 rounded w-3/4"></div>
+                                        <div class="h-4 bg-white/10 rounded"></div>
+                                        <div class="h-4 bg-white/10 rounded w-5/6"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </main>
 
@@ -1586,8 +1625,97 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         
         // const currency = '<?php echo $currency; ?>';
 
+        async function loadYearlyAdvice() {
+            try {
+                const currentYear = new Date().getFullYear();
+                const response = await fetch(`api.php?action=get_yearly_advice&year=${currentYear}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    const container = document.getElementById('yearly-advice-container');
+                    const adviceList = document.getElementById('advice-list');
+                    const scoreEl = document.getElementById('financial-score');
+                    const verdictEl = document.getElementById('financial-verdict');
+                    
+                    // Only show if we have data or explicit "no data" advice
+                    container.classList.remove('hidden');
+                    
+                    // Animate Score
+                    let currentScore = 0;
+                    const targetScore = data.score !== undefined ? data.score : 0;
+                    scoreEl.textContent = '0/10';
+                    
+                    const scoreInterval = setInterval(() => {
+                        if (currentScore >= targetScore) {
+                            clearInterval(scoreInterval);
+                            scoreEl.textContent = targetScore + '/10';
+                            
+                            // Color code the score
+                            scoreEl.classList.remove('text-white', 'text-red-500', 'text-yellow-400', 'text-green-500');
+                            if(targetScore < 5) scoreEl.classList.add('text-red-500');
+                            else if(targetScore < 8) scoreEl.classList.add('text-yellow-400');
+                            else scoreEl.classList.add('text-green-500');
+                            
+                        } else {
+                            currentScore++;
+                            scoreEl.textContent = currentScore + '/10';
+                        }
+                    }, 100);
+                    
+                    // Set Verdict
+                    const verdictText = window.__(data.verdict) || data.verdict;
+                    verdictEl.textContent = verdictText;
+                    
+                    // Render Advice
+                    adviceList.innerHTML = '';
+                    if (data.advice && data.advice.length > 0) {
+                        data.advice.forEach(item => {
+                            let icon = 'info';
+                            let colorClass = 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+                            
+                            if (item.type === 'critical') {
+                                icon = 'warning';
+                                colorClass = 'text-red-400 bg-red-500/10 border-red-500/20';
+                            } else if (item.type === 'warning') {
+                                icon = 'priority_high';
+                                colorClass = 'text-orange-400 bg-orange-500/10 border-orange-500/20';
+                            } else if (item.type === 'success') {
+                                icon = 'check_circle';
+                                colorClass = 'text-green-400 bg-green-500/10 border-green-500/20';
+                            }
+                            
+                            let message = window.__(item.key);
+                            if (message && item.value) {
+                                let val = item.value;
+                                if (item.is_translatable_value) {
+                                    val = window.__(item.value) || item.value;
+                                }
+                                message = message.replace('%s', val);
+                            } else if (!message) {
+                                message = item.key;
+                            }
+                            
+                            const div = document.createElement('div');
+                            div.className = `p-4 rounded-xl border flex items-start gap-3 ${colorClass} transition-all hover:translate-x-1`;
+                            div.innerHTML = `
+                                <span class="material-icons-round mt-0.5 text-lg">${icon}</span>
+                                <p class="text-sm font-medium leading-relaxed">${message}</p>
+                            `;
+                            adviceList.appendChild(div);
+                        });
+                    } else {
+                        adviceList.innerHTML = `<div class="text-center text-gray-500 py-4">${window.__('verdict_no_data')}</div>`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading yearly advice:', error);
+            }
+        }
+
         async function loadDashboardStats() {
             try {
+                loadYearlyAdvice();
                 const response = await fetch('api.php?action=getDashboardStats');
                 const result = await response.json();
                 
