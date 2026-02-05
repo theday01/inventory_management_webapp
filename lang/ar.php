@@ -1236,4 +1236,18 @@ return [
     'advice_returns_low_text' => 'نسبة المرتجعات %s فقط. هذا يدل على رضا العملاء وجودة المنتجات.',
     'advice_expense_top_cat_title' => 'أعلى فئة للمصاريف: %s',
     'advice_expense_top_cat_text' => 'تستحوذ فئة \'%s\' على %s من إجمالي المصاريف. هل يمكن تقليل التكاليف في هذا الجانب؟',
+
+    // New Annual Analysis Keys - Inventory & Customers
+    'advice_inventory_stagnant_title' => 'مخزون راكد',
+    'advice_inventory_stagnant_text' => 'لديك %d منتجاً متوفراً في المخزون لم يتم بيع أي قطعة منها خلال هذا العام. ننصح بعمل عروض ترويجية لتصريفها.',
+    'advice_inventory_turnover_low_title' => 'معدل دوران مخزون منخفض',
+    'advice_inventory_turnover_low_text' => 'حركة المخزون بطيئة. أنت تحتفظ بكميات كبيرة مقارنة بحجم المبيعات، مما يجمد السيولة.',
+    'advice_inventory_concentration_title' => 'اعتماد كبير على منتجات قليلة',
+    'advice_inventory_concentration_text' => 'أعلى %d منتجات تشكل %s من إجمالي مبيعاتك. حاول تنويع المنتجات الناجحة لتقليل المخاطر.',
+    'advice_customers_retention_low_title' => 'معدل عودة عملاء منخفض',
+    'advice_customers_retention_low_text' => 'فقط %s من عملائك قاموا بالشراء أكثر من مرة. ركز على برامج الولاء وخدمة ما بعد البيع.',
+    'advice_customers_retention_high_title' => 'ولاء عملاء مرتفع',
+    'advice_customers_retention_high_text' => 'ممتاز! %s من عملائك عادوا للشراء مرة أخرى. هذا مؤشر قوي على رضا العملاء.',
+    'advice_customers_new_title' => 'اكتساب عملاء جدد',
+    'advice_customers_new_text' => 'نجحت في كسب %d عميل جديد هذا العام. استمر في الحملات التسويقية.',
 ];

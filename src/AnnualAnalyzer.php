@@ -347,7 +347,172 @@ class AnnualAnalyzer {
             }
         }
 
+        // 8. Inventory Analysis
+        $invStats = $this->getInventoryStats();
+        
+        if ($invStats['stagnant_count'] > 0) {
+            $advice[] = [
+                'type' => 'warning',
+                'title' => __('advice_inventory_stagnant_title'),
+                'text' => sprintf(__('advice_inventory_stagnant_text'), $invStats['stagnant_count'])
+            ];
+        }
+
+        if ($invStats['turnover_ratio'] < 2 && $stats['total_orders'] > 0) {
+             $advice[] = [
+                'type' => 'info',
+                'title' => __('advice_inventory_turnover_low_title'),
+                'text' => __('advice_inventory_turnover_low_text')
+            ];
+        }
+
+        if ($invStats['top_product_concentration'] > 50) {
+             $advice[] = [
+                'type' => 'warning',
+                'title' => __('advice_inventory_concentration_title'),
+                'text' => sprintf(__('advice_inventory_concentration_text'), 5, number_format($invStats['top_product_concentration'], 1) . "%")
+            ];
+        }
+
+        // 9. Customer Analysis
+        $custStats = $this->getCustomerStats();
+
+        if ($custStats['total_customers'] > 10) { // Only if we have enough data
+            if ($custStats['retention_rate'] < 10) {
+                $advice[] = [
+                    'type' => 'danger',
+                    'title' => __('advice_customers_retention_low_title'),
+                    'text' => sprintf(__('advice_customers_retention_low_text'), number_format($custStats['retention_rate'], 1) . "%")
+                ];
+            } elseif ($custStats['retention_rate'] > 40) {
+                $advice[] = [
+                    'type' => 'success',
+                    'title' => __('advice_customers_retention_high_title'),
+                    'text' => sprintf(__('advice_customers_retention_high_text'), number_format($custStats['retention_rate'], 1) . "%")
+                ];
+            }
+        }
+
+        if ($custStats['new_customers'] > 0) {
+             $advice[] = [
+                'type' => 'success',
+                'title' => __('advice_customers_new_title'),
+                'text' => sprintf(__('advice_customers_new_text'), $custStats['new_customers'])
+            ];
+        }
+
         return $advice;
+    }
+
+    private function getInventoryStats() {
+        $startDate = "{$this->year}-01-01 00:00:00";
+        $endDate = "{$this->year}-12-31 23:59:59";
+
+        // 1. Stagnant Stock (Products with stock > 0 not sold in this year)
+        // Note: This checks if product was EVER sold in the year.
+        $sqlStagnant = "
+            SELECT COUNT(*) as count 
+            FROM products p
+            WHERE p.quantity > 0 
+            AND p.id NOT IN (
+                SELECT DISTINCT ii.product_id
+                FROM invoice_items ii
+                JOIN invoices i ON ii.invoice_id = i.id
+                WHERE i.created_at BETWEEN ? AND ?
+            )
+        ";
+        $stmt = $this->conn->prepare($sqlStagnant);
+        $stmt->bind_param("ss", $startDate, $endDate);
+        $stmt->execute();
+        $stagnantCount = $stmt->get_result()->fetch_assoc()['count'];
+
+        // 2. Turnover Ratio (Approx: Total Items Sold / Current Total Stock)
+        // A better formula uses average inventory, but we only have current stock.
+        $sqlTotalStock = "SELECT COALESCE(SUM(quantity), 0) as total_stock FROM products";
+        $totalStock = $this->conn->query($sqlTotalStock)->fetch_assoc()['total_stock'];
+        
+        $sqlSold = "
+            SELECT COALESCE(SUM(ii.quantity), 0) as sold 
+            FROM invoice_items ii 
+            JOIN invoices i ON ii.invoice_id = i.id 
+            WHERE i.created_at BETWEEN ? AND ?
+        ";
+        $stmt2 = $this->conn->prepare($sqlSold);
+        $stmt2->bind_param("ss", $startDate, $endDate);
+        $stmt2->execute();
+        $soldCount = $stmt2->get_result()->fetch_assoc()['sold'];
+
+        $turnoverRatio = $totalStock > 0 ? $soldCount / $totalStock : 0;
+
+        // 3. Product Concentration (Revenue from top 5 products / Total Revenue)
+        $topProducts = $this->getTopProducts();
+        $topRevenue = 0;
+        foreach($topProducts as $p) {
+            $topRevenue += $p['revenue'];
+        }
+        
+        // We need total revenue again or pass it. For simplicity, fetch it quickly or calculate relative to just products.
+        // Let's use total revenue from products only to be accurate.
+        $sqlTotalRev = "
+            SELECT COALESCE(SUM(ii.quantity * ii.price), 0) as total_rev
+            FROM invoice_items ii
+            JOIN invoices i ON ii.invoice_id = i.id
+            WHERE i.created_at BETWEEN ? AND ?
+        ";
+        $stmt3 = $this->conn->prepare($sqlTotalRev);
+        $stmt3->bind_param("ss", $startDate, $endDate);
+        $stmt3->execute();
+        $totalProductRevenue = $stmt3->get_result()->fetch_assoc()['total_rev'];
+
+        $concentration = $totalProductRevenue > 0 ? ($topRevenue / $totalProductRevenue) * 100 : 0;
+
+        return [
+            'stagnant_count' => $stagnantCount,
+            'turnover_ratio' => $turnoverRatio,
+            'top_product_concentration' => $concentration
+        ];
+    }
+
+    private function getCustomerStats() {
+        $startDate = "{$this->year}-01-01 00:00:00";
+        $endDate = "{$this->year}-12-31 23:59:59";
+
+        // 1. Retention Rate: % of customers who bought more than once in the period
+        // We check unique customers in period, and how many of them have > 1 invoice.
+        $sqlRetention = "
+            SELECT 
+                COUNT(customer_id) as total_active_customers,
+                SUM(CASE WHEN order_count > 1 THEN 1 ELSE 0 END) as returning_customers
+            FROM (
+                SELECT customer_id, COUNT(id) as order_count
+                FROM invoices
+                WHERE created_at BETWEEN ? AND ?
+                AND customer_id IS NOT NULL
+                GROUP BY customer_id
+            ) as sub
+        ";
+        $stmt = $this->conn->prepare($sqlRetention);
+        $stmt->bind_param("ss", $startDate, $endDate);
+        $stmt->execute();
+        $res = $stmt->get_result()->fetch_assoc();
+        
+        $totalActive = $res['total_active_customers'];
+        $returning = $res['returning_customers'];
+        $retentionRate = $totalActive > 0 ? ($returning / $totalActive) * 100 : 0;
+
+        // 2. New Customers (Approximation: Customers created in this year)
+        // Assuming 'created_at' in customers table is reliable.
+        $sqlNew = "SELECT COUNT(*) as new_count FROM customers WHERE created_at BETWEEN ? AND ?";
+        $stmt2 = $this->conn->prepare($sqlNew);
+        $stmt2->bind_param("ss", $startDate, $endDate);
+        $stmt2->execute();
+        $newCustomers = $stmt2->get_result()->fetch_assoc()['new_count'];
+
+        return [
+            'retention_rate' => $retentionRate,
+            'new_customers' => $newCustomers,
+            'total_customers' => $totalActive
+        ];
     }
 
     private function calculateHealthScore($stats, $prevStats) {

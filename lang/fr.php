@@ -1236,4 +1236,18 @@ return [
     'advice_returns_low_text' => 'Le taux de retour est seulement de %s. Cela indique la satisfaction des clients et la qualité des produits.',
     'advice_expense_top_cat_title' => 'Catégorie de dépenses la plus élevée : %s',
     'advice_expense_top_cat_text' => 'La catégorie \'%s\' représente %s des dépenses totales. Est-il possible de réduire les coûts dans ce domaine ?',
+
+    // New Annual Analysis Keys - Inventory & Customers
+    'advice_inventory_stagnant_title' => 'Stock Dormant',
+    'advice_inventory_stagnant_text' => 'Vous avez %d produits en stock qui n\'ont pas été vendus cette année. Envisagez des promotions pour les écouler.',
+    'advice_inventory_turnover_low_title' => 'Faible rotation des stocks',
+    'advice_inventory_turnover_low_text' => 'Le mouvement des stocks est lent. Vous détenez de grandes quantités par rapport aux ventes, ce qui immobilise la trésorerie.',
+    'advice_inventory_concentration_title' => 'Forte concentration produit',
+    'advice_inventory_concentration_text' => 'Les %d meilleurs produits représentent %s de vos ventes totales. Diversifiez votre catalogue pour réduire les risques.',
+    'advice_customers_retention_low_title' => 'Faible rétention client',
+    'advice_customers_retention_low_text' => 'Seulement %s de vos clients ont acheté plus d\'une fois. Concentrez-vous sur la fidélisation.',
+    'advice_customers_retention_high_title' => 'Fidélité client élevée',
+    'advice_customers_retention_high_text' => 'Excellent ! %s de vos clients sont revenus. C\'est un indicateur fort de satisfaction.',
+    'advice_customers_new_title' => 'Nouveaux Clients',
+    'advice_customers_new_text' => 'Vous avez acquis %d nouveaux clients cette année. Continuez vos efforts marketing.',
 ];
