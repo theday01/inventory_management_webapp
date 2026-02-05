@@ -172,10 +172,10 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     }
 
     /* تنسيق محدد لأعمدة الجدول */
-    thead th:nth-child(1) { text-align: right !important; width: 45% !important; }
+    thead th:nth-child(1) { text-align: start !important; width: 45% !important; }
     thead th:nth-child(2) { text-align: center !important; width: 15% !important; }
     thead th:nth-child(3) { text-align: center !important; width: 20% !important; }
-    thead th:nth-child(4) { text-align: left !important; width: 20% !important; }
+    thead th:nth-child(4) { text-align: end !important; width: 20% !important; }
 
     tbody tr {
         page-break-inside: avoid !important;
@@ -190,10 +190,10 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     }
 
     /* تنسيق محدد لخلايا الجدول */
-    tbody td:nth-child(1) { text-align: right !important; }
+    tbody td:nth-child(1) { text-align: start !important; }
     tbody td:nth-child(2) { text-align: center !important; }
     tbody td:nth-child(3) { text-align: center !important; }
-    tbody td:nth-child(4) { text-align: left !important; }
+    tbody td:nth-child(4) { text-align: end !important; }
 
     /* 11. تحسين صف الكميات */
     tbody td:nth-child(2) span {
@@ -224,7 +224,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
     /* تنسيق عمود التاريخ (يمين) */
     .invoice-header-grid > div:first-child {
-        text-align: right !important;
+        text-align: start !important;
         grid-column: 1 !important;
         padding: 0 10px !important;
     }
@@ -242,7 +242,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
     /* تنسيق عمود رقم الفاتورة (يسار) */
     .invoice-header-grid > div:last-child {
-        text-align: left !important;
+        text-align: end !important;
         grid-column: 3 !important;
         padding: 0 10px !important;
     }
@@ -587,7 +587,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
         </div>
 
         <div class="flex-1 overflow-y-auto">
-            <div id="invoice-print-area" class="p-8 bg-white text-gray-900">
+            <div id="invoice-print-area" class="p-8 bg-white text-gray-900" dir="<?php echo get_dir(); ?>">
                             <!-- Header: Invoice Title and Logo -->
                 <div class="flex items-center justify-between pb-6 mb-6 border-b-2 border-gray-300">
                     <div>
@@ -629,7 +629,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 <!-- Three Columns: Date, Barcode, Invoice Number -->
                 <div class="grid grid-cols-3 gap-6 pb-6 mb-6 border-b border-gray-200 invoice-header-grid">
                         <!-- تاريخ الإصدار - يمين -->
-                    <div class="text-right">
+                    <div class="text-start">
                         <h3 class="text-xs font-bold text-gray-500 uppercase mb-2"><?php echo __('issue_date'); ?></h3>
                         <p class="text-base font-bold text-gray-900" id="invoice-date">-</p>
                         <p class="text-sm text-gray-600" id="invoice-time">-</p>
@@ -641,7 +641,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                     </div>
 
                     <!-- رقم الفاتورة - يسار -->
-                    <div class="text-left">
+                    <div class="text-end">
                         <h3 class="text-xs font-bold text-gray-500 uppercase mb-2"><?php echo __('invoice_no'); ?></h3>
                         <p class="text-2xl font-bold text-gray-900" id="invoice-number">-</p>
                     </div>
@@ -652,10 +652,10 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                         <table class="w-full text-sm invoice-items-container">
                             <thead class="bg-gray-100">
                                 <tr class="border-b-2 border-gray-300">
-                                    <th class="text-right py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('product_col'); ?></th>
+                                    <th class="text-start py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('product_col'); ?></th>
                                     <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('quantity_col'); ?></th>
                                     <th class="text-center py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('price_col'); ?></th>
-                                    <th class="text-left py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('total_col'); ?></th>
+                                    <th class="text-end py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('total_col'); ?></th>
                                 </tr>
                             </thead>
                             <tbody id="invoice-items"></tbody>
@@ -1045,14 +1045,14 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             const row = document.createElement('tr');
             row.className = 'border-b border-gray-200 invoice-item-row hover:bg-gray-50 transition-colors';
             row.innerHTML = `
-                <td class="py-3 px-4 text-gray-800 font-bold">${item.product_name}</td>
+                <td class="py-3 px-4 text-gray-800 font-bold text-start">${item.product_name}</td>
                 <td class="py-3 px-4 text-center">
                     <span class="inline-block bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-lg text-sm">
                         ${item.quantity}
                     </span>
                 </td>
                 <td class="py-3 px-4 text-center text-gray-700 font-semibold">${parseFloat(item.price).toFixed(2)} ${currency}</td>
-                <td class="py-3 px-4 text-left">
+                <td class="py-3 px-4 text-end">
                     <span class="font-extrabold text-gray-900 text-base">
                         ${itemTotal.toFixed(2)} ${currency}
                     </span>
@@ -1152,7 +1152,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=80mm">
-    <title>فاتورة حرارية #${String(currentInvoiceData.id).padStart(6, '0')}</title>
+    <title>${window.__('invoice_header')} #${String(currentInvoiceData.id).padStart(6, '0')}</title>
     <style>
         @page { size: 80mm auto; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }

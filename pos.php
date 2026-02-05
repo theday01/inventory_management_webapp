@@ -269,10 +269,10 @@ $printMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['settin
     }
 
     /* تنسيق محدد لأعمدة الجدول */
-    thead th:nth-child(1) { text-align: right !important; width: 45% !important; }
+    thead th:nth-child(1) { text-align: start !important; width: 45% !important; }
     thead th:nth-child(2) { text-align: center !important; width: 15% !important; }
     thead th:nth-child(3) { text-align: center !important; width: 20% !important; }
-    thead th:nth-child(4) { text-align: left !important; width: 20% !important; }
+    thead th:nth-child(4) { text-align: end !important; width: 20% !important; }
 
     tbody tr {
         page-break-inside: avoid !important;
@@ -287,10 +287,10 @@ $printMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['settin
     }
 
     /* تنسيق محدد لخلايا الجدول */
-    tbody td:nth-child(1) { text-align: right !important; }
+    tbody td:nth-child(1) { text-align: start !important; }
     tbody td:nth-child(2) { text-align: center !important; }
     tbody td:nth-child(3) { text-align: center !important; }
-    tbody td:nth-child(4) { text-align: left !important; }
+    tbody td:nth-child(4) { text-align: end !important; }
 
     /* 11. تحسين صف الكميات */
     tbody td:nth-child(2) span {
@@ -321,7 +321,7 @@ $printMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['settin
 
     /* تنسيق عمود التاريخ (يمين) */
     .invoice-header-grid > div:first-child {
-        text-align: right !important;
+        text-align: start !important;
         grid-column: 1 !important;
         padding: 0 10px !important;
     }
@@ -339,7 +339,7 @@ $printMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['settin
 
     /* تنسيق عمود رقم الفاتورة (يسار) */
     .invoice-header-grid > div:last-child {
-        text-align: left !important;
+        text-align: end !important;
         grid-column: 3 !important;
         padding: 0 10px !important;
     }
@@ -1018,7 +1018,7 @@ html:not(.dark) .text-red-500 {
         </div>
 
         <div class="flex-1 overflow-y-auto">
-            <div id="invoice-print-area" class="p-8 bg-white text-gray-900">
+            <div id="invoice-print-area" class="p-8 bg-white text-gray-900" dir="<?php echo get_dir(); ?>">
                             <!-- Header: Invoice Title and Logo -->
                 <div class="flex items-center justify-between pb-6 mb-6 border-b-2 border-gray-300">
                     <div>
@@ -1060,7 +1060,7 @@ html:not(.dark) .text-red-500 {
                 <!-- Three Columns: Date, Barcode, Invoice Number -->
                 <div class="grid grid-cols-3 gap-6 pb-6 mb-6 border-b border-gray-200 invoice-header-grid">
                         <!-- تاريخ الإصدار - يمين -->
-                    <div class="text-right">
+                    <div class="text-start">
                         <h3 class="text-xs font-bold text-gray-500 uppercase mb-2"><?php echo __('issue_date'); ?></h3>
                         <p class="text-base font-bold text-gray-900" id="invoice-date">-</p>
                         <p class="text-sm text-gray-600" id="invoice-time">-</p>
@@ -1072,7 +1072,7 @@ html:not(.dark) .text-red-500 {
                     </div>
 
                     <!-- رقم الفاتورة - يسار -->
-                    <div class="text-left">
+                    <div class="text-end">
                         <h3 class="text-xs font-bold text-gray-500 uppercase mb-2"><?php echo __('invoice_no'); ?></h3>
                         <p class="text-2xl font-bold text-gray-900" id="invoice-number">-</p>
                     </div>
@@ -1146,13 +1146,13 @@ html:not(.dark) .text-red-500 {
 <div id="thermal-invoice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs mx-auto overflow-hidden flex flex-col" style="max-height: 90vh;">
         <div class="bg-dark-surface border-b border-white/5 p-4 flex items-center justify-between shrink-0">
-            <h2 class="text-lg font-bold text-white">طباعة حرارية</h2>
+            <h2 class="text-lg font-bold text-white"><?php echo __('thermal_print_modal'); ?></h2>
             <button id="close-thermal-invoice-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 bg-white">
-            <div id="thermal-invoice-print-area" class="text-black text-xs leading-tight font-mono" dir="rtl">
+            <div id="thermal-invoice-print-area" class="text-black text-xs leading-tight font-mono" dir="<?php echo get_dir(); ?>">
                 <!-- Thermal invoice content will be populated here -->
             </div>
         </div>
@@ -1311,6 +1311,8 @@ html:not(.dark) .text-red-500 {
 <script>
     const soundNotificationsEnabled = <?php echo ($soundEnabled == '1') ? 'true' : 'false'; ?>;
     const printMode = '<?php echo $printMode; ?>';
+    const currentLang = '<?php echo get_locale(); ?>';
+    const currentDir = '<?php echo get_dir(); ?>';
 
     // Customer Display Channel
     const customerDisplayChannel = new BroadcastChannel('pos_display');
@@ -2865,24 +2867,24 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 
     <div class="invoice-info">
-        <div class="info-row"><span>رقم الفاتورة:</span><span>#${String(data.id).padStart(6, '0')}</span></div>
-        <div class="info-row"><span>التاريخ:</span><span>${formattedDate}</span></div>
-        <div class="info-row"><span>الوقت:</span><span>${formattedTime}</span></div>
+        <div class="info-row"><span>${window.__('invoice_number')}:</span><span>#${String(data.id).padStart(6, '0')}</span></div>
+        <div class="info-row"><span>${window.__('date')}:</span><span>${formattedDate}</span></div>
+        <div class="info-row"><span>${window.__('time')}:</span><span>${formattedTime}</span></div>
     </div>
 
     ${data.customer ? `
     <div class="customer-section">
-        <div style="font-weight: bold;">العميل: ${data.customer.name}</div>
+        <div style="font-weight: bold;">${window.__('customer')}: ${data.customer.name}</div>
         ${data.customer.phone ? `<div>${data.customer.phone}</div>` : ''}
     </div>
     ` : `
     <div class="customer-section">
-        <div>💵 عميل نقدي</div>
+        <div>💵 ${window.__('cash_customer')}</div>
     </div>
     `}
 
     <div class="items-table">
-        <div class="items-header">المنتجات (${data.items.length})</div>`;
+        <div class="items-header">${window.__('product_col')} (${data.items.length})</div>`;
 
         data.items.forEach((item, index) => {
             const itemTotal = item.price * item.quantity;
@@ -2898,24 +2900,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         thermalContent += `</div>
             <div class="totals-section">
-                <div class="total-row"><span>المجموع:</span><span>${data.subtotal.toFixed(2)} ${currency}</span></div>`;
+                <div class="total-row"><span>${window.__('invoice_subtotal_label')}</span><span>${data.subtotal.toFixed(2)} ${currency}</span></div>`;
 
         if (taxEnabled) {
             thermalContent += `<div class="total-row"><span>${taxLabel} (${(taxRate * 100).toFixed(0)}%):</span><span>${data.tax.toFixed(2)} ${currency}</span></div>`;
         }
         if (data.delivery > 0) {
-            thermalContent += `<div class="total-row"><span>التوصيل:</span><span>${data.delivery.toFixed(2)} ${currency}</span></div>`;
+            thermalContent += `<div class="total-row"><span>${window.__('delivery')}:</span><span>${data.delivery.toFixed(2)} ${currency}</span></div>`;
             if (data.deliveryCity) {
-            thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>مدينة التوصيل:</span><span>${data.deliveryCity}</span></div>`;
+            thermalContent += `<div class="total-row" style="font-size: 9pt; color: #666;"><span>${window.__('delivery_city_label')}</span><span>${data.deliveryCity}</span></div>`;
         }
     }
     
     if (data.discount_amount && data.discount_amount > 0) {
-        thermalContent += `<div class="total-row"><span>الخصم:</span><span>-${data.discount_amount.toFixed(2)} ${currency}</span></div>`;
+        thermalContent += `<div class="total-row"><span>${window.__('discount')}:</span><span>-${data.discount_amount.toFixed(2)} ${currency}</span></div>`;
     }
 
     thermalContent += `
-        <div class="total-row grand-total"><span>الإجمالي:</span><span>${data.total.toFixed(2)} ${currency}</span></div>`;
+        <div class="total-row grand-total"><span>${window.__('invoice_total_label')}</span><span>${data.total.toFixed(2)} ${currency}</span></div>`;
 
     const recVal = data.amount_received || data.amountReceived || 0;
     const chgVal = data.change_due || data.changeDue || 0;
@@ -2923,11 +2925,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (recVal > 0) {
         thermalContent += `
         <div class="total-row" style="border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm;">
-            <span>المبلغ المستلم:</span>
+            <span>${window.__('amount_received_label')}</span>
             <span>${parseFloat(recVal).toFixed(2)} ${currency}</span>
         </div>
         <div class="total-row">
-            <span>المبلغ الذي تم رده:</span>
+            <span>${window.__('refunded_amount_label')}</span>
             <span>${parseFloat(chgVal).toFixed(2)} ${currency}</span>
         </div>`;
     }
@@ -2940,7 +2942,7 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 
     <div class="footer">
-        <div style="font-weight: bold; margin-bottom: 2mm;">🌟 شكراً لثقتكم بنا 🌟</div>
+        <div style="font-weight: bold; margin-bottom: 2mm;">🌟 ${window.__('thanks_for_trust')} 🌟</div>
         ${shopName ? `<div>${shopName}</div>` : ''}
     </div>`;
 
@@ -2974,11 +2976,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const thermalContent = generateThermalContent(currentInvoiceData);
 
         const fullContent = `<!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html dir="${currentDir}" lang="${currentLang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=80mm">
-    <title>فاتورة حرارية #${String(currentInvoiceData.id).padStart(6, '0')}</title>
+    <title>${window.__('invoice_header')} #${String(currentInvoiceData.id).padStart(6, '0')}</title>
     <style>
         @page { size: 80mm auto; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
