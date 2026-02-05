@@ -690,7 +690,19 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
     </div>
     
     <header class="bg-dark-surface/50 backdrop-blur-md border-b border-white/5 p-6 sticky top-0 z-20 no-print">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Tabs Navigation -->
+        <div class="flex gap-4 mb-4 border-b border-white/5 pb-4">
+            <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-bold transition-all">
+                <span class="material-icons-round text-sm">dashboard</span>
+                <?php echo __('dashboard'); ?>
+            </button>
+            <button onclick="switchTab('annual-tips')" id="tab-btn-annual-tips" class="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white font-bold transition-all">
+                <span class="material-icons-round text-sm">lightbulb</span>
+                <?php echo __('annual_tips'); ?>
+            </button>
+        </div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 tab-specific" id="header-controls-dashboard">
             <div>
                 <h2 class="text-2xl font-bold text-white flex items-center gap-2">
                     <span class="material-icons-round text-pink-500">analytics</span>
@@ -738,6 +750,8 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
 
     <div class="flex-1 overflow-y-auto p-6 scroll-smooth">
         
+        <!-- DASHBOARD TAB -->
+        <div id="tab-dashboard" class="tab-content block">
         <!-- Welcome & Quick Actions Section -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             <!-- Welcome Banner -->
@@ -1280,6 +1294,159 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 </div>
             </div>
         </div>  
+        </div> <!-- End Dashboard Tab -->
+
+        <!-- ANNUAL TIPS TAB -->
+        <div id="tab-annual-tips" class="tab-content hidden space-y-6">
+            <!-- Filter Section -->
+            <div class="glass-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span class="material-icons-round text-yellow-500">lightbulb</span>
+                        <?php echo __('annual_tips'); ?>
+                    </h3>
+                    <p class="text-gray-400 text-sm mt-1"><?php echo __('annual_tips_tab_desc'); ?></p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label for="annual-year-select" class="text-gray-400 text-sm"><?php echo __('year_label'); ?>:</label>
+                    <select id="annual-year-select" class="bg-dark border border-white/10 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
+                        <!-- Populated via JS -->
+                    </select>
+                    <button id="analyze-year-btn" class="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-bold transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
+                        <span class="material-icons-round">analytics</span>
+                        <?php echo __('analyze_btn'); ?>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Initial State / Loading -->
+            <div id="annual-loading" class="hidden text-center py-20">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4"></div>
+                <p class="text-gray-400"><?php echo __('processing_data'); ?></p>
+            </div>
+
+            <!-- Results Container -->
+            <div id="annual-results" class="hidden space-y-6">
+                
+                <!-- Health Score & Key Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Score Card -->
+                    <div class="glass-card p-6 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent"></div>
+                        <div class="relative z-10 w-full flex flex-col items-center">
+                            <h4 class="text-gray-400 text-sm font-bold uppercase tracking-wider mb-4"><?php echo __('financial_health_score'); ?></h4>
+                            <div class="relative w-40 h-40 flex items-center justify-center mb-2">
+                                <svg class="w-full h-full transform -rotate-90 drop-shadow-2xl">
+                                    <circle cx="80" cy="80" r="70" stroke="rgba(255,255,255,0.1)" stroke-width="12" fill="transparent" />
+                                    <circle id="score-circle" cx="80" cy="80" r="70" stroke="#10B981" stroke-width="12" fill="transparent" stroke-dasharray="439.8" stroke-dashoffset="439.8" style="transition: stroke-dashoffset 1.5s ease-out;" />
+                                </svg>
+                                <div class="absolute flex flex-col items-center">
+                                    <span id="score-value" class="text-5xl font-bold text-white">0</span>
+                                    <span class="text-xs text-gray-500">/ 100</span>
+                                </div>
+                            </div>
+                            <p id="score-verdict" class="mt-2 font-bold text-lg text-white"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Revenue & Profit -->
+                    <div class="glass-card p-6 flex flex-col justify-center gap-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-5">
+                            <span class="material-icons-round text-8xl">payments</span>
+                        </div>
+                        
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-end mb-1">
+                                <p class="text-gray-400 text-xs uppercase font-bold"><?php echo __('total_revenue'); ?></p>
+                                <span id="revenue-growth" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-700 text-gray-300"></span>
+                            </div>
+                            <h3 class="text-3xl font-bold text-white" id="annual-revenue">0</h3>
+                        </div>
+                        
+                        <div class="w-full h-px bg-white/5"></div>
+
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-end mb-1">
+                                <p class="text-gray-400 text-xs uppercase font-bold"><?php echo __('net_profit'); ?></p>
+                                <span id="profit-growth" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-700 text-gray-300"></span>
+                            </div>
+                            <h3 class="text-3xl font-bold text-green-400" id="annual-profit">0</h3>
+                            <div class="mt-2 flex items-center gap-2">
+                                <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
+                                    <div id="margin-bar" class="bg-green-500 h-full" style="width: 0%"></div>
+                                </div>
+                                <span id="annual-margin" class="text-xs font-bold text-gray-300">0%</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500 mt-1"><?php echo __('profit_margin'); ?></p>
+                        </div>
+                    </div>
+
+                    <!-- Best/Worst Months -->
+                    <div class="glass-card p-6 flex flex-col justify-center">
+                        <h4 class="text-white font-bold mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
+                            <span class="material-icons-round text-purple-500">calendar_today</span>
+                            <?php echo __('seasonality'); ?>
+                        </h4>
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                                    <span class="material-icons-round text-green-500">trending_up</span>
+                                </div>
+                                <div class="flex-1">
+                                    <span class="text-gray-400 text-xs block mb-0.5"><?php echo __('best_month'); ?></span>
+                                    <div class="flex justify-between items-end">
+                                        <p class="text-white font-bold text-lg" id="best-month-name">-</p>
+                                        <p class="text-xs font-mono text-green-400" id="best-month-val">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                    <span class="material-icons-round text-red-500">trending_down</span>
+                                </div>
+                                <div class="flex-1">
+                                    <span class="text-gray-400 text-xs block mb-0.5"><?php echo __('worst_month'); ?></span>
+                                    <div class="flex justify-between items-end">
+                                        <p class="text-white font-bold text-lg" id="worst-month-name">-</p>
+                                        <p class="text-xs font-mono text-red-400" id="worst-month-val">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Advice -->
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                        <span class="material-icons-round text-blue-400">psychology</span>
+                        <?php echo __('smart_recommendations'); ?>
+                    </h3>
+                    <div id="advice-container" class="grid grid-cols-1 gap-4">
+                        <!-- Dynamic Content -->
+                    </div>
+                </div>
+                
+                <!-- Top Products Table -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4"><?php echo __('top_products_annual'); ?></h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-right">
+                            <thead>
+                                <tr class="text-gray-400 border-b border-white/10">
+                                    <th class="pb-2"><?php echo __('product'); ?></th>
+                                    <th class="pb-2"><?php echo __('quantity_sold'); ?></th>
+                                    <th class="pb-2"><?php echo __('revenue'); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody id="annual-top-products-body" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
 
     </div>
 </main>
@@ -2330,7 +2497,220 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             }
         }
         checkHolidayStatus();
+
+        // Initialize Year Selector
+        const yearSelect = document.getElementById('annual-year-select');
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear; y >= currentYear - 5; y--) {
+            const option = document.createElement('option');
+            option.value = y;
+            option.textContent = y;
+            yearSelect.appendChild(option);
+        }
+
+        document.getElementById('analyze-year-btn').addEventListener('click', loadAnnualAnalysis);
     });
+
+    // Tab Switching Logic
+    function switchTab(tabName) {
+        // Update Buttons
+        document.querySelectorAll('button[id^="tab-btn-"]').forEach(btn => {
+            if (btn.id === 'tab-btn-' + tabName) {
+                btn.classList.remove('bg-transparent', 'text-gray-400', 'hover:bg-white/5', 'hover:text-white');
+                btn.classList.add('bg-primary', 'text-white');
+            } else {
+                btn.classList.add('bg-transparent', 'text-gray-400', 'hover:bg-white/5', 'hover:text-white');
+                btn.classList.remove('bg-primary', 'text-white');
+            }
+        });
+
+        // Update Content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            if (content.id === 'tab-' + tabName) {
+                content.classList.remove('hidden');
+                content.classList.add('block');
+            } else {
+                content.classList.add('hidden');
+                content.classList.remove('block');
+            }
+        });
+
+        // Toggle Header Controls
+        const dashControls = document.getElementById('header-controls-dashboard');
+        if (tabName === 'dashboard') {
+            dashControls.classList.remove('hidden');
+            dashControls.classList.add('flex');
+        } else {
+            dashControls.classList.add('hidden');
+            dashControls.classList.remove('flex');
+        }
+    }
+
+    async function loadAnnualAnalysis() {
+        const year = document.getElementById('annual-year-select').value;
+        const resultsDiv = document.getElementById('annual-results');
+        const loadingDiv = document.getElementById('annual-loading');
+        
+        resultsDiv.classList.add('hidden');
+        loadingDiv.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`api.php?action=get_annual_tips&year=${year}`);
+            const result = await response.json();
+
+            loadingDiv.classList.add('hidden');
+
+            if (result.success) {
+                renderAnnualAnalysis(result.data);
+                resultsDiv.classList.remove('hidden');
+            } else {
+                Swal.fire({
+                    title: 'خطأ',
+                    text: result.message,
+                    icon: 'error'
+                });
+            }
+        } catch (error) {
+            loadingDiv.classList.add('hidden');
+            console.error('Analysis error:', error);
+            Swal.fire('خطأ', 'حدث خطأ في الاتصال', 'error');
+        }
+    }
+
+    function renderAnnualAnalysis(data) {
+        const stats = data.stats;
+        const growth = data.growth;
+        const advice = data.advice;
+        
+        // 1. Score Animation
+        const score = Math.round(data.score);
+        document.getElementById('score-value').textContent = score;
+        
+        const circle = document.getElementById('score-circle');
+        const radius = 70;
+        const circumference = 2 * Math.PI * radius; // ~439.8
+        const offset = circumference - (score / 100) * circumference;
+        
+        // Reset animation
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = circumference;
+        
+        // Color based on score
+        let color = '#EF4444'; // Red
+        let verdict = 'ضعيف';
+        if (score >= 80) { color = '#10B981'; verdict = 'ممتاز 🌟'; } // Green
+        else if (score >= 60) { color = '#3B82F6'; verdict = 'جيد جداً ✅'; } // Blue
+        else if (score >= 40) { color = '#F59E0B'; verdict = 'متوسط ⚠️'; } // Yellow
+        
+        circle.style.stroke = color;
+        document.getElementById('score-verdict').textContent = verdict;
+        document.getElementById('score-verdict').style.color = color;
+
+        // Trigger animation
+        setTimeout(() => {
+            circle.style.strokeDashoffset = offset;
+        }, 100);
+
+        // 2. Metrics
+        document.getElementById('annual-revenue').innerHTML = formatNumber(stats.total_revenue) + ' <span class="text-sm font-normal text-gray-500">' + currency + '</span>';
+        document.getElementById('annual-profit').innerHTML = formatNumber(stats.net_profit) + ' <span class="text-sm font-normal text-gray-500">' + currency + '</span>';
+        document.getElementById('annual-margin').textContent = stats.profit_margin.toFixed(1) + '%';
+        
+        // Margin Bar
+        const marginBar = document.getElementById('margin-bar');
+        marginBar.style.width = Math.min(stats.profit_margin, 100) + '%';
+        marginBar.className = 'h-full transition-all duration-1000 ' + (stats.profit_margin < 10 ? 'bg-red-500' : (stats.profit_margin < 25 ? 'bg-yellow-500' : 'bg-green-500'));
+
+        // Growth Badges
+        const renderGrowth = (elementId, value) => {
+            const el = document.getElementById(elementId);
+            if (value > 0) {
+                el.textContent = '+' + value.toFixed(1) + '%';
+                el.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400';
+            } else if (value < 0) {
+                el.textContent = value.toFixed(1) + '%';
+                el.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400';
+            } else {
+                el.textContent = '0%';
+                el.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400';
+            }
+        };
+        renderGrowth('revenue-growth', growth.revenue_growth);
+        renderGrowth('profit-growth', growth.profit_growth);
+
+        // 3. Seasonality
+        const getMonthName = (m) => {
+            const months = ['-', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+            return months[m] || '-';
+        };
+        
+        document.getElementById('best-month-name').textContent = getMonthName(data.monthly.best_month.month);
+        document.getElementById('best-month-val').textContent = formatNumber(data.monthly.best_month.revenue) + ' ' + currency;
+        
+        document.getElementById('worst-month-name').textContent = getMonthName(data.monthly.worst_month.month);
+        document.getElementById('worst-month-val').textContent = formatNumber(data.monthly.worst_month.revenue) + ' ' + currency;
+
+        // 4. Advice
+        const adviceContainer = document.getElementById('advice-container');
+        adviceContainer.innerHTML = '';
+        
+        if (advice.length === 0) {
+            adviceContainer.innerHTML = '<div class="text-center text-gray-500 py-4">لا توجد نصائح محددة لهذا العام.</div>';
+        } else {
+            advice.forEach(tip => {
+                let colorClass = 'bg-blue-500/10 border-blue-500/20 text-blue-200';
+                let icon = 'info';
+                
+                if (tip.type === 'success') {
+                    colorClass = 'bg-green-500/10 border-green-500/20 text-green-200';
+                    icon = 'check_circle';
+                } else if (tip.type === 'warning') {
+                    colorClass = 'bg-yellow-500/10 border-yellow-500/20 text-yellow-200';
+                    icon = 'warning';
+                } else if (tip.type === 'danger') {
+                    colorClass = 'bg-red-500/10 border-red-500/20 text-red-200';
+                    icon = 'error';
+                }
+
+                const div = document.createElement('div');
+                div.className = `p-4 rounded-xl border ${colorClass} flex gap-4 items-start`;
+                div.innerHTML = `
+                    <span class="material-icons-round mt-0.5">${icon}</span>
+                    <div>
+                        <h5 class="font-bold mb-1 text-sm opacity-90">${tip.title}</h5>
+                        <p class="text-xs leading-relaxed opacity-80">${tip.text}</p>
+                    </div>
+                `;
+                adviceContainer.appendChild(div);
+            });
+        }
+
+        // 5. Top Products
+        const tbody = document.getElementById('annual-top-products-body');
+        tbody.innerHTML = '';
+        data.top_products.forEach(p => {
+            const tr = document.createElement('tr');
+            
+            // Safe rendering to prevent XSS
+            const tdName = document.createElement('td');
+            tdName.className = 'py-3 text-white';
+            tdName.textContent = p.name;
+            
+            const tdQty = document.createElement('td');
+            tdQty.className = 'py-3 text-gray-400 font-mono';
+            tdQty.textContent = p.qty;
+            
+            const tdRev = document.createElement('td');
+            tdRev.className = 'py-3 text-primary font-bold font-mono';
+            tdRev.innerHTML = formatNumber(p.revenue) + ' <span class="text-[10px] text-gray-500">' + currency + '</span>'; // currency is safe (from PHP), formatNumber is safe
+            
+            tr.appendChild(tdName);
+            tr.appendChild(tdQty);
+            tr.appendChild(tdRev);
+            
+            tbody.appendChild(tr);
+        });
+    }
 </script>
 
 <?php if ($show_welcome): ?>

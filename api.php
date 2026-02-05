@@ -3,6 +3,7 @@
 session_start();
 require_once 'db.php';
 require_once __DIR__ . '/src/language.php';
+require_once __DIR__ . '/src/AnnualAnalyzer.php';
 
 // منع أي output قبل JSON
 ob_start();
@@ -253,6 +254,9 @@ switch ($action) {
         break;
     case 'getRefunds':
         getRefunds($conn);
+        break;
+    case 'get_annual_tips':
+        get_annual_tips($conn);
         break;
     // Backup Actions
     case 'createBackup':
@@ -4344,6 +4348,23 @@ function getRefunds($conn) {
     $stmt->close();
 
     echo json_encode(['success' => true, 'data' => $refunds, 'total_refunds' => $total_refunds]);
+}
+
+function get_annual_tips($conn) {
+    try {
+        $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+        
+        // Fetch currency setting
+        $res = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
+        $currency = ($res && $res->num_rows > 0) ? $res->fetch_assoc()['setting_value'] : 'MAD';
+
+        $analyzer = new AnnualAnalyzer($conn, $year, $currency);
+        $result = $analyzer->getAnalysis();
+        
+        echo json_encode(['success' => true, 'data' => $result]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
+    }
 }
 
 function performDatabaseBackup($conn) {
