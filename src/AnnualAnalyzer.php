@@ -196,6 +196,28 @@ class AnnualAnalyzer {
         return $products;
     }
 
+    private function getTopExpenseCategory() {
+        $startDate = "{$this->year}-01-01";
+        $endDate = "{$this->year}-12-31";
+
+        $sql = "SELECT category, SUM(amount) as total 
+                FROM expenses 
+                WHERE expense_date BETWEEN ? AND ? 
+                GROUP BY category 
+                ORDER BY total DESC 
+                LIMIT 1";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("ss", $startDate, $endDate);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            return $row;
+        }
+        return null;
+    }
+
     private function generateAdvice($stats, $prevStats, $monthly) {
         $advice = [];
 
@@ -273,6 +295,54 @@ class AnnualAnalyzer {
                     'type' => 'success',
                     'title' => __('advice_growth_positive_title'),
                     'text' => sprintf(__('advice_growth_positive_text'), number_format($growth['revenue_growth'], 1) . "%")
+                ];
+            }
+        }
+
+        // 5. Invoices & AOV
+        if ($stats['avg_order_value'] < 50) { 
+             $advice[] = [
+                'type' => 'warning',
+                'title' => __('advice_aov_low_title'),
+                'text' => sprintf(__('advice_aov_low_text'), number_format($stats['avg_order_value'], 2) . ' ' . $this->currency)
+            ];
+        } else {
+             $advice[] = [
+                'type' => 'success',
+                'title' => __('advice_aov_good_title'),
+                'text' => sprintf(__('advice_aov_good_text'), number_format($stats['avg_order_value'], 2) . ' ' . $this->currency)
+            ];
+        }
+
+        // 6. Returns Analysis
+        if ($stats['gross_revenue'] > 0) {
+            $returnRate = ($stats['total_refunds'] / $stats['gross_revenue']) * 100;
+            if ($returnRate > 5) {
+                 $advice[] = [
+                    'type' => 'danger',
+                    'title' => __('advice_returns_high_title'),
+                    'text' => sprintf(__('advice_returns_high_text'), number_format($returnRate, 1) . "%")
+                ];
+            } else {
+                 $advice[] = [
+                    'type' => 'success',
+                    'title' => __('advice_returns_low_title'),
+                    'text' => sprintf(__('advice_returns_low_text'), number_format($returnRate, 1) . "%")
+                ];
+            }
+        }
+
+        // 7. Expenses Detailed Analysis
+        if ($stats['total_expenses'] > 0) {
+            $topCategory = $this->getTopExpenseCategory();
+            if ($topCategory) {
+                $catPercentage = ($topCategory['total'] / $stats['total_expenses']) * 100;
+                $catNameTranslated = __($topCategory['category']);
+                
+                $advice[] = [
+                    'type' => 'info',
+                    'title' => sprintf(__('advice_expense_top_cat_title'), $catNameTranslated),
+                    'text' => sprintf(__('advice_expense_top_cat_text'), $catNameTranslated, number_format($catPercentage, 1) . "%")
                 ];
             }
         }

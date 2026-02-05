@@ -1224,4 +1224,16 @@ return [
     'advice_year_incomplete_text' => 'البيانات الحالية تمثل جزءاً من السنة فقط. متبقي %s على انتهاء السنة.',
     'time_months_plural' => 'أشهر',
     'time_days_plural' => 'أيام',
+    
+    // New Advice Keys
+    'advice_aov_low_title' => 'متوسط قيمة الفاتورة منخفض',
+    'advice_aov_low_text' => 'متوسط قيمة الفاتورة هو %s. حاول إنشاء عروض ترويجية (Bundles) لزيادة قيمة سلة المشتريات.',
+    'advice_aov_good_title' => 'متوسط قيمة الفاتورة جيد',
+    'advice_aov_good_text' => 'متوسط قيمة الفاتورة هو %s، وهذا مؤشر جيد على قوة الشراء لدى عملائك.',
+    'advice_returns_high_title' => 'معدل الاسترجاع مرتفع',
+    'advice_returns_high_text' => 'نسبة المرتجعات بلغت %s من إجمالي المبيعات. يرجى مراجعة جودة المنتجات أو دقة الوصف لتجنب الخسائر.',
+    'advice_returns_low_title' => 'معدل استرجاع ممتاز',
+    'advice_returns_low_text' => 'نسبة المرتجعات %s فقط. هذا يدل على رضا العملاء وجودة المنتجات.',
+    'advice_expense_top_cat_title' => 'أعلى فئة للمصاريف: %s',
+    'advice_expense_top_cat_text' => 'تستحوذ فئة \'%s\' على %s من إجمالي المصاريف. هل يمكن تقليل التكاليف في هذا الجانب؟',
 ];

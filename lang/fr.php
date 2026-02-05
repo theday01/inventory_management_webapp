@@ -1224,4 +1224,16 @@ return [
     'advice_year_incomplete_text' => 'Les données actuelles ne représentent qu\'une partie de l\'année. Il reste %s avant la fin de l\'année.',
     'time_months_plural' => 'mois',
     'time_days_plural' => 'jours',
+
+    // New Advice Keys
+    'advice_aov_low_title' => 'Valeur moyenne du panier faible',
+    'advice_aov_low_text' => 'La valeur moyenne du panier est de %s. Essayez de créer des offres groupées (Bundles) pour augmenter le panier moyen.',
+    'advice_aov_good_title' => 'Bonne valeur moyenne du panier',
+    'advice_aov_good_text' => 'La valeur moyenne du panier est de %s, ce qui est un bon indicateur du pouvoir d\'achat de vos clients.',
+    'advice_returns_high_title' => 'Taux de retour élevé',
+    'advice_returns_high_text' => 'Le taux de retour a atteint %s des ventes totales. Veuillez vérifier la qualité des produits ou l\'exactitude des descriptions.',
+    'advice_returns_low_title' => 'Excellent taux de retour',
+    'advice_returns_low_text' => 'Le taux de retour est seulement de %s. Cela indique la satisfaction des clients et la qualité des produits.',
+    'advice_expense_top_cat_title' => 'Catégorie de dépenses la plus élevée : %s',
+    'advice_expense_top_cat_text' => 'La catégorie \'%s\' représente %s des dépenses totales. Est-il possible de réduire les coûts dans ce domaine ?',
 ];
