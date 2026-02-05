@@ -17,7 +17,7 @@ return [
     
     // Sidebar
     'smart_shop_system' => 'نظام إدارة المتاجر الذكي',
-    'dashboard' => 'الرئيسية',
+    'dashboard' => 'لوحة التحكم',
     'pos' => 'نقطة البيع',
     'invoices' => 'الفواتير',
     'refunds' => 'المسترجعات',

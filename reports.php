@@ -691,15 +691,18 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
     
     <header class="bg-dark-surface/50 backdrop-blur-md border-b border-white/5 p-6 sticky top-0 z-20 no-print">
         <!-- Tabs Navigation -->
-        <div class="flex gap-4 mb-4 border-b border-white/5 pb-4">
-            <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-bold transition-all">
-                <span class="material-icons-round text-sm">dashboard</span>
-                <?php echo __('dashboard'); ?>
-            </button>
-            <button onclick="switchTab('annual-tips')" id="tab-btn-annual-tips" class="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white font-bold transition-all">
-                <span class="material-icons-round text-sm">lightbulb</span>
-                <?php echo __('annual_tips'); ?>
-            </button>
+        <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
+            <div class="flex gap-4">
+                <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-bold transition-all">
+                    <span class="material-icons-round text-sm">dashboard</span>
+                    <?php echo __('dashboard'); ?>
+                </button>
+                <button onclick="switchTab('annual-tips')" id="tab-btn-annual-tips" class="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white font-bold transition-all">
+                    <span class="material-icons-round text-sm">lightbulb</span>
+                    <?php echo __('annual_tips'); ?>
+                </button>
+            </div>
+            <div id="real-date-time" class="text-gray-400 font-mono text-lg font-bold" dir="ltr"></div>
         </div>
 
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 tab-specific" id="header-controls-dashboard">
@@ -1752,6 +1755,19 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
 
     document.addEventListener('DOMContentLoaded', function() {
         
+        // Real Time Clock
+        function updateRealTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+            const dateString = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+            const container = document.getElementById('real-date-time');
+            if (container) {
+                container.textContent = dateString + ' ' + timeString;
+            }
+        }
+        setInterval(updateRealTime, 1000);
+        updateRealTime();
+
         // const currency = '<?php echo $currency; ?>';
 
         async function loadDashboardStats() {
