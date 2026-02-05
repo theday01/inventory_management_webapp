@@ -203,7 +203,7 @@ class AnnualAnalyzer {
         if ($this->year == date('Y')) {
             $remaining = $this->getRemainingTime();
             $advice[] = [
-                'type' => 'info',
+                'type' => 'warning',
                 'title' => __('advice_year_incomplete_title'),
                 'text' => sprintf(__('advice_year_incomplete_text'), $remaining)
             ];

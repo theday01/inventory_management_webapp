@@ -258,6 +258,9 @@ switch ($action) {
     case 'get_annual_tips':
         get_annual_tips($conn);
         break;
+    case 'get_available_years':
+        get_available_years($conn);
+        break;
     // Backup Actions
     case 'createBackup':
         createBackup($conn);
@@ -4362,6 +4365,27 @@ function get_annual_tips($conn) {
         $result = $analyzer->getAnalysis();
         
         echo json_encode(['success' => true, 'data' => $result]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
+    }
+}
+
+function get_available_years($conn) {
+    try {
+        // Query to get distinct years from invoices
+        $sql = "SELECT DISTINCT YEAR(created_at) as year FROM invoices WHERE created_at IS NOT NULL ORDER BY year DESC";
+        $result = $conn->query($sql);
+        
+        $years = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                if ($row['year']) {
+                    $years[] = (int)$row['year'];
+                }
+            }
+        }
+        
+        echo json_encode(['success' => true, 'data' => $years]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }

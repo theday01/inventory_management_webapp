@@ -767,16 +767,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <span class="material-icons-round text-yellow-500">access_alarm</span>
                                 <?php echo __('end_of_day_reminder_title'); ?>
                             </h3>
-                            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                                <span class="text-sm text-gray-300"><?php echo __('enable_end_day_reminder'); ?></span>
-                                <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="end_day_reminder_enabled" id="toggle-end-day-reminder" value="1"
-                                        class="toggle-checkbox"
-                                        <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '1') ? 'checked' : ''; ?>
-                                        <?php echo $disabledAttr; ?>
-                                        onchange="toggleEndDaySettings(this)" />
-                                    <label for="toggle-end-day-reminder" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
-                                </div>
+                            <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="end_day_reminder_enabled" id="toggle-end-day-reminder" value="1"
+                                    class="toggle-checkbox"
+                                    <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '1') ? 'checked' : ''; ?>
+                                    <?php echo $disabledAttr; ?>
+                                    onchange="toggleEndDaySettings(this)" />
+                                <label for="toggle-end-day-reminder" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
                             </div>
                         </div>
 

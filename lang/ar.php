@@ -105,6 +105,9 @@ return [
     'notification_business_day_started' => 'تم بدء يوم عمل جديد برصيد افتتاحي',
     'notification_business_day_ended' => 'تم إغلاق يوم العمل',
     'notification_business_day_reopened' => 'تم إعادة فتح يوم العمل',
+    'business_day_start_required' => 'يجب بدء يوم عمل جديد أولاً',
+    'notification_invoice_created' => 'تم إنشاء فاتورة جديدة',
+    'empty_cart_message' => 'سلة المشتريات فارغة',
     
     // POS (subset)
     'shopping_cart' => 'سلة المشتريات',

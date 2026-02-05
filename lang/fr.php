@@ -105,6 +105,9 @@ return [
     'notification_business_day_started' => 'Nouvelle journée de travail commencée avec un solde d\'ouverture',
     'notification_business_day_ended' => 'La journée de travail est terminée',
     'notification_business_day_reopened' => 'La journée de travail a été rouverte',
+    'business_day_start_required' => 'Vous devez d\'abord commencer une nouvelle journée de travail',
+    'notification_invoice_created' => 'Nouvelle facture créée',
+    'empty_cart_message' => 'Le panier est vide',
     
     // POS (subset)
     'shopping_cart' => 'Panier',

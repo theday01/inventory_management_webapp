@@ -2516,13 +2516,36 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
 
         // Initialize Year Selector
         const yearSelect = document.getElementById('annual-year-select');
-        const currentYear = new Date().getFullYear();
-        for (let y = currentYear; y >= currentYear - 5; y--) {
-            const option = document.createElement('option');
-            option.value = y;
-            option.textContent = y;
-            yearSelect.appendChild(option);
+        
+        async function loadAvailableYears() {
+            try {
+                const response = await fetch('api.php?action=get_available_years');
+                const result = await response.json();
+                
+                yearSelect.innerHTML = ''; // Clear existing
+                
+                if (result.success && result.data.length > 0) {
+                    result.data.forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = year;
+                        option.textContent = `${year - 1} -> ${year}`;
+                        yearSelect.appendChild(option);
+                    });
+                    
+                    // Select first one (latest year)
+                    yearSelect.selectedIndex = 0;
+                } else {
+                    const option = document.createElement('option');
+                    option.textContent = '<?php echo __('no_data'); ?>';
+                    option.disabled = true;
+                    yearSelect.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Error loading years:', error);
+            }
         }
+        
+        loadAvailableYears();
 
         document.getElementById('analyze-year-btn').addEventListener('click', loadAnnualAnalysis);
     });
