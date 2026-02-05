@@ -302,7 +302,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </div>
 
                             <!-- Favicon Section -->
-                            <div class="lg:col-span-2 flex flex-col items-center justify-center p-6 border border-dashed border-white/10 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors group relative">
+                            <div class="lg:col-span-2 flex flex-col items-center justify-center p-6 border border-dashed border-white/10 rounded-2xl bg-white/[0.02] transition-colors group relative">
                                 <div class="w-16 h-16 rounded-xl bg-gradient-to-tr from-gray-800 to-gray-700 flex items-center justify-center mb-4 shadow-lg overflow-hidden relative">
                                     <?php if (!empty($settings['shopFavicon'] ?? '')): ?>
                                         <img src="<?php echo htmlspecialchars($settings['shopFavicon']); ?>" alt="Favicon" class="w-full h-full object-contain p-2">
@@ -312,12 +312,8 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 </div>
                                 <div class="text-center">
                                     <p class="text-sm font-bold text-white mb-1"><?php echo __('shop_favicon'); ?></p>
-                                    <p class="text-[10px] text-gray-400 mb-3"><?php echo __('favicon_auto_generated'); ?></p>
-                                    <button type="button" onclick="document.getElementById('shopFaviconFile').click();" class="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-bold text-white transition-all <?php echo $disabledAttr; ?>">
-                                        <?php echo __('upload_manual'); ?>
-                                    </button>
+                                    <p class="text-[10px] text-gray-400 mb-0"><?php echo __('favicon_auto_generated'); ?></p>
                                 </div>
-                                <input type="file" name="shopFaviconFile" id="shopFaviconFile" accept="image/png,image/jpeg,image/x-icon" class="absolute inset-0 opacity-0 cursor-pointer <?php echo $isAdmin ? '' : 'pointer-events-none'; ?>" title="">
                             </div>
 
                             <div class="lg:col-span-6 space-y-6">
@@ -1954,44 +1950,6 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         }
     });
 
-    // === Manual Favicon Upload ===
-    document.getElementById('shopFaviconFile').addEventListener('change', async function(event) {
-        if (event.target.files && event.target.files[0]) {
-            const file = event.target.files[0];
-            const formData = new FormData();
-            formData.append('shopFaviconFile', file);
-
-            const previewContainer = document.querySelector('.w-16.h-16.rounded-xl');
-            const originalContent = previewContainer.innerHTML;
-            previewContainer.innerHTML = `
-                <div class="w-full h-full flex items-center justify-center bg-dark/50">
-                    <svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>`;
-
-            try {
-                const response = await fetch('api.php?action=updateShopFavicon', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-
-                if (result.success && result.faviconUrl) {
-                    const newImageUrl = result.faviconUrl + '?t=' + new Date().getTime();
-                    previewContainer.innerHTML = `<img src="${newImageUrl}" alt="Favicon" class="w-full h-full object-contain p-2">`;
-                    showToast(window.__('action_success'), true);
-                } else {
-                    previewContainer.innerHTML = originalContent;
-                    showToast(result.message || window.__('action_failed'), false);
-                }
-            } catch (error) {
-                previewContainer.innerHTML = originalContent;
-                showToast(window.__('server_connection_error'), false);
-            }
-        }
-    });
     // === End Logo/Favicon Code ===
 
     async function deleteShopLogo() {
