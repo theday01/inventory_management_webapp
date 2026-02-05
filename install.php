@@ -210,15 +210,6 @@ $sql_business_days = "CREATE TABLE IF NOT EXISTS business_days (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
-// Year Tips Archive Table
-$sql_year_tips_archive = "CREATE TABLE IF NOT EXISTS year_tips_archive (
-    year INT(4) NOT NULL,
-    user_id INT(6) UNSIGNED NOT NULL,
-    archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (year, user_id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-
 // Execute table creation queries in proper order
 $tables = [
     'users' => $sql_users,
@@ -238,8 +229,7 @@ $tables = [
     'holidays' => $sql_holidays,
     'expenses' => $sql_expenses,
     'refunds' => $sql_refunds,
-    'business_days' => $sql_business_days,
-    'year_tips_archive' => $sql_year_tips_archive
+    'business_days' => $sql_business_days
 ];
 
 foreach ($tables as $name => $sql) {
