@@ -2111,7 +2111,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateCart() {
         cartItemsContainer.innerHTML = '';
         if (cart.length === 0) {
-            cartItemsContainer.innerHTML = '<p class="text-center py-4 text-gray-500">سلة المشتريات فارغة.</p>';
+            cartItemsContainer.innerHTML = '<p class="text-center py-4 text-gray-500">' + window.__('empty_cart_msg') + '</p>';
         } else {
             cart.forEach(item => {
                 const cartItem = document.createElement('div');
