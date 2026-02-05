@@ -395,6 +395,7 @@ return [
     'shop_city_undefined_calculation' => 'La ville du magasin n\'est pas définie, calculé comme hors ville : %s',
     'orders_label' => 'Commandes',
     'revenue_label' => 'Revenus',
+    'revenue' => 'Revenus',
     'date_label' => 'Date',
     'orders_count_label' => 'Nombre de commandes',
     'revenue_currency_label' => 'Revenus (%s)',

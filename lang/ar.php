@@ -395,6 +395,7 @@ return [
     'shop_city_undefined_calculation' => 'لم يتم تحديد مدينة المحل، سيتم احتساب خارج المدينة: %s',
     'orders_label' => 'الطلبات',
     'revenue_label' => 'الإيرادات',
+    'revenue' => 'الإيرادات',
     'date_label' => 'التاريخ',
     'orders_count_label' => 'عدد الطلبات',
     'revenue_currency_label' => 'الإيرادات (%s)',
