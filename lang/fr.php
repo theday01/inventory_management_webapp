@@ -1214,4 +1214,8 @@ return [
     'advice_growth_negative_text' => 'Les revenus ont baissé de %s par rapport à l\'année dernière. Analysez les causes (concurrence, marketing ?).',
     'advice_growth_positive_title' => 'Croissance rapide',
     'advice_growth_positive_text' => 'Félicitations ! Croissance des ventes de %s. Vous êtes sur la bonne voie.',
+    'advice_year_incomplete_title' => 'Année en cours incomplète',
+    'advice_year_incomplete_text' => 'Les données actuelles ne représentent qu\'une partie de l\'année. Il reste %s avant la fin de l\'année.',
+    'time_months_plural' => 'mois',
+    'time_days_plural' => 'jours',
 ];

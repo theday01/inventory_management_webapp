@@ -199,6 +199,16 @@ class AnnualAnalyzer {
     private function generateAdvice($stats, $prevStats, $monthly) {
         $advice = [];
 
+        // Check if year is current year (Incomplete)
+        if ($this->year == date('Y')) {
+            $remaining = $this->getRemainingTime();
+            $advice[] = [
+                'type' => 'info',
+                'title' => __('advice_year_incomplete_title'),
+                'text' => sprintf(__('advice_year_incomplete_text'), $remaining)
+            ];
+        }
+
         // 1. Profit Margin Analysis
         if ($stats['total_revenue'] == 0) {
              $advice[] = [
@@ -307,5 +317,34 @@ class AnnualAnalyzer {
             9 => 'month_september', 10 => 'month_october', 11 => 'month_november', 12 => 'month_december'
         ];
         return isset($months[$monthNum]) ? __($months[$monthNum]) : '';
+    }
+
+    private function getRemainingTime() {
+        $endOfYear = new \DateTime($this->year . '-12-31 23:59:59');
+        $now = new \DateTime();
+        
+        // Ensure we don't get negative values if we are past the year (unlikely with year check, but for safety)
+        if ($now > $endOfYear) {
+            return '';
+        }
+
+        $diff = $now->diff($endOfYear);
+        
+        $parts = [];
+        if ($diff->m > 0) {
+            $parts[] = $diff->m . ' ' . __('time_months_plural');
+        }
+        if ($diff->d > 0) {
+             $parts[] = $diff->d . ' ' . __('time_days_plural');
+        }
+        
+        // Fallback if less than a day
+        if (empty($parts) && $diff->h > 0) {
+             $parts[] = $diff->h . ' ' . __('time_hours_short');
+        } elseif (empty($parts)) {
+             return "0 " . __('time_days_plural');
+        }
+        
+        return implode(', ', $parts);
     }
 }

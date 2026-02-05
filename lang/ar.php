@@ -1214,4 +1214,8 @@ return [
     'advice_growth_negative_text' => 'الإيرادات انخفضت بنسبة %s مقارنة بالسنة الماضية. يجب البحث عن أسباب هذا التراجع (منافسة جديدة، قلة التسويق؟).',
     'advice_growth_positive_title' => 'نمو سريع',
     'advice_growth_positive_text' => 'ما شاء الله! نمو في المبيعات بنسبة %s. أنت في المسار الصحيح للتوسع.',
+    'advice_year_incomplete_title' => 'السنة الحالية غير مكتملة',
+    'advice_year_incomplete_text' => 'البيانات الحالية تمثل جزءاً من السنة فقط. متبقي %s على انتهاء السنة.',
+    'time_months_plural' => 'أشهر',
+    'time_days_plural' => 'أيام',
 ];
