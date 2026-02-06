@@ -1434,8 +1434,8 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <!-- Top Products Table -->
                 <div class="glass-card p-6">
                     <h3 class="text-lg font-bold text-white mb-4"><?php echo __('top_products_annual'); ?></h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-right">
+                    <div class="overflow-x-auto" dir="ltr">
+                        <table class="w-full text-sm text-left">
                             <thead>
                                 <tr class="text-gray-400 border-b border-white/10">
                                     <th class="pb-2"><?php echo __('product'); ?></th>
@@ -1473,8 +1473,8 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
 <div id="end-day-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
     <div class="bg-dark-surface rounded-xl p-8 max-w-4xl w-full max-h-screen overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold text-white">ملخص يوم العمل</h2>
-            <button id="calculation-method-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded-lg transition-colors" title="طريقة الحساب">
+            <h2 class="text-xl font-bold text-white"><?php echo __('day_summary_title'); ?></h2>
+            <button id="calculation-method-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded-lg transition-colors" title="<?php echo __('calculation_method'); ?>">
                 <span class="material-icons-round text-sm">help_outline</span>
             </button>
         </div>
@@ -1485,7 +1485,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         </div>
 
         <div class="flex justify-end mt-4">
-            <button id="close-summary" class="bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded">إغلاق</button>
+            <button id="close-summary" class="bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded"><?php echo __('close'); ?></button>
         </div>
     </div>
 </div>
@@ -1496,7 +1496,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-white flex items-center gap-2">
                 <span class="material-icons-round text-blue-500">calculate</span>
-                طريقة الحساب
+                <?php echo __('calculation_method_modal_title'); ?>
             </h2>
             <button id="close-calculation-method-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
@@ -1505,36 +1505,36 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         <div class="space-y-3 text-sm text-gray-300">
             <div class="flex items-start gap-2">
                 <span class="text-green-400 font-bold">•</span>
-                <p><strong class="text-green-400">إجمالي المبيعات:</strong> مجموع قيمة جميع الفواتير الصادرة خلال الفترة (قبل خصم المرجعات).</p>
+                <p><strong class="text-green-400"><?php echo __('total_sales'); ?>:</strong> <?php echo __('calc_total_sales_desc'); ?></p>
             </div>
             <div class="flex items-start gap-2">
                 <span class="text-red-500 font-bold">•</span>
-                <p><strong class="text-red-500">المرجعات:</strong> المبالغ التي تم استرجاعها للعملاء.</p>
+                <p><strong class="text-red-500"><?php echo __('total_refunds'); ?>:</strong> <?php echo __('calc_refunds_desc'); ?></p>
             </div>
             <div class="flex items-start gap-2">
                 <span class="text-orange-400 font-bold">•</span>
-                <p><strong class="text-orange-400">إجمالي رسوم التوصيل:</strong> مجموع رسوم التوصيل المحصلة.</p>
+                <p><strong class="text-orange-400"><?php echo __('total_delivery_fees'); ?>:</strong> <?php echo __('calc_delivery_fees_desc'); ?></p>
             </div>
             <div class="flex items-start gap-2">
                 <span class="text-red-400 font-bold">•</span>
-                <p><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> تكلفة المنتجات المباعة (سعر التكلفة وقت البيع × الكمية).</p>
+                <p><strong class="text-red-400"><?php echo __('total_cogs'); ?>:</strong> <?php echo __('calc_cogs_desc'); ?></p>
             </div>
             <div class="flex items-start gap-2">
                 <span class="text-orange-500 font-bold">•</span>
-                <p><strong class="text-orange-500">إجمالي المصاريف:</strong> مجموع المصاريف العامة، الرواتب، والإيجارات.</p>
+                <p><strong class="text-orange-500"><?php echo __('total_expenses_all'); ?>:</strong> <?php echo __('calc_total_expenses_desc'); ?></p>
             </div>
             <div class="flex items-start gap-2">
                 <span class="text-yellow-400 font-bold">•</span>
-                <p><strong class="text-yellow-400">الرصيد الختامي المتوقع:</strong> الرصيد الافتتاحي + المبيعات - المرجعات - مصاريف الصندوق (التي دفعت من الدرج).</p>
+                <p><strong class="text-yellow-400"><?php echo __('expected_closing_balance'); ?>:</strong> <?php echo __('calc_expected_closing_balance_desc'); ?></p>
             </div>
             <div class="flex items-start gap-2 bg-green-500/10 p-3 rounded-lg border border-green-500/20">
                 <span class="text-green-400 font-bold text-lg">></span>
-                <p><strong class="text-green-400 text-lg">صافي الربح:</strong> (المبيعات - المرجعات) - تكلفة البضاعة - إجمالي المصاريف (الكلية).</p>
+                <p><strong class="text-green-400 text-lg"><?php echo __('net_profit'); ?>:</strong> <?php echo __('calc_net_profit_desc'); ?></p>
             </div>
             <div class="text-xs text-gray-400 mt-4 bg-dark/30 p-3 rounded-lg">
                 <p class="flex items-center gap-2">
                     <span class="material-icons-round text-yellow-500" style="font-size: 16px;">info</span>
-                    <span>ملاحظة: هذه الحسابات تقدم بناءً على البيانات المتوفرة في الفترة المحددة</span>
+                    <span><?php echo __('calc_note'); ?></span>
                 </p>
             </div>
         </div>
@@ -1800,24 +1800,28 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 
                 if (result.success) {
                     const summary = result.data.summary;
+                    const lang = document.documentElement.lang || 'ar';
+                    const dir = lang === 'ar' ? 'rtl' : 'ltr';
+                    const alignClass = lang === 'ar' ? 'text-right' : 'text-left';
+
                     let invoicesHtml = '';
                     if (summary.invoices && summary.invoices.length > 0) {
                         invoicesHtml = `
                             <hr class="border-gray-600 my-4">
-                            <h3 class="text-lg font-bold text-white mb-3">الفواتير (${summary.invoices.length})</h3>
+                            <h3 class="text-lg font-bold text-white mb-3 ${alignClass}">${window.__('invoices_header')} (${summary.invoices.length})</h3>
                             <div class="max-h-96 overflow-y-auto space-y-2">
                         `;
                         summary.invoices.forEach(invoice => {
                             invoicesHtml += `
                                 <details class="bg-gray-700 rounded-lg p-3">
-                                    <summary class="cursor-pointer text-white font-medium flex justify-between items-center">
-                                        <span>فاتورة #${invoice.id} - ${invoice.customer_name || 'عميل غير محدد'}</span>
+                                    <summary class="cursor-pointer text-white font-medium flex justify-between items-center ${alignClass}">
+                                        <span>#${invoice.id} - ${invoice.customer_name || window.__('undefined_customer')}</span>
                                         <div class="flex items-center gap-2">
-                                            <button onclick="viewInvoice(${invoice.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">عرض الفاتورة</button>
+                                            <button onclick="viewInvoice(${invoice.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">${window.__('view_invoice_btn')}</button>
                                             <span class="text-green-400">${formatNumber(invoice.total)} ${currency}</span>
                                         </div>
                                     </summary>
-                                    <div class="mt-3 text-gray-300 text-sm space-y-1">
+                                    <div class="mt-3 text-gray-300 text-sm space-y-1 ${alignClass}">
                                         <p><strong>${window.__('date_label')}:</strong> ${new Date(invoice.created_at).toLocaleString(document.documentElement.lang === 'ar' ? 'ar' : 'fr')}</p>
                                         <p><strong>${window.__('phone_placeholder')}:</strong> ${invoice.customer_phone || window.__('undefined_customer')}</p>
                                         <p><strong>${window.__('delivery')}:</strong> ${formatNumber(invoice.delivery_cost)} ${currency}</p>
@@ -1830,26 +1834,26 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         invoicesHtml += '</div>';
                     }
                         document.getElementById('summary-data').innerHTML = `
-                            <div class="space-y-3">
-                                <p class="text-right"><strong class="text-green-400">إجمالي المبيعات:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
-                                <p class="text-right"><strong class="text-red-400">إجمالي المرجعات:</strong> -${formatNumber(summary.total_refunds)} ${currency}</p>
-                                <p class="text-right"><strong class="text-orange-400">إجمالي رسوم التوصيل:</strong> ${formatNumber(summary.total_delivery)} ${currency}</p>
+                            <div class="space-y-3" dir="${dir}">
+                                <p class="${alignClass}"><strong class="text-green-400">${window.__('total_sales')}:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
+                                <p class="${alignClass}"><strong class="text-red-400">${window.__('total_refunds')}:</strong> -${formatNumber(summary.total_refunds)} ${currency}</p>
+                                <p class="${alignClass}"><strong class="text-orange-400">${window.__('total_delivery_fees')}:</strong> ${formatNumber(summary.total_delivery)} ${currency}</p>
                                 <hr class="border-gray-600 my-3">
-                                <p class="text-right"><strong class="text-blue-400">الرصيد الافتتاحي:</strong> ${formatNumber(summary.opening_balance)} ${currency}</p>
-                                <p class="text-right"><strong class="text-orange-500">مصاريف من الصندوق:</strong> -${formatNumber(summary.drawer_expenses)} ${currency}</p>
-                                <p class="text-right"><strong class="text-yellow-400">الرصيد الختامي المتوقع:</strong> ${formatNumber(summary.closing_balance)} ${currency}</p>
+                                <p class="${alignClass}"><strong class="text-blue-400">${window.__('opening_balance')}:</strong> ${formatNumber(summary.opening_balance)} ${currency}</p>
+                                <p class="${alignClass}"><strong class="text-orange-500">${window.__('drawer_expenses')}:</strong> -${formatNumber(summary.drawer_expenses)} ${currency}</p>
+                                <p class="${alignClass}"><strong class="text-yellow-400">${window.__('expected_closing_balance')}:</strong> ${formatNumber(summary.closing_balance)} ${currency}</p>
                                 <hr class="border-gray-600 my-3">
-                                <p class="text-right"><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
-                                <p class="text-right"><strong class="text-orange-500">إجمالي المصاريف (الكل):</strong> ${formatNumber(summary.total_expenses)} ${currency}</p>
+                                <p class="${alignClass}"><strong class="text-red-400">${window.__('total_cogs')}:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
+                                <p class="${alignClass}"><strong class="text-orange-500">${window.__('total_expenses_all')}:</strong> ${formatNumber(summary.total_expenses)} ${currency}</p>
                                 <div class="bg-green-500/10 p-3 rounded-lg mt-4 border border-green-500/20">
-                                    <p class="text-right text-xl font-bold text-green-400">صافي الربح: ${formatNumber(summary.total_profit)} ${currency}</p>
+                                    <p class="${alignClass} text-xl font-bold text-green-400">${window.__('net_profit')}: ${formatNumber(summary.total_profit)} ${currency}</p>
                                 </div>
                                 <div class="bg-yellow-500/10 p-3 rounded-lg mt-2 border border-yellow-500/20">
-                                    <p class="text-right text-lg font-bold text-yellow-500">مبيعات أيام العطل: ${formatNumber(summary.holiday_sales)} ${currency} (${summary.holiday_orders} طلب)</p>
+                                    <p class="${alignClass} text-lg font-bold text-yellow-500">${window.__('holiday_sales')}: ${formatNumber(summary.holiday_sales)} ${currency} (${summary.holiday_orders} ${window.__('order_unit')})</p>
                                     ${summary.holiday_breakdown && summary.holiday_breakdown.length > 0 ? `
-                                        <div class="mt-2 space-y-1 pr-4 border-r border-yellow-500/30">
+                                        <div class="mt-2 space-y-1 pe-4 ${lang === 'ar' ? 'border-e' : 'border-s'} border-yellow-500/30">
                                             ${summary.holiday_breakdown.map(item => `
-                                                <p class="text-right text-sm text-yellow-400/80">• ${item.holiday_name}: ${formatNumber(item.sales)} ${currency} (${item.orders} طلب)</p>
+                                                <p class="${alignClass} text-sm text-yellow-400/80">• ${item.holiday_name}: ${formatNumber(item.sales)} ${currency} (${item.orders} ${window.__('order_unit')})</p>
                                             `).join('')}
                                         </div>
                                     ` : ''}
@@ -2252,7 +2256,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 businessDayControls.innerHTML = `
                     <div class="flex items-center gap-2">
                         <button id="end-day-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
-                            إنهاء اليوم
+                            ${window.__('end_day_btn')}
                         </button>
                     </div>`;
                 document.getElementById('end-day-btn').addEventListener('click', handleEndDay);
@@ -2318,17 +2322,17 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 } else if (result.code === 'business_day_open_exists') {
                     startDayModal.classList.add('hidden');
                     const { isConfirmed } = await Swal.fire({
-                        title: 'يوم عمل مفتوح بالفعل',
+                        title: window.__('day_already_open_title'),
                         html: `
-                            <p class="mb-4">تم العثور على يوم عمل مفتوح بالفعل.</p>
-                            <p>هل تريد تمديد يوم العمل الحالي بإضافة مبلغ <strong class="text-lg">${opening_balance} ${currency}</strong> إلى الرصيد الافتتاحي؟</p>
+                            <p class="mb-4">${window.__('day_already_open_text')}</p>
+                            <p>${window.__('extend_day_question_html').replace('%s', '<strong class="text-lg">' + opening_balance + ' ' + currency + '</strong>')}</p>
                         `,
                         icon: 'question',
                         showCancelButton: true,
                         confirmButtonColor: '#10B981',
                         cancelButtonColor: '#6B7280',
-                        confirmButtonText: 'نعم، تمديد',
-                        cancelButtonText: 'إلغاء'
+                        confirmButtonText: window.__('confirm_extend'),
+                        cancelButtonText: window.__('cancel')
                     });
 
                     if (isConfirmed) {
@@ -2346,27 +2350,27 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         hideLoadingOverlay();
 
                         if (extendResult.success) {
-                            Swal.fire('تم التمديد', 'تم تمديد يوم العمل بنجاح.', 'success').then(() => {
+                            Swal.fire(window.__('extended_success_title'), window.__('extended_success_text'), 'success').then(() => {
                                 location.reload();
                             });
                         } else {
-                            Swal.fire('خطأ', extendResult.message || 'فشل في تمديد يوم العمل', 'error');
+                            Swal.fire(window.__('toast_error'), extendResult.message || window.__('extend_fail'), 'error');
                         }
                     }
                 } else if (result.code === 'business_day_closed_exists') {
                     startDayModal.classList.add('hidden');
                     const { isConfirmed } = await Swal.fire({
-                        title: 'يوم عمل مغلق',
+                        title: window.__('day_closed_title'),
                         html: `
-                            <p class="mb-4">تم العثور على يوم عمل مغلق لهذا اليوم.</p>
-                            <p>هل تريد إعادة فتح اليوم وتمديده بمبلغ <strong class="text-lg">${opening_balance} ${currency}</strong>؟</p>
+                            <p class="mb-4">${window.__('day_closed_text')}</p>
+                            <p>${window.__('reopen_day_question_html').replace('%s', '<strong class="text-lg">' + opening_balance + ' ' + currency + '</strong>')}</p>
                         `,
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#F59E0B',
                         cancelButtonColor: '#6B7280',
-                        confirmButtonText: 'نعم، إعادة فتح',
-                        cancelButtonText: 'إلغاء'
+                        confirmButtonText: window.__('confirm_reopen'),
+                        cancelButtonText: window.__('cancel')
                     });
 
                     if (isConfirmed) {
@@ -2383,11 +2387,11 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         hideLoadingOverlay();
 
                         if (reopenResult.success) {
-                            Swal.fire('تمت إعادة الفتح', 'تم إعادة فتح يوم العمل بنجاح.', 'success').then(() => {
+                            Swal.fire(window.__('reopen_success_title'), window.__('reopen_success_text'), 'success').then(() => {
                                 location.reload();
                             });
                         } else {
-                            Swal.fire('خطأ', reopenResult.message || 'فشل في إعادة فتح يوم العمل', 'error');
+                            Swal.fire(window.__('toast_error'), reopenResult.message || window.__('reopen_fail'), 'error');
                         }
                     }
                 } else {
@@ -2414,28 +2418,32 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         }
 
         async function handleEndDay() {
+            const lang = document.documentElement.lang || 'ar';
+            const dir = lang === 'ar' ? 'rtl' : 'ltr';
+            const alignClass = lang === 'ar' ? 'text-right' : 'text-left';
+
             const confirmed = await Swal.fire({
-                title: 'تأكيد إغلاق يوم العمل',
-                html: '<div class="text-right">' +
-                    '<p class="text-lg font-bold mb-2 text-white">تحذير هام!</p>' +
-                    '<p class="mb-4 text-white">هل أنت متأكد من رغبتك في إغلاق يوم العمل؟</p>' +
-                    '<p class="text-sm text-yellow-300">⚠️ لا يمكن التراجع عن هذه العملية بعد التنفيذ</p>' +
+                title: window.__('confirm_end_day_title'),
+                html: `<div class="${alignClass}" dir="${dir}">` +
+                    '<p class="text-lg font-bold mb-2 text-white">' + window.__('important_warning') + '</p>' +
+                    '<p class="mb-4 text-white">' + window.__('confirm_end_day_msg') + '</p>' +
+                    '<p class="text-sm text-yellow-300">' + window.__('end_day_irreversible_warning') + '</p>' +
                     '</div>',
                 icon: 'warning',
-                iconColor: '#ffffff',
-                background: 'rgb(93 0 0)',
+                iconColor: '#F59E0B',
+                background: '#1F2937',
                 color: '#ffffff',
                 showCancelButton: true,
-                confirmButtonColor: '#ffffff',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: '<span style="color: #dc2626; font-weight: bold;">نعم، أغلقه</span>',
-                cancelButtonText: '<span style="color: #ffffff;">إلغاء</span>',
+                confirmButtonColor: '#EF4444',
+                cancelButtonColor: '#4B5563',
+                confirmButtonText: window.__('yes_close_it'),
+                cancelButtonText: window.__('cancel'),
                 reverseButtons: true,
                 focusCancel: true,
                 customClass: {
-                    confirmButton: 'px-6 py-2 rounded-lg',
-                    cancelButton: 'px-6 py-2 rounded-lg',
-                    popup: 'border-4 border-white/30',
+                    confirmButton: 'px-6 py-2 rounded-lg font-bold',
+                    cancelButton: 'px-6 py-2 rounded-lg font-bold',
+                    popup: 'border border-white/10 shadow-xl rounded-2xl',
                     title: 'text-white'
                 }
             });
@@ -2452,15 +2460,15 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         const summary = result.data.summary;
                         document.getElementById('summary-data').innerHTML = `
                             <div class="space-y-3">
-                                <p class="text-right"><strong class="text-green-400">إجمالي المبيعات:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
-                                <p class="text-right"><strong class="text-red-400">إجمالي المرجعات:</strong> -${formatNumber(summary.total_refunds)} ${currency}</p>
-                                <p class="text-right"><strong class="text-blue-400">الرصيد الافتتاحي:</strong> ${formatNumber(summary.opening_balance)} ${currency}</p>
-                                <p class="text-right"><strong class="text-orange-500">مصاريف من الصندوق:</strong> -${formatNumber(summary.drawer_expenses)} ${currency}</p>
-                                <p class="text-right"><strong class="text-yellow-400">الرصيد الختامي المتوقع:</strong> ${formatNumber(summary.closing_balance)} ${currency}</p>
+                                <p class="text-start"><strong class="text-green-400">${window.__('total_sales')}:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
+                                <p class="text-start"><strong class="text-red-400">${window.__('total_refunds')}:</strong> -${formatNumber(summary.total_refunds)} ${currency}</p>
+                                <p class="text-start"><strong class="text-blue-400">${window.__('opening_balance')}:</strong> ${formatNumber(summary.opening_balance)} ${currency}</p>
+                                <p class="text-start"><strong class="text-orange-500">${window.__('drawer_expenses')}:</strong> -${formatNumber(summary.drawer_expenses)} ${currency}</p>
+                                <p class="text-start"><strong class="text-yellow-400">${window.__('expected_closing_balance')}:</strong> ${formatNumber(summary.closing_balance)} ${currency}</p>
                                 <hr class="border-gray-600 my-3">
-                                <p class="text-right"><strong class="text-red-400">إجمالي تكلفة البضاعة:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
-                                <p class="text-right"><strong class="text-orange-500">إجمالي المصاريف (الكل):</strong> ${formatNumber(summary.total_expenses)} ${currency}</p>
-                                <p class="text-right text-xl font-bold mt-4 text-green-400">صافي الربح: ${formatNumber(summary.total_profit)} ${currency}</p>
+                                <p class="text-start"><strong class="text-red-400">${window.__('total_cogs')}:</strong> ${formatNumber(summary.total_cogs)} ${currency}</p>
+                                <p class="text-start"><strong class="text-orange-500">${window.__('total_expenses_all')}:</strong> ${formatNumber(summary.total_expenses)} ${currency}</p>
+                                <p class="text-start text-xl font-bold mt-4 text-green-400">${window.__('net_profit')}: ${formatNumber(summary.total_profit)} ${currency}</p>
                             </div>
                         `;
                         endDayModal.classList.remove('hidden');
@@ -2468,24 +2476,24 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         
                         // Show success message
                         Swal.fire({
-                            title: '!تمت العملية بنجاح',
-                            text: 'تم إغلاق يوم العمل بنجاح',
+                            title: window.__('action_success'),
+                            text: window.__('action_success'),
                             icon: 'success',
                             confirmButtonColor: '#10b981',
-                            confirmButtonText: 'تم'
+                            confirmButtonText: window.__('ok')
                         });
                     } else {
-                        throw new Error(result.message || 'حدث خطأ أثناء محاولة إغلاق يوم العمل');
+                        throw new Error(result.message || window.__('action_failed'));
                     }
                 } catch (error) {
                     hideLoadingOverlay();
                     console.error('Error details:', error);
                     Swal.fire({
-                        title: '!حدث خطأ',
-                        text: error.message || 'حدث خطأ غير متوقع',
+                        title: window.__('toast_error'),
+                        text: error.message || window.__('unexpected_error'),
                         icon: 'error',
                         confirmButtonColor: '#ef4444',
-                        confirmButtonText: 'حسناً'
+                        confirmButtonText: window.__('ok')
                     });
                 }
             }
