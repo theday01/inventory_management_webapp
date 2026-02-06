@@ -1434,8 +1434,8 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 <!-- Top Products Table -->
                 <div class="glass-card p-6">
                     <h3 class="text-lg font-bold text-white mb-4"><?php echo __('top_products_annual'); ?></h3>
-                    <div class="overflow-x-auto" dir="ltr">
-                        <table class="w-full text-sm text-left">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-start">
                             <thead>
                                 <tr class="text-gray-400 border-b border-white/10">
                                     <th class="pb-2"><?php echo __('product'); ?></th>
