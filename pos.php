@@ -3041,7 +3041,7 @@ document.addEventListener('DOMContentLoaded', function () {
         invoiceModal.classList.add('hidden');
         // تحديث المنتجات فوراً بعد إغلاق الفاتورة
         loadProducts();
-        showToast('تم تحديث قائمة المنتجات', true);
+        showToast(window.__('products_updated'), true);
     });
 
     printInvoiceBtn.addEventListener('click', () => {
@@ -3066,7 +3066,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const { jsPDF } = window.jspdf;
         
         try {
-            showToast('جاري إنشاء ملف PDF...', true);
+            showToast(window.__('generating_pdf'), true);
             
             // احفظ خصائص CSS الأصلية قبل التعديل
             const element = document.getElementById('invoice-print-area');
