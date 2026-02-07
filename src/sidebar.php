@@ -5,8 +5,16 @@ if (!isset($shopName)) {
     $shopName = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'Smart Shop';
 }
 ?>
+<!-- Mobile Overlay -->
+<div id="mobile-menu-overlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleMobileMenu()"></div>
+
+<!-- Mobile Menu Button -->
+<button id="mobile-menu-toggle" class="md:hidden fixed top-4 start-4 z-[60] p-2 bg-dark-surface text-white rounded-lg shadow-lg border border-white/10 transition-all hover:bg-dark-surface/80" onclick="toggleMobileMenu()">
+    <span class="material-icons-round">menu</span>
+</button>
+
 <!-- Sidebar -->
-<aside class="hidden md:flex w-72 bg-dark-surface border-l border-white/5 dark:bg-dark-surface dark:border-white/5 bg-white border-gray-200 flex-col shrink-0 z-30 transition-colors duration-200">
+<aside id="main-sidebar" class="hidden md:flex w-72 bg-dark-surface border-l border-white/5 dark:bg-dark-surface dark:border-white/5 bg-white border-gray-200 flex-col shrink-0 z-30 transition-colors duration-200">
     <!-- Logo -->
     <div class="h-20 flex items-center justify-center px-6 border-b border-white/5 dark:border-white/5 border-gray-200">
         <div class="flex items-center gap-3">
@@ -121,3 +129,45 @@ if (!isset($shopName)) {
         </div>
     </div>
 </aside>
+
+<script>
+    function toggleMobileMenu() {
+        const sidebar = document.getElementById('main-sidebar');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const btnIcon = document.querySelector('#mobile-menu-toggle span');
+        
+        if (sidebar.classList.contains('hidden')) {
+            // Open
+            sidebar.classList.remove('hidden');
+            sidebar.classList.add('flex', 'fixed', 'inset-y-0', 'start-0', 'z-50', 'w-72', 'shadow-2xl');
+            overlay.classList.remove('hidden');
+            btnIcon.textContent = 'close';
+        } else {
+            // Close
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('flex', 'fixed', 'inset-y-0', 'start-0', 'z-50', 'w-72', 'shadow-2xl');
+            overlay.classList.add('hidden');
+            btnIcon.textContent = 'menu';
+        }
+    }
+
+    // Reset on resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) {
+            const sidebar = document.getElementById('main-sidebar');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const btnIcon = document.querySelector('#mobile-menu-toggle span');
+            
+            // Reset to desktop state (hidden class is overridden by md:flex, but we should clean up mobile classes)
+            sidebar.classList.remove('fixed', 'inset-y-0', 'start-0', 'z-50', 'w-72', 'shadow-2xl');
+            
+            // Ensure hidden is present so it defaults to hidden on mobile if resized back down
+            if (!sidebar.classList.contains('hidden')) {
+                sidebar.classList.add('hidden');
+            }
+            
+            overlay.classList.add('hidden');
+            if (btnIcon) btnIcon.textContent = 'menu';
+        }
+    });
+</script>
