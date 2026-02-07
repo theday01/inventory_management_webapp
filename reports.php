@@ -706,17 +706,22 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         </div>
 
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 tab-specific" id="header-controls-dashboard">
-            <div>
-                <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-                    <span class="material-icons-round text-pink-500">analytics</span>
-                    <?php echo __('reports_title'); ?>
-                </h2>
-                <p class="text-sm text-gray-400 mt-1">
-                    <?php echo __('viewing_data_from'); ?> <span class="text-white font-bold"><?php echo $start_date; ?></span> <?php echo __('to'); ?> <span class="text-white font-bold"><?php echo $end_date; ?></span>
-                </p>
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div>
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <span class="material-icons-round text-pink-500">analytics</span>
+                        <?php echo __('reports_title'); ?>
+                    </h2>
+                    <p class="text-sm text-gray-400 mt-1">
+                        <?php echo __('viewing_data_from'); ?> <span class="text-white font-bold"><?php echo $start_date; ?></span> <?php echo __('to'); ?> <span class="text-white font-bold"><?php echo $end_date; ?></span>
+                    </p>
+                </div>
+                <button id="toggle-dashboard-filters" class="md:hidden p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white border border-white/10 transition-colors">
+                    <span class="material-icons-round">filter_list</span>
+                </button>
             </div>
 
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
+            <div id="dashboard-filters-content" class="hidden md:flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto transition-all duration-300">
             <?php if ($is_day_active): ?>
                 <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm text-center sm:text-start">
                     <?php echo __('active_business_day'); ?>
@@ -2560,6 +2565,18 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         loadAvailableYears();
 
         document.getElementById('analyze-year-btn').addEventListener('click', loadAnnualAnalysis);
+
+        // Toggle Dashboard Filters (Mobile)
+        document.getElementById('toggle-dashboard-filters').addEventListener('click', function() {
+            const content = document.getElementById('dashboard-filters-content');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                content.classList.add('flex');
+            } else {
+                content.classList.add('hidden');
+                content.classList.remove('flex');
+            }
+        });
     });
 
     // Tab Switching Logic

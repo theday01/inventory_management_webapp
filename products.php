@@ -31,9 +31,14 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     <!-- Header -->
     <header
         class="h-auto min-h-[5rem] py-4 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 sticky top-0 z-30 shrink-0 gap-4">
-        <h2 class="text-xl font-bold text-white text-center md:text-start w-full md:w-auto"><?php echo __('products_page_title'); ?></h2>
+        <div class="flex items-center justify-between w-full md:w-auto gap-4">
+            <h2 class="text-xl font-bold text-white text-start flex-1 md:flex-none"><?php echo __('products_page_title'); ?></h2>
+            <button id="toggle-header-actions" class="md:hidden text-gray-400 hover:text-white transition-colors p-2 bg-white/5 rounded-lg shrink-0">
+                <span class="material-icons-round text-2xl">filter_list</span>
+            </button>
+        </div>
 
-        <div class="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
+        <div id="header-actions-content" class="hidden md:flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
             <button id="add-product-btn"
                 class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold shadow-lg shadow-rose-500/30 flex items-center gap-2 transition-all hover:-translate-y-0.5 text-xs md:text-sm flex-1 md:flex-none justify-center">
                 <span class="material-icons-round text-sm">add</span>
@@ -727,6 +732,28 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Toggle Header Actions on Mobile
+        const toggleHeaderActionsBtn = document.getElementById('toggle-header-actions');
+        const headerActionsContent = document.getElementById('header-actions-content');
+        
+        if (toggleHeaderActionsBtn && headerActionsContent) {
+            toggleHeaderActionsBtn.addEventListener('click', () => {
+                headerActionsContent.classList.toggle('hidden');
+                headerActionsContent.classList.toggle('flex');
+                // Change icon based on state
+                const icon = toggleHeaderActionsBtn.querySelector('.material-icons-round');
+                if (headerActionsContent.classList.contains('hidden')) {
+                    icon.textContent = 'filter_list';
+                    toggleHeaderActionsBtn.classList.remove('bg-primary/20', 'text-primary');
+                    toggleHeaderActionsBtn.classList.add('bg-white/5', 'text-gray-400');
+                } else {
+                    icon.textContent = 'expand_less';
+                    toggleHeaderActionsBtn.classList.remove('bg-white/5', 'text-gray-400');
+                    toggleHeaderActionsBtn.classList.add('bg-primary/20', 'text-primary');
+                }
+            });
+        }
+
         // التحقق من وجود رسالة محفوظة في sessionStorage وعرضها
         const savedMessage = sessionStorage.getItem('toastMessage');
         const savedType = sessionStorage.getItem('toastType');
