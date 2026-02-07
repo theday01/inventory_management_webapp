@@ -2860,7 +2860,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         <div class="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
                             <span class="material-icons-round text-2xl text-primary">store</span>
                         </div>
-                        <div class="flex-1 text-right">
+                        <div class="flex-1 text-start">
                             <h3 class="text-xl font-bold text-primary mb-3"><?php echo __('welcome_intro_title'); ?></h3>
                             <p class="text-gray-300 leading-relaxed">
                                 <?php echo __('welcome_intro_text'); ?>
@@ -2875,7 +2875,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         <div class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center flex-shrink-0">
                             <span class="material-icons-round text-2xl text-accent">rocket_launch</span>
                         </div>
-                        <div class="flex-1 text-right">
+                        <div class="flex-1 text-start">
                             <h3 class="text-xl font-bold text-accent mb-4"><?php echo __('welcome_features_title'); ?></h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
@@ -2913,7 +2913,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         <div class="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                             <span class="material-icons-round text-2xl text-yellow-400">warning</span>
                         </div>
-                        <div class="flex-1 text-right">
+                        <div class="flex-1 text-start">
                             <h3 class="text-xl font-bold text-yellow-400 mb-3"><?php echo __('welcome_step3_title'); ?></h3>
                             <p class="text-gray-300 leading-relaxed mb-4">
                                 <?php echo __('welcome_step3_text'); ?>
@@ -2950,7 +2950,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                             <span class="material-icons-round text-2xl text-green-400">build</span>
                         </div>
-                        <div class="flex-1 text-right">
+                        <div class="flex-1 text-start">
                             <h3 class="text-xl font-bold text-green-400 mb-3"><?php echo __('welcome_custom_title'); ?></h3>
                             <p class="text-gray-300 leading-relaxed mb-4">
                                 <?php echo __('welcome_custom_text'); ?>
@@ -2989,7 +2989,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                         <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                             <span class="material-icons-round text-2xl text-blue-400">devices</span>
                         </div>
-                        <div class="flex-1 text-right">
+                        <div class="flex-1 text-start">
                             <h3 class="text-xl font-bold text-blue-400 mb-3"><?php echo __('welcome_setup_title'); ?></h3>
                             <p class="text-gray-300 leading-relaxed mb-4">
                                 <?php echo __('welcome_setup_text'); ?>
@@ -3117,7 +3117,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
         
         if (type === 'touch') {
-            settings.push({ name: 'virtualKeyboardEnabled', value: '1' });
+            settings.push({ name: 'keyboard_enabled', value: '1' });
         }
         
         fetch('api.php?action=updateSetting', {

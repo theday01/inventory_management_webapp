@@ -22,7 +22,7 @@ return [
     'invoices' => 'Factures',
     'refunds' => 'Remboursements',
     'expenses' => 'Dépenses',
-    'products_management' => 'Gestion des stocks et des produits',
+    'products_management' => 'Gestion S-P',
     'customers' => 'Clients',
     'deleted_products' => 'Produits supprimés',
     'zakat_calculator' => 'Calcul Zakat',
