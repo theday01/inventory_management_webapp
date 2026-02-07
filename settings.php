@@ -242,9 +242,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
             <div class="flex items-center gap-4">
                 <?php if ($isAdmin): ?>
-                    <button type="submit" id="save-settings-btn" disabled class="bg-gray-500/50 text-gray-400 px-8 py-2.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 cursor-not-allowed">
+                    <button type="submit" id="save-settings-btn" disabled class="bg-gray-500/50 text-gray-400 px-4 md:px-8 py-2.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 cursor-not-allowed">
                         <span class="material-icons-round text-sm">save</span>
-                        <span><?php echo __('save_changes_btn'); ?></span>
+                        <span class="hidden md:inline"><?php echo __('save_changes_btn'); ?></span>
                     </button>
                 <?php else: ?>
                     <div class="bg-gray-500/20 text-gray-400 px-6 py-2 rounded-xl font-bold flex items-center gap-2 cursor-not-allowed">
@@ -2069,7 +2069,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             if (!hasChanges) {
                 hasChanges = true;
                 saveBtn.disabled = false;
-                saveBtn.className = "bg-primary hover:bg-primary-hover text-white px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer";
+                saveBtn.className = "bg-primary hover:bg-primary-hover text-white px-4 md:px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer";
                 alertDiv.classList.remove('hidden');
             }
         }
@@ -2078,7 +2078,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         function disableSave() {
             hasChanges = false;
             saveBtn.disabled = true;
-            saveBtn.className = "bg-gray-500/50 text-gray-400 px-8 py-2.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 cursor-not-allowed";
+            saveBtn.className = "bg-gray-500/50 text-gray-400 px-4 md:px-8 py-2.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 cursor-not-allowed";
             alertDiv.classList.add('hidden');
         }
 

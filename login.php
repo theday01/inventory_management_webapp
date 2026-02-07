@@ -97,13 +97,13 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 
-<body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+<body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative">
 
 <!-- نظام الرسائل الموحد -->
-<div id="toast-notification" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none">
-    <div id="toast-content" class="flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md">
-        <span id="toast-icon" class="material-icons-round text-2xl"></span>
-        <span id="toast-message" class="font-bold text-lg"></span>
+<div id="toast-notification" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none w-[90%] max-w-md md:w-auto">
+    <div id="toast-content" class="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 rounded-xl shadow-2xl backdrop-blur-md">
+        <span id="toast-icon" class="material-icons-round text-xl md:text-2xl"></span>
+        <span id="toast-message" class="font-bold text-base md:text-lg"></span>
     </div>
 </div>
 
@@ -182,18 +182,18 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
 </script>
 
     <div
-        class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none">
+        class="absolute top-[-10%] right-[-5%] w-64 h-64 md:w-[500px] md:h-[500px] bg-primary/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none">
     </div>
     <div
-        class="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px] pointer-events-none">
+        class="absolute bottom-[-10%] left-[-5%] w-64 h-64 md:w-[500px] md:h-[500px] bg-accent/10 rounded-full blur-[80px] md:blur-[120px] pointer-events-none">
     </div>
 
     <div
-        class="w-full max-w-md bg-dark-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl p-8 relative z-10 glass-panel">
+        class="w-full max-w-md bg-dark-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl p-6 md:p-8 relative z-10 glass-panel mx-4 md:mx-0">
 
-        <div class="text-center mb-10">
-            <h1 class="text-3xl font-bold text-white mb-2"><?php echo __('welcome_back'); ?></h1>
-            <p class="text-gray-400"><?php echo __('login_subtitle'); ?></p>
+        <div class="text-center mb-8 md:mb-10">
+            <h1 class="text-2xl md:text-3xl font-bold text-white mb-2"><?php echo __('welcome_back'); ?></h1>
+            <p class="text-sm md:text-base text-gray-400"><?php echo __('login_subtitle'); ?></p>
         </div>
 
         <form action="login.php" method="POST" class="space-y-6">

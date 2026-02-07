@@ -55,7 +55,7 @@ if ($result && $result->num_rows > 0) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     </head>
-    <body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative">
         <!-- خلفية متحركة -->
         <div class="absolute inset-0 bg-gradient-to-br from-dark via-dark-surface to-dark opacity-80"></div>
         <div class="absolute inset-0">
@@ -63,13 +63,13 @@ if ($result && $result->num_rows > 0) {
             <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
 
-        <div class="relative z-10 w-full max-w-md">
-            <div class="glass-panel rounded-2xl p-8 text-center shadow-2xl">
+        <div class="relative z-10 w-full max-w-md px-4 md:px-0">
+            <div class="glass-panel rounded-2xl p-6 md:p-8 text-center shadow-2xl">
                 <div class="mb-6">
-                    <div class="inline-flex items-center justify-center w-20 h-20 bg-red-500/20 rounded-full mb-4">
-                        <span class="material-icons-round text-4xl text-red-400">lock</span>
+                    <div class="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-red-500/20 rounded-full mb-4">
+                        <span class="material-icons-round text-3xl md:text-4xl text-red-400">lock</span>
                     </div>
-                    <h1 class="text-2xl font-bold text-white mb-2">الصفحة غير متوفرة</h1>
+                    <h1 class="text-xl md:text-2xl font-bold text-white mb-2">الصفحة غير متوفرة</h1>
                     <p class="text-gray-300 leading-relaxed">
                         هذه الصفحة لم تعد قابلة للوصول. تواصل مع صاحب المتجر ليضيفك إلى المستخدمين الجدد.
                     </p>
@@ -229,13 +229,13 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 
-<body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+<body class="bg-dark text-white font-sans min-h-screen flex items-center justify-center p-4 relative">
 
 <!-- نظام الرسائل الموحد -->
-<div id="toast-notification" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none">
-    <div id="toast-content" class="flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md">
-        <span id="toast-icon" class="material-icons-round text-2xl"></span>
-        <span id="toast-message" class="font-bold text-lg"></span>
+<div id="toast-notification" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none w-[90%] max-w-md md:w-auto">
+    <div id="toast-content" class="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 rounded-xl shadow-2xl backdrop-blur-md">
+        <span id="toast-icon" class="material-icons-round text-xl md:text-2xl"></span>
+        <span id="toast-message" class="font-bold text-base md:text-lg"></span>
     </div>
 </div>
 
@@ -407,21 +407,21 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
     });
 </script>
     <div
-        class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none">
+        class="absolute top-[-10%] right-[-5%] w-64 h-64 md:w-[500px] md:h-[500px] bg-primary/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none">
     </div>
     <div
-        class="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px] pointer-events-none">
+        class="absolute bottom-[-10%] left-[-5%] w-64 h-64 md:w-[500px] md:h-[500px] bg-accent/10 rounded-full blur-[80px] md:blur-[120px] pointer-events-none">
     </div>
 
     <div
-        class="w-full max-w-6xl bg-dark-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl p-12 relative z-10 glass-panel">
+        class="w-full max-w-6xl bg-dark-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl p-6 md:p-12 relative z-10 glass-panel">
 
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-white mb-3">إنشاء حساب مسؤول</h1>
-            <p class="text-gray-400 text-lg">مرحباً بك في Smart Shop. قم بإنشاء الحساب الأول ليكون حساب المدير.</p>
+        <div class="text-center mb-8 md:mb-12">
+            <h1 class="text-2xl md:text-4xl font-bold text-white mb-3">إنشاء حساب مسؤول</h1>
+            <p class="text-sm md:text-lg text-gray-400">مرحباً بك في Smart Shop. قم بإنشاء الحساب الأول ليكون حساب المدير.</p>
         </div>
 
-        <form action="register.php" method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <form action="register.php" method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
             <!-- الجانب الأيمن: المعلومات الأساسية -->
             <div class="lg:col-span-1 space-y-8">
                 <div>
@@ -433,7 +433,7 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                     <div>
                         <label for="username" class="block text-sm font-semibold text-gray-300 mb-3">اسم المستخدم</label>
                         <input type="text" id="username" name="username"
-                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 text-base"
+                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 text-base"
                             placeholder="أدخل اسم المستخدم" required>
                     </div>
                 </div>
@@ -442,7 +442,7 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                     <label for="password" class="block text-sm font-semibold text-gray-300 mb-3">كلمة المرور</label>
                     <div class="relative">
                         <input type="password" id="password" name="password"
-                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-4 pl-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 text-base"
+                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 md:py-4 pl-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 text-base"
                             placeholder="••••••••" required>
                         <button type="button" onclick="togglePassword('password', 'togglePasswordIcon')" 
                             class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
@@ -456,7 +456,7 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                     <label for="password_confirm" class="block text-sm font-semibold text-gray-300 mb-3">تأكيد كلمة المرور</label>
                     <div class="relative">
                         <input type="password" id="password_confirm" name="password_confirm"
-                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-4 pl-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 text-base"
+                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 md:py-4 pl-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 text-base"
                             placeholder="••••••••" required>
                         <button type="button" onclick="togglePassword('password_confirm', 'toggleConfirmPasswordIcon')" 
                             class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
@@ -473,7 +473,7 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                     <span class="align-middle mr-2">أسئلة الأمان (لاستعادة كلمة المرور)</span>
                 </h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                     <!-- سؤال الأمان 1 -->
                     <div class="space-y-4">
                         <div class="flex items-center gap-2 mb-4">
@@ -481,7 +481,7 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                             <label for="security_question_1" class="text-sm font-semibold text-gray-300">السؤال الأول</label>
                         </div>
                         <select id="security_question_1" name="security_question_1" 
-                            class="w-full bg-dark/50 border border-dark-border text-white text-right rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300" required>
+                            class="w-full bg-dark/50 border border-dark-border text-white text-right rounded-lg px-4 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300" required>
                             <option value="">اختر السؤال...</option>
                             <option value="ما اسم والدتك؟">ما اسم والدتك؟</option>
                             <option value="ما هي مدينة ميلادك؟">ما هي مدينة ميلادك؟</option>
@@ -490,7 +490,7 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                             <option value="ما هو عنوان بيتك الأول؟">ما هو عنوان بيتك الأول؟</option>
                         </select>
                         <input type="text" id="security_answer_1" name="security_answer_1"
-                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
+                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                             placeholder="أجب على السؤال" required>
                         <p id="error_security_answer_1" class="text-red-500 text-xs mt-1 hidden font-bold">هذه الإجابة مكررة وغير مقبولة</p>
                     </div>
@@ -502,7 +502,7 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                             <label for="security_question_2" class="text-sm font-semibold text-gray-300">السؤال الثاني</label>
                         </div>
                         <select id="security_question_2" name="security_question_2" 
-                            class="w-full bg-dark/50 border border-dark-border text-white text-right rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300" required>
+                            class="w-full bg-dark/50 border border-dark-border text-white text-right rounded-lg px-4 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300" required>
                             <option value="">اختر السؤال...</option>
                             <option value="ما اسم والدتك؟">ما اسم والدتك؟</option>
                             <option value="ما هي مدينة ميلادك؟">ما هي مدينة ميلادك؟</option>
@@ -511,7 +511,7 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                             <option value="ما هو عنوان بيتك الأول؟">ما هو عنوان بيتك الأول؟</option>
                         </select>
                         <input type="text" id="security_answer_2" name="security_answer_2"
-                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
+                            class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                             placeholder="أجب على السؤال" required>
                         <p id="error_security_answer_2" class="text-red-500 text-xs mt-1 hidden font-bold">هذه الإجابة مكررة وغير مقبولة</p>
                     </div>
@@ -524,7 +524,7 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                         <label for="security_question_3" class="text-sm font-semibold text-gray-300">السؤال الثالث</label>
                     </div>
                     <select id="security_question_3" name="security_question_3" 
-                        class="w-full bg-dark/50 border border-dark-border text-white text-right rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300" required>
+                        class="w-full bg-dark/50 border border-dark-border text-white text-right rounded-lg px-4 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300" required>
                         <option value="">اختر السؤال...</option>
                         <option value="ما اسم والدتك؟">ما اسم والدتك؟</option>
                         <option value="ما هي مدينة ميلادك؟">ما هي مدينة ميلادك؟</option>
@@ -533,13 +533,13 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                         <option value="ما هو عنوان بيتك الأول؟">ما هو عنوان بيتك الأول؟</option>
                     </select>
                     <input type="text" id="security_answer_3" name="security_answer_3"
-                        class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
+                        class="w-full bg-dark/50 border border-dark-border text-white text-right placeholder-gray-500 rounded-lg px-4 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                         placeholder="أجب على السؤال" required>
                     <p id="error_security_answer_3" class="text-red-500 text-xs mt-1 hidden font-bold">هذه الإجابة مكررة وغير مقبولة</p>
                 </div>
             </div>
 
-            <button type="submit" class="lg:col-span-3 py-4 px-8 border border-transparent rounded-lg shadow-lg shadow-primary/25 text-base font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+            <button type="submit" class="lg:col-span-3 py-3 px-6 md:py-4 md:px-8 border border-transparent rounded-lg shadow-lg shadow-primary/25 text-base font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
                 <span class="material-icons-round">check_circle</span>
                 إنشاء حساب
             </button>
