@@ -767,23 +767,40 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         <!-- Welcome & Quick Actions Section -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 mb-8">
             <!-- Welcome Banner -->
-            <div class="lg:col-span-2 bg-gradient-to-br from-dark-surface/80 to-dark-surface/40 backdrop-blur-xl border border-white/10 rounded-3xl p-4 md:p-8 relative overflow-hidden animate-enter">
-                <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+            <div class="lg:col-span-2 bg-gradient-to-br from-dark-surface/90 to-dark-surface/50 backdrop-blur-xl border border-white/10 rounded-3xl p-4 md:p-8 relative overflow-hidden animate-enter group hover:border-primary/20 transition-colors duration-500">
+                <!-- Background decoration -->
+                <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-primary/10 to-transparent pointer-events-none opacity-50"></div>
+                <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-[80px] pointer-events-none animate-pulse"></div>
+                
                 <div class="relative z-10">
-                    <h1 class="text-2xl md:text-4xl font-bold text-white mb-3 leading-tight">
-                        <?php echo __('welcome_to'); ?> <span class="gradient-text"><?php echo htmlspecialchars($shopName); ?></span> 👋
+                    <h1 class="text-2xl md:text-4xl font-bold text-white mb-2 leading-tight flex flex-col md:flex-row gap-2 md:items-center">
+                        <span id="dynamic-greeting" class="flex items-center gap-2"></span> 
+                        <span class="gradient-text"><?php echo htmlspecialchars($_SESSION['username']); ?></span> 👋
                     </h1>
-                    <p class="text-gray-400 text-lg max-w-2xl">
-                        <?php echo sprintf(__('store_performance_overview'), '<span class="text-white font-bold" id="today-orders-count-banner">0</span>', '<span class="text-primary font-bold" id="today-revenue-banner">0</span>'); ?>
+                    
+                    <p class="text-gray-300 text-lg mb-1 font-medium flex items-center gap-2">
+                        <?php echo __('welcome_to'); ?> <span class="text-primary font-bold"><?php echo htmlspecialchars($shopName); ?></span>
                     </p>
                     
-                    <div class="mt-8 flex gap-4">
-                        <a href="pos.php" class="action-btn group bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/25 flex items-center gap-3 hover:-translate-y-1 transition-all">
-                            <span class="material-icons-round transition-transform">add_shopping_cart</span>
+                    <p id="dynamic-subtext" class="text-gray-400 text-sm md:text-base max-w-2xl mb-6 font-light italic">
+                        <!-- Subtext from JS -->
+                    </p>
+
+                    <!-- The stats sentence (Store performance overview...) -->
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-3 md:p-4 max-w-fit mb-8 backdrop-blur-md shadow-lg">
+                        <p class="text-gray-300 text-sm md:text-base flex items-start md:items-center gap-3 leading-relaxed">
+                            <span class="material-icons-round text-primary bg-primary/10 p-1 rounded-lg">analytics</span>
+                            <span><?php echo sprintf(__('store_performance_overview'), '<span class="text-white font-bold text-lg px-1" id="today-orders-count-banner">0</span>', '<span class="text-primary font-bold text-lg px-1" id="today-revenue-banner">0</span>'); ?></span>
+                        </p>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <a href="pos.php" class="action-btn group bg-gradient-to-r from-primary to-primary-hover text-white px-6 py-3.5 rounded-xl font-bold shadow-lg shadow-primary/25 flex items-center gap-3 hover:-translate-y-1 hover:shadow-primary/40 transition-all">
+                            <span class="material-icons-round transition-transform group-hover:rotate-12">add_shopping_cart</span>
                             <?php echo __('new_sale'); ?>
                         </a>
-                        <a href="products.php" class="action-btn group bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-xl font-bold border border-white/10 flex items-center gap-3 hover:-translate-y-1 transition-all">
-                            <span class="material-icons-round text-accent">inventory</span>
+                        <a href="products.php" class="action-btn group bg-white/5 hover:bg-white/10 text-white px-6 py-3.5 rounded-xl font-bold border border-white/10 flex items-center gap-3 hover:-translate-y-1 hover:border-white/20 transition-all">
+                            <span class="material-icons-round text-accent group-hover:scale-110 transition-transform">inventory</span>
                             <?php echo __('products_management'); ?>
                         </a>
                     </div>
@@ -1764,6 +1781,34 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
 
     document.addEventListener('DOMContentLoaded', function() {
         
+        // Greeting Logic
+        function updateGreeting() {
+            const hour = new Date().getHours();
+            let greetingKey = 'good_morning';
+            let messageKey = 'dashboard_message_morning';
+            let icon = '🌅'; 
+
+            if (hour >= 12 && hour < 17) {
+                greetingKey = 'good_afternoon';
+                messageKey = 'dashboard_message_afternoon';
+                icon = '☀️'; 
+            } else if (hour >= 17) {
+                greetingKey = 'good_evening';
+                messageKey = 'dashboard_message_evening';
+                icon = '🌙'; 
+            }
+
+            const greetingText = window.__(greetingKey);
+            const messageText = window.__(messageKey);
+
+            const greetingEl = document.getElementById('dynamic-greeting');
+            if(greetingEl) greetingEl.innerHTML = `<span class="text-3xl md:text-4xl animate-pulse">${icon}</span> ${greetingText}`;
+
+            const subtextEl = document.getElementById('dynamic-subtext');
+            if(subtextEl) subtextEl.textContent = messageText;
+        }
+        updateGreeting();
+
         // Real Time Clock
         function updateRealTime() {
             const now = new Date();
@@ -2800,10 +2845,10 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                     <div class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full animate-ping"></div>
                 </div>
                 <h2 class="text-4xl font-bold bg-gradient-to-r from-white via-accent to-primary bg-clip-text text-transparent mb-3 animate-slideUp">
-                    مرحباً بك في Smart Shop
+                    <?php echo __('welcome_modal_title'); ?>
                 </h2>
                 <p class="text-gray-300 text-lg animate-slideUp animation-delay-200">
-                    نحن سعداء بانضمامك إلى عائلتنا المتخصصة في إدارة المتاجر
+                    <?php echo __('welcome_modal_subtitle'); ?>
                 </p>
             </div>
 
@@ -2816,9 +2861,9 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             <span class="material-icons-round text-2xl text-primary">store</span>
                         </div>
                         <div class="flex-1 text-right">
-                            <h3 class="text-xl font-bold text-primary mb-3">شكراً لاختيارك Smart Shop</h3>
+                            <h3 class="text-xl font-bold text-primary mb-3"><?php echo __('welcome_intro_title'); ?></h3>
                             <p class="text-gray-300 leading-relaxed">
-                                نظام Smart Shop هو حل شامل ومتطور لإدارة متجرك بكفاءة واحترافية عالية. يساعدك في إدارة المنتجات، تتبع المخزون، إدارة العملاء، إنشاء الفواتير الاحترافية، وتحليل الأداء المالي بشكل دقيق.
+                                <?php echo __('welcome_intro_text'); ?>
                             </p>
                         </div>
                     </div>
@@ -2831,31 +2876,31 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             <span class="material-icons-round text-2xl text-accent">rocket_launch</span>
                         </div>
                         <div class="flex-1 text-right">
-                            <h3 class="text-xl font-bold text-accent mb-4">ما يمكنك فعله مع النظام</h3>
+                            <h3 class="text-xl font-bold text-accent mb-4"><?php echo __('welcome_features_title'); ?></h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
                                     <span class="material-icons-round text-accent text-lg">inventory_2</span>
-                                    <span class="text-gray-300">إدارة شاملة للمنتجات والمخزون</span>
+                                    <span class="text-gray-300"><?php echo __('welcome_feature_1'); ?></span>
                                 </div>
                                 <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
                                     <span class="material-icons-round text-accent text-lg">people</span>
-                                    <span class="text-gray-300">تتبع العملاء وتاريخ المشتريات</span>
+                                    <span class="text-gray-300"><?php echo __('welcome_feature_2'); ?></span>
                                 </div>
                                 <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
                                     <span class="material-icons-round text-accent text-lg">receipt_long</span>
-                                    <span class="text-gray-300">إنشاء فواتير احترافية وتتبع المبيعات</span>
+                                    <span class="text-gray-300"><?php echo __('welcome_feature_3'); ?></span>
                                 </div>
                                 <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
                                     <span class="material-icons-round text-accent text-lg">analytics</span>
-                                    <span class="text-gray-300">تقارير مفصلة وتحليلات مالية</span>
+                                    <span class="text-gray-300"><?php echo __('welcome_feature_4'); ?></span>
                                 </div>
                                 <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
                                     <span class="material-icons-round text-accent text-lg">point_of_sale</span>
-                                    <span class="text-gray-300">نظام نقاط البيع المتطور</span>
+                                    <span class="text-gray-300"><?php echo __('welcome_feature_5'); ?></span>
                                 </div>
                                 <div class="flex items-center gap-3 p-3 bg-dark/30 rounded-lg hover:bg-dark/50 transition-colors">
                                     <span class="material-icons-round text-accent text-lg">settings</span>
-                                    <span class="text-gray-300">تخصيص النظام حسب احتياجاتك</span>
+                                    <span class="text-gray-300"><?php echo __('welcome_feature_6'); ?></span>
                                 </div>
                             </div>
                         </div>
@@ -2869,30 +2914,30 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             <span class="material-icons-round text-2xl text-yellow-400">warning</span>
                         </div>
                         <div class="flex-1 text-right">
-                            <h3 class="text-xl font-bold text-yellow-400 mb-3">⚠️ خطوة مهمة قبل البدء</h3>
+                            <h3 class="text-xl font-bold text-yellow-400 mb-3"><?php echo __('welcome_step3_title'); ?></h3>
                             <p class="text-gray-300 leading-relaxed mb-4">
-                                للحصول على أفضل أداء وتخصيص النظام حسب احتياجات متجرك، يرجى الذهاب إلى صفحة الإعدادات وتعديل البيانات التالية:
+                                <?php echo __('welcome_step3_text'); ?>
                             </p>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 <div class="flex items-center gap-2 text-sm text-gray-300">
                                     <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
-                                    العملة المستخدمة في المتجر
+                                    <?php echo __('welcome_step3_item_1'); ?>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-gray-300">
                                     <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
-                                    إعدادات الضرائب والرسوم
+                                    <?php echo __('welcome_step3_item_2'); ?>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-gray-300">
                                     <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
-                                    معلومات التوصيل والمدن
+                                    <?php echo __('welcome_step3_item_3'); ?>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-gray-300">
                                     <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
-                                    إعدادات الإشعارات والتنبيهات
+                                    <?php echo __('welcome_step3_item_4'); ?>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-gray-300">
                                     <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
-                                    شعار المتجر والبيانات الأساسية
+                                    <?php echo __('welcome_step3_item_5'); ?>
                                 </div>
                             </div>
                         </div>
@@ -2906,32 +2951,31 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             <span class="material-icons-round text-2xl text-green-400">build</span>
                         </div>
                         <div class="flex-1 text-right">
-                            <h3 class="text-xl font-bold text-green-400 mb-3">تخصيص مخصص لك</h3>
+                            <h3 class="text-xl font-bold text-green-400 mb-3"><?php echo __('welcome_custom_title'); ?></h3>
                             <p class="text-gray-300 leading-relaxed mb-4">
-                                يمكننا تعديل أي شيء في النظام بشكل مخصص لك ولمشروعك — فقط تواصل معنا وسنساعدك في تطوير النظام حسب رؤيتك.
+                                <?php echo __('welcome_custom_text'); ?>
                             </p>
                             <div class="bg-gradient-to-r from-dark-surface/80 to-dark/50 border border-white/10 rounded-xl p-4">
                                 <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                                     <span class="material-icons-round text-green-400">contact_support</span>
-                                    للتواصل معنا
+                                    <?php echo __('welcome_contact_title'); ?>
                                 </h4>
                                 <div class="space-y-2 text-sm">
                                     <p class="text-gray-300">
-                                        الموقع الإلكتروني:
+                                        <?php echo __('contact_us'); ?>:
                                         <a href="https://eagleshadow.technology" class="text-primary hover:text-primary-hover underline transition-colors">eagleshadow.technology</a>
                                     </p>
                                     <p class="text-gray-300">
-                                        البريد الإلكتروني:
+                                        <?php echo __('email'); ?>:
                                         <a href="mailto:support@eagleshadow.technology" class="text-primary hover:text-primary-hover underline transition-colors">support@eagleshadow.technology</a>
                                     </p>
                                     <p class="text-gray-300">
-                                        واتساب:
+                                        <?php echo __('whatsapp'); ?>:
                                         <a href="https://wa.me/212700979284?text=مرحباً، انا قادم من نظام سمارتشوب واريد تخصيص بعض المميزات لأجل متجري فقط ...." target="_blank" class="text-primary hover:text-primary-hover underline transition-colors">0700979284</a>
                                     </p>
                                     <p class="text-gray-300">
-                                        صفحة الدعم:
-                                        <a href="contact.php" class="text-primary hover:text-primary-hover underline transition-colors">اذهب إلى صفحة التواصل</a>
-                                        <span class="text-xs text-gray-400">(يمكنك الوصول إلى هذه الصفحة في أي وقت عبر الإعدادات)</span>
+                                        <?php echo __('contact_link'); ?>:
+                                        <a href="contact.php" class="text-primary hover:text-primary-hover underline transition-colors"><?php echo __('contact_link'); ?></a>
                                     </p>
                                 </div>
                             </div>
@@ -2946,22 +2990,22 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                             <span class="material-icons-round text-2xl text-blue-400">devices</span>
                         </div>
                         <div class="flex-1 text-right">
-                            <h3 class="text-xl font-bold text-blue-400 mb-3">تخصيص سريع للنظام</h3>
+                            <h3 class="text-xl font-bold text-blue-400 mb-3"><?php echo __('welcome_setup_title'); ?></h3>
                             <p class="text-gray-300 leading-relaxed mb-4">
-                                هل جهازك يدعم شاشة اللمس؟
-                                <span class="text-yellow-400 text-sm font-bold block mt-1">هذا سيؤثر على بعض الميزات مثل لوحة المفاتيح الافتراضية</span>
+                                <?php echo __('welcome_setup_text'); ?>
+                                <span class="text-yellow-400 text-sm font-bold block mt-1"><?php echo __('welcome_setup_note'); ?></span>
                             </p>
                             <div class="flex flex-col sm:flex-row gap-4">
                                 <button id="device-touch" class="flex-1 bg-gradient-to-r from-accent to-accent-hover hover:from-accent-hover hover:to-accent text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-accent/30 flex items-center justify-center gap-3">
                                     <span class="material-icons-round">touch_app</span>
-                                    <span>حاسوب بشاشة لمس</span>
+                                    <span><?php echo __('device_touch_btn'); ?></span>
                                 </button>
                                 <button id="device-desktop" class="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-gray-600/30 flex items-center justify-center gap-3">
                                     <span class="material-icons-round">computer</span>
-                                    <span>حاسوب عادي</span>
+                                    <span><?php echo __('device_desktop_btn'); ?></span>
                                 </button>
                             </div>
-                            <p id="device-feedback" class="text-sm text-center mt-3 text-gray-400 opacity-0 transition-opacity">تم حفظ الإعداد بنجاح!</p>
+                            <p id="device-feedback" class="text-sm text-center mt-3 text-gray-400 opacity-0 transition-opacity"></p>
                         </div>
                     </div>
                 </div>
@@ -2971,11 +3015,11 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             <div class="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-white/10">
                 <button id="welcome-close" class="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-gray-600/30 flex items-center justify-center gap-2">
                     <span class="material-icons-round">check_circle</span>
-                    فهمت، سأذهب لاحقاً
+                    <?php echo __('welcome_later_btn'); ?>
                 </button>
                 <a href="settings.php" class="flex-1 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-primary/30 text-center flex items-center justify-center gap-2">
                     <span class="material-icons-round">settings</span>
-                    اذهب إلى الإعدادات الآن
+                    <?php echo __('welcome_settings_btn'); ?>
                 </a>
             </div>
         </div>
@@ -3087,7 +3131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             hideLoadingOverlay();
             if (data.success) {
-                deviceFeedback.textContent = 'تم حفظ الإعدادات بنجاح!';
+                deviceFeedback.textContent = window.__('settings_saved_feedback');
                 deviceFeedback.classList.remove('text-red-400');
                 deviceFeedback.classList.add('text-green-400');
                 deviceFeedback.style.opacity = '1';
@@ -3097,7 +3141,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 deviceTouchBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 deviceDesktopBtn.classList.add('opacity-50', 'cursor-not-allowed');
             } else {
-                deviceFeedback.textContent = 'فشل في حفظ الإعدادات.';
+                deviceFeedback.textContent = window.__('settings_save_fail');
                 deviceFeedback.classList.remove('text-green-400');
                 deviceFeedback.classList.add('text-red-400');
                 deviceFeedback.style.opacity = '1';
@@ -3106,7 +3150,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             hideLoadingOverlay();
             console.error('Error:', error);
-            deviceFeedback.textContent = 'حدث خطأ.';
+            deviceFeedback.textContent = window.__('error_occurred');
             deviceFeedback.classList.remove('text-green-400');
             deviceFeedback.classList.add('text-red-400');
             deviceFeedback.style.opacity = '1';
