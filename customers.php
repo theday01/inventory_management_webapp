@@ -107,22 +107,22 @@ require_once 'db.php';
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark">
     <div class="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 md:px-8 relative z-10 shrink-0">
         <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <span class="material-icons-round text-primary">groups</span>
-            <span><?php echo __('customers_management'); ?></span>
+            <span class="hidden sm:inline"><?php echo __('customers_management'); ?></span>
         </h2>
         
         <div class="flex items-center gap-3">
             <button id="export-excel-btn"
                 class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all hover:border-emerald-500/50">
                 <span class="material-icons-round text-sm">download</span>
-                <span><?php echo __('export_excel'); ?></span>
+                <span class="hidden md:inline"><?php echo __('export_excel'); ?></span>
             </button>
             <button id="add-customer-btn"
                 class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:-translate-y-0.5">
                 <span class="material-icons-round text-sm">add</span>
-                <span><?php echo __('add_customer'); ?></span>
+                <span class="hidden md:inline"><?php echo __('add_customer'); ?></span>
             </button>
         </div>
     </header>
@@ -142,7 +142,7 @@ require_once 'db.php';
         <div class="flex-1 flex flex-col bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
             <div class="flex-1 overflow-y-auto">
                 <table class="w-full">
-                    <thead class="sticky top-0 bg-dark-surface/95 backdrop-blur-sm z-10 border-b border-white/5">
+                    <thead class="hidden md:table-header-group sticky top-0 bg-dark-surface/95 backdrop-blur-sm z-10 border-b border-white/5">
                         <tr class="text-right">
                             <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('customer_name'); ?></th>
                             <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('phone_number'); ?></th>
@@ -151,7 +151,7 @@ require_once 'db.php';
                             <th class="p-4 text-sm font-medium text-gray-300 text-center w-40"><?php echo __('actions'); ?></th> 
                         </tr>
                     </thead>
-                    <tbody id="customers-table-body" class="divide-y divide-white/5">
+                    <tbody id="customers-table-body" class="grid grid-cols-1 md:table-row-group gap-4 p-4 md:p-0 md:divide-y md:divide-white/5">
                         </tbody>
                 </table>
             </div>
@@ -419,25 +419,34 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         customers.forEach(customer => {
             const customerRow = document.createElement('tr');
-            customerRow.className = 'hover:bg-white/5 transition-colors group border-b border-white/5 last:border-0';
+            // Responsive Card View Classes
+            customerRow.className = 'hover:bg-white/5 transition-colors group border border-white/5 rounded-xl p-4 mb-4 bg-white/5 md:bg-transparent md:border-b md:border-white/5 md:rounded-none md:p-0 md:mb-0 flex flex-col md:table-row relative';
             
             customerRow.innerHTML = `
-                <td class="p-4">
+                <td class="p-2 md:p-4 flex justify-between md:table-cell items-center">
+                    <span class="md:hidden text-gray-400 font-normal text-xs uppercase">${__('customer_name')}</span>
                     <div class="font-bold text-white text-sm">${customer.name}</div>
                 </td>
                 
-                <td class="p-4 text-sm text-gray-300 font-mono dir-ltr text-right">${customer.phone || '-'}</td>
+                <td class="p-2 md:p-4 flex justify-between md:table-cell items-center">
+                    <span class="md:hidden text-gray-400 font-normal text-xs uppercase">${__('phone_number')}</span>
+                    <div class="text-sm text-gray-300 font-mono dir-ltr text-right">${customer.phone || '-'}</div>
+                </td>
                 
-                <td class="p-4 text-sm text-gray-400">${customer.email || '-'}</td>
+                <td class="p-2 md:p-4 flex justify-between md:table-cell items-center">
+                    <span class="md:hidden text-gray-400 font-normal text-xs uppercase">${__('email_address')}</span>
+                    <div class="text-sm text-gray-400">${customer.email || '-'}</div>
+                </td>
                 
-                <td class="p-4 text-sm text-gray-400">
-                    <div class="truncate max-w-[250px]" title="${customer.address || ''}">
+                <td class="p-2 md:p-4 flex justify-between md:table-cell items-center">
+                    <span class="md:hidden text-gray-400 font-normal text-xs uppercase">${__('address')}</span>
+                    <div class="text-sm text-gray-400 truncate max-w-[200px] md:max-w-[250px]" title="${customer.address || ''}">
                         ${customer.address || '-'}
                     </div>
                 </td>
 
-                <td class="p-4">
-                    <div class="flex items-center justify-center gap-2 opacity-90 group-hover:opacity-100 transition-opacity">
+                <td class="p-2 md:p-4 flex justify-end md:justify-center md:table-cell mt-2 md:mt-0 border-t border-white/5 md:border-0 pt-3 md:pt-4">
+                    <div class="flex items-center gap-2 opacity-100 md:opacity-90 md:group-hover:opacity-100 transition-opacity">
                         <button class="view-barcode-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all" data-id="${customer.id}" data-name="${customer.name}" data-phone="${customer.phone}" title="${__('view_barcode')}">
                             <span class="material-icons-round text-[18px]">qr_code_2</span>
                         </button>
@@ -711,7 +720,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="text-xs text-gray-400 mb-1">${__('full_name')}</div>
                     <div class="text-lg font-bold text-white">${customer.name}</div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div class="bg-white/5 p-4 rounded-xl border border-white/5">
                         <div class="text-xs text-gray-400 mb-1">${__('phone_number')}</div>
                         <div class="text-white font-mono dir-ltr">${customer.phone || '-'}</div>
