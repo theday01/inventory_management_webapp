@@ -30,34 +30,34 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
     <!-- Header -->
     <header
-        class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-30 shrink-0">
-        <h2 class="text-xl font-bold text-white"><?php echo __('products_page_title'); ?></h2>
+        class="h-auto min-h-[5rem] py-4 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 sticky top-0 z-30 shrink-0 gap-4">
+        <h2 class="text-xl font-bold text-white text-center md:text-start w-full md:w-auto"><?php echo __('products_page_title'); ?></h2>
 
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
             <button id="add-product-btn"
-                class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-rose-500/30 flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold shadow-lg shadow-rose-500/30 flex items-center gap-2 transition-all hover:-translate-y-0.5 text-xs md:text-sm flex-1 md:flex-none justify-center">
                 <span class="material-icons-round text-sm">add</span>
-                <span><?php echo __('new_product'); ?></span>
+                <span class="whitespace-nowrap"><?php echo __('new_product'); ?></span>
             </button>
             <button id="bulk-add-btn"
-                class="bg-gradient-to-r from-violet-500/20 to-purple-500/20 hover:from-violet-500/30 hover:to-purple-500/30 text-violet-300 border border-violet-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-violet-500/20 to-purple-500/20 hover:from-violet-500/30 hover:to-purple-500/30 text-violet-300 border border-violet-500/40 px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5 text-xs md:text-sm flex-1 md:flex-none justify-center">
                 <span class="material-icons-round text-sm">playlist_add</span>
-                <span><?php echo __('bulk_add_products'); ?></span>
+                <span class="whitespace-nowrap"><?php echo __('bulk_add_products'); ?></span>
             </button>
             <button id="manage-categories-btn"
-                class="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-blue-300 border border-blue-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-blue-300 border border-blue-500/40 px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5 text-xs md:text-sm flex-1 md:flex-none justify-center">
                 <span class="material-icons-round text-sm">category</span>
-                <span><?php echo __('manage_categories'); ?></span>
+                <span class="whitespace-nowrap"><?php echo __('manage_categories'); ?></span>
             </button>
             <button id="export-csv-btn"
-                class="bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 text-orange-300 border border-orange-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 text-orange-300 border border-orange-500/40 px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5 text-xs md:text-sm flex-1 md:flex-none justify-center">
                 <span class="material-icons-round text-sm">download</span>
-                <span><?php echo __('export_excel'); ?></span>
+                <span class="whitespace-nowrap"><?php echo __('export_excel'); ?></span>
             </button>
             <button id="import-excel-btn"
-                class="bg-gradient-to-r from-teal-500/20 to-green-500/20 hover:from-teal-500/30 hover:to-green-500/30 text-teal-300 border border-teal-500/40 px-4 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5">
+                class="bg-gradient-to-r from-teal-500/20 to-green-500/20 hover:from-teal-500/30 hover:to-green-500/30 text-teal-300 border border-teal-500/40 px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all hover:-translate-y-0.5 text-xs md:text-sm flex-1 md:flex-none justify-center">
                 <span class="material-icons-round text-sm">upload_file</span>
-                <span><?php echo __('import_excel'); ?></span>
+                <span class="whitespace-nowrap"><?php echo __('import_excel'); ?></span>
             </button>
         </div>
     </header>
@@ -115,7 +115,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         <div class="flex-1 flex flex-col bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
             <div class="flex-1 overflow-y-auto">
                 <table class="w-full min-w-full table-auto">
-                    <thead>
+                    <thead class="hidden md:table-header-group">
                         <tr class="text-right">
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300 cursor-pointer sortable-header" data-sort="name"><?php echo __('product'); ?> <span class="sort-icon opacity-30">▲</span></th>
@@ -127,7 +127,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                             <th class="sticky top-0 bg-dark-surface/80 backdrop-blur-sm p-4 text-sm font-medium text-gray-300"><?php echo __('actions'); ?></th>
                         </tr>
                     </thead>
-                    <tbody id="products-table-body" class="divide-y divide-white/5">
+                    <tbody id="products-table-body" class="divide-y divide-white/5 block md:table-row-group">
                         <!-- Products will be loaded here -->
                     </tbody>
                 </table>
@@ -513,8 +513,8 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
         </div>
         <form id="bulk-add-form">
             <div class="p-6 max-h-[70vh] overflow-y-auto">
-                <div class="grid grid-cols-1 gap-4">
-                    <table class="w-full">
+                <div class="grid grid-cols-1 gap-4 overflow-x-auto">
+                    <table class="w-full min-w-[800px]">
                         <thead>
                             <tr class="text-right border-b border-white/10">
                                 <th class="p-2 text-sm font-medium text-gray-300"><?php echo __('product_name'); ?></th>
@@ -887,50 +887,71 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             const productRow = document.createElement('tr');
             
             const qty = parseInt(product.quantity);
-            let rowClass = 'transition-colors border-b border-white/5';
+            // Base classes for both mobile (card) and desktop (row)
+            let baseClasses = 'transition-colors border-b border-white/5 block md:table-row mb-4 md:mb-0 rounded-xl md:rounded-none overflow-hidden md:overflow-visible'; 
+            
             let quantityClass = 'text-gray-300';
             let quantityBadge = '';
+            let bgClass = 'bg-dark-surface/40 md:bg-transparent'; // Default background for mobile card
 
             if (qty === 0) {
-                rowClass += ' bg-gray-900/40 hover:bg-gray-900/50'; 
+                bgClass = 'bg-gray-900/40 hover:bg-gray-900/50'; 
                 quantityClass = 'text-gray-500 font-bold';
                 quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">block</span>${__('stock_status_out')}</span>`;
             } else if (qty <= criticalAlert) {
-                rowClass += ' bg-red-900/20 hover:bg-red-900/30'; 
+                bgClass = 'bg-red-900/20 hover:bg-red-900/30'; 
                 quantityClass = 'text-red-400 font-bold';
                 quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">error</span>${__('stock_status_critical')} (${qty}/${criticalAlert})</span>`;
             } else if (qty <= lowAlert) {
-                rowClass += ' bg-orange-900/20 hover:bg-orange-900/30';
+                bgClass = 'bg-orange-900/20 hover:bg-orange-900/30';
                 quantityClass = 'text-orange-400 font-bold';
                 quantityBadge = `<span class="inline-flex items-center gap-1 text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full ml-2"><span class="material-icons-round text-xs">warning</span>${__('stock_status_low')} (${qty}/${lowAlert})</span>`;
             } else {
-                rowClass += ' bg-transparent hover:bg-white/5';
+                 bgClass += ' hover:bg-white/5';
             }
 
-            productRow.className = rowClass;
+            productRow.className = `${baseClasses} ${bgClass}`;
 
             productRow.innerHTML = `
-                <td class="p-4"><input type="checkbox" class="product-checkbox bg-dark/50 border-white/20 rounded" data-id="${product.id}"></td>
-                <td class="p-4 text-sm text-gray-300 font-medium">${product.name}</td>
-                <td class="p-4 text-sm text-gray-300">
+                <td class="p-3 md:p-4 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-b-0 last:border-0">
+                    <span class="md:hidden font-bold text-gray-400 text-sm">${__('select')}</span>
+                    <input type="checkbox" class="product-checkbox bg-dark/50 border-white/20 rounded" data-id="${product.id}">
+                </td>
+                <td class="p-3 md:p-4 block md:table-cell text-sm text-gray-300 font-medium border-b border-white/5 md:border-b-0 last:border-0 flex justify-between items-center">
+                    <span class="md:hidden font-bold text-gray-400 text-sm">${__('product')}</span>
+                    <span>${product.name}</span>
+                </td>
+                <td class="p-3 md:p-4 block md:table-cell text-sm text-gray-300 border-b border-white/5 md:border-b-0 last:border-0 flex justify-between items-center">
+                    <span class="md:hidden font-bold text-gray-400 text-sm">${__('product_image')}</span>
                     <img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" class="w-10 h-10 rounded-md object-cover">
                 </td>
-                <td class="p-4 text-sm text-gray-300">${product.category_name || '-'}</td>
-                <td class="p-4 text-sm text-gray-300">${parseFloat(product.price).toFixed(2)}</td>
-                <td class="p-4 text-sm ${quantityClass}">
-                    <div class="flex items-center">
+                <td class="p-3 md:p-4 block md:table-cell text-sm text-gray-300 border-b border-white/5 md:border-b-0 last:border-0 flex justify-between items-center">
+                    <span class="md:hidden font-bold text-gray-400 text-sm">${__('category')}</span>
+                    <span>${product.category_name || '-'}</span>
+                </td>
+                <td class="p-3 md:p-4 block md:table-cell text-sm text-gray-300 border-b border-white/5 md:border-b-0 last:border-0 flex justify-between items-center">
+                    <span class="md:hidden font-bold text-gray-400 text-sm">${__('selling_price')}</span>
+                    <span>${parseFloat(product.price).toFixed(2)}</span>
+                </td>
+                <td class="p-3 md:p-4 block md:table-cell text-sm ${quantityClass} border-b border-white/5 md:border-b-0 last:border-0 flex justify-between items-center">
+                    <span class="md:hidden font-bold text-gray-400 text-sm">${__('quantity')}</span>
+                    <div class="flex items-center justify-end">
                         ${qty}
                         ${quantityBadge}
                     </div>
                 </td>
-                <td class="p-4 text-sm text-gray-300">
+                <td class="p-3 md:p-4 block md:table-cell text-sm text-gray-300 border-b border-white/5 md:border-b-0 last:border-0 flex justify-between items-center">
+                    <span class="md:hidden font-bold text-gray-400 text-sm">${__('details')}</span>
                     <button class="view-details-btn p-1.5 text-gray-400 hover:text-primary transition-colors" data-id="${product.id}">
                         <span class="material-icons-round text-lg">visibility</span>
                     </button>
                 </td>
-                <td class="p-4 text-sm text-gray-300">
-                    <button class="edit-product-btn p-1.5 text-gray-400 hover:text-yellow-500 transition-colors" data-id="${product.id}"><span class="material-icons-round text-lg">edit</span></button>
-                    <button class="delete-product-btn p-1.5 text-gray-400 hover:text-red-500 transition-colors" data-id="${product.id}"><span class="material-icons-round text-lg">delete</span></button>
+                <td class="p-3 md:p-4 block md:table-cell text-sm text-gray-300 border-b border-white/5 md:border-b-0 last:border-0 flex justify-between items-center">
+                    <span class="md:hidden font-bold text-gray-400 text-sm">${__('actions')}</span>
+                    <div class="flex items-center gap-1 justify-end">
+                        <button class="edit-product-btn p-1.5 text-gray-400 hover:text-yellow-500 transition-colors" data-id="${product.id}"><span class="material-icons-round text-lg">edit</span></button>
+                        <button class="delete-product-btn p-1.5 text-gray-400 hover:text-red-500 transition-colors" data-id="${product.id}"><span class="material-icons-round text-lg">delete</span></button>
+                    </div>
                 </td>
             `;
             productsTableBody.appendChild(productRow);
@@ -1990,7 +2011,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
         categories.forEach(category => {
             const categoryEl = document.createElement('div');
-            categoryEl.className = 'flex justify-between items-start bg-dark/50 p-4 rounded-lg border border-white/5 hover:border-primary/30 transition-colors';
+            categoryEl.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-dark/50 p-4 rounded-lg border border-white/5 hover:border-primary/30 transition-colors';
             
             const fieldsArray = category.fields ? category.fields.split(',') : [];
             const fieldsCount = fieldsArray.length;
@@ -1998,7 +2019,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
             const hasMoreFields = fieldsCount > 5;
             
             categoryEl.innerHTML = `
-                <div class="flex-1">
+                <div class="flex-1 w-full sm:w-auto">
                     <div class="flex items-center gap-2 mb-1">
                         <span class="material-icons-round text-primary text-sm">category</span>
                         <span class="font-bold text-white">${category.name}</span>
@@ -2011,7 +2032,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
                         </p>
                     ` : `<p class="text-xs text-gray-500">${__('no_custom_fields_cat')}</p>`}
                 </div>
-                <div class="flex gap-2 mr-4">
+                <div class="flex gap-2 self-end sm:self-center">
                     <button class="edit-category-btn p-2 text-gray-400 hover:text-primary transition-colors" 
                         data-id="${category.id}" 
                         data-name="${category.name}" 
@@ -2251,15 +2272,15 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
                         outOfStock.forEach(product => {
                             content += `
-                                <div class="bg-gray-900/30 border border-gray-500/40 rounded-lg p-4 flex justify-between items-center hover:bg-gray-900/40 transition-colors">
-                                    <div>
-                                        <div class="font-bold text-white flex items-center gap-2">
-                                            ${product.name}
-                                            <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded">${__('out_of_stock')}</span>
+                                <div class="bg-gray-900/30 border border-gray-500/40 rounded-lg p-4 flex justify-between items-center hover:bg-gray-900/40 transition-colors gap-4">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-bold text-white flex items-center gap-2 flex-wrap">
+                                            <span class="truncate">${product.name}</span>
+                                            <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded whitespace-nowrap">${__('out_of_stock')}</span>
                                         </div>
-                                        <div class="text-sm text-gray-500 mt-1">${__('reorder_immediately')}</div>
+                                        <div class="text-sm text-gray-500 mt-1 truncate">${__('reorder_immediately')}</div>
                                     </div>
-                                    <div class="text-2xl font-bold text-gray-500">0</div>
+                                    <div class="text-2xl font-bold text-gray-500 shrink-0">0</div>
                                 </div>
                             `;
                         });
@@ -2286,12 +2307,12 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
                         critical.forEach(product => {
                             content += `
-                                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-red-900/30 transition-colors">
-                                    <div>
-                                        <div class="font-bold text-white">${product.name}</div>
-                                        <div class="text-sm text-gray-400">${__('remaining_quantity')}</div>
+                                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-red-900/30 transition-colors gap-4">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-bold text-white truncate">${product.name}</div>
+                                        <div class="text-sm text-gray-400 truncate">${__('remaining_quantity')}</div>
                                     </div>
-                                    <div class="text-2xl font-bold text-red-500">${product.quantity}</div>
+                                    <div class="text-2xl font-bold text-red-500 shrink-0">${product.quantity}</div>
                                 </div>
                             `;
                         });
@@ -2318,12 +2339,12 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
 
                         low.forEach(product => {
                             content += `
-                                <div class="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-orange-900/30 transition-colors">
-                                    <div>
-                                        <div class="font-bold text-white">${product.name}</div>
-                                        <div class="text-sm text-gray-400">${__('remaining_quantity')}</div>
+                                <div class="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 flex justify-between items-center hover:bg-orange-900/30 transition-colors gap-4">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-bold text-white truncate">${product.name}</div>
+                                        <div class="text-sm text-gray-400 truncate">${__('remaining_quantity')}</div>
                                     </div>
-                                    <div class="text-2xl font-bold text-orange-500">${product.quantity}</div>
+                                    <div class="text-2xl font-bold text-orange-500 shrink-0">${product.quantity}</div>
                                 </div>
                             `;
                         });
