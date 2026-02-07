@@ -4,7 +4,7 @@
 // وفي صفحة الإعدادات، يمكن تمرير $active_tab لإبراز القسم الحالي
 $active_tab = $active_tab ?? (isset($_GET['tab']) ? $_GET['tab'] : null);
 function tabClass($tab, $current_page, $active_tab) {
-    $base = 'tab-btn flex items-center gap-3 px-4 py-3 rounded-xl transition-all group';
+    $base = 'tab-btn flex items-center gap-3 px-4 py-3 rounded-xl transition-all group shrink-0 w-max lg:w-full';
     $textAlign = get_dir() === 'rtl' ? 'text-right' : 'text-left';
     if ($current_page === 'settings.php' && $active_tab === $tab) {
         return $base . ' ' . $textAlign . ' active-tab';
@@ -12,8 +12,8 @@ function tabClass($tab, $current_page, $active_tab) {
     return $base . ' ' . $textAlign . ' text-gray-400 hover:text-white hover:bg-white/5';
 }
 ?>
-<aside class="w-72 bg-dark-surface/30 backdrop-blur-md border-l border-white/5 flex flex-col shrink-0 py-6 px-4 gap-2 overflow-y-auto" dir="<?php echo get_dir(); ?>">
-    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2"><?php echo __('settings_sections_title'); ?></div>
+<aside class="w-full lg:w-72 bg-dark-surface/30 backdrop-blur-md border-b lg:border-b-0 lg:border-l border-white/5 flex flex-row lg:flex-col shrink-0 py-4 lg:py-6 px-4 gap-2 overflow-x-auto lg:overflow-y-auto custom-scrollbar" dir="<?php echo get_dir(); ?>">
+    <div class="hidden lg:block text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2"><?php echo __('settings_sections_title'); ?></div>
 
     <a href="settings.php?tab=store" id="tab-btn-store" class="<?php echo tabClass('store', $current_page, $active_tab); ?>" data-tab="store">
         <span class="material-icons-round text-[20px] transition-colors">store</span>
@@ -79,14 +79,14 @@ function tabClass($tab, $current_page, $active_tab) {
         </div>
     </a>
     
-    <div class="my-2 border-t border-white/5"></div>
-    <a href="users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page === 'users.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
+    <div class="hidden lg:block my-2 border-t border-white/5"></div>
+    <a href="users.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group shrink-0 w-max lg:w-full <?php echo ($current_page === 'users.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
         <span class="material-icons-round text-[20px]">people</span>
         <span class="font-<?php echo ($current_page === 'users.php') ? 'bold' : 'medium'; ?> text-sm"><?php echo __('users_link'); ?></span>
     </a>
 
-    <div class="my-2 border-t border-white/5"></div>
-    <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+    <div class="hidden lg:block my-2 border-t border-white/5"></div>
+    <div class="hidden lg:block px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
         <?php echo __('system_section_title'); ?>
     </div>
 
@@ -106,17 +106,17 @@ function tabClass($tab, $current_page, $active_tab) {
         </div>
     </a>
     
-    <a href="version.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page === 'version.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
+    <a href="version.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group shrink-0 w-max lg:w-full <?php echo ($current_page === 'version.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
         <span class="material-icons-round text-[20px]">info</span>
         <span class="font-<?php echo ($current_page === 'version.php') ? 'bold' : 'medium'; ?> text-sm"><?php echo __('version_link'); ?></span>
     </a>
      
-    <a href="license.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page === 'license.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
+    <a href="license.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group shrink-0 w-max lg:w-full <?php echo ($current_page === 'license.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
         <span class="material-icons-round text-[20px]">verified_user</span>
         <span class="font-<?php echo ($current_page === 'license.php') ? 'bold' : 'medium'; ?> text-sm"><?php echo __('license_link'); ?></span>
     </a>
 
-    <a href="contact.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group <?php echo ($current_page === 'contact.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
+    <a href="contact.php" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group shrink-0 w-max lg:w-full <?php echo ($current_page === 'contact.php') ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5' : 'text-gray-400 hover:text-white hover:bg-white/5'; ?>">
         <span class="material-icons-round text-[20px]">support_agent</span>
         <span class="font-<?php echo ($current_page === 'contact.php') ? 'bold' : 'medium'; ?> text-sm"><?php echo __('contact_link'); ?></span>
     </a>

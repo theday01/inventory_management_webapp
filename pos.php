@@ -797,11 +797,36 @@ html:not(.dark) .text-red-500 {
     padding-top: 3mm;
     font-size: 10pt;
 }
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide Scrollbar */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
 </style>
 
 <!-- Main Content -->
-<main class="flex-1 flex flex-col relative overflow-hidden">
-    <div id="business-day-notification" class="hidden bg-yellow-500/10 text-yellow-400 p-6 text-center border-b border-yellow-500/20">
+<main class="flex-1 flex flex-col relative overflow-hidden h-screen md:h-auto">
+    <div id="business-day-notification" class="hidden bg-yellow-500/10 text-yellow-400 p-6 text-center border-b border-yellow-500/20 shrink-0">
         <div class="flex flex-col items-center gap-4">
             <p class="text-sm font-medium"><?php echo __('start_business_day_notification'); ?></p>
             <button id="start-day-banner-btn" class="bg-yellow-500 hover:bg-yellow-600 text-dark-surface font-bold py-3 px-8 rounded-lg shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 w-fit">
@@ -811,16 +836,20 @@ html:not(.dark) .text-red-500 {
             <p class="text-xs text-yellow-400/80"><a href="reports.php" class="underline hover:text-yellow-300"><?php echo __('go_to_reports'); ?></a></p>
         </div>
     </div>
-    <div id="holiday-notification" class="hidden bg-blue-500/10 text-blue-400 p-4 text-center border-b border-blue-500/20">
+    <div id="holiday-notification" class="hidden bg-blue-500/10 text-blue-400 p-4 text-center border-b border-blue-500/20 shrink-0">
         <span class="material-icons-round text-sm align-middle mr-1">celebration</span>
         <?php echo __('holiday_notification'); ?>
     </div>
+    
     <div class="flex-1 flex flex-col md:flex-row-reverse relative overflow-hidden">
     <!-- Cart Sidebar (Left) -->
-    <aside class="w-full md:w-96 h-[50vh] md:h-full bg-dark-surface border-b md:border-b-0 md:border-r border-white/5 flex flex-col z-20 shadow-2xl shrink-0">
-        <div class="p-6 border-b border-white/5">
+    <aside id="pos-cart-sidebar" class="fixed inset-0 z-50 md:static md:z-0 w-full md:w-96 h-full bg-dark-surface border-b md:border-b-0 md:border-r border-white/5 flex flex-col shadow-2xl shrink-0 transition-transform duration-300 translate-y-full md:translate-y-0">
+        <div class="p-4 md:p-6 border-b border-white/5 bg-dark-surface sticky top-0 z-10">
             <div class="flex items-center justify-between mb-2">
                 <h2 class="text-xl font-bold text-white"><?php echo __('shopping_cart'); ?></h2>
+                <button id="close-cart-sidebar-btn" class="md:hidden p-2 text-gray-400 hover:text-white bg-white/5 rounded-lg transition-colors">
+                    <span class="material-icons-round">expand_more</span>
+                </button>
             </div>
             <div id="customer-selection" class="flex items-center gap-2 mt-4 bg-white/5 p-3 rounded-xl cursor-pointer hover:bg-white/10 transition-colors">
                 <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs" id="customer-avatar">A</div>
@@ -960,43 +989,63 @@ html:not(.dark) .text-red-500 {
     </aside>
 
     <!-- Products Section (Right) -->
-    <div class="flex-1 flex flex-col h-full relative">
+    <div id="pos-product-section" class="flex-1 flex flex-col h-full relative overflow-hidden pb-20 md:pb-0">
         <div class="absolute top-[10%] right-[10%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-[80px] pointer-events-none"></div>
 
-        <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-10 shrink-0">
-            <div class="flex items-center gap-4 flex-1">
-                <a href="reports.php" class="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors" title="<?php echo __('reports'); ?>">
+        <header class="bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex flex-col md:flex-row items-stretch md:items-center justify-between p-4 md:px-6 z-10 shrink-0 gap-3 md:gap-0">
+            <div class="flex items-center gap-3 flex-1">
+                <a href="reports.php" class="hidden md:flex p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors" title="<?php echo __('reports'); ?>">
                     <span class="material-icons-round">arrow_forward</span>
                 </a>
-                <button id="open-customer-screen-btn" class="p-2 text-primary hover:text-white bg-primary/10 hover:bg-primary rounded-xl transition-colors" title="<?php echo __('open_customer_screen') ?? 'شاشة العميل'; ?>">
+                
+                <!-- Mobile Only Menu Button -->
+                <a href="reports.php" class="md:hidden p-2.5 text-gray-400 bg-white/5 rounded-xl">
+                     <span class="material-icons-round">arrow_forward</span>
+                </a>
+
+                <button id="open-customer-screen-btn" class="hidden md:block p-2 text-primary hover:text-white bg-primary/10 hover:bg-primary rounded-xl transition-colors" title="<?php echo __('open_customer_screen') ?? 'شاشة العميل'; ?>">
                     <span class="material-icons-round">dvr</span>
                 </button>
-                <div class="relative flex-1 max-w-md">
-                    <span class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">search</span>
-                    <input type="text" id="product-search-input" placeholder="<?php echo __('search_product'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-start pr-10 pl-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all">
-                    <button id="scan-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white">
-                        <span class="material-icons-round">qr_code_scanner</span>
+                
+                <div class="relative flex-1 max-w-full md:max-w-md">
+                    <span class="material-icons-round absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 text-sm md:text-base">search</span>
+                    <input type="text" id="product-search-input" placeholder="<?php echo __('search_product'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-start pr-9 pl-9 py-2.5 md:py-3 rounded-xl text-sm md:text-base focus:outline-none focus:border-primary/50 transition-all">
+                    <button id="scan-barcode-btn" class="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 hover:text-white p-1">
+                        <span class="material-icons-round text-lg md:text-xl">qr_code_scanner</span>
                     </button>
                 </div>
             </div>
 
-            <div class="flex items-center gap-3">
-                <label for="category-filter" class="text-sm text-gray-400"><?php echo __('category'); ?>:</label>
-                <div class="relative min-w-[200px]">
-                    <select id="category-filter" class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-start pr-4 pl-8 py-2 rounded-xl focus:outline-none focus:border-primary/50 cursor-pointer">
+            <div class="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
+                <div class="relative min-w-[140px] md:min-w-[200px] w-full md:w-auto">
+                    <select id="category-filter" class="w-full appearance-none bg-dark/50 border border-white/10 text-white text-start pr-4 pl-8 py-2.5 md:py-2 rounded-xl text-sm focus:outline-none focus:border-primary/50 cursor-pointer">
                         <option value=""><?php echo __('all_categories'); ?></option>
                     </select>
-                    <span class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                    <span class="material-icons-round absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm">expand_more</span>
                 </div>
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-6 z-10">
-            <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+        <div class="flex-1 overflow-y-auto p-3 md:p-6 z-10 custom-scrollbar">
+            <div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-4"></div>
+             <div id="pagination-container" class="flex justify-center items-center py-4"></div>
         </div>
-        <div id="pagination-container" class="sticky bottom-0 p-6 pt-2 flex justify-center items-center z-20 ">
-        </div>
+       
     </div>
+
+    <!-- Mobile Bottom Bar (Fixed) -->
+    <div class="fixed bottom-0 left-0 right-0 z-40 bg-dark-surface border-t border-white/10 p-3 md:hidden flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.4)]">
+        <div class="flex flex-col">
+            <span class="text-xs text-gray-400"><?php echo __('total'); ?></span>
+            <span id="mobile-cart-total" class="text-lg font-bold text-primary">0 <?php echo $currency; ?></span>
+        </div>
+        <button id="mobile-view-cart-btn" class="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all">
+            <span class="material-icons-round">shopping_cart</span>
+            <span><?php echo __('shopping_cart'); ?></span>
+            <span id="mobile-cart-count" class="bg-white text-primary text-xs font-bold px-1.5 py-0.5 rounded-md min-w-[20px] text-center hidden">0</span>
+        </button>
+    </div>
+
 </main>
 
 <!-- Invoice Modal -->
@@ -1079,8 +1128,8 @@ html:not(.dark) .text-red-500 {
                 </div>
             
                 <div class="mb-6">
-                    <div class="rounded-2xl border-2 border-gray-200 overflow-hidden bg-white shadow-sm">
-                        <table class="w-full text-sm invoice-items-container">
+                    <div class="rounded-2xl border-2 border-gray-200 overflow-x-auto bg-white shadow-sm">
+                        <table class="w-full text-sm invoice-items-container min-w-[500px] md:min-w-0">
                             <thead class="bg-gray-100">
                                 <tr class="border-b-2 border-gray-300">
                                     <th class="text-start py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('product_col'); ?></th>
@@ -1194,8 +1243,8 @@ html:not(.dark) .text-red-500 {
 
 <!-- Customer Modal -->
 <div id="customer-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-4xl border border-white/10 m-4">
-        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+    <div class="bg-dark-surface rounded-2xl shadow-lg w-full max-w-4xl border border-white/10 m-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center sticky top-0 bg-dark-surface z-10">
             <button id="close-customer-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
             </button>
@@ -1266,8 +1315,8 @@ html:not(.dark) .text-red-500 {
 
 <!-- Payment Modal -->
 <div id="payment-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
-    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 m-4 transform transition-all">
-        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+    <div class="bg-dark-surface rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 m-4 transform transition-all max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center sticky top-0 bg-dark-surface z-10">
             <h3 class="text-lg font-bold text-white"><?php echo __('payment_method_modal'); ?></h3>
             <button id="close-payment-modal" class="text-gray-400 hover:text-white transition-colors">
                 <span class="material-icons-round">close</span>
@@ -1506,13 +1555,38 @@ document.addEventListener('DOMContentLoaded', function () {
     let cart = [];
     
     // Customer Display Logic
-    document.getElementById('open-customer-screen-btn').addEventListener('click', () => {
-        const width = 1200;
-        const height = 800;
-        const left = (screen.width - width) / 2;
-        const top = (screen.height - height) / 2;
-        window.open('customer_display.php', 'CustomerDisplay', `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`);
-    });
+    const customerScreenBtn = document.getElementById('open-customer-screen-btn');
+    if(customerScreenBtn) {
+        customerScreenBtn.addEventListener('click', () => {
+            const width = 1200;
+            const height = 800;
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+            window.open('customer_display.php', 'CustomerDisplay', `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`);
+        });
+    }
+
+    // Mobile Cart Logic
+    const posCartSidebar = document.getElementById('pos-cart-sidebar');
+    const mobileViewCartBtn = document.getElementById('mobile-view-cart-btn');
+    const closeCartSidebarBtn = document.getElementById('close-cart-sidebar-btn');
+    const mobileCartTotal = document.getElementById('mobile-cart-total');
+    const mobileCartCount = document.getElementById('mobile-cart-count');
+
+    function toggleCartSidebar(show) {
+        if (show) {
+            posCartSidebar.classList.remove('translate-y-full');
+        } else {
+            posCartSidebar.classList.add('translate-y-full');
+        }
+    }
+
+    if (mobileViewCartBtn) {
+        mobileViewCartBtn.addEventListener('click', () => toggleCartSidebar(true));
+    }
+    if (closeCartSidebarBtn) {
+        closeCartSidebarBtn.addEventListener('click', () => toggleCartSidebar(false));
+    }
 
     function broadcastCartUpdate(action = 'update_cart', extraData = {}) {
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -2313,6 +2387,16 @@ document.addEventListener('DOMContentLoaded', function () {
         
         cartTotal.textContent = `${total.toFixed(2)} ${currency}`;
         
+        // Update Mobile Bottom Bar
+        if(mobileCartTotal) mobileCartTotal.textContent = `${total.toFixed(2)} ${currency}`;
+        
+        const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+        if(mobileCartCount) {
+            mobileCartCount.textContent = totalItems;
+            if(totalItems > 0) mobileCartCount.classList.remove('hidden');
+            else mobileCartCount.classList.add('hidden');
+        }
+
         broadcastCartUpdate();
     }
     
@@ -2599,6 +2683,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     checkoutBtn.addEventListener('click', () => {
+        // Close mobile cart sidebar first if open
+        if(window.innerWidth < 768) {
+             toggleCartSidebar(false);
+        }
+
         if (cart.length === 0) {
             showToast(window.__('empty_cart'), false);
             return;

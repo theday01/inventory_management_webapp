@@ -10,18 +10,18 @@ require_once 'src/sidebar.php';
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark">
     <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-20 shrink-0">
+    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 lg:px-8 relative z-20 shrink-0">
         <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <span class="material-icons-round text-primary">settings_suggest</span>
             <?php echo __('license_header'); ?>
         </h2>
     </header>
 
-    <div class="flex-1 flex overflow-hidden relative z-10">
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative z-10">
 
         <?php require_once 'src/settings_sidebar.php'; ?>
 
-        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div class="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
             <div class="max-w-4xl mx-auto">
                 
                 <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden glass-panel">

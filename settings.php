@@ -218,7 +218,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
     <form method="POST" action="settings.php" enctype="multipart/form-data" class="flex-1 flex flex-col overflow-hidden" <?php echo $isAdmin ? '' : 'onsubmit="return false;"'; ?>>
         
-        <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+        <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 lg:px-8 relative z-10 shrink-0">
             <div class="flex items-center gap-4">
                 <div class="p-2.5 bg-primary/10 rounded-xl">
                     <span class="material-icons-round text-primary">settings</span>
@@ -255,19 +255,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
             </div>
         </header>
 
-        <div class="flex-1 overflow-hidden flex relative z-10">
+        <div class="flex-1 overflow-hidden flex flex-col lg:flex-row relative z-10">
             
             <?php
                 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'store';
                 require_once 'src/settings_sidebar.php';
             ?>
 
-            <div class="flex-1 overflow-y-auto p-8 relative scroll-smooth" id="settings-content-area">
+            <div class="flex-1 overflow-y-auto p-4 lg:p-8 relative scroll-smooth" id="settings-content-area">
                 
                 <div id="tab-content-store" class="tab-content space-y-6 max-w-5xl mx-auto animate-fade-in">
                     
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden glass-panel">
-                        <div class="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                        <div class="px-4 lg:px-8 py-4 lg:py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                             <h3 class="text-lg font-bold text-white flex items-center gap-3">
                                 <div class="p-2 bg-primary/10 rounded-lg text-primary">
                                     <span class="material-icons-round">storefront</span>
@@ -276,7 +276,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </h3>
                         </div>
 
-                        <div class="p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        <div class="p-4 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
                             
                             <div class="lg:col-span-4 flex flex-col items-center justify-center p-6 border border-dashed border-white/10 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors group relative">
                                 <div class="w-32 h-32 rounded-full bg-gradient-to-tr from-gray-800 to-gray-700 flex items-center justify-center mb-4 shadow-xl shadow-black/20 overflow-hidden relative">
@@ -341,7 +341,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     </div>
 
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden glass-panel">
-                        <div class="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                        <div class="px-4 lg:px-8 py-4 lg:py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                             <h3 class="text-lg font-bold text-white flex items-center gap-3">
                                 <div class="p-2 bg-blue-500/10 rounded-lg text-blue-500">
                                     <span class="material-icons-round">contact_phone</span>
@@ -350,7 +350,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </h3>
                         </div>
 
-                        <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                        <div class="p-4 lg:p-8 grid grid-cols-1 md:grid-cols-2 gap-x-6 lg:gap-x-8 gap-y-6">
                             
                             <div class="col-span-2 md:col-span-1">
                                 <label class="block text-xs font-bold text-gray-400 mb-2 mr-1"><?php echo __('official_phone_label'); ?></label>
@@ -405,15 +405,15 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 </div>
                 
                 <div id="tab-content-delivery" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
-                        <div class="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 border-b border-white/5 pb-4 gap-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">local_shipping</span>
                                 <?php echo __('delivery_settings_title'); ?>
                             </h3>
                             <?php if ($isAdmin): ?>
                                 <button type="button" onclick="resetDeliveryPrices()" 
-                                    class="text-xs flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                                    class="w-full sm:w-auto text-xs flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
                                     <span class="material-icons-round text-sm">restart_alt</span>
                                     <span><?php echo __('reset_btn'); ?></span>
                                 </button>
@@ -464,13 +464,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
                 
                 <div id="tab-content-rental" class="tab-content hidden space-y-6 max-w-5xl mx-auto animate-fade-in">
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
-                        <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 border-b border-white/5 pb-4 gap-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">home_work</span>
                                 <?php echo __('rental_management_title'); ?>
                             </h3>
-                            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                            <div class="flex items-center justify-between w-full sm:w-auto gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
                                 <span class="text-sm text-gray-300"><?php echo __('enable_rental_system'); ?></span>
                                 <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                     <input type="checkbox" name="rentalEnabled" id="toggle-rental" value="1"
@@ -600,7 +600,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </div>
                         </div>
                      </div>
-                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
                         <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">update</span>
@@ -630,7 +630,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </div>
                      </div>
 
-                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3"><span class="material-icons-round text-primary">receipt</span><?php echo __('tax_settings_title'); ?></h3>
                              <div class="flex items-center gap-3">
@@ -794,7 +794,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 </div>
 
                 <div id="tab-content-language" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
                         <h3 class="text-xl font-bold text-white flex items-center gap-3 mb-6">
                             <span class="material-icons-round text-primary">translate</span>
                             <?php echo __('system_language_title'); ?>
@@ -851,13 +851,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
                 <div id="tab-content-workdays" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
                     <!-- Work Days Settings -->
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
-                        <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 border-b border-white/5 pb-4 gap-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">calendar_month</span>
                                 <?php echo __('weekly_work_days_title'); ?>
                             </h3>
-                            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                            <div class="flex items-center justify-between w-full sm:w-auto gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
                                 <span class="text-sm text-gray-300"><?php echo __('enable_work_days_label'); ?></span>
                                 <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                     <input type="checkbox" name="work_days_enabled" id="toggle-work-days" value="1"
@@ -902,13 +902,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
 
                     <!-- Moroccan National and Religious Holidays -->
-                    <div id="holidays-management-section" class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
-                        <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4 gap-4">
+                    <div id="holidays-management-section" class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 border-b border-white/5 pb-4 gap-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">festival</span>
                                 <?php echo __('holidays_title'); ?>
                             </h3>
-                            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                            <div class="flex items-center justify-between w-full sm:w-auto gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
                                 <span class="text-sm text-gray-300"><?php echo __('enable_holidays_label'); ?></span>
                                 <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                     <input type="checkbox" name="holidays_enabled" id="toggle-holidays" value="1"
@@ -970,7 +970,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
                         <div class="overflow-x-auto rounded-xl border border-white/5">
                             <table class="w-full text-right border-collapse">
-                                <thead>
+                                <thead class="hidden md:table-header-group">
                                     <tr class="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
                                         <th class="px-6 py-4 font-bold"><?php echo __('holiday_date_col'); ?></th>
                                         <th class="px-6 py-4 font-bold"><?php echo __('holiday_name_col'); ?></th>
@@ -1000,13 +1000,13 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 </div>
 
                 <div id="tab-content-backup" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
-                        <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 border-b border-white/5 pb-4 gap-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">
                                 <span class="material-icons-round text-primary">backup</span>
                                 <?php echo __('backup_title'); ?>
                             </h3>
-                            <button type="button" onclick="createBackup()" id="btn-create-backup" class="bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-primary/20">
+                            <button type="button" onclick="createBackup()" id="btn-create-backup" class="w-full sm:w-auto bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
                                 <span class="material-icons-round text-lg">add_circle</span>
                                 <span><?php echo __('create_backup_btn'); ?></span>
                             </button>
@@ -1014,14 +1014,14 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
 
                         <!-- Restore Section -->
                         <div class="bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 border border-indigo-500/20 rounded-xl p-6 mb-8 relative overflow-hidden">
-                            <div class="flex items-center justify-between mb-4 relative z-10">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 relative z-10 gap-4">
                                 <h4 class="text-base font-bold text-white flex items-center gap-2">
                                     <span class="material-icons-round text-indigo-400">cloud_upload</span>
                                     <?php echo __('restore_backup_title'); ?>
                                 </h4>
-                                <div class="flex gap-2">
+                                <div class="flex gap-2 w-full sm:w-auto">
                                     <input type="file" id="restore-file-input" accept=".sql" class="hidden" onchange="handleRestoreUpload(this)">
-                                    <button type="button" onclick="document.getElementById('restore-file-input').click()" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                                    <button type="button" onclick="document.getElementById('restore-file-input').click()" class="w-full sm:w-auto bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
                                         <span class="material-icons-round text-sm">upload_file</span>
                                         <?php echo __('upload_restore_btn'); ?>
                                     </button>
@@ -1082,7 +1082,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </h4>
                         <div class="overflow-hidden rounded-xl border border-white/5">
                             <table class="w-full text-right border-collapse">
-                                <thead>
+                                <thead class="hidden md:table-header-group">
                                     <tr class="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
                                         <th class="px-6 py-4 font-bold text-right"><?php echo __('filename_col'); ?></th>
                                         <th class="px-6 py-4 font-bold text-right"><?php echo __('date_label'); ?></th>
@@ -1099,7 +1099,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 </div>
 
                 <div id="tab-content-reset" class="tab-content hidden space-y-6 max-w-4xl mx-auto animate-fade-in">
-                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-8 glass-panel">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
                         <div class="text-center mb-8">
                             <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <span class="material-icons-round text-red-500 text-3xl">warning</span>
@@ -1233,20 +1233,32 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                     if(size > 1024) { size = size / 1024; unit = 'MB'; }
                     
                     html += `
-                    <tr class="hover:bg-white/[0.02] border-b border-white/5 last:border-0">
-                        <td class="px-6 py-4 font-mono text-xs text-primary dir-ltr text-right">${b.name}</td>
-                        <td class="px-6 py-4 font-bold text-white dir-ltr text-right">${b.date}</td>
-                        <td class="px-6 py-4 text-center text-gray-400 dir-ltr">${size.toFixed(2)} ${unit}</td>
-                        <td class="px-6 py-4 text-center flex justify-center gap-2">
-                            <a href="api.php?action=downloadBackup&filename=${b.name}" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20" title="${window.__('download_pdf')}">
-                                <span class="material-icons-round text-sm">download</span>
-                            </a>
-                            <button type="button" onclick="restoreFromList('${b.name}')" class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg transition-colors hover:bg-indigo-500/20" title="${window.__('restore_backup_title')}">
-                                <span class="material-icons-round text-sm">settings_backup_restore</span>
-                            </button>
-                            <button type="button" onclick="deleteBackup('${b.name}')" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20" title="${window.__('delete')}">
-                                <span class="material-icons-round text-sm">delete</span>
-                            </button>
+                    <tr class="block md:table-row hover:bg-white/[0.02] border-b border-white/5 last:border-0 p-4 mb-4 md:mb-0 bg-white/[0.02] md:bg-transparent rounded-xl md:rounded-none">
+                        <td class="px-2 py-2 md:px-6 md:py-4 font-mono text-xs text-primary block md:table-cell flex justify-between items-center md:block">
+                            <span class="md:hidden text-gray-400 font-bold">${window.__('filename_col')}</span>
+                            <span class="dir-ltr text-right block w-full">${b.name}</span>
+                        </td>
+                        <td class="px-2 py-2 md:px-6 md:py-4 font-bold text-white block md:table-cell flex justify-between items-center md:block">
+                            <span class="md:hidden text-gray-400 font-bold">${window.__('date_label')}</span>
+                            <span class="dir-ltr text-right block w-full">${b.date}</span>
+                        </td>
+                        <td class="px-2 py-2 md:px-6 md:py-4 text-gray-400 block md:table-cell flex justify-between items-center md:block md:text-center">
+                            <span class="md:hidden text-gray-400 font-bold">${window.__('size_col')}</span>
+                            <span class="dir-ltr block md:inline">${size.toFixed(2)} ${unit}</span>
+                        </td>
+                        <td class="px-2 py-2 md:px-6 md:py-4 text-center block md:table-cell flex justify-between items-center md:block md:justify-center">
+                            <span class="md:hidden text-gray-400 font-bold">${window.__('actions')}</span>
+                            <div class="flex justify-center gap-2">
+                                <a href="api.php?action=downloadBackup&filename=${b.name}" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20" title="${window.__('download_pdf')}">
+                                    <span class="material-icons-round text-sm">download</span>
+                                </a>
+                                <button type="button" onclick="restoreFromList('${b.name}')" class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg transition-colors hover:bg-indigo-500/20" title="${window.__('restore_backup_title')}">
+                                    <span class="material-icons-round text-sm">settings_backup_restore</span>
+                                </button>
+                                <button type="button" onclick="deleteBackup('${b.name}')" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20" title="${window.__('delete')}">
+                                    <span class="material-icons-round text-sm">delete</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>`;
                 });
@@ -1446,10 +1458,17 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                 data.data.forEach(h => {
                     const isChecked = h.is_active == 1 ? 'checked' : '';
                     html += `
-                    <tr class="hover:bg-white/[0.02] border-b border-white/5 last:border-0">
-                        <td class="px-6 py-4 font-mono text-xs text-primary">${h.date}</td>
-                        <td class="px-6 py-4 font-bold text-white">${h.name}</td>
-                        <td class="px-6 py-4 text-center">
+                    <tr class="block md:table-row hover:bg-white/[0.02] border-b border-white/5 last:border-0 p-4 mb-4 md:mb-0 bg-white/[0.02] md:bg-transparent rounded-xl md:rounded-none">
+                        <td class="px-2 py-2 md:px-6 md:py-4 font-mono text-xs text-primary block md:table-cell flex justify-between items-center md:block">
+                            <span class="md:hidden text-gray-400 font-bold">${window.__('holiday_date_col')}</span>
+                            <span>${h.date}</span>
+                        </td>
+                        <td class="px-2 py-2 md:px-6 md:py-4 font-bold text-white block md:table-cell flex justify-between items-center md:block">
+                            <span class="md:hidden text-gray-400 font-bold">${window.__('holiday_name_col')}</span>
+                            <span>${h.name}</span>
+                        </td>
+                        <td class="px-2 py-2 md:px-6 md:py-4 text-center block md:table-cell flex justify-between items-center md:block md:justify-center">
+                            <span class="md:hidden text-gray-400 font-bold">${window.__('adopt_holiday')}</span>
                             <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
                                 <input type="checkbox" id="holiday-toggle-${h.id}" 
                                     class="toggle-checkbox" 
@@ -1458,13 +1477,16 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <label for="holiday-toggle-${h.id}" class="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer"></label>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-center flex justify-center gap-2">
-                            <button type="button" onclick="openHolidayModal(${h.id}, '${h.name}', '${h.date}')" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20">
-                                <span class="material-icons-round text-sm">edit</span>
-                            </button>
-                            <button type="button" onclick="deleteHoliday(${h.id})" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20">
-                                <span class="material-icons-round text-sm">delete</span>
-                            </button>
+                        <td class="px-2 py-2 md:px-6 md:py-4 text-center block md:table-cell flex justify-between items-center md:block md:justify-center">
+                            <span class="md:hidden text-gray-400 font-bold">${window.__('actions')}</span>
+                            <div class="flex gap-2 justify-end md:justify-center">
+                                <button type="button" onclick="openHolidayModal(${h.id}, '${h.name}', '${h.date}')" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20">
+                                    <span class="material-icons-round text-sm">edit</span>
+                                </button>
+                                <button type="button" onclick="deleteHoliday(${h.id})" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20">
+                                    <span class="material-icons-round text-sm">delete</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>`;
                 });

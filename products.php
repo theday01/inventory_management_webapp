@@ -826,7 +826,7 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     let currentPage = 1;
     let sortBy = 'name';
     let sortOrder = 'asc';
-    const productsPerPage = 300;
+    const productsPerPage = 50;
 
     window.reloadProductsAndStats = async function() {
         await loadProducts();
