@@ -23,7 +23,8 @@ window.daySettings = <?php echo json_encode($endDaySettings); ?>;
 
 /* Virtual Keyboard Logic */
 document.addEventListener('DOMContentLoaded', function() {
-    if (window.daySettings.keyboard_enabled !== '1') return;
+    // Disable virtual keyboard on small screens (mobile) to allow native keyboard
+    if (window.innerWidth < 768 || window.daySettings.keyboard_enabled !== '1') return;
 
     // Inject Keyboard HTML
     const kbHTML = `
