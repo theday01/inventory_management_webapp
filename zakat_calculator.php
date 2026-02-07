@@ -15,19 +15,19 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 <main class="flex-1 flex flex-col relative bg-dark">
     <div class="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none">
     </div>
-    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+    <header class="h-auto md:h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between p-4 md:px-8 relative z-10 shrink-0 gap-2">
         <div class="flex items-center gap-3">
             <span class="material-icons-round text-primary text-2xl">mosque</span>
             <h2 class="text-xl font-bold text-white"><?php echo __('zakat_calculator_title'); ?></h2>
         </div>
         <p class="text-gray-400 text-sm"><?php echo __('zakat_calculator_subtitle'); ?></p>
     </header>
-    <div class="flex-1 overflow-y-auto p-6">
+    <div class="flex-1 overflow-y-auto p-4 md:p-6">
         <div class="max-w-7xl mx-auto">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 <!-- Islamic Guidelines - Left Side -->
-                <div class="lg:col-span-1">
-                    <div class="bg-dark-surface/60 backdrop-blur-md rounded-2xl shadow-lg border border-white/5 p-6 glass-panel sticky top-6">
+                <div class="lg:col-span-1 space-y-4 md:space-y-6">
+                    <div class="bg-dark-surface/60 backdrop-blur-md rounded-2xl shadow-lg border border-white/5 p-4 md:p-6 glass-panel lg:sticky lg:top-6">
                         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                             <span class="material-icons-round text-blue-400">info</span>
                             <?php echo __('islamic_guidelines'); ?>
@@ -43,7 +43,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     </div>
 
                     <!-- Contact Us Section -->
-                    <div class="bg-dark-surface/60 backdrop-blur-md rounded-2xl shadow-lg border border-white/5 p-6 glass-panel mt-6">
+                    <div class="bg-dark-surface/60 backdrop-blur-md rounded-2xl shadow-lg border border-white/5 p-4 md:p-6 glass-panel">
                         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                             <span class="material-icons-round text-green-400">support_agent</span>
                             <?php echo __('contact_us'); ?>
@@ -75,186 +75,187 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
                 <!-- Main Content - Right Side -->
                 <div class="lg:col-span-2">
-                    <div class="space-y-6">
-            <!-- Calculator Form -->
-            <div class="bg-dark-surface/60 backdrop-blur-md rounded-2xl shadow-lg border border-white/5 p-6 glass-panel">
-                <form id="zakatForm" class="space-y-6">
-                <!-- Year Check -->
-                <div class="bg-amber-50/10 dark:bg-amber-900/20 border border-amber-200/30 dark:border-amber-800 rounded-lg p-4">
-                    <div class="flex items-start gap-3">
-                        <span class="material-icons-round text-amber-400 mt-0.5">warning</span>
-                        <div>
-                            <h3 class="font-semibold text-amber-300"><?php echo __('important_reminder'); ?></h3>
-                            <p class="text-sm text-amber-200 mt-1">
-                                <?php echo __('hawl_reminder'); ?>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                    <div class="space-y-4 md:space-y-6">
+                        <!-- Calculator Form -->
+                        <div class="bg-dark-surface/60 backdrop-blur-md rounded-2xl shadow-lg border border-white/5 p-4 md:p-6 glass-panel">
+                            <form id="zakatForm" class="space-y-4 md:space-y-6">
+                                <!-- Year Check -->
+                                <div class="bg-amber-50/10 dark:bg-amber-900/20 border border-amber-200/30 dark:border-amber-800 rounded-lg p-4">
+                                    <div class="flex items-start gap-3">
+                                        <span class="material-icons-round text-amber-400 mt-0.5">warning</span>
+                                        <div>
+                                            <h3 class="font-semibold text-amber-300"><?php echo __('important_reminder'); ?></h3>
+                                            <p class="text-sm text-amber-200 mt-1">
+                                                <?php echo __('hawl_reminder'); ?>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
 
-                <!-- Assets Section -->
-                <div class="space-y-4">
-                    <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                        <span class="material-icons-round text-primary">account_balance_wallet</span>
-                        <?php echo __('zakat_assets'); ?>
-                    </h2>
+                                <!-- Assets Section -->
+                                <div class="space-y-4">
+                                    <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                                        <span class="material-icons-round text-primary">account_balance_wallet</span>
+                                        <?php echo __('zakat_assets'); ?>
+                                    </h2>
 
-                    <!-- Gold and Silver Prices -->
-                    <div class="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
-                        <h3 class="font-semibold text-blue-300 mb-3"><?php echo __('current_metal_prices'); ?></h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-blue-300 mb-2">
-                                    <?php echo __('gold_gram_price'); ?> (<?php echo $currency; ?>)
-                                </label>
-                                <input type="text" id="gold_price" name="gold_price" min="0" step="0.01" inputmode="numeric"
-                                       class="w-full px-3 py-2 border border-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-dark/50 text-white"
-                                       placeholder="<?php echo __('enter_gold_price'); ?>" value="500">
+                                    <!-- Gold and Silver Prices -->
+                                    <div class="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
+                                        <h3 class="font-semibold text-blue-300 mb-3"><?php echo __('current_metal_prices'); ?></h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-blue-300 mb-2">
+                                                    <?php echo __('gold_gram_price'); ?> (<?php echo $currency; ?>)
+                                                </label>
+                                                <input type="text" id="gold_price" name="gold_price" min="0" step="0.01" inputmode="numeric"
+                                                       class="w-full px-3 py-3 md:py-2 border border-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-dark/50 text-white"
+                                                       placeholder="<?php echo __('enter_gold_price'); ?>" value="500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-blue-300 mb-2">
+                                                    <?php echo __('silver_gram_price'); ?> (<?php echo $currency; ?>)
+                                                </label>
+                                                <input type="text" id="silver_price" name="silver_price" min="0" step="0.01" inputmode="numeric"
+                                                       class="w-full px-3 py-3 md:py-2 border border-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-dark/50 text-white"
+                                                       placeholder="<?php echo __('enter_silver_price'); ?>" value="6">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Cash -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                                <?php echo __('cash_and_currency'); ?> (<?php echo $currency; ?>)
+                                            </label>
+                                            <input type="text" id="cash" name="cash" min="0" step="0.01" inputmode="numeric"
+                                                   class="w-full px-3 py-3 md:py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
+                                                   placeholder="<?php echo __('enter_cash_amount'); ?>">
+                                        </div>
+
+                                        <!-- Gold -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                                <?php echo __('gold_grams'); ?>
+                                            </label>
+                                            <input type="text" id="gold" name="gold" min="0" step="0.01" inputmode="numeric"
+                                                   class="w-full px-3 py-3 md:py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
+                                                   placeholder="<?php echo __('enter_gold_weight'); ?>">
+                                        </div>
+                                    </div>
+
+                                    <!-- Silver -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                                <?php echo __('silver_grams'); ?>
+                                            </label>
+                                            <input type="text" id="silver" name="silver" min="0" step="0.01" inputmode="numeric"
+                                                   class="w-full px-3 py-3 md:py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
+                                                   placeholder="<?php echo __('enter_silver_weight'); ?>">
+                                        </div>
+
+                                        <!-- Trade Goods -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                                <?php echo __('trade_goods'); ?> (<?php echo $currency; ?>)
+                                            </label>
+                                            <input type="text" id="trade_goods" name="trade_goods" min="0" step="0.01" inputmode="numeric"
+                                                   class="w-full px-3 py-3 md:py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
+                                                   placeholder="<?php echo __('enter_trade_goods_value'); ?>">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Deductions Section -->
+                                <div class="space-y-4">
+                                    <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                                        <span class="material-icons-round text-orange-400">remove_circle</span>
+                                        <?php echo __('deductions'); ?>
+                                    </h2>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <!-- Debts -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                                <?php echo __('debts_owed'); ?> (<?php echo $currency; ?>)
+                                            </label>
+                                            <input type="text" id="debts" name="debts" min="0" step="0.01" inputmode="numeric"
+                                                   class="w-full px-3 py-3 md:py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
+                                                   placeholder="<?php echo __('enter_debts'); ?>">
+                                        </div>
+
+                                        <!-- Basic Needs -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                                <?php echo __('basic_needs'); ?> (<?php echo $currency; ?>)
+                                            </label>
+                                            <input type="text" id="basic_needs" name="basic_needs" min="0" step="0.01" inputmode="numeric"
+                                                   class="w-full px-3 py-3 md:py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
+                                                   placeholder="<?php echo __('enter_basic_needs'); ?>">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Calculate Button -->
+                                <div class="flex justify-center pt-4">
+                                    <button type="button" onclick="calculateZakat()"
+                                            class="w-full md:w-auto px-8 py-3.5 md:py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+                                        <span class="material-icons-round">calculate</span>
+                                        <?php echo __('calculate_zakat_btn'); ?>
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Results Section -->
+                            <div id="results" class="mt-8 space-y-4 hidden animate-scaleIn">
+                                <div class="border-t border-white/10 pt-6">
+                                    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                        <span class="material-icons-round text-green-400">receipt</span>
+                                        <?php echo __('calculation_results'); ?>
+                                    </h2>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                        <!-- Total Assets -->
+                                        <div class="bg-dark/50 rounded-lg p-4 border border-white/10">
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                                <span class="text-sm font-medium text-gray-400"><?php echo __('total_zakat_assets'); ?></span>
+                                                <span id="totalAssets" class="font-bold text-white">0 <?php echo $currency; ?></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Net Assets -->
+                                        <div class="bg-dark/50 rounded-lg p-4 border border-white/10">
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                                <span class="text-sm font-medium text-gray-400"><?php echo __('net_assets'); ?></span>
+                                                <span id="netAssets" class="font-bold text-white">0 <?php echo $currency; ?></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Nisab Check -->
+                                        <div class="bg-dark/50 rounded-lg p-4 border border-white/10">
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                                <span class="text-sm font-medium text-gray-400"><?php echo __('nisab_threshold'); ?></span>
+                                                <span id="nisabAmount" class="font-bold text-white">0 <?php echo $currency; ?></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Zakat Amount -->
+                                        <div class="bg-green-900/20 border border-green-800 rounded-lg p-4">
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                                <span class="text-sm font-medium text-green-300"><?php echo __('zakat_due_amount'); ?></span>
+                                                <span id="zakatAmount" class="font-bold text-green-300 text-xl">0 <?php echo $currency; ?></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Status Message -->
+                                    <div id="statusMessage" class="mt-4 p-4 rounded-lg hidden border text-sm md:text-base">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-blue-300 mb-2">
-                                    <?php echo __('silver_gram_price'); ?> (<?php echo $currency; ?>)
-                                </label>
-                                <input type="text" id="silver_price" name="silver_price" min="0" step="0.01" inputmode="numeric"
-                                       class="w-full px-3 py-2 border border-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-dark/50 text-white"
-                                       placeholder="<?php echo __('enter_silver_price'); ?>" value="6">
-                            </div>
                         </div>
-                    </div>
-
-                    <!-- Cash -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">
-                                <?php echo __('cash_and_currency'); ?> (<?php echo $currency; ?>)
-                            </label>
-                            <input type="text" id="cash" name="cash" min="0" step="0.01" inputmode="numeric"
-                                   class="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
-                                   placeholder="<?php echo __('enter_cash_amount'); ?>">
-                        </div>
-
-                        <!-- Gold -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">
-                                <?php echo __('gold_grams'); ?>
-                            </label>
-                            <input type="text" id="gold" name="gold" min="0" step="0.01" inputmode="numeric"
-                                   class="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
-                                   placeholder="<?php echo __('enter_gold_weight'); ?>">
-                        </div>
-                    </div>
-
-                    <!-- Silver -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">
-                                <?php echo __('silver_grams'); ?>
-                            </label>
-                            <input type="text" id="silver" name="silver" min="0" step="0.01" inputmode="numeric"
-                                   class="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
-                                   placeholder="<?php echo __('enter_silver_weight'); ?>">
-                        </div>
-
-                        <!-- Trade Goods -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">
-                                <?php echo __('trade_goods'); ?> (<?php echo $currency; ?>)
-                            </label>
-                            <input type="text" id="trade_goods" name="trade_goods" min="0" step="0.01" inputmode="numeric"
-                                   class="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
-                                   placeholder="<?php echo __('enter_trade_goods_value'); ?>">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Deductions Section -->
-                <div class="space-y-4">
-                    <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                        <span class="material-icons-round text-orange-400">remove_circle</span>
-                        <?php echo __('deductions'); ?>
-                    </h2>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Debts -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">
-                                <?php echo __('debts_owed'); ?> (<?php echo $currency; ?>)
-                            </label>
-                            <input type="text" id="debts" name="debts" min="0" step="0.01" inputmode="numeric"
-                                   class="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
-                                   placeholder="<?php echo __('enter_debts'); ?>">
-                        </div>
-
-                        <!-- Basic Needs -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">
-                                <?php echo __('basic_needs'); ?> (<?php echo $currency; ?>)
-                            </label>
-                            <input type="text" id="basic_needs" name="basic_needs" min="0" step="0.01" inputmode="numeric"
-                                   class="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-dark/50 text-white"
-                                   placeholder="<?php echo __('enter_basic_needs'); ?>">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Calculate Button -->
-                <div class="flex justify-center pt-4">
-                    <button type="button" onclick="calculateZakat()"
-                            class="px-8 py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-primary/20">
-                        <span class="material-icons-round">calculate</span>
-                        <?php echo __('calculate_zakat_btn'); ?>
-                    </button>
-                </div>
-            </form>
-
-            <!-- Results Section -->
-            <div id="results" class="mt-8 space-y-4 hidden">
-                <div class="border-t border-white/10 pt-6">
-                    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <span class="material-icons-round text-green-400">receipt</span>
-                        <?php echo __('calculation_results'); ?>
-                    </h2>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Total Assets -->
-                        <div class="bg-dark/50 rounded-lg p-4 border border-white/10">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-gray-400"><?php echo __('total_zakat_assets'); ?></span>
-                                <span id="totalAssets" class="font-bold text-white">0 <?php echo $currency; ?></span>
-                            </div>
-                        </div>
-
-                        <!-- Net Assets -->
-                        <div class="bg-dark/50 rounded-lg p-4 border border-white/10">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-gray-400"><?php echo __('net_assets'); ?></span>
-                                <span id="netAssets" class="font-bold text-white">0 <?php echo $currency; ?></span>
-                            </div>
-                        </div>
-
-                        <!-- Nisab Check -->
-                        <div class="bg-dark/50 rounded-lg p-4 border border-white/10">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-gray-400"><?php echo __('nisab_threshold'); ?></span>
-                                <span id="nisabAmount" class="font-bold text-white">0 <?php echo $currency; ?></span>
-                            </div>
-                        </div>
-
-                        <!-- Zakat Amount -->
-                        <div class="bg-green-900/20 border border-green-800 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-green-300"><?php echo __('zakat_due_amount'); ?></span>
-                                <span id="zakatAmount" class="font-bold text-green-300 text-xl">0 <?php echo $currency; ?></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Status Message -->
-                    <div id="statusMessage" class="mt-4 p-4 rounded-lg hidden border">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
                     </div>
                 </div>
             </div>
@@ -280,6 +281,16 @@ function toEnglishNumbers(str) {
         result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
     }
     return result;
+}
+
+function escapeHtml(text) {
+  if (text == null) return '';
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function calculateZakat() {
@@ -332,7 +343,7 @@ function calculateZakat() {
 
     // Show status message
     const statusDiv = document.getElementById('statusMessage');
-    statusDiv.className = `mt-4 p-4 rounded-lg border ${statusClass}`;
+    statusDiv.className = `mt-4 p-4 rounded-lg border text-sm md:text-base ${statusClass}`;
     statusDiv.textContent = statusMessage;
     statusDiv.classList.remove('hidden');
 
@@ -367,5 +378,13 @@ document.querySelectorAll('input[inputmode="numeric"]').forEach(input => {
     });
 });
 </script>
+
+<style>
+@keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.animate-scaleIn { animation: scaleIn 0.2s ease-out forwards; }
+</style>
 
 <?php require_once 'src/footer.php'; ?>

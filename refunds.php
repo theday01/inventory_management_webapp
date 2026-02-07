@@ -15,16 +15,16 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
 
     <!-- Header -->
-    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+    <header class="h-auto md:h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between p-4 md:px-8 relative z-10 shrink-0 gap-4">
         <h2 class="text-xl font-bold text-white flex items-center gap-3">
             <span class="material-icons-round text-red-500">assignment_return</span>
             <?php echo __('refunds_history'); ?>
         </h2>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
-        <div class="grid grid-cols-1 gap-8">
-            <section class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+    <div class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
+        <div class="grid grid-cols-1 gap-4 md:gap-8">
+            <section class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 md:p-6 glass-panel">
 
                 <form id="search-form" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div class="md:col-span-2">
@@ -34,21 +34,21 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                         </div>
                     </div>
                     <div class="flex justify-end gap-2">
-                        <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all">
+                        <button type="submit" class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all flex-1 md:flex-initial justify-center">
                             <span class="material-icons-round">search</span>
                             <span><?php echo __('search'); ?></span>
                         </button>
-                        <button type="button" id="clear-search-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all">
+                        <button type="button" id="clear-search-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all flex-1 md:flex-initial justify-center">
                             <span class="material-icons-round">clear</span>
                             <span><?php echo __('clear_search'); ?></span>
                         </button>
                     </div>
                 </form>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-right">
-                        <thead>
-                            <tr class="border-b border-white/10">
+                <div class="overflow-x-auto bg-transparent md:bg-transparent rounded-2xl md:rounded-none">
+                    <table class="w-full text-right border-collapse block md:table">
+                        <thead class="hidden md:table-header-group">
+                            <tr class="border-b border-white/10 bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
                                 <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('date'); ?></th>
                                 <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('invoice_number'); ?></th>
                                 <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('customer'); ?></th>
@@ -57,9 +57,9 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                                 <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('reason'); ?></th>
                             </tr>
                         </thead>
-                        <tbody id="refunds-table-body">
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-gray-500">
+                        <tbody id="refunds-table-body" class="block md:table-row-group divide-y divide-white/5 md:divide-white/5">
+                            <tr class="block md:table-row">
+                                <td colspan="6" class="text-center py-12 text-gray-500 block md:table-cell">
                                     <?php echo __('loading_data'); ?>
                                 </td>
                             </tr>
@@ -100,7 +100,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
         async function loadRefunds(searchTerm = '') {
             showLoadingOverlay(window.__('loading_refunds'));
-            tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">${window.__('loading_data')}</td></tr>`;
+            tableBody.innerHTML = `<tr class="block md:table-row"><td colspan="7" class="text-center py-12 text-gray-500 block md:table-cell">${window.__('loading_data')}</td></tr>`;
             
             const params = new URLSearchParams({
                 action: 'getRefunds',
@@ -119,12 +119,12 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     hideLoadingOverlay();
                 } else {
                     hideLoadingOverlay();
-                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">${window.__('failed_loading_data')}</td></tr>`;
+                    tableBody.innerHTML = `<tr class="block md:table-row"><td colspan="7" class="text-center py-12 text-gray-500 block md:table-cell">${window.__('failed_loading_data')}</td></tr>`;
                 }
             } catch (error) {
                 hideLoadingOverlay();
                 console.error('Error loading refunds:', error);
-                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">${window.__('error_loading')}</td></tr>`;
+                tableBody.innerHTML = `<tr class="block md:table-row"><td colspan="6" class="text-center py-12 text-gray-500 block md:table-cell">${window.__('error_loading')}</td></tr>`;
             }
         }
 
@@ -132,13 +132,13 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             tableBody.innerHTML = '';
             
             if (refunds.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">${window.__('no_refunds_found')}</td></tr>`;
+                tableBody.innerHTML = `<tr class="block md:table-row"><td colspan="6" class="text-center py-12 text-gray-500 block md:table-cell">${window.__('no_refunds_found')}</td></tr>`;
                 return;
             }
 
             refunds.forEach(refund => {
                 const row = document.createElement('tr');
-                row.className = 'border-b border-white/5 hover:bg-white/5 transition-colors';
+                row.className = 'block md:table-row bg-dark-surface/40 md:bg-transparent mb-4 md:mb-0 rounded-2xl md:rounded-none border border-white/5 md:border-b hover:bg-white/5 transition-colors group';
                 
                 const date = new Date(refund.created_at);
                 const formattedDate = date.toLocaleDateString('en-US', {
@@ -147,20 +147,46 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 });
 
                 row.innerHTML = `
-                    <td class="p-4 text-sm text-gray-300" dir="ltr">${formattedDate}</td>
-                    <td class="p-4 text-sm font-bold text-primary">#${String(refund.invoice_id).padStart(6, '0')}</td>
-                    <td class="p-4 text-sm text-gray-300">${refund.customer_name || window.__('cash_customer')}</td>
-                    <td class="p-4 text-sm text-gray-300">
-                        <div class="max-w-md truncate" title="${refund.items_summary || ''}">
-                            ${refund.items_summary || `<span class="italic opacity-50">${window.__('no_refund_details')}</span>`}
+                    <td class="p-4 md:px-4 md:py-4 text-sm text-gray-300 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('date')}</span>
+                        <span dir="ltr">${formattedDate}</span>
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm font-bold text-primary block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('invoice_number')}</span>
+                        <span>#${String(refund.invoice_id).padStart(6, '0')}</span>
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm text-gray-300 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('customer')}</span>
+                        <span>${escapeHtml(refund.customer_name) || window.__('cash_customer')}</span>
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm text-gray-300 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider flex-shrink-0 mr-2">${window.__('refunded_products')}</span>
+                        <div class="max-w-full md:max-w-md truncate text-right md:text-start" title="${escapeHtml(refund.items_summary) || ''}">
+                            ${escapeHtml(refund.items_summary) || `<span class="italic opacity-50">${window.__('no_refund_details')}</span>`}
                         </div>
                     </td>
-                    <td class="p-4 text-sm font-bold text-white">${parseFloat(refund.amount).toFixed(2)} ${currency}</td>
-                    <td class="p-4 text-sm text-gray-400">${refund.reason || '-'}</td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm font-bold text-white block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('amount')}</span>
+                        <span>${parseFloat(refund.amount).toFixed(2)} ${currency}</span>
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm text-gray-400 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('reason')}</span>
+                        <span>${escapeHtml(refund.reason) || '-'}</span>
+                    </td>
                 `;
                 
                 tableBody.appendChild(row);
             });
+        }
+
+        function escapeHtml(text) {
+          if (text == null) return '';
+          return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
         }
 
         function renderPagination(totalItems) {

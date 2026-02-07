@@ -59,35 +59,40 @@ require_once 'src/sidebar.php';
     <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
     <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[100px] pointer-events-none"></div>
 
-    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
-        <div class="flex items-center gap-4">
+    <header class="h-auto md:h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:px-8 relative z-10 shrink-0 gap-4">
+        <div class="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
             <h2 class="text-xl font-bold text-white"><?= __('notifications_page_title') ?></h2>
-            <div class="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-lg">
-                <span class="material-icons-round text-yellow-400 text-sm">info</span>
-                <span class="text-yellow-400 text-xs"><?= __('notifications_auto_delete_msg') ?></span>
-            </div>
-            <div class="flex bg-white/5 p-1 rounded-xl border border-white/5 ml-4">
-                <button onclick="setFilter('all')" id="filter-all" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-primary text-white"><?= __('filter_all') ?></button>
-                <button onclick="setFilter('unread')" id="filter-unread" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white"><?= __('filter_unread') ?></button>
-                <button onclick="setFilter('read')" id="filter-read" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white"><?= __('filter_read') ?></button>
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-lg w-full md:w-auto">
+                    <span class="material-icons-round text-yellow-400 text-sm">info</span>
+                    <span class="text-yellow-400 text-xs"><?= __('notifications_auto_delete_msg') ?></span>
+                </div>
             </div>
         </div>
         
-        <div class="flex items-center gap-3">
-            <span id="auto-refresh-indicator" class="text-xs text-primary/70 hidden transition-opacity"><?= __('auto_refreshing') ?></span>
-            
-            <button onclick="markAllAsRead()" id="main-notification-btn" class="relative p-2 bg-white/5 hover:bg-green-500/20 rounded-full transition-all text-white" title="<?= __('mark_all_read_title') ?>">
-                <span class="material-icons-round">done_all</span>
-                <span id="unread-dot" class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-dark-surface hidden"></span>
-            </button>
+        <div class="flex flex-col-reverse md:flex-row items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+             <div class="flex bg-white/5 p-1 rounded-xl border border-white/5 w-full md:w-auto justify-center">
+                <button onclick="setFilter('all')" id="filter-all" class="flex-1 md:flex-none px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-primary text-white text-center"><?= __('filter_all') ?></button>
+                <button onclick="setFilter('unread')" id="filter-unread" class="flex-1 md:flex-none px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white text-center"><?= __('filter_unread') ?></button>
+                <button onclick="setFilter('read')" id="filter-read" class="flex-1 md:flex-none px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white text-center"><?= __('filter_read') ?></button>
+            </div>
 
-            <button onclick="loadNotifications(false)" class="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white" title="<?= __('refresh_list_title') ?>">
-                <span class="material-icons-round">refresh</span>
-            </button>
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <span id="auto-refresh-indicator" class="text-xs text-primary/70 hidden transition-opacity whitespace-nowrap"><?= __('auto_refreshing') ?></span>
+                
+                <button onclick="markAllAsRead()" id="main-notification-btn" class="relative p-2 bg-white/5 hover:bg-green-500/20 rounded-full transition-all text-white" title="<?= __('mark_all_read_title') ?>">
+                    <span class="material-icons-round">done_all</span>
+                    <span id="unread-dot" class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-dark-surface hidden"></span>
+                </button>
+
+                <button onclick="loadNotifications(false)" class="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white" title="<?= __('refresh_list_title') ?>">
+                    <span class="material-icons-round">refresh</span>
+                </button>
+            </div>
         </div>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-8 relative z-10">
+    <div class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10">
         <div id="loading-screen" class="flex flex-col items-center justify-center h-full min-h-[300px]">
             <div class="relative w-16 h-16">
                 <div class="absolute w-full h-full rounded-full border-4 border-white/5"></div>
@@ -96,8 +101,8 @@ require_once 'src/sidebar.php';
             <p class="mt-6 text-gray-400 text-sm animate-pulse"><?= __('fetching_notifications') ?></p>
         </div>
 
-        <div id="notifications-container" class="space-y-4 hidden opacity-0 transition-opacity duration-300"></div>
-        <div id="pagination-container" class="mt-8 flex justify-center items-center gap-2 pb-10">
+        <div id="notifications-container" class="space-y-4 hidden opacity-0 transition-opacity duration-300 pb-20"></div>
+        <div id="pagination-container" class="mt-8 flex justify-center items-center gap-2 pb-10 flex-wrap">
         </div>
     </div>
 
@@ -107,7 +112,7 @@ require_once 'src/sidebar.php';
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity opacity-0 duration-300" id="confirm-modal-backdrop"></div>
         
         <!-- Modal Content -->
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm p-6 bg-dark-surface border border-white/10 rounded-2xl shadow-2xl transform scale-90 opacity-0 transition-all duration-300" id="confirm-modal-content">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] md:w-full max-w-sm p-6 bg-dark-surface border border-white/10 rounded-2xl shadow-2xl transform scale-90 opacity-0 transition-all duration-300" id="confirm-modal-content">
             <div class="text-center">
                 <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 ring-4 ring-primary/5">
                     <span class="material-icons-round text-3xl text-primary">priority_high</span>
@@ -115,9 +120,9 @@ require_once 'src/sidebar.php';
                 <h3 class="text-xl font-bold text-white mb-2" id="confirm-title"><?= __('confirm_action_title') ?></h3>
                 <p class="text-gray-400 mb-6 text-sm leading-relaxed" id="confirm-message"><?= __('confirm_action_message') ?></p>
                 
-                <div class="flex items-center gap-3 justify-center">
-                    <button id="confirm-btn-yes" class="px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20 active:scale-95"><?= __('yes_confirm') ?></button>
-                    <button id="confirm-btn-no" class="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl font-medium transition-all active:scale-95 border border-white/5"><?= __('cancel') ?></button>
+                <div class="flex flex-col md:flex-row items-center gap-3 justify-center">
+                    <button id="confirm-btn-yes" class="w-full md:w-auto px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20 active:scale-95"><?= __('yes_confirm') ?></button>
+                    <button id="confirm-btn-no" class="w-full md:w-auto px-6 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl font-medium transition-all active:scale-95 border border-white/5"><?= __('cancel') ?></button>
                 </div>
             </div>
         </div>
@@ -126,6 +131,17 @@ require_once 'src/sidebar.php';
 
 
 <script>
+// Helper function to escape HTML
+function escapeHtml(text) {
+  if (text == null) return '';
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // صوت تنبيه قصير مدمج (Base64) لتجنب مشاكل الروابط الخارجية
 const soundBase64 = "data:audio/mp3;base64,//uQxAAAAANIAAAAABxBTUUzLjEwMAr///8=";
 const notificationSound = new Audio(soundBase64);
@@ -205,8 +221,8 @@ function setFilter(filter) {
         const btn = document.getElementById('filter-' + f);
         if(btn) {
             btn.className = (f === filter) 
-                ? "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-primary text-white shadow-lg shadow-primary/20" 
-                : "px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white bg-white/5";
+                ? "flex-1 md:flex-none px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-primary text-white shadow-lg shadow-primary/20 text-center" 
+                : "flex-1 md:flex-none px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white bg-white/5 text-center";
         }
     });
 
@@ -283,25 +299,26 @@ function renderNotifications(notifications, isBackgroundUpdate) {
             const isUnread = notification.status === 'unread';
             const flashClass = isUnread ? 'unread-flash-card' : '';
             const delay = isBackgroundUpdate ? 0 : index * 50;
+            const safeMessage = escapeHtml(notification.message);
             
             container.innerHTML += `
-                <div class="bg-dark-surface/60 border ${flashClass} ${isUnread ? 'border-primary/30' : 'border-white/5'} rounded-2xl p-6 transition-all hover:bg-dark-surface/80 animate-fade-in-up" style="animation-delay: ${delay}ms;">
+                <div class="bg-dark-surface/60 border ${flashClass} ${isUnread ? 'border-primary/30' : 'border-white/5'} rounded-2xl p-4 md:p-6 transition-all hover:bg-dark-surface/80 animate-fade-in-up" style="animation-delay: ${delay}ms;">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div class="flex items-start space-x-4 space-x-reverse">
+                        <div class="flex items-start space-x-4 space-x-reverse w-full">
                             <div class="p-3 rounded-full ${isUnread ? 'bg-primary/20' : 'bg-gray-700/30'} shrink-0">
                                 <span class="material-icons-round ${isUnread ? 'text-primary shake-icon' : 'text-gray-400'}">
                                     ${isUnread ? 'notifications_active' : 'notifications'}
                                 </span>
                             </div>
-                            <div>
-                                <p class="text-white ${isUnread ? 'font-bold' : ''}">${notification.message}</p>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-white ${isUnread ? 'font-bold' : ''} break-words">${safeMessage}</p>
                                 <p class="text-gray-400 text-sm mt-1 flex items-center gap-1">
                                     <span class="material-icons-round text-xs">schedule</span>
                                     ${formatArabicDate(notification.created_at)}
                                 </p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 self-end md:self-center">
+                        <div class="flex items-center gap-2 self-end md:self-center shrink-0">
                             ${isUnread ? `
                                 <button onclick="markAsRead(${notification.id})" class="p-2 text-green-400 bg-green-500/10 hover:bg-green-500/20 rounded-lg border border-green-500/20 transition-all" title="${window.__('mark_as_read_tooltip')}">
                                     <span class="material-icons-round text-base">done</span>
@@ -331,7 +348,7 @@ function renderPagination(info) {
     }
     
     let paginationHTML = `
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap justify-center">
     `;
     
     paginationHTML += `<button class="pagination-btn ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-icons-round">chevron_right</span></button>`;

@@ -31,16 +31,16 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 <p class="text-sm text-gray-400 mt-1"><?php echo __('track_and_record_expenses'); ?></p>
             </div>
 
-            <button onclick="openAddExpenseModal()" class="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
+            <button onclick="openAddExpenseModal()" class="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2 w-full md:w-auto justify-center md:justify-start">
                 <span class="material-icons-round">add</span>
                 <?php echo __('add_new_expense'); ?>
             </button>
         </div>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-6">
+    <div class="flex-1 overflow-y-auto p-4 md:p-6">
         <!-- Expenses Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-8">
             <div class="bg-dark-surface/60 border border-white/5 p-6 rounded-2xl">
                 <p class="text-sm text-gray-400 mb-1"><?php echo __('today_expenses'); ?></p>
                 <h3 id="today-expenses" class="text-2xl font-bold text-white">0.00 <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
@@ -62,10 +62,10 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         </div>
 
         <!-- Expenses Table -->
-        <div class="bg-dark-surface/40 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-md">
+        <div class="bg-transparent md:bg-dark-surface/40 md:border border-white/5 rounded-2xl overflow-hidden md:backdrop-blur-md">
             <div class="overflow-x-auto">
-                <table class="w-full text-right border-collapse">
-                    <thead>
+                <table class="w-full text-right border-collapse block md:table">
+                    <thead class="hidden md:table-header-group">
                         <tr class="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
                             <th class="px-6 py-4 font-bold"><?php echo __('date'); ?></th>
                             <th class="px-6 py-4 font-bold"><?php echo __('title'); ?></th>
@@ -75,22 +75,22 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                             <th class="px-6 py-4 font-bold text-left"><?php echo __('actions'); ?></th>
                         </tr>
                     </thead>
-                    <tbody id="expenses-table-body" class="divide-y divide-white/5">
+                    <tbody id="expenses-table-body" class="block md:table-row-group divide-y divide-white/5 md:divide-white/5">
                         <!-- Data will be loaded here -->
                     </tbody>
                 </table>
             </div>
             
             <!-- Pagination -->
-            <div id="pagination" class="p-6 border-t border-white/5 flex justify-center items-center gap-2"></div>
+            <div id="pagination" class="p-6 border-t border-white/5 flex justify-center items-center gap-2 bg-dark-surface/40 md:bg-transparent rounded-2xl md:rounded-none mt-4 md:mt-0"></div>
         </div>
     </div>
 </main>
 
 <!-- Add Expense Modal -->
 <div id="expense-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-dark-surface border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-scaleIn">
-        <div class="p-6 border-b border-white/5 flex items-center justify-between">
+    <div class="bg-dark-surface border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-scaleIn max-h-[90vh] overflow-y-auto">
+        <div class="p-4 md:p-6 border-b border-white/5 flex items-center justify-between sticky top-0 bg-dark-surface z-10">
             <h3 class="text-xl font-bold text-white flex items-center gap-2">
                 <span class="material-icons-round text-primary">add_circle</span>
                 <?php echo __('add_new_expense'); ?>
@@ -100,13 +100,13 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             </button>
         </div>
         
-        <form id="expense-form" class="p-6 space-y-4">
+        <form id="expense-form" class="p-4 md:p-6 space-y-4">
             <div>
                 <label class="block text-sm text-gray-400 mb-2"><?php echo __('expense_title'); ?></label>
                 <input type="text" id="expense-title" required class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" placeholder="<?php echo __('expense_title_placeholder'); ?>">
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm text-gray-400 mb-2"><?php echo __('amount'); ?> (<?php echo $currency; ?>)</label>
                     <input type="number" id="expense-amount" step="0.01" required class="w-full bg-dark/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all" placeholder="0.00">
@@ -187,7 +187,7 @@ function displayExpenses(expenses) {
     tbody.innerHTML = '';
     
     if (expenses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-500">${window.__('no_expenses_recorded')}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-500 block md:table-cell">${window.__('no_expenses_recorded')}</td></tr>`;
         return;
     }
     
@@ -204,19 +204,35 @@ function displayExpenses(expenses) {
 
     expenses.forEach(expense => {
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-white/5 transition-colors group';
+        // Mobile: card style. Desktop: table-row style.
+        tr.className = 'block md:table-row bg-dark-surface/40 md:bg-transparent mb-4 md:mb-0 rounded-2xl md:rounded-none border border-white/5 md:border-b hover:bg-white/5 transition-colors group';
+        
         tr.innerHTML = `
-            <td class="px-6 py-4 text-white text-sm">${expense.expense_date}</td>
-            <td class="px-6 py-4 text-white font-bold">${expense.title}</td>
-            <td class="px-6 py-4">
+            <td class="px-4 py-3 md:px-6 md:py-4 text-white text-sm block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('date')}</span>
+                <span>${escapeHtml(expense.expense_date)}</span>
+            </td>
+            <td class="px-4 py-3 md:px-6 md:py-4 text-white font-bold block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('title')}</span>
+                <span>${escapeHtml(expense.title)}</span>
+            </td>
+            <td class="px-4 py-3 md:px-6 md:py-4 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('category')}</span>
                 <span class="bg-blue-500/10 text-blue-400 text-xs px-2 py-1 rounded-full border border-blue-500/20">
-                    ${categoryNames[expense.category] || expense.category}
+                    ${categoryNames[expense.category] || escapeHtml(expense.category)}
                 </span>
             </td>
-            <td class="px-6 py-4 text-red-400 font-bold">${parseFloat(expense.amount).toFixed(2)} ${currency}</td>
-            <td class="px-6 py-4 text-gray-400 text-xs max-w-xs truncate">${expense.notes || '-'}</td>
-            <td class="px-6 py-4 text-left">
-                <button onclick="deleteExpense(${expense.id})" class="text-gray-500 hover:text-red-500 transition-colors p-2">
+            <td class="px-4 py-3 md:px-6 md:py-4 text-red-400 font-bold block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('amount')}</span>
+                <span>${parseFloat(expense.amount).toFixed(2)} ${currency}</span>
+            </td>
+            <td class="px-4 py-3 md:px-6 md:py-4 text-gray-400 text-xs max-w-full md:max-w-xs block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider flex-shrink-0 mr-2">${window.__('notes')}</span>
+                <span class="truncate block max-w-[200px] md:max-w-xs text-right">${escapeHtml(expense.notes || '-')}</span>
+            </td>
+            <td class="px-4 py-3 md:px-6 md:py-4 text-left block md:table-cell flex justify-between items-center md:justify-start border-b border-white/5 md:border-0 last:border-0">
+                <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('actions')}</span>
+                <button onclick="deleteExpense(${expense.id})" class="text-gray-500 hover:text-red-500 transition-colors p-2 bg-white/5 md:bg-transparent rounded-lg md:rounded-none">
                     <span class="material-icons-round text-sm">delete</span>
                 </button>
             </td>
@@ -225,11 +241,26 @@ function displayExpenses(expenses) {
     });
 }
 
+function escapeHtml(text) {
+  if (text == null) return '';
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function renderPagination(pagination) {
     const container = document.getElementById('pagination');
     container.innerHTML = '';
     
-    if (pagination.total_pages <= 1) return;
+    if (pagination.total_pages <= 1) {
+        container.closest('div').classList.add('hidden'); // Hide container if no pagination needed
+        return; 
+    } else {
+        container.closest('div').classList.remove('hidden');
+    }
     
     for (let i = 1; i <= pagination.total_pages; i++) {
         const btn = document.createElement('button');

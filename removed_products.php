@@ -64,7 +64,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     <div class="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-red-500/5 rounded-full blur-[120px] pointer-events-none"></div>
 
     <!-- Header -->
-    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+    <header class="h-auto md:h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between p-4 md:px-8 relative z-10 shrink-0 gap-4">
         <h2 class="text-xl font-bold text-white flex items-center gap-2">
             <span class="material-icons-round text-red-500">delete_sweep</span>
             <span><?php echo __('removed_products_title'); ?></span>
@@ -73,7 +73,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     </header>
 
     <!-- Filters & Actions -->
-    <div class="p-6 pt-6 flex flex-col gap-4 relative z-10 shrink-0">
+    <div class="p-4 md:p-6 pt-6 flex flex-col gap-4 relative z-10 shrink-0">
         <div id="bulk-actions-bar" class="hidden bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-center justify-between transition-all">
             <span id="selected-count" class="text-white font-bold"></span>
             <div class="flex items-center gap-2">
@@ -94,12 +94,12 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
     </div>
 
     <!-- Products Table -->
-    <div class="flex-1 flex flex-col overflow-hidden p-6 pt-0 relative z-10">
-        <div class="flex-1 flex flex-col bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl glass-panel overflow-hidden">
+    <div class="flex-1 flex flex-col overflow-hidden p-4 md:p-6 pt-0 relative z-10">
+        <div class="flex-1 flex flex-col bg-transparent md:bg-dark-surface/60 md:backdrop-blur-md md:border border-white/5 rounded-2xl glass-panel overflow-hidden">
             <div class="flex-1 overflow-y-auto">
-                <table class="w-full">
-                    <thead class="sticky top-0 bg-white/5 z-10">
-                        <tr class="text-start">
+                <table class="w-full text-right border-collapse block md:table">
+                    <thead class="hidden md:table-header-group sticky top-0 bg-white/5 z-10">
+                        <tr class="text-start border-b border-white/10">
                             <th class="p-4 w-10"><input type="checkbox" id="select-all-products" class="bg-dark/50 border-white/20 rounded"></th>
                             <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('product'); ?></th>
                             <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('product_image'); ?></th>
@@ -110,12 +110,12 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                             <th class="p-4 text-sm font-medium text-gray-300"><?php echo __('actions'); ?></th>
                         </tr>
                     </thead>
-                    <tbody id="products-table-body" class="divide-y divide-white/5">
+                    <tbody id="products-table-body" class="block md:table-row-group divide-y divide-white/5 md:divide-white/5">
                         <!-- Products will be loaded here -->
                     </tbody>
                 </table>
             </div>
-            <div id="pagination-container" class="p-4 bg-dark-surface/60 border-t border-white/5 flex items-center justify-center text-sm text-gray-400 shrink-0"></div>
+            <div id="pagination-container" class="p-4 bg-dark-surface/60 border-t border-white/5 flex items-center justify-center text-sm text-gray-400 shrink-0 rounded-b-2xl"></div>
         </div>
     </div>
 </main>
@@ -159,10 +159,20 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             }
         }
 
+        function escapeHtml(text) {
+          if (text == null) return '';
+          return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+        }
+
         function displayProducts(products) {
             productsTableBody.innerHTML = '';
             if (products.length === 0) {
-                productsTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-500">${__('no_removed_products')}</td></tr>`;
+                productsTableBody.innerHTML = `<tr class="block md:table-row"><td colspan="8" class="text-center py-8 text-gray-500 block md:table-cell">${__('no_removed_products')}</td></tr>`;
                 return;
             }
 
@@ -179,7 +189,7 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 
             products.forEach(product => {
                 const productRow = document.createElement('tr');
-                productRow.className = 'hover:bg-white/5 transition-colors';
+                productRow.className = 'block md:table-row bg-dark-surface/40 md:bg-transparent mb-4 md:mb-0 rounded-2xl md:rounded-none border border-white/5 md:border-b hover:bg-white/5 transition-colors group';
 
                 const removedAt = new Date(product.removed_at);
                 const removedAtStr = removedAt.toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
@@ -191,28 +201,55 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                 let expiryBadge = '';
                 // Show warning when remaining time is within 1 day (24h)
                 if (remainingMs > 0 && remainingMs <= ONE_DAY_MS) {
-                    expiryBadge = `<div class="text-xs text-yellow-300">${__('will_be_deleted_after').replace('%s', formatRemaining(remainingMs))}</div>`;
+                    expiryBadge = `<div class="text-xs text-yellow-300 mt-1">${__('will_be_deleted_after').replace('%s', formatRemaining(remainingMs))}</div>`;
                     expiring.push({ name: product.name, remainingMs });
                 }
 
                 productRow.innerHTML = `
-                    <td class="p-4"><input type="checkbox" class="product-checkbox bg-dark/50 border-white/20 rounded" data-id="${product.id}"></td>
-                    <td class="p-4 text-sm text-gray-300 font-medium">${product.name}</td>
-                    <td class="p-4"><img src="${product.image || 'src/img/default-product.png'}" alt="${product.name}" class="w-10 h-10 rounded-md object-cover"></td>
-                    <td class="p-4 text-sm text-gray-400">${product.category_name || 'غير مصنّف'}</td>
-                    <td class="p-4 text-sm text-gray-300">${parseFloat(product.price).toFixed(2)} ${'<?php echo $currency; ?>'}</td>
-                    <td class="p-4 text-sm text-gray-400">${removedAtStr}${expiryBadge}</td>
-                    <td class="p-4 text-sm text-gray-300"><span class="text-red-400 font-bold">${new Date(expiryTimestamp).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span></td>
-                    <td class="p-4 text-sm">
-                        <button class="restore-product-btn p-1.5 text-gray-400 hover:text-green-500 transition-colors" data-id="${product.id}" title="${__('restore_product_tooltip')}"><span class="material-icons-round text-lg">restore_from_trash</span></button>
-                        <button class="delete-product-btn p-1.5 text-gray-400 hover:text-red-500 transition-colors" data-id="${product.id}" title="${__('permanent_delete_tooltip')}"><span class="material-icons-round text-lg">delete_forever</span></button>
+                    <td class="p-4 md:px-4 md:py-4 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('select')}</span>
+                        <input type="checkbox" class="product-checkbox bg-dark/50 border-white/20 rounded" data-id="${product.id}">
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm text-gray-300 font-medium block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('product')}</span>
+                        <span>${escapeHtml(product.name)}</span>
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('product_image')}</span>
+                        <img src="${escapeHtml(product.image) || 'src/img/default-product.png'}" alt="${escapeHtml(product.name)}" class="w-10 h-10 rounded-md object-cover">
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm text-gray-400 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('category')}</span>
+                        <span>${escapeHtml(product.category_name) || 'غير مصنّف'}</span>
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm text-gray-300 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('price')}</span>
+                        <span>${parseFloat(product.price).toFixed(2)} ${'<?php echo $currency; ?>'}</span>
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm text-gray-400 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('deleted_at_header')}</span>
+                        <div class="text-right md:text-start">
+                            ${removedAtStr}
+                            ${expiryBadge}
+                        </div>
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm text-gray-300 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('permanent_delete_date_header')}</span>
+                        <span class="text-red-400 font-bold">${new Date(expiryTimestamp).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                    </td>
+                    <td class="p-4 md:px-4 md:py-4 text-sm block md:table-cell flex justify-between items-center md:justify-start border-b border-white/5 md:border-0 last:border-0 gap-2">
+                        <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('actions')}</span>
+                        <div class="flex gap-2">
+                            <button class="restore-product-btn p-2 md:p-1.5 text-gray-400 hover:text-green-500 transition-colors bg-white/5 md:bg-transparent rounded-lg md:rounded-none" data-id="${product.id}" title="${__('restore_product_tooltip')}"><span class="material-icons-round text-lg">restore_from_trash</span></button>
+                            <button class="delete-product-btn p-2 md:p-1.5 text-gray-400 hover:text-red-500 transition-colors bg-white/5 md:bg-transparent rounded-lg md:rounded-none" data-id="${product.id}" title="${__('permanent_delete_tooltip')}"><span class="material-icons-round text-lg">delete_forever</span></button>
+                        </div>
                     </td>
                 `;
                 productsTableBody.appendChild(productRow);
             });
 
             if (expiring.length > 0) {
-                let msg = `${expiring[0].name} (${formatRemaining(expiring[0].remainingMs)})`;
+                let msg = `${escapeHtml(expiring[0].name)} (${formatRemaining(expiring[0].remainingMs)})`;
                 if (expiring.length > 1) {
                     msg += ' ' + __('and_more_products').replace('%d', expiring.length - 1);
                 }
@@ -440,4 +477,3 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideScanner(); });
     })();
 </script>
-
