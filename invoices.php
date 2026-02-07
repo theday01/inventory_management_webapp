@@ -482,11 +482,11 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
     <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
 
     <!-- Header -->
-    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 relative z-10 shrink-0">
+    <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 md:px-8 relative z-10 shrink-0">
         <h2 class="text-xl font-bold text-white"><?php echo __('invoices_and_tax'); ?></h2>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
+    <div class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10" style="max-height: calc(100vh - 5rem);">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Invoices Content -->
             <div class="lg:col-span-3 space-y-6">
@@ -524,7 +524,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
                     <div class="overflow-x-auto">
                         <table class="w-full text-right">
-                            <thead>
+                            <thead class="hidden md:table-header-group">
                                 <tr class="border-b border-white/10">
                                     <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('invoice_number'); ?></th>
                                     <th class="p-4 text-sm font-bold text-gray-400"><?php echo __('date'); ?></th>
@@ -533,7 +533,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                                     <th class="p-4 text-sm font-bold text-gray-400"></th>
                                 </tr>
                             </thead>
-                            <tbody id="invoices-table-body">
+                            <tbody id="invoices-table-body" class="grid grid-cols-1 md:table-row-group gap-4">
                                 <tr>
                                     <td colspan="5" class="text-center py-4 text-gray-500">
                                         <?php echo __('loading_data'); ?>
@@ -627,7 +627,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
                 <!-- Two Columns: Issue Date and Invoice Number with Barcode -->
                 <!-- Three Columns: Date, Barcode, Invoice Number -->
-                <div class="grid grid-cols-3 gap-6 pb-6 mb-6 border-b border-gray-200 invoice-header-grid">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 pb-6 mb-6 border-b border-gray-200 invoice-header-grid">
                         <!-- تاريخ الإصدار - يمين -->
                     <div class="text-start">
                         <h3 class="text-xs font-bold text-gray-500 uppercase mb-2"><?php echo __('issue_date'); ?></h3>
@@ -648,8 +648,8 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
                 </div>
             
                 <div class="mb-6">
-                    <div class="rounded-2xl border-2 border-gray-200 overflow-hidden bg-white shadow-sm">
-                        <table class="w-full text-sm invoice-items-container">
+                    <div class="rounded-2xl border-2 border-gray-200 overflow-x-auto bg-white shadow-sm">
+                        <table class="w-full text-sm invoice-items-container min-w-[600px] md:min-w-0">
                             <thead class="bg-gray-100">
                                 <tr class="border-b-2 border-gray-300">
                                     <th class="text-start py-3 px-4 font-bold text-gray-800 text-sm uppercase"><?php echo __('product_col'); ?></th>
@@ -690,7 +690,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             </div>
         </div>
 
-        <div class="bg-gray-50 p-6 grid grid-cols-2 gap-3 no-print border-t shrink-0">
+        <div class="bg-gray-50 p-4 md:p-6 grid grid-cols-1 sm:grid-cols-2 gap-3 no-print border-t shrink-0">
             <button id="print-invoice-btn" class="bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
                 <span class="material-icons-round text-lg">print</span>
                 <?php echo __('print_direct'); ?>
@@ -872,7 +872,8 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
 
         invoices.forEach(invoice => {
             const row = document.createElement('tr');
-            row.className = 'border-b border-white/5 hover:bg-white/5 transition-colors';
+            // Responsive row styling: card on mobile, table row on desktop
+            row.className = 'border border-white/5 rounded-xl p-4 mb-4 bg-white/5 md:bg-transparent md:border-b md:border-white/5 md:rounded-none md:p-0 md:mb-0 hover:bg-white/5 transition-colors flex flex-col md:table-row';
             
             const invoiceDate = new Date(invoice.created_at);
             const gregorianDate = invoiceDate.toLocaleDateString('en-US', {
@@ -886,7 +887,7 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             const formattedDate = toEnglishNumbers(gregorianDate);
             
             let actionButtons = `
-                <div class="flex items-center gap-2">
+                <div class="flex items-center justify-end gap-2 w-full md:w-auto">
                     <button class="view-invoice-btn bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2" data-id="${invoice.id}">
                         <span class="material-icons-round text-base">visibility</span>
                         ${window.__('view')}
@@ -911,11 +912,23 @@ $invoiceShowLogo = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['
             actionButtons += `</div>`;
 
             row.innerHTML = `
-                <td class="p-4 text-sm font-bold text-primary">#${String(invoice.id).padStart(6, '0')}</td>
-                <td class="p-4 text-sm text-gray-300">${formattedDate}</td>
-                <td class="p-4 text-sm text-gray-300">${invoice.customer_name || window.__('cash_customer')}</td>
-                <td class="p-4 text-sm font-bold text-white">${parseFloat(invoice.total).toFixed(2)} ${currency}</td>
-                <td class="p-4">
+                <td class="p-2 md:p-4 text-sm font-bold text-primary flex justify-between md:table-cell items-center">
+                    <span class="md:hidden text-gray-400 font-normal text-xs uppercase">${window.__('invoice_number')}</span>
+                    #${String(invoice.id).padStart(6, '0')}
+                </td>
+                <td class="p-2 md:p-4 text-sm text-gray-300 flex justify-between md:table-cell items-center">
+                    <span class="md:hidden text-gray-400 font-normal text-xs uppercase">${window.__('date')}</span>
+                    ${formattedDate}
+                </td>
+                <td class="p-2 md:p-4 text-sm text-gray-300 flex justify-between md:table-cell items-center">
+                    <span class="md:hidden text-gray-400 font-normal text-xs uppercase">${window.__('customer')}</span>
+                    ${invoice.customer_name || window.__('cash_customer')}
+                </td>
+                <td class="p-2 md:p-4 text-sm font-bold text-white flex justify-between md:table-cell items-center">
+                    <span class="md:hidden text-gray-400 font-normal text-xs uppercase">${window.__('amount')}</span>
+                    ${parseFloat(invoice.total).toFixed(2)} ${currency}
+                </td>
+                <td class="p-2 md:p-4 flex md:table-cell mt-2 md:mt-0 border-t border-white/5 md:border-0 pt-3 md:pt-4">
                     ${actionButtons}
                 </td>
             `;

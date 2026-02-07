@@ -689,20 +689,20 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         اليوم عطلة رسمية: <span id="holiday-name" class="font-bold"></span>.
     </div>
     
-    <header class="bg-dark-surface/50 backdrop-blur-md border-b border-white/5 p-6 sticky top-0 z-20 no-print">
+    <header class="bg-dark-surface/50 backdrop-blur-md border-b border-white/5 p-3 md:p-6 sticky top-0 z-20 no-print">
         <!-- Tabs Navigation -->
-        <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
-            <div class="flex gap-4">
-                <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-bold transition-all">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 border-b border-white/5 pb-4">
+            <div class="flex gap-4 w-full md:w-auto overflow-x-auto">
+                <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-bold transition-all whitespace-nowrap">
                     <span class="material-icons-round text-sm">dashboard</span>
                     <?php echo __('dashboard'); ?>
                 </button>
-                <button onclick="switchTab('annual-tips')" id="tab-btn-annual-tips" class="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white font-bold transition-all">
+                <button onclick="switchTab('annual-tips')" id="tab-btn-annual-tips" class="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white font-bold transition-all whitespace-nowrap">
                     <span class="material-icons-round text-sm">lightbulb</span>
                     <?php echo __('annual_tips'); ?>
                 </button>
             </div>
-            <div id="real-date-time" class="text-gray-400 font-mono text-lg font-bold" dir="ltr"></div>
+            <div id="real-date-time" class="text-gray-400 font-mono text-lg font-bold self-end md:self-auto" dir="ltr"></div>
         </div>
 
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 tab-specific" id="header-controls-dashboard">
@@ -716,14 +716,14 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 </p>
             </div>
 
-            <div class="flex items-center gap-4">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
             <?php if ($is_day_active): ?>
-                <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm">
+                <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm text-center sm:text-start">
                     <?php echo __('active_business_day'); ?>
                 </div>
             <?php endif; ?>
-            <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg">
-                <div class="flex gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
+            <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg justify-center sm:justify-start">
+                <div class="flex flex-wrap justify-center gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
                     <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>"><?php echo __('today'); ?></button>
                     <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>"><?php echo __('yesterday'); ?></button>
                     <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>"><?php echo __('7_days'); ?></button>
@@ -731,13 +731,17 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                     <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>"><?php echo __('month'); ?></button>
                 </div>
                 
-                <div class="h-8 w-px bg-white/10"></div>
+                <div class="h-8 w-px bg-white/10 hidden sm:block"></div>
 
-                <div class="flex items-center gap-2">
-                    <span class="text-gray-400 text-xs"><?php echo __('from'); ?></span>
-                    <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
-                    <span class="text-gray-400 text-xs"><?php echo __('to'); ?></span>
-                    <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                <div class="flex flex-wrap justify-center items-center gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-400 text-xs"><?php echo __('from'); ?></span>
+                        <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-400 text-xs"><?php echo __('to'); ?></span>
+                        <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                    </div>
                     <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
                         <span class="material-icons-round text-sm block">filter_alt</span>
                     </button>
@@ -751,17 +755,17 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
         </div>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-6 scroll-smooth">
+    <div class="flex-1 overflow-y-auto p-3 md:p-6 scroll-smooth">
         
         <!-- DASHBOARD TAB -->
         <div id="tab-dashboard" class="tab-content block">
         <!-- Welcome & Quick Actions Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 mb-8">
             <!-- Welcome Banner -->
-            <div class="lg:col-span-2 bg-gradient-to-br from-dark-surface/80 to-dark-surface/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative overflow-hidden animate-enter">
+            <div class="lg:col-span-2 bg-gradient-to-br from-dark-surface/80 to-dark-surface/40 backdrop-blur-xl border border-white/10 rounded-3xl p-4 md:p-8 relative overflow-hidden animate-enter">
                 <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
                 <div class="relative z-10">
-                    <h1 class="text-4xl font-bold text-white mb-3 leading-tight">
+                    <h1 class="text-2xl md:text-4xl font-bold text-white mb-3 leading-tight">
                         <?php echo __('welcome_to'); ?> <span class="gradient-text"><?php echo htmlspecialchars($shopName); ?></span> 👋
                     </h1>
                     <p class="text-gray-400 text-lg max-w-2xl">
@@ -782,29 +786,29 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             </div>
 
             <!-- Quick Stats / Actions Grid -->
-            <div class="grid grid-cols-2 gap-4 animate-enter delay-100">
-                <a href="customers.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-primary/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
+            <div class="grid grid-cols-2 gap-2 md:gap-4 animate-enter delay-100">
+                <a href="customers.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-primary/30 rounded-2xl p-4 md:p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
                     <div class="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                         <span class="material-icons-round text-purple-500 text-2xl">people</span>
                     </div>
                     <span class="text-white font-bold"><?php echo __('customers'); ?></span>
                     <span class="text-xs text-gray-500 mt-1"><?php echo __('view_history'); ?></span>
                 </a>
-                <a href="invoices.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-accent/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
+                <a href="invoices.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-accent/30 rounded-2xl p-4 md:p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
                     <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                         <span class="material-icons-round text-accent text-2xl">receipt_long</span>
                     </div>
                     <span class="text-white font-bold"><?php echo __('invoices'); ?></span>
                     <span class="text-xs text-gray-500 mt-1"><?php echo __('sales_history'); ?></span>
                 </a>
-                <a href="settings.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-orange-500/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
+                <a href="settings.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-orange-500/30 rounded-2xl p-4 md:p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
                     <div class="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                         <span class="material-icons-round text-orange-500 text-2xl">settings</span>
                     </div>
                     <span class="text-white font-bold"><?php echo __('settings'); ?></span>
                     <span class="text-xs text-gray-500 mt-1"><?php echo __('system_customization'); ?></span>
                 </a>
-                <a href="reports.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-pink-500/30 rounded-2xl p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
+                <a href="reports.php" class="group bg-dark-surface/60 hover:bg-dark-surface/80 backdrop-blur-md border border-white/5 hover:border-pink-500/30 rounded-2xl p-4 md:p-6 flex flex-col justify-center items-center transition-all stat-card cursor-pointer">
                     <div class="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                         <span class="material-icons-round text-pink-500 text-2xl">analytics</span>
                     </div>
@@ -814,7 +818,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             </div>
         </div>
 
-        <div id="metrics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div id="metrics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             <div class="glass-card p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform">
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-icons-round text-6xl text-blue-500">payments</span>
