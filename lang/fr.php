@@ -1104,22 +1104,38 @@ return [
 
     // License Page
     'license_page_title' => 'Contrat de licence',
-    'license_header' => 'Contrats de licence',
-    'license_agreement_version' => 'Contrat de licence logiciel - Version 2.0',
+    'license_header' => 'Contrat de licence',
+    'license_agreement_version' => 'Contrat de Licence Utilisateur Final (CLUF) - Version 3.0',
+    'license_preamble' => 'Ceci est un accord juridique contraignant entre vous ("Le Licencié") et Eagle Shadow Technology ("Le Concédant"). En installant, copiant ou utilisant ce logiciel, vous reconnaissez avoir lu cet accord, l\'avoir compris et acceptez d\'être lié par ses termes.',
+    
     'license_grant_title' => 'Octroi de licence',
-    'license_grant_text_1' => '<strong class="text-white">Eagle Shadow Technology</strong> ("Le Concédant") vous accorde une licence non exclusive, non transférable et limitée pour utiliser ce logiciel ("Smart Shop") conformément aux termes énoncés dans le présent contrat.',
-    'license_grant_text_2' => 'Cette licence vous permet d\'installer et d\'utiliser une seule copie du logiciel sur un seul serveur ou réseau local uniquement à des fins de gestion de vos activités commerciales.',
+    'license_grant_text' => 'Le Concédant vous accorde une licence limitée, non exclusive, non transférable et révocable pour utiliser une copie du logiciel à des fins de gestion interne de vos activités commerciales uniquement, sous réserve du respect continu de tous les termes de cet accord et du paiement des frais de licence (le cas échéant).',
+    
     'ip_rights_title' => 'Droits de propriété intellectuelle',
-    'ip_rights_text' => 'Le logiciel est protégé par les lois sur le droit d\'auteur et les traités internationaux de propriété intellectuelle. Eagle Shadow Technology conserve tous les droits, titres et intérêts sur le logiciel (y compris le code source, la conception et les algorithmes).',
-    'ip_rights_list_1' => 'Vous ne pouvez pas modifier, faire de l\'ingénierie inverse ou déchiffrer le logiciel.',
-    'ip_rights_list_2' => 'Vous ne pouvez pas louer, prêter ou revendre le logiciel à un tiers.',
-    'ip_rights_list_3' => 'Toutes les marques et logos sont la propriété de leurs propriétaires respectifs.',
-    'support_updates_title' => 'Support et mises à jour',
-    'support_updates_text' => 'Des mises à jour périodiques du logiciel peuvent être fournies pour améliorer les performances ou ajouter de nouvelles fonctionnalités. Cette licence s\'applique à toutes les mises à jour futures, sauf si elles sont accompagnées de conditions distinctes.',
-    'legal_inquiries' => 'Pour les demandes juridiques :',
-    'or_via_whatsapp' => 'ou via WhatsApp :',
-    'usage_consent' => 'Votre utilisation du système signifie que vous acceptez ces conditions.',
-    'print_document' => 'Imprimer le document',
+    'ip_rights_text' => 'Le logiciel et tous les droits de propriété intellectuelle associés (y compris, mais sans s\'y limiter : le code source, les bases de données, les interfaces utilisateur, les conceptions et les algorithmes) restent la propriété exclusive d\'Eagle Shadow Technology. Ce logiciel vous est "concédé sous licence" et non "vendu".',
+    
+    'license_restrictions_title' => 'Restrictions d\'utilisation',
+    'license_restrictions_text' => 'Vous acceptez de ne pas faire, et de ne pas permettre à des tiers de faire, ce qui suit :',
+    'license_restrictions_list_1' => 'Copier le logiciel (sauf une copie de sauvegarde), le distribuer, le louer ou le sous-licencier.',
+    'license_restrictions_list_2' => 'Effectuer de l\'ingénierie inverse, décompiler, désassembler ou tenter d\'extraire le code source du logiciel.',
+    'license_restrictions_list_3' => 'Utiliser le logiciel pour fournir des services de traitement de données à des tiers (Service Bureau) ou l\'utiliser dans toute activité illégale.',
+    
+    'license_privacy_title' => 'Données et confidentialité',
+    'license_privacy_text' => 'Vous êtes le seul propriétaire des données que vous saisissez dans le système. Vous assumez l\'entière responsabilité de l\'exactitude des données, de leur intégrité et de la réalisation de sauvegardes périodiques. Le Concédant n\'assume aucune responsabilité pour la perte de données résultant d\'une mauvaise utilisation, de pannes techniques ou de virus.',
+    
+    'license_disclaimer_title' => 'Exclusion de garantie',
+    'license_disclaimer_text' => 'Le logiciel est fourni "TEL QUEL" (As Is) sans aucune garantie d\'aucune sorte, expresse ou implicite. Le Concédant ne garantit pas que le logiciel fonctionnera sans interruption, qu\'il est exempt d\'erreurs ou que tous les défauts seront corrigés.',
+    
+    'license_liability_title' => 'Limitation de responsabilité',
+    'license_liability_text' => 'Dans toute la mesure permise par la loi applicable, le Concédant ne pourra en aucun cas être tenu responsable des dommages spéciaux, accessoires, indirects ou consécutifs (y compris, mais sans s\'y limiter, les dommages résultant d\'une perte de bénéfices, d\'une interruption d\'activité ou d\'une perte d\'informations commerciales) découlant de l\'utilisation ou de l\'impossibilité d\'utiliser le logiciel.',
+    
+    'license_termination_title' => 'Résiliation',
+    'license_termination_text' => 'Cet accord reste en vigueur jusqu\'à sa résiliation. Vos droits en vertu de cette licence prendront fin automatiquement sans préavis du Concédant si vous ne respectez pas l\'un des termes de cet accord. À la résiliation, vous devez cesser d\'utiliser le logiciel et détruire toutes les copies en votre possession.',
+
+    'legal_inquiries' => 'Pour les demandes juridiques et le support :',
+    'or_via_whatsapp' => 'Contactez-nous via WhatsApp :',
+    'usage_consent' => 'L\'installation et l\'utilisation du système constituent une acceptation pleine et entière de ces conditions.',
+    'print_document' => 'Imprimer le document officiel',
 
     // Notifications Page
     'notifications_page_title' => 'Notifications',

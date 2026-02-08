@@ -593,10 +593,8 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                              <div class="p-3 bg-white/5 rounded-xl"><span class="material-icons-round text-yellow-500">currency_exchange</span></div>
                             <div class="flex-1"><h3 class="text-lg font-bold text-white"><?php echo __('system_currency_title'); ?></h3></div>
                             <div class="w-48">
-                                <select name="currency" class="w-full bg-dark border border-white/10 text-white text-right px-4 py-2.5 rounded-xl" <?php echo $disabledAttr; ?>>
-                                    <option value="MAD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'MAD') ? 'selected' : ''; ?>><?php echo __('currency_mad'); ?></option>
-                                    <option value="USD" <?php echo (isset($settings['currency']) && $settings['currency'] == 'USD') ? 'selected' : ''; ?>><?php echo __('currency_usd'); ?></option>
-                                    </select>
+                                <input type="text" value="<?php echo __('currency_mad'); ?>" class="w-full bg-dark border border-white/10 text-white text-right px-4 py-2.5 rounded-xl opacity-80 cursor-not-allowed" disabled>
+                                <input type="hidden" name="currency" value="MAD">
                             </div>
                         </div>
                      </div>

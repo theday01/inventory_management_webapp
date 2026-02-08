@@ -94,7 +94,7 @@ require_once 'src/sidebar.php';
                 <div class="mt-8 text-center">
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 inline-block">
                         <a href="https://eagleshadow.technology" target="_blank" class="block">
-                            <img src="src/support/logo.png" alt="شعار مطور الموقع" class="h-16 w-auto mx-auto mb-4 opacity-80 hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                            <img src="src/support/logo.png" alt="شعار مطور الموقع" class="h-25 w-auto mx-auto mb-4 opacity-80 hover:opacity-100 transition-opacity duration-300 cursor-pointer">
                         </a>
                         <p class="text-sm text-gray-400">تم تطوير هذا النظام بواسطة</p>
                         <p class="text-white font-semibold">EagleShadow Technology</p>

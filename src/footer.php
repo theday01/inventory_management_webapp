@@ -67,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .kb-key.action { background: rgba(255,255,255,0.15); flex: 1.5; }
         .kb-key.space { flex: 6; }
         #virtual-keyboard.active { transform: translateY(0); }
+        @media print {
+            #virtual-keyboard, #kb-show-btn { display: none !important; }
+        }
     </style>
     `;
     document.body.insertAdjacentHTML('beforeend', kbHTML);

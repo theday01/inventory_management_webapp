@@ -35,42 +35,77 @@ require_once 'src/sidebar.php';
 
                     <div class="p-8 space-y-8 text-gray-300 leading-relaxed text-sm md:text-base h-[600px] overflow-y-auto custom-scrollbar">
                         
+                        <!-- Preamble -->
+                        <div class="bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
+                            <p class="italic text-gray-400 text-sm"><?php echo __('license_preamble'); ?></p>
+                        </div>
+
+                        <!-- 1. License Grant -->
                         <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
                                 <span class="text-primary">1.</span> <?php echo __('license_grant_title'); ?>
                             </h3>
-                            <p class="mb-2"><?php echo __('license_grant_text_1'); ?></p>
-                            <p><?php echo __('license_grant_text_2'); ?></p>
+                            <p class="mb-2"><?php echo __('license_grant_text'); ?></p>
                         </section>
 
+                        <!-- 2. Intellectual Property -->
                         <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
                                 <span class="text-primary">2.</span> <?php echo __('ip_rights_title'); ?>
                             </h3>
                             <p><?php echo __('ip_rights_text'); ?></p>
-                            <ul class="list-disc list-inside mt-2 space-y-1 text-gray-400">
-                                <li><?php echo __('ip_rights_list_1'); ?></li>
-                                <li><?php echo __('ip_rights_list_2'); ?></li>
-                                <li><?php echo __('ip_rights_list_3'); ?></li>
+                        </section>
+
+                        <!-- 3. Restrictions -->
+                        <section>
+                            <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
+                                <span class="text-primary">3.</span> <?php echo __('license_restrictions_title'); ?>
+                            </h3>
+                            <p><?php echo __('license_restrictions_text'); ?></p>
+                            <ul class="list-disc list-inside mt-2 space-y-1 text-gray-400 pl-4 rtl:pr-4">
+                                <li><?php echo __('license_restrictions_list_1'); ?></li>
+                                <li><?php echo __('license_restrictions_list_2'); ?></li>
+                                <li><?php echo __('license_restrictions_list_3'); ?></li>
                             </ul>
                         </section>
 
+                        <!-- 4. Data Privacy -->
                         <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                                <span class="text-primary">3.</span> <?php echo __('ip_rights_title'); ?>
+                                <span class="text-primary">4.</span> <?php echo __('license_privacy_title'); ?>
                             </h3>
-                            <p><?php echo __('ip_rights_text'); ?></p>
+                            <p><?php echo __('license_privacy_text'); ?></p>
                         </section>
 
+                        <!-- 5. Warranty Disclaimer -->
                         <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                                <span class="text-primary">4.</span> <?php echo __('support_updates_title'); ?>
+                                <span class="text-primary">5.</span> <?php echo __('license_disclaimer_title'); ?>
                             </h3>
-                            <p><?php echo __('support_updates_text'); ?></p>
+                            <p class="uppercase text-xs tracking-wider bg-red-500/10 p-2 rounded border border-red-500/20 text-red-200"><?php echo __('license_disclaimer_text'); ?></p>
                         </section>
 
+                        <!-- 6. Limitation of Liability -->
+                        <section>
+                            <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
+                                <span class="text-primary">6.</span> <?php echo __('license_liability_title'); ?>
+                            </h3>
+                            <p><?php echo __('license_liability_text'); ?></p>
+                        </section>
+                        
+                        <!-- 7. Termination -->
+                         <section>
+                            <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
+                                <span class="text-primary">7.</span> <?php echo __('license_termination_title'); ?>
+                            </h3>
+                            <p><?php echo __('license_termination_text'); ?></p>
+                        </section>
+
+                        <!-- Contact -->
                         <div class="mt-8 pt-8 border-t border-white/5 text-center">
-                            <p class="text-xs text-gray-500"><?php echo __('legal_inquiries'); ?> <span class="text-primary">support@eagleshadow.technology</span> <?php echo __('or_via_whatsapp'); ?> <span style="color: rgb(59 130 246 / var(--tw-text-opacity, 1));;" dir="ltr">+212 700-979284</span></p>
+                            <p class="text-sm text-gray-500 mb-2"><?php echo __('legal_inquiries'); ?></p>
+                            <p class="text-primary font-bold">support@eagleshadow.technology</p>
+                            <p class="text-xs text-gray-500 mt-2"><?php echo __('or_via_whatsapp'); ?> <span style="color: rgb(59 130 246 / var(--tw-text-opacity, 1));;" dir="ltr">+212 700-979284</span></p>
                         </div>
                     </div>
 
@@ -117,7 +152,8 @@ require_once 'src/sidebar.php';
     aside,
     main > header,
     button,
-    main > .absolute {
+    main > .absolute,
+    .no-print {
         display: none !important;
     }
     
@@ -176,7 +212,8 @@ require_once 'src/sidebar.php';
     /* إزالة الخلفيات الداكنة */
     .bg-dark-surface,
     .bg-white\/5,
-    .backdrop-blur-md {
+    .backdrop-blur-md,
+    .bg-red-500\/10 {
         background: white !important;
     }
     
