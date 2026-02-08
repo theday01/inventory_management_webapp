@@ -1415,6 +1415,11 @@ return [
 
     // Credits / Debts
     'credits_page_title' => 'Gestion des Crédits',
+    'total_outstanding_debt' => 'Dette totale impayée',
+    'top_debtors' => 'Clients les plus endettés',
+    'debt_count' => 'Nombre de débiteurs',
+    'debt_analysis' => 'Analyse de la dette',
+    'debt_ratio' => 'Ratio d\'endettement',
     'view_debts' => 'Voir les crédits',
     'pay_debt' => 'Rembourser dette',
     'debt_history' => 'Historique des crédits',

@@ -1415,6 +1415,11 @@ return [
 
     // Credits / Debts
     'credits_page_title' => 'إدارة الديون (الكريدي)',
+    'total_outstanding_debt' => 'إجمالي الديون المستحقة',
+    'top_debtors' => 'أكثر العملاء مديونية',
+    'debt_count' => 'عدد العملاء المدينين',
+    'debt_analysis' => 'تحليل الديون والائتمان',
+    'debt_ratio' => 'نسبة الدين من المبيعات',
     'view_debts' => 'عرض الديون',
     'pay_debt' => 'تسديد دين',
     'debt_history' => 'سجل الديون',

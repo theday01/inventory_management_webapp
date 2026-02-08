@@ -471,6 +471,25 @@ $avg_rev_per_regular = $actual_regular_days > 0 ? $regular_revenue / $actual_reg
 
 $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / $avg_rev_per_regular) * 100 : 0;
 
+// 14. Debt Analysis
+$sql_debt_total = "SELECT COALESCE(SUM(balance), 0) as total_debt, COUNT(*) as debtor_count FROM customers WHERE balance > 0";
+$debt_stats = $conn->query($sql_debt_total)->fetch_assoc();
+$total_outstanding_debt = $debt_stats['total_debt'];
+$debtor_count = $debt_stats['debtor_count'];
+
+$sql_top_debtors = "
+    SELECT 
+        name, 
+        phone, 
+        balance,
+        (SELECT MAX(created_at) FROM invoices WHERE customer_id = customers.id AND payment_status != 'paid') as last_debt_date
+    FROM customers 
+    WHERE balance > 0 
+    ORDER BY balance DESC 
+    LIMIT 5
+";
+$top_debtors_result = $conn->query($sql_top_debtors);
+
 ?>
 
 <style>
@@ -840,7 +859,19 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             </div>
         </div>
 
-        <div id="metrics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <div id="metrics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 mb-8">
+            <div class="glass-card p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <span class="material-icons-round text-6xl text-red-500">money_off</span>
+                </div>
+                <p class="text-sm text-gray-400 font-medium mb-1"><?php echo __('total_outstanding_debt'); ?></p>
+                <h3 class="text-3xl font-bold text-white stat-value"><?php echo number_format($total_outstanding_debt, 2); ?> <span class="text-sm text-gray-500 font-normal"><?php echo $currency; ?></span></h3>
+                <div class="mt-4 flex items-center text-xs text-red-400 bg-red-500/10 w-fit px-2 py-1 rounded-full border border-red-500/10">
+                    <span class="material-icons-round text-sm mr-1">person</span>
+                    <span><?php echo $debtor_count; ?> <?php echo __('debt_count'); ?></span>
+                </div>
+            </div>
+
             <div class="glass-card p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform">
                 <div class="absolute top-0 left-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span class="material-icons-round text-6xl text-blue-500">payments</span>
@@ -993,8 +1024,47 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
             </div>
         </div>
 
-        <div id="tables-grid" class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div id="tables-grid" class="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             
+            <div class="glass-card p-6 print-break-page">
+                <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <span class="material-icons-round text-red-500">money_off</span>
+                    <?php echo __('top_debtors'); ?>
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-right border-b border-white/10 text-gray-400 text-xs uppercase">
+                                <th class="pb-3 w-1/2"><?php echo __('customer'); ?></th>
+                                <th class="pb-3 text-left"><?php echo __('amount'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 text-sm">
+                            <?php 
+                            if ($top_debtors_result && $top_debtors_result->num_rows > 0) {
+                                while($debtor = $top_debtors_result->fetch_assoc()) {
+                                    $percentage = $total_outstanding_debt > 0 ? ($debtor['balance'] / $total_outstanding_debt) * 100 : 0;
+                            ?>
+                            <tr class="group hover:bg-white/5 transition-colors">
+                                <td class="py-3 text-white font-medium">
+                                    <div class="truncate max-w-[200px]"><?php echo htmlspecialchars($debtor['name']); ?></div>
+                                    <div class="w-24 h-1 bg-gray-700 rounded-full mt-1 overflow-hidden no-print">
+                                        <div class="h-full bg-red-500" style="width: <?php echo $percentage > 0 ? $percentage : 5; ?>%"></div>
+                                    </div>
+                                </td>
+                                <td class="py-3 text-left text-red-400 font-bold"><?php echo number_format($debtor['balance'], 2); ?> <span class="text-xs text-gray-500 font-normal"><?php echo $currency; ?></span></td>
+                            </tr>
+                            <?php 
+                                }
+                            } else {
+                                echo '<tr><td colspan="3" class="text-center py-4 text-gray-500">' . __('no_data') . '</td></tr>';
+                            }
+                            ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="glass-card p-6 print-break-page">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-yellow-500">emoji_events</span>
@@ -1159,7 +1229,7 @@ $holiday_performance_index = $avg_rev_per_regular > 0 ? ($avg_rev_per_holiday / 
                 </div>
             </div>
 
-            <div class="glass-card p-6 lg:col-span-4">
+            <div class="glass-card p-6 lg:col-span-4 xl:col-span-5">
                 <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <span class="material-icons-round text-teal-500">dashboard</span>
                     <?php echo __('quick_summary'); ?>
