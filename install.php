@@ -351,7 +351,7 @@ $default_settings = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('stockAlertInterval', '20') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     
     // Tax Settings
-    "INSERT INTO settings (setting_name, setting_value) VALUES ('taxEnabled', '1') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('taxEnabled', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('taxRate', '20') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('taxLabel', 'TVA') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     

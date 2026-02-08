@@ -634,12 +634,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                              <div class="flex items-center gap-3">
                                 <span class="text-sm text-gray-400"><?php echo __('enable_tax_label'); ?></span>
                                 <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1" class="toggle-checkbox" <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
+                                    <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1" class="toggle-checkbox" <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> onchange="toggleTaxSettings(this)" />
                                     <label for="toggle-tax" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
                                 </div>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/5 rounded-2xl border border-white/5">
+                        <div id="tax-settings-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/5 rounded-2xl border border-white/5 transition-all duration-300 <?php echo (!isset($settings['taxEnabled']) || $settings['taxEnabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
                             <div><label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('tax_name_label'); ?></label><input type="text" name="taxLabel" value="<?php echo htmlspecialchars($settings['taxLabel'] ?? 'TVA'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
                             <div><label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('tax_rate_label'); ?></label><input type="number" name="taxRate" value="<?php echo htmlspecialchars($settings['taxRate'] ?? '20'); ?>" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
                         </div>
@@ -1688,6 +1688,19 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
     
     async function toggleRentalSettings(checkbox) {
         const content = document.getElementById('rental-settings-content');
+        if (!checkbox.checked) {
+            if (await showConfirmModal(window.__('confirm_action'), '⚠️ ' + window.__('are_you_sure'))) {
+                content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+            } else {
+                checkbox.checked = true;
+            }
+        } else {
+            content.classList.remove('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+        }
+    }
+
+    async function toggleTaxSettings(checkbox) {
+        const content = document.getElementById('tax-settings-container');
         if (!checkbox.checked) {
             if (await showConfirmModal(window.__('confirm_action'), '⚠️ ' + window.__('are_you_sure'))) {
                 content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
