@@ -826,11 +826,37 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         <div id="end-day-settings-content" class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-300 <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('day_start_time_label'); ?></label>
-                                <input type="time" lang="sv-SE" step="60" name="day_start_time" value="<?php echo htmlspecialchars($settings['day_start_time'] ?? '05:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: dark;">
+                                <div class="relative">
+                                    <input type="text" 
+                                           name="day_start_time" 
+                                           value="<?php echo htmlspecialchars($settings['day_start_time'] ?? '05:00'); ?>" 
+                                           placeholder="HH:MM" 
+                                           pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"
+                                           maxlength="5"
+                                           oninput="formatTimeInput(this)"
+                                           class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" 
+                                           <?php echo $disabledAttr; ?>>
+                                    <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none opacity-50">
+                                        <span class="text-xs text-gray-500 font-mono">24h</span>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('day_end_time_label'); ?></label>
-                                <input type="time" lang="sv-SE" step="60" name="day_end_time" value="<?php echo htmlspecialchars($settings['day_end_time'] ?? '00:00'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" <?php echo $disabledAttr; ?> style="color-scheme: dark;">
+                                <div class="relative">
+                                    <input type="text" 
+                                           name="day_end_time" 
+                                           value="<?php echo htmlspecialchars($settings['day_end_time'] ?? '00:00'); ?>" 
+                                           placeholder="HH:MM" 
+                                           pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"
+                                           maxlength="5"
+                                           oninput="formatTimeInput(this)"
+                                           class="w-full bg-dark/50 border border-white/10 text-white text-center px-4 py-3 rounded-xl focus:outline-none focus:border-primary/50 transition-all font-bold text-lg ltr" 
+                                           <?php echo $disabledAttr; ?>>
+                                    <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none opacity-50">
+                                        <span class="text-xs text-gray-500 font-mono">24h</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="md:col-span-2">
                                 <p class="text-xs text-gray-500 bg-white/5 p-3 rounded-lg border border-white/5 flex items-center gap-2">
@@ -1859,6 +1885,29 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const logBtn = document.getElementById('btn-rental-payments-log');
         if(logBtn) logBtn.addEventListener('click', () => { openRentalPaymentsModal(); loadRentalPayments(1); });
     });
+
+    function formatTimeInput(input) {
+        let v = input.value.replace(/[^0-9]/g, '');
+        if (v.length > 4) v = v.slice(0, 4);
+        
+        // Hours validation
+        if (v.length >= 2) {
+            let h = parseInt(v.slice(0, 2));
+            if (h > 23) { v = '23' + v.slice(2); }
+        }
+
+        // Minutes validation
+        if (v.length >= 4) {
+             let m = parseInt(v.slice(2, 4));
+             if (m > 59) { v = v.slice(0, 2) + '59'; }
+        }
+
+        if (v.length > 2) {
+            input.value = v.slice(0, 2) + ':' + v.slice(2);
+        } else {
+            input.value = v;
+        }
+    }
 </script>
 
 <div id="rental-payments-modal" class="fixed inset-0 z-[100] hidden">
