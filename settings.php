@@ -113,6 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'deliveryHomeCity' => $_POST['deliveryHomeCity'] ?? '',
         'deliveryInsideCity' => $_POST['deliveryInsideCity'] ?? '0',
         'deliveryOutsideCity' => $_POST['deliveryOutsideCity'] ?? '0',
+        'enable_delivery' => isset($_POST['enable_delivery']) ? '1' : '0',
+        'enable_discount' => isset($_POST['enable_discount']) ? '1' : '0',
         'stockAlertsEnabled' => isset($_POST['stockAlertsEnabled']) ? '1' : '0',
         'stockAlertInterval' => $_POST['stockAlertInterval'] ?? '20',
         'rentalEnabled' => isset($_POST['rentalEnabled']) ? '1' : '0',
@@ -411,13 +413,25 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <span class="material-icons-round text-primary">local_shipping</span>
                                 <?php echo __('delivery_settings_title'); ?>
                             </h3>
-                            <?php if ($isAdmin): ?>
-                                <button type="button" onclick="resetDeliveryPrices()" 
-                                    class="w-full sm:w-auto text-xs flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
-                                    <span class="material-icons-round text-sm">restart_alt</span>
-                                    <span><?php echo __('reset_btn'); ?></span>
-                                </button>
-                            <?php endif; ?>
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center justify-between w-full sm:w-auto gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                                    <span class="text-sm text-gray-300"><?php echo __('enable_delivery_label'); ?></span>
+                                    <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" name="enable_delivery" id="toggle-delivery" value="1"
+                                            class="toggle-checkbox"
+                                            <?php echo (isset($settings['enable_delivery']) && $settings['enable_delivery'] == '1') ? 'checked' : ''; ?>
+                                            <?php echo $disabledAttr; ?> />
+                                        <label for="toggle-delivery" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                    </div>
+                                </div>
+                                <?php if ($isAdmin): ?>
+                                    <button type="button" onclick="resetDeliveryPrices()" 
+                                        class="w-full sm:w-auto text-xs flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                                        <span class="material-icons-round text-sm">restart_alt</span>
+                                        <span><?php echo __('reset_btn'); ?></span>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
                         <div class="space-y-6">
@@ -598,6 +612,26 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             </div>
                         </div>
                      </div>
+
+                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-3">
+                                <span class="material-icons-round text-primary">percent</span>
+                                <?php echo __('discount'); ?>
+                            </h3>
+                            <div class="flex items-center justify-between w-full sm:w-auto gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                                <span class="text-sm text-gray-300"><?php echo __('enable_discount_label'); ?></span>
+                                <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" name="enable_discount" id="toggle-discount" value="1"
+                                        class="toggle-checkbox"
+                                        <?php echo (isset($settings['enable_discount']) && $settings['enable_discount'] == '1') ? 'checked' : ''; ?>
+                                        <?php echo $disabledAttr; ?> />
+                                    <label for="toggle-discount" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                </div>
+                            </div>
+                        </div>
+                     </div>
+
                      <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-4 lg:p-8 glass-panel">
                         <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                             <h3 class="text-xl font-bold text-white flex items-center gap-3">

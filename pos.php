@@ -62,6 +62,12 @@ $criticalAlert = ($result && $result->num_rows > 0) ? (int)$result->fetch_assoc(
 
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'printMode'");
 $printMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'normal';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'enable_delivery'");
+$enableDelivery = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
+
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'enable_discount'");
+$enableDiscount = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : '0';
 ?>
 
 <style>
@@ -869,6 +875,7 @@ html:not(.dark) .text-red-500 {
             <!-- Options Section (Delivery & Discount) -->
             <div class="px-6 pb-2">
                 <!-- Delivery -->
+                <?php if ($enableDelivery == '1'): ?>
                 <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-400"><?php echo __('delivery'); ?></span>
@@ -919,8 +926,10 @@ html:not(.dark) .text-red-500 {
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- Discount -->
+                <?php if ($enableDiscount == '1'): ?>
                 <div class="mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-400"><?php echo __('discount'); ?></span>
@@ -941,6 +950,7 @@ html:not(.dark) .text-red-500 {
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -1505,22 +1515,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const cartDiscountAmount = document.getElementById('cart-discount-amount');
     
     // Add input validation for discount percent and apply automatically
-    discountPercentInput.addEventListener('input', function() {
-        let value = this.value;
-        // Convert Arabic numbers to English
-        value = toEnglishNumbers(value);
-        // Remove non-numeric characters except decimal point
-        value = value.replace(/[^0-9.]/g, '');
-        this.value = value;
-        
-        // تطبيق الخصم تلقائياً عند الإدخال
-        if (discountToggle.checked && value) {
-            const inputPercent = parseFloat(value) || 0;
-            if (inputPercent >= 0 && inputPercent <= 100) {
-                applyDiscount();
+    if (discountPercentInput) {
+        discountPercentInput.addEventListener('input', function() {
+            let value = this.value;
+            // Convert Arabic numbers to English
+            value = toEnglishNumbers(value);
+            // Remove non-numeric characters except decimal point
+            value = value.replace(/[^0-9.]/g, '');
+            this.value = value;
+            
+            // تطبيق الخصم تلقائياً عند الإدخال
+            if (discountToggle && discountToggle.checked && value) {
+                const inputPercent = parseFloat(value) || 0;
+                if (inputPercent >= 0 && inputPercent <= 100) {
+                    applyDiscount();
+                }
             }
-        }
-    });
+        });
+    }
     
     // Global variables for discount
     let discountPercent = 0;
@@ -2156,7 +2168,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function checkDiscountStatus() {
         // فحص إذا كان الخصم مفعل
-        if (discountToggle.checked) {
+        if (discountToggle && discountToggle.checked) {
             const inputPercent = parseFloat(discountPercentInput.value) || 0;
             
             // إذا كان هناك قيمة في حقل الخصم ولم يتم تطبيقها، قم بتطبيقها تلقائياً
@@ -2216,23 +2228,27 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateDeliveryState() {
-        if (deliveryToggle.checked) {
-            deliveryOptionsDiv.classList.remove('hidden');
-            cartDeliveryRow.classList.remove('hidden');
+        if (deliveryToggle && deliveryToggle.checked) {
+            if(deliveryOptionsDiv) deliveryOptionsDiv.classList.remove('hidden');
+            if(cartDeliveryRow) cartDeliveryRow.classList.remove('hidden');
         } else {
-            deliveryOptionsDiv.classList.add('hidden');
-            cartDeliveryRow.classList.add('hidden');
+            if(deliveryOptionsDiv) deliveryOptionsDiv.classList.add('hidden');
+            if(cartDeliveryRow) cartDeliveryRow.classList.add('hidden');
             deliveryCost = 0;
             // إعادة تعيين الحقول
             const deliveryTypeRadios = document.querySelectorAll('input[name="delivery-type"]');
             deliveryTypeRadios.forEach(radio => radio.checked = false);
-            deliveryCityInput.value = '';
-            deliveryCityInput.readOnly = true;
-            deliveryCostInfo.innerHTML = `
-                <span class="material-icons-round text-xs">info</span>
-                <span>اختر نوع التوصيل</span>
-            `;
-            deliveryCostInfo.className = 'text-xs text-gray-500 mt-1 flex items-center gap-1';
+            if(deliveryCityInput) {
+                deliveryCityInput.value = '';
+                deliveryCityInput.readOnly = true;
+            }
+            if(deliveryCostInfo) {
+                deliveryCostInfo.innerHTML = `
+                    <span class="material-icons-round text-xs">info</span>
+                    <span>اختر نوع التوصيل</span>
+                `;
+                deliveryCostInfo.className = 'text-xs text-gray-500 mt-1 flex items-center gap-1';
+            }
         }
         updateTotals();
     }
@@ -2288,7 +2304,7 @@ document.addEventListener('DOMContentLoaded', function () {
         updateTotals();
         
         // فحص حالة الخصم بعد تغيير التوصيل - إعادة تطبيق تلقائي
-        if (discountToggle.checked) {
+        if (discountToggle && discountToggle.checked) {
             discountApplied = false;
             checkDiscountStatus();
         }
@@ -2337,15 +2353,20 @@ document.addEventListener('DOMContentLoaded', function () {
         updateTotals();
         
         // فحص حالة الخصم بعد تغيير المدينة - إعادة تطبيق تلقائي
-        if (discountToggle.checked) {
+        if (discountToggle && discountToggle.checked) {
             discountApplied = false;
             checkDiscountStatus();
         }
     }
-    deliveryToggle.addEventListener('change', updateDeliveryState);
+    
+    if (deliveryToggle) {
+        deliveryToggle.addEventListener('change', updateDeliveryState);
+    }
 
     // Discount Toggle
-    discountToggle.addEventListener('change', updateDiscountState);
+    if (discountToggle) {
+        discountToggle.addEventListener('change', updateDiscountState);
+    }
 
     document.addEventListener('change', function(e) {
         if (e.target.name === 'delivery-type') {
@@ -2353,7 +2374,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    deliveryCityInput.addEventListener('input', calculateDeliveryCost);
+    if (deliveryCityInput) {
+        deliveryCityInput.addEventListener('input', calculateDeliveryCost);
+    }
     
     // Apply discount button
     // لا يوجد زر تطبيق - يتم التطبيق تلقائياً عند الإدخال
@@ -2401,20 +2424,22 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function updateDiscountState() {
-        if (discountToggle.checked) {
-            discountOptionsDiv.classList.remove('hidden');
+        if (discountToggle && discountToggle.checked) {
+            if(discountOptionsDiv) discountOptionsDiv.classList.remove('hidden');
             // تطبيق الخصم تلقائياً إذا كان هناك قيمة مدخلة
-            const inputPercent = parseFloat(discountPercentInput.value) || 0;
-            if (inputPercent > 0) {
-                applyDiscount();
+            if(discountPercentInput) {
+                const inputPercent = parseFloat(discountPercentInput.value) || 0;
+                if (inputPercent > 0) {
+                    applyDiscount();
+                }
             }
         } else {
-            discountOptionsDiv.classList.add('hidden');
+            if(discountOptionsDiv) discountOptionsDiv.classList.add('hidden');
             // Reset discount when toggled off
             discountPercent = 0;
-            discountPercentInput.value = '';
+            if(discountPercentInput) discountPercentInput.value = '';
             discountAmount = 0;
-            discountAmountDisplay.textContent = `0.00 ${currency}`;
+            if(discountAmountDisplay) discountAmountDisplay.textContent = `0.00 ${currency}`;
             discountApplied = false; // إعادة تعيين حالة التطبيق
             
             // تفعيل زر الدفع عند إلغاء الخصم
@@ -2566,7 +2591,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let deliveryCity = null;
         let deliveryCostValue = 0;
         
-        if (deliveryToggle.checked) {
+        if (deliveryToggle && deliveryToggle.checked) {
             // التحقق من اختيار نوع التوصيل
             const selectedType = document.querySelector('input[name="delivery-type"]:checked');
             if (!selectedType) {

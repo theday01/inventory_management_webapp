@@ -832,6 +832,7 @@ return [
     'home_city_tip' => 'سيتم احتساب سعر "داخل المدينة" لأي طلب يتم شحنه لهذه المدينة، وسعر "خارج المدينة" لباقي المدن.',
     'inside_city_cost_label' => 'تكلفة التوصيل داخل المدينة',
     'outside_city_cost_label' => 'تكلفة التوصيل خارج المدينة',
+    'enable_delivery_label' => 'تفعيل خيار التوصيل في نقطة البيع',
     
     // Settings - Rental Tab
     'rental_management_title' => 'إدارة إيجار المحل',
@@ -872,6 +873,7 @@ return [
     'enable_tax_label' => 'تفعيل الضريبة',
     'tax_name_label' => 'اسم الضريبة',
     'tax_rate_label' => 'نسبة الضريبة (%)',
+    'enable_discount_label' => 'تفعيل خيار الخصم في نقطة البيع',
     
     // Settings - Print Tab
     'print_settings_title' => 'إعدادات الطباعة',

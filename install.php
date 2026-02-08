@@ -343,6 +343,7 @@ $default_settings = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryHomeCity', '') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryInsideCity', '10') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('deliveryOutsideCity', '30') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('enable_delivery', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     
     // Stock Alert Settings
     "INSERT INTO settings (setting_name, setting_value) VALUES ('low_quantity_alert', '30') ON DUPLICATE KEY UPDATE setting_value = setting_value",
@@ -354,6 +355,7 @@ $default_settings = [
     "INSERT INTO settings (setting_name, setting_value) VALUES ('taxEnabled', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('taxRate', '20') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     "INSERT INTO settings (setting_name, setting_value) VALUES ('taxLabel', 'TVA') ON DUPLICATE KEY UPDATE setting_value = setting_value",
+    "INSERT INTO settings (setting_name, setting_value) VALUES ('enable_discount', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
     
     // Virtual Keyboard Settings
     "INSERT INTO settings (setting_name, setting_value) VALUES ('virtualKeyboardEnabled', '0') ON DUPLICATE KEY UPDATE setting_value = setting_value",
