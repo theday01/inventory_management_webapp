@@ -224,6 +224,27 @@ $profit_margin = $total_net_revenue > 0 ? ($gross_profit / $total_net_revenue) *
 $total_cost = $total_cogs + $total_delivery + $total_other_costs;
 $profit_markup = $total_cost > 0 ? ($gross_profit / $total_cost) * 100 : 0;
 
+// Sales Breakdown (Cash vs Credit)
+$sql_sales_breakdown = "
+    SELECT 
+        COALESCE(SUM(paid_amount), 0) as cash_sales,
+        COALESCE(SUM(total - paid_amount), 0) as credit_sales
+    FROM invoices
+    WHERE created_at BETWEEN '$sql_start' AND '$sql_end'
+";
+$sales_breakdown_res = $conn->query($sql_sales_breakdown)->fetch_assoc();
+$total_cash_sales = $sales_breakdown_res['cash_sales'];
+$total_credit_sales = $sales_breakdown_res['credit_sales'];
+
+// Debt Collected (from Payments)
+$sql_debt_collected = "
+    SELECT COALESCE(SUM(amount), 0) as debt_collected
+    FROM payments
+    WHERE payment_date BETWEEN '$sql_start' AND '$sql_end'
+";
+$debt_collected_res = $conn->query($sql_debt_collected)->fetch_assoc();
+$total_debt_collected = $debt_collected_res['debt_collected'];
+
 // Fetch cycle configuration
 $resCycle = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'expense_cycle'");
 $expenseCycleType = ($resCycle && $resCycle->num_rows > 0) ? $resCycle->fetch_assoc()['setting_value'] : 'monthly';
@@ -1307,7 +1328,19 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                 <div class="space-y-4">
                     <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
                         <span class="text-gray-400"><?php echo __('total_sales'); ?></span>
-                        <span class="text-green-400 font-bold text-lg"><?php echo number_format($total_revenue, 2); ?> <?php echo $currency; ?></span>
+                        <span class="text-white font-bold text-lg"><?php echo number_format($total_revenue, 2); ?> <?php echo $currency; ?></span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
+                        <span class="text-gray-400"><?php echo __('cash_sales'); ?></span>
+                        <span class="text-green-400 font-bold text-lg"><?php echo number_format($total_cash_sales, 2); ?> <?php echo $currency; ?></span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
+                        <span class="text-gray-400"><?php echo __('credit_sales'); ?></span>
+                        <span class="text-red-400 font-bold text-lg"><?php echo number_format($total_credit_sales, 2); ?> <?php echo $currency; ?></span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
+                        <span class="text-gray-400"><?php echo __('debts_collected'); ?></span>
+                        <span class="text-blue-400 font-bold text-lg"><?php echo number_format($total_debt_collected, 2); ?> <?php echo $currency; ?></span>
                     </div>
                     <div class="flex justify-between items-center p-4 bg-dark rounded-lg border border-white/5">
                         <span class="text-gray-400"><?php echo __('total_cogs'); ?></span>
@@ -1998,7 +2031,13 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                     }
                         document.getElementById('summary-data').innerHTML = `
                             <div class="space-y-3" dir="${dir}">
-                                <p class="${alignClass}"><strong class="text-green-400">${window.__('total_sales')}:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
+                                <p class="${alignClass}"><strong class="text-white">${window.__('total_sales')}:</strong> ${formatNumber(summary.total_sales)} ${currency}</p>
+                                <div class="ps-4 border-s-2 border-white/10 my-2">
+                                    <p class="${alignClass} text-sm"><strong class="text-green-400">${window.__('cash_sales')}:</strong> ${formatNumber(summary.cash_sales)} ${currency}</p>
+                                    <p class="${alignClass} text-sm"><strong class="text-red-400">${window.__('credit_sales')}:</strong> ${formatNumber(summary.credit_sales)} ${currency}</p>
+                                </div>
+                                <p class="${alignClass}"><strong class="text-blue-400">${window.__('debts_collected')}:</strong> ${formatNumber(summary.debt_collected)} ${currency}</p>
+                                <hr class="border-gray-600 my-3">
                                 <p class="${alignClass}"><strong class="text-red-400">${window.__('total_refunds')}:</strong> -${formatNumber(summary.total_refunds)} ${currency}</p>
                                 <p class="${alignClass}"><strong class="text-orange-400">${window.__('total_delivery_fees')}:</strong> ${formatNumber(summary.total_delivery)} ${currency}</p>
                                 <hr class="border-gray-600 my-3">

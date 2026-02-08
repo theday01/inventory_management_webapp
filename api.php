@@ -625,13 +625,30 @@ function get_period_summary($conn) {
         $sql_start = $start_date . " 00:00:00";
         $sql_end = $end_date . " 23:59:59";
 
-        // 1. Total Sales
-        $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales, COALESCE(SUM(delivery_cost), 0) as total_delivery FROM invoices WHERE created_at BETWEEN ? AND ?");
+        // 1. Total Sales (Cash vs Credit)
+        $stmt = $conn->prepare("
+            SELECT 
+                COALESCE(SUM(total), 0) as total_sales, 
+                COALESCE(SUM(delivery_cost), 0) as total_delivery,
+                COALESCE(SUM(paid_amount), 0) as cash_sales,
+                COALESCE(SUM(total - paid_amount), 0) as credit_sales
+            FROM invoices 
+            WHERE created_at BETWEEN ? AND ?
+        ");
         $stmt->bind_param("ss", $sql_start, $sql_end);
         $stmt->execute();
         $res = $stmt->get_result()->fetch_assoc();
         $total_sales = floatval($res['total_sales']);
         $total_delivery = floatval($res['total_delivery']);
+        $cash_sales = floatval($res['cash_sales']);
+        $credit_sales = floatval($res['credit_sales']);
+        $stmt->close();
+
+        // 1.1 Debt Collected (from Payments table)
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as debt_collected FROM payments WHERE payment_date BETWEEN ? AND ?");
+        $stmt->bind_param("ss", $sql_start, $sql_end);
+        $stmt->execute();
+        $debt_collected = floatval($stmt->get_result()->fetch_assoc()['debt_collected']);
         $stmt->close();
 
         // 2. Total Refunds
@@ -742,6 +759,9 @@ function get_period_summary($conn) {
 
         $summary = [
             'total_sales' => $total_sales,
+            'cash_sales' => $cash_sales,
+            'credit_sales' => $credit_sales,
+            'debt_collected' => $debt_collected,
             'total_refunds' => $total_refunds,
             'drawer_expenses' => $drawer_expenses,
             'total_delivery' => $total_delivery,
