@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show loading state
             if (submitBtn) submitBtn.disabled = true;
-            if (submitText) submitText.textContent = '<?= __('sending') ?>';
+            if (submitText) submitText.textContent = <?= json_encode(__('sending')) ?>;
             if (submitSpinner) submitSpinner.classList.remove('hidden');
             
             // Get form data
@@ -148,12 +148,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Success - Show custom message
                 Swal.fire({
                     icon: 'success',
-                    title: '<?= __('message_sent_success_title') ?>',
-                    text: '<?= __('message_sent_success_text') ?>',
+                    title: <?= json_encode(__('message_sent_success_title')) ?>,
+                    text: <?= json_encode(__('message_sent_success_text')) ?>,
                     background: '#1F2937',
                     color: '#ffffff',
                     confirmButtonColor: '#3B82F6',
-                    confirmButtonText: '<?= __('ok') ?>'
+                    confirmButtonText: <?= json_encode(__('ok')) ?>
                 });
                 form.reset(); // Clear the form
             })
@@ -161,18 +161,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Error - Show custom message
                 Swal.fire({
                     icon: 'error',
-                    title: '<?= __('message_sent_fail_title') ?>',
-                    text: '<?= __('message_sent_fail_text') ?>',
+                    title: <?= json_encode(__('message_sent_fail_title')) ?>,
+                    text: <?= json_encode(__('message_sent_fail_text')) ?>,
                     background: '#1F2937',
                     color: '#ffffff',
                     confirmButtonColor: '#EF4444',
-                    confirmButtonText: '<?= __('try_again') ?>'
+                    confirmButtonText: <?= json_encode(__('try_again')) ?>
                 });
             })
             .finally(() => {
                 // Reset button state
                 if (submitBtn) submitBtn.disabled = false;
-                if (submitText) submitText.textContent = '<?= __('send_message_btn') ?>';
+                if (submitText) submitText.textContent = <?= json_encode(__('send_message_btn')) ?>;
                 if (submitSpinner) submitSpinner.classList.add('hidden');
             });
         });
@@ -197,12 +197,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (urlParams.get('status') === 'sent') {
         Swal.fire({
             icon: 'success',
-            title: '<?= __('message_sent_success_title') ?>',
-            text: '<?= __('message_sent_success_text') ?>',
+            title: <?= json_encode(__('message_sent_success_title')) ?>,
+            text: <?= json_encode(__('message_sent_success_text')) ?>,
             background: '#1F2937',
             color: '#ffffff',
             confirmButtonColor: '#3B82F6',
-            confirmButtonText: '<?= __('ok') ?>'
+            confirmButtonText: <?= json_encode(__('ok')) ?>
         });
         // Clean URL
         const newUrl = window.location.pathname;
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
     // دوال إدارة شاشة التحميل
-    function showLoadingOverlay(message = '<?= __('processing_data_msg') ?>') {
+    function showLoadingOverlay(message = <?= json_encode(__('processing_data_msg')) ?>) {
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingMessage = document.getElementById('loading-message');
         loadingMessage.textContent = message;
