@@ -17,14 +17,43 @@ class AnnualAnalyzer {
         $monthlyStats = $this->getMonthlyStats();
         $topProducts = $this->getTopProducts();
         
+        $debtStats = $this->getDebtStats();
+
         return [
             'year' => $this->year,
             'stats' => $stats,
+            'debt' => $debtStats,
             'growth' => $this->calculateGrowth($stats, $prevStats),
             'monthly' => $monthlyStats,
             'top_products' => $topProducts,
-            'advice' => $this->generateAdvice($stats, $prevStats, $monthlyStats),
-            'score' => $this->calculateHealthScore($stats, $prevStats)
+            'advice' => $this->generateAdvice($stats, $prevStats, $monthlyStats, $debtStats),
+            'score' => $this->calculateHealthScore($stats, $prevStats, $debtStats)
+        ];
+    }
+
+    private function getDebtStats() {
+        // 1. Current Total Outstanding Debt (All time)
+        $sqlTotal = "SELECT COALESCE(SUM(balance), 0) as total_debt, COUNT(*) as debtor_count FROM customers WHERE balance > 0";
+        $totalRes = $this->conn->query($sqlTotal)->fetch_assoc();
+
+        // 2. Debt generated this year (Unpaid invoices from this year)
+        $startDate = "{$this->year}-01-01 00:00:00";
+        $endDate = "{$this->year}-12-31 23:59:59";
+        
+        $sqlYearlyDebt = "SELECT COALESCE(SUM(total - paid_amount), 0) as yearly_debt 
+                          FROM invoices 
+                          WHERE created_at BETWEEN ? AND ? 
+                          AND payment_status != 'paid'";
+        
+        $stmt = $this->conn->prepare($sqlYearlyDebt);
+        $stmt->bind_param("ss", $startDate, $endDate);
+        $stmt->execute();
+        $yearlyDebt = $stmt->get_result()->fetch_assoc()['yearly_debt'];
+
+        return [
+            'total_outstanding' => (float)$totalRes['total_debt'],
+            'debtor_count' => (int)$totalRes['debtor_count'],
+            'yearly_debt_creation' => (float)$yearlyDebt
         ];
     }
 
@@ -218,7 +247,7 @@ class AnnualAnalyzer {
         return null;
     }
 
-    private function generateAdvice($stats, $prevStats, $monthly) {
+    private function generateAdvice($stats, $prevStats, $monthly, $debtStats = null) {
         $advice = [];
 
         // Check if year is current year (Incomplete)
@@ -401,6 +430,39 @@ class AnnualAnalyzer {
             ];
         }
 
+        // 10. Debt Analysis (New)
+        if ($debtStats && $stats['total_revenue'] > 0) {
+            $debtRatio = ($debtStats['total_outstanding'] / $stats['total_revenue']) * 100;
+
+            if ($debtRatio > 20) {
+                $advice[] = [
+                    'type' => 'danger',
+                    'title' => __('advice_debt_high_title'),
+                    'text' => sprintf(__('advice_debt_high_text'), number_format($debtRatio, 1) . "%", number_format($debtStats['total_outstanding'], 2))
+                ];
+            } elseif ($debtRatio > 5) {
+                $advice[] = [
+                    'type' => 'warning',
+                    'title' => __('advice_debt_moderate_title'),
+                    'text' => sprintf(__('advice_debt_moderate_text'), number_format($debtRatio, 1) . "%")
+                ];
+            } else {
+                $advice[] = [
+                    'type' => 'success',
+                    'title' => __('advice_debt_good_title'),
+                    'text' => sprintf(__('advice_debt_good_text'), number_format($debtRatio, 1) . "%")
+                ];
+            }
+
+            if ($debtStats['debtor_count'] > 10) {
+                 $advice[] = [
+                    'type' => 'info',
+                    'title' => __('advice_debt_count_title'),
+                    'text' => sprintf(__('advice_debt_count_text'), $debtStats['debtor_count'])
+                ];
+            }
+        }
+
         return $advice;
     }
 
@@ -515,7 +577,7 @@ class AnnualAnalyzer {
         ];
     }
 
-    private function calculateHealthScore($stats, $prevStats) {
+    private function calculateHealthScore($stats, $prevStats, $debtStats = null) {
         // If there's no significant data, score is 0
         if ($stats['total_revenue'] <= 0 && $stats['total_orders'] == 0) {
             return 0;
@@ -541,6 +603,13 @@ class AnnualAnalyzer {
             $expenseRatio = ($stats['total_expenses'] / $stats['total_revenue']) * 100;
             if ($expenseRatio < 15) $score += 10;
             if ($expenseRatio > 40) $score -= 15;
+        }
+
+        // Debt Impact
+        if ($debtStats && $stats['total_revenue'] > 0) {
+            $debtRatio = ($debtStats['total_outstanding'] / $stats['total_revenue']) * 100;
+            if ($debtRatio > 20) $score -= 15; // High debt penalizes score
+            elseif ($debtRatio < 5) $score += 5; // Low debt improves score
         }
 
         return max(0, min(100, $score));

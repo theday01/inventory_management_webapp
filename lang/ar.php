@@ -1320,6 +1320,16 @@ return [
     'advice_customers_new_title' => 'اكتساب عملاء جدد',
     'advice_customers_new_text' => 'نجحت في كسب %d عميل جديد هذا العام. استمر في الحملات التسويقية.',
 
+    // Debt Advice
+    'advice_debt_high_title' => 'معدل ديون مرتفع جداً',
+    'advice_debt_high_text' => 'إجمالي الديون المستحقة بلغ %s من الإيرادات (%s). هذا يشكل خطراً كبيراً على السيولة. ننصح بوقف البيع بالآجل فوراً.',
+    'advice_debt_moderate_title' => 'معدل ديون متوسط',
+    'advice_debt_moderate_text' => 'نسبة الديون تبلغ %s من الإيرادات. حاول تحصيل الديون القديمة لتحسين السيولة وتجنب تراكمها.',
+    'advice_debt_good_title' => 'إدارة ديون ممتازة',
+    'advice_debt_good_text' => 'نسبة الديون منخفضة جداً (%s)، مما يعكس سياسة ائتمانية حكيمة وتحصيل فعال.',
+    'advice_debt_count_title' => 'تعدد المدينين',
+    'advice_debt_count_text' => 'لديك %d عميل مدين. كثرة المدينين تزيد من جهد التحصيل، حاول تقليل العدد والتركيز على العملاء الملتزمين.',
+
     // End of Day & Reports
     'day_summary_title' => 'ملخص يوم العمل',
     'calculation_method' => 'طريقة الحساب',

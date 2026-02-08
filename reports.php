@@ -1428,7 +1428,7 @@ $top_debtors_result = $conn->query($sql_top_debtors);
             <div id="annual-results" class="hidden space-y-6">
                 
                 <!-- Health Score & Key Metrics -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                     <!-- Score Card -->
                     <div class="glass-card p-6 flex flex-col items-center justify-center text-center relative overflow-hidden group">
                         <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent"></div>
@@ -1510,6 +1510,34 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                                         <p class="text-white font-bold text-lg" id="worst-month-name">-</p>
                                         <p class="text-xs font-mono text-red-400" id="worst-month-val">0</p>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Debt Analysis (New) -->
+                    <div class="glass-card p-6 flex flex-col justify-center relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-5">
+                            <span class="material-icons-round text-8xl">money_off</span>
+                        </div>
+                        <h4 class="text-white font-bold mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                            <span class="material-icons-round text-red-500">money_off</span>
+                            <?php echo __('debt_analysis'); ?>
+                        </h4>
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-gray-400 text-xs uppercase font-bold"><?php echo __('total_outstanding_debt'); ?></p>
+                                <h3 class="text-2xl font-bold text-red-400" id="annual-debt-total">0</h3>
+                            </div>
+                            
+                            <div class="flex justify-between items-center bg-white/5 p-3 rounded-lg">
+                                <div>
+                                    <p class="text-gray-400 text-xs"><?php echo __('debt_count'); ?></p>
+                                    <p class="text-white font-bold" id="annual-debt-count">0</p>
+                                </div>
+                                <div class="text-end">
+                                    <p class="text-gray-400 text-xs"><?php echo __('debt_ratio'); ?></p>
+                                    <p class="text-white font-bold" id="annual-debt-ratio">0%</p>
                                 </div>
                             </div>
                         </div>
@@ -2833,7 +2861,19 @@ $top_debtors_result = $conn->query($sql_top_debtors);
         document.getElementById('worst-month-name').textContent = getMonthName(data.monthly.worst_month.month);
         document.getElementById('worst-month-val').textContent = formatNumber(data.monthly.worst_month.revenue) + ' ' + currency;
 
-        // 4. Advice
+        // 4. Debt Analysis
+        if (data.debt) {
+            document.getElementById('annual-debt-total').innerHTML = formatNumber(data.debt.total_outstanding) + ' <span class="text-sm font-normal text-gray-500">' + currency + '</span>';
+            document.getElementById('annual-debt-count').textContent = data.debt.debtor_count;
+            
+            let ratio = 0;
+            if (stats.total_revenue > 0) {
+                ratio = (data.debt.total_outstanding / stats.total_revenue) * 100;
+            }
+            document.getElementById('annual-debt-ratio').textContent = ratio.toFixed(1) + '%';
+        }
+
+        // 5. Advice
         const adviceContainer = document.getElementById('advice-container');
         adviceContainer.innerHTML = '';
         

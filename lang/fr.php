@@ -1320,6 +1320,16 @@ return [
     'advice_customers_new_title' => 'Nouveaux Clients',
     'advice_customers_new_text' => 'Vous avez acquis %d nouveaux clients cette année. Continuez vos efforts marketing.',
 
+    // Debt Advice
+    'advice_debt_high_title' => 'Taux d\'endettement critique',
+    'advice_debt_high_text' => 'La dette totale impayée représente %s des revenus (%s). Cela pose un risque majeur pour la trésorerie.',
+    'advice_debt_moderate_title' => 'Taux d\'endettement modéré',
+    'advice_debt_moderate_text' => 'Le ratio de la dette est de %s des revenus. Essayez de recouvrer les anciennes dettes rapidement.',
+    'advice_debt_good_title' => 'Excellente gestion de la dette',
+    'advice_debt_good_text' => 'Le ratio de la dette est très faible (%s), reflétant une politique de crédit prudente et efficace.',
+    'advice_debt_count_title' => 'Nombre élevé de débiteurs',
+    'advice_debt_count_text' => 'Vous avez %d clients débiteurs. Un grand nombre de débiteurs augmente l\'effort de recouvrement.',
+
     // End of Day & Reports
     'day_summary_title' => 'Résumé de la journée',
     'calculation_method' => 'Méthode de calcul',
