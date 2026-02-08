@@ -176,19 +176,31 @@ $sql_end = $end_date . " 23:59:59";
 // --- Data Fetching ---
 
 // 1. Key Metrics
-$sql_metrics = "
+
+// 1.1 Invoice Level Metrics
+$sql_invoices_metrics = "
     SELECT 
-        COUNT(DISTINCT i.id) as total_orders,
-        COALESCE(SUM(i.total), 0) as total_revenue,
-        COALESCE(SUM(i.delivery_cost), 0) as total_delivery,
+        COUNT(id) as total_orders,
+        COALESCE(SUM(total), 0) as total_revenue,
+        COALESCE(SUM(delivery_cost), 0) as total_delivery,
+        MAX(total) as max_order_value
+    FROM invoices 
+    WHERE created_at BETWEEN '$sql_start' AND '$sql_end'
+";
+$invoices_metrics = $conn->query($sql_invoices_metrics)->fetch_assoc();
+
+// 1.2 Item Level Metrics (COGS, Sold Qty)
+$sql_items_metrics = "
+    SELECT 
         COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs,
-        COALESCE(SUM(ii.quantity), 0) as total_items_sold,
-        MAX(i.total) as max_order_value
-    FROM invoices i
-    LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
+        COALESCE(SUM(ii.quantity), 0) as total_items_sold
+    FROM invoice_items ii
+    JOIN invoices i ON ii.invoice_id = i.id
     WHERE i.created_at BETWEEN '$sql_start' AND '$sql_end'
 ";
-$metrics_result = $conn->query($sql_metrics)->fetch_assoc();
+$items_metrics = $conn->query($sql_items_metrics)->fetch_assoc();
+
+$metrics_result = array_merge($invoices_metrics, $items_metrics);
 
 // 1.1 Refunds
 $sql_refunds_total = "SELECT COALESCE(SUM(amount), 0) as total FROM refunds WHERE created_at BETWEEN '$sql_start' AND '$sql_end'";

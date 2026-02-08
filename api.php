@@ -3194,18 +3194,28 @@ function getDashboardStats($conn) {
         $yesterday = date('Y-m-d', strtotime('-1 day'));
         
         // Use calendar day for today stats, not business day
-        $result = $conn->query("
+        // 1. Invoice Level Stats
+        $invRes = $conn->query("
             SELECT 
-                COUNT(DISTINCT i.id) as total_orders,
-                COALESCE(SUM(i.total), 0) as revenue,
-                COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs,
-                COALESCE(SUM(i.delivery_cost), 0) as total_delivery
-            FROM invoices i 
-            LEFT JOIN invoice_items ii ON i.id = ii.invoice_id 
+                COUNT(id) as total_orders,
+                COALESCE(SUM(total), 0) as revenue,
+                COALESCE(SUM(delivery_cost), 0) as total_delivery
+            FROM invoices 
+            WHERE DATE(created_at) = '$today'
+        ");
+        $invData = $invRes ? $invRes->fetch_assoc() : ['total_orders' => 0, 'revenue' => 0, 'total_delivery' => 0];
+
+        // 2. Item Level Stats (COGS)
+        $itemRes = $conn->query("
+            SELECT 
+                COALESCE(SUM(ii.quantity * ii.cost_price), 0) as total_cogs
+            FROM invoice_items ii 
+            JOIN invoices i ON ii.invoice_id = i.id 
             WHERE DATE(i.created_at) = '$today'
         ");
-        
-        $todayData = $result ? $result->fetch_assoc() : ['total_orders' => 0, 'revenue' => 0, 'total_cogs' => 0, 'total_delivery' => 0];
+        $itemData = $itemRes ? $itemRes->fetch_assoc() : ['total_cogs' => 0];
+
+        $todayData = array_merge($invData, $itemData);
         
         // Fetch today's expenses
         $expRes = $conn->query("SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE expense_date = '$today'");
