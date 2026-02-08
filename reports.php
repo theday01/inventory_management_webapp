@@ -1672,8 +1672,8 @@ $top_debtors_result = $conn->query($sql_top_debtors);
 
 <!-- Calculation Method Modal -->
 <div id="calculation-method-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-    <div class="bg-dark-surface rounded-xl p-8 max-w-2xl w-full max-h-screen overflow-y-auto">
-        <div class="flex items-center justify-between mb-6">
+    <div class="bg-dark-surface rounded-xl p-6 md:p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
             <h2 class="text-xl font-bold text-white flex items-center gap-2">
                 <span class="material-icons-round text-blue-500">calculate</span>
                 <?php echo __('calculation_method_modal_title'); ?>
@@ -1682,41 +1682,82 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                 <span class="material-icons-round">close</span>
             </button>
         </div>
-        <div class="space-y-3 text-sm text-gray-300">
-            <div class="flex items-start gap-2">
-                <span class="text-green-400 font-bold">•</span>
-                <p><strong class="text-green-400"><?php echo __('total_sales'); ?>:</strong> <?php echo __('calc_total_sales_desc'); ?></p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Sales & Revenue -->
+            <div class="bg-white/5 rounded-xl p-4 border border-white/5">
+                <h3 class="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
+                    <span class="material-icons-round">point_of_sale</span>
+                    <?php echo __('sales_orders_analysis'); ?>
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-white font-bold text-sm mb-1"><?php echo __('total_sales'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_total_sales_desc'); ?></p>
+                    </div>
+                    <div>
+                        <p class="text-red-400 font-bold text-sm mb-1"><?php echo __('calc_credit_sales_title'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_credit_sales_desc'); ?></p>
+                    </div>
+                     <div>
+                        <p class="text-orange-400 font-bold text-sm mb-1"><?php echo __('total_refunds'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_refunds_desc'); ?></p>
+                    </div>
+                </div>
             </div>
-            <div class="flex items-start gap-2">
-                <span class="text-red-500 font-bold">•</span>
-                <p><strong class="text-red-500"><?php echo __('total_refunds'); ?>:</strong> <?php echo __('calc_refunds_desc'); ?></p>
+
+            <!-- Cash Flow -->
+            <div class="bg-white/5 rounded-xl p-4 border border-white/5">
+                <h3 class="text-lg font-bold text-green-400 mb-4 flex items-center gap-2">
+                    <span class="material-icons-round">account_balance_wallet</span>
+                    <?php echo __('opening_balance'); ?> / <?php echo __('expected_closing_balance'); ?>
+                </h3>
+                <div class="space-y-4">
+                     <div>
+                        <p class="text-green-400 font-bold text-sm mb-1"><?php echo __('calc_debt_collected_title'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_debt_collected_desc'); ?></p>
+                    </div>
+                    <div>
+                        <p class="text-white font-bold text-sm mb-1"><?php echo __('expected_closing_balance'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_expected_closing_balance_desc'); ?></p>
+                    </div>
+                     <div>
+                        <p class="text-yellow-400 font-bold text-sm mb-1"><?php echo __('drawer_expenses'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_drawer_expenses_desc'); ?></p>
+                    </div>
+                </div>
             </div>
-            <div class="flex items-start gap-2">
-                <span class="text-orange-400 font-bold">•</span>
-                <p><strong class="text-orange-400"><?php echo __('total_delivery_fees'); ?>:</strong> <?php echo __('calc_delivery_fees_desc'); ?></p>
+
+            <!-- Costs & Profit -->
+            <div class="bg-white/5 rounded-xl p-4 border border-white/5 md:col-span-2">
+                <h3 class="text-lg font-bold text-purple-400 mb-4 flex items-center gap-2">
+                    <span class="material-icons-round">trending_up</span>
+                    <?php echo __('net_profit'); ?>
+                </h3>
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-red-400 font-bold text-sm mb-1"><?php echo __('total_cogs'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_cogs_desc'); ?></p>
+                    </div>
+                    <div>
+                        <p class="text-orange-400 font-bold text-sm mb-1"><?php echo __('total_delivery_fees'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_delivery_fees_desc'); ?></p>
+                    </div>
+                    <div>
+                        <p class="text-orange-500 font-bold text-sm mb-1"><?php echo __('total_general_expenses'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_total_expenses_desc'); ?></p>
+                    </div>
+                     <div class="bg-green-500/10 p-2 rounded-lg border border-green-500/20">
+                        <p class="text-green-400 font-bold text-sm mb-1"><?php echo __('net_profit'); ?></p>
+                        <p class="text-xs text-gray-400"><?php echo __('calc_net_profit_desc'); ?></p>
+                    </div>
+                </div>
             </div>
-            <div class="flex items-start gap-2">
-                <span class="text-red-400 font-bold">•</span>
-                <p><strong class="text-red-400"><?php echo __('total_cogs'); ?>:</strong> <?php echo __('calc_cogs_desc'); ?></p>
-            </div>
-            <div class="flex items-start gap-2">
-                <span class="text-orange-500 font-bold">•</span>
-                <p><strong class="text-orange-500"><?php echo __('total_expenses_all'); ?>:</strong> <?php echo __('calc_total_expenses_desc'); ?></p>
-            </div>
-            <div class="flex items-start gap-2">
-                <span class="text-yellow-400 font-bold">•</span>
-                <p><strong class="text-yellow-400"><?php echo __('expected_closing_balance'); ?>:</strong> <?php echo __('calc_expected_closing_balance_desc'); ?></p>
-            </div>
-            <div class="flex items-start gap-2 bg-green-500/10 p-3 rounded-lg border border-green-500/20">
-                <span class="text-green-400 font-bold text-lg">></span>
-                <p><strong class="text-green-400 text-lg"><?php echo __('net_profit'); ?>:</strong> <?php echo __('calc_net_profit_desc'); ?></p>
-            </div>
-            <div class="text-xs text-gray-400 mt-4 bg-dark/30 p-3 rounded-lg">
-                <p class="flex items-center gap-2">
-                    <span class="material-icons-round text-yellow-500" style="font-size: 16px;">info</span>
-                    <span><?php echo __('calc_note'); ?></span>
-                </p>
-            </div>
+        </div>
+        
+        <div class="mt-6 flex items-start gap-2 bg-blue-500/10 p-3 rounded-lg border border-blue-500/20 text-xs text-blue-300">
+             <span class="material-icons-round text-sm mt-0.5">info</span>
+             <p><?php echo __('calc_note'); ?></p>
         </div>
     </div>
 </div>
