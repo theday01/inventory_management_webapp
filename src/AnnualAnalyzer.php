@@ -516,6 +516,11 @@ class AnnualAnalyzer {
     }
 
     private function calculateHealthScore($stats, $prevStats) {
+        // If there's no significant data, score is 0
+        if ($stats['total_revenue'] <= 0 && $stats['total_orders'] == 0) {
+            return 0;
+        }
+
         // Simple algorithm to score business health 0-100
         $score = 50; // Base score
 
