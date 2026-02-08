@@ -280,6 +280,19 @@ switch ($action) {
     case 'getRestoreProgress':
         getRestoreProgress();
         break;
+    // Credit System Actions
+    case 'get_customer_debt':
+        get_customer_debt($conn);
+        break;
+    case 'pay_debt':
+        pay_debt($conn);
+        break;
+    case 'get_debt_history':
+        get_debt_history($conn);
+        break;
+    case 'get_debt_customers':
+        get_debt_customers($conn);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => __('invalid_data')]);
         break;
@@ -2807,8 +2820,7 @@ function checkout($conn) {
         $customer_id = isset($data['customer_id']) ? (int)$data['customer_id'] : null;
         $delivery_cost = isset($data['delivery_cost']) ? (float)$data['delivery_cost'] : 0;
         $delivery_city = isset($data['delivery_city']) ? $data['delivery_city'] : null;
-        // SECURITY: Force payment method to 'cash' as per requirements
-        $payment_method = 'cash'; 
+        $payment_method = isset($data['payment_method']) ? $data['payment_method'] : 'cash';
         
         // SECURITY: Calculate total server-side
         $calculated_subtotal = 0;
@@ -2852,15 +2864,53 @@ function checkout($conn) {
         if ($total < 0) $total = 0;
 
         $amount_received = isset($data['amount_received']) ? (float)$data['amount_received'] : 0;
-        $change_due = $amount_received - $total; // Server-side calculation
+        
+        // Credit Logic
+        $paid_amount = min($amount_received, $total);
+        $change_due = max(0, $amount_received - $total);
+        $payment_status = 'paid';
+
+        if ($payment_method === 'credit') {
+            if (!$customer_id) {
+                throw new Exception(__('customer_required_for_credit'));
+            }
+            if ($paid_amount >= $total) {
+                $payment_status = 'paid';
+            } elseif ($paid_amount > 0) {
+                $payment_status = 'partial';
+            } else {
+                $payment_status = 'unpaid';
+            }
+            
+            // Update Customer Balance (Increase Debt)
+            $debt_amount = $total - $paid_amount;
+            if ($debt_amount > 0) {
+                $stmt_balance = $conn->prepare("UPDATE customers SET balance = balance + ? WHERE id = ?");
+                $stmt_balance->bind_param("di", $debt_amount, $customer_id);
+                $stmt_balance->execute();
+                $stmt_balance->close();
+            }
+        } else {
+            // Cash logic (always paid unless specified otherwise, but standard is paid)
+            // Even if amount_received < total in Cash mode, legacy behavior might expect full payment?
+            // Usually cash payment is rejected if < total in frontend.
+            // But let's assume if backend receives it, it might be allowed (but we force 'paid' for cash to keep simple unless changed)
+            // Actually, let's trust amount_received.
+            if ($amount_received < $total) {
+                 // Should we reject or allow partial cash? Legacy code forced 'cash' and calculated change.
+                 // We'll stick to legacy behavior for 'cash' method which assumes paid.
+                 $paid_amount = $total; // Legacy assumption: if cash, it's fully paid (frontend validates)
+                 $change_due = $amount_received - $total;
+            }
+        }
 
         $holiday_name = isHoliday($conn, date('Y-m-d'));
         $is_holiday = $holiday_name ? 1 : 0;
 
         // Insert Invoice
-        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due, is_holiday, holiday_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $discount_percent = 0; // Simplified, or calculate if needed
-        $stmt->bind_param("iddsddsddis", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due, $is_holiday, $holiday_name);
+        $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, delivery_cost, delivery_city, discount_percent, discount_amount, payment_method, amount_received, change_due, is_holiday, holiday_name, payment_status, paid_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $discount_percent = 0; // Simplified
+        $stmt->bind_param("iddsddsddissd", $customer_id, $total, $delivery_cost, $delivery_city, $discount_percent, $discount_amount, $payment_method, $amount_received, $change_due, $is_holiday, $holiday_name, $payment_status, $paid_amount);
         
         $stmt->execute();
         $invoiceId = $stmt->insert_id;
@@ -4758,6 +4808,173 @@ function deleteShopLogo($conn) {
     $stmt->close();
 
     echo json_encode(['success' => true, 'message' => __('logo_deleted_success')]);
+}
+
+// ==========================================
+// Credit System Functions
+// ==========================================
+
+function get_customer_debt($conn) {
+    $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+    if ($id <= 0) {
+        echo json_encode(['success' => false, 'message' => __('invalid_customer_id')]);
+        return;
+    }
+
+    // Get current balance
+    $stmt = $conn->prepare("SELECT balance, name FROM customers WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $customer = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$customer) {
+        echo json_encode(['success' => false, 'message' => __('customer_not_found')]);
+        return;
+    }
+
+    // Get unpaid/partial invoices
+    $stmt = $conn->prepare("SELECT id, total, paid_amount, created_at, payment_status 
+                           FROM invoices 
+                           WHERE customer_id = ? AND payment_status IN ('unpaid', 'partial') 
+                           ORDER BY created_at ASC");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $invoices = [];
+    while ($row = $res->fetch_assoc()) {
+        $invoices[] = $row;
+    }
+    $stmt->close();
+
+    echo json_encode([
+        'success' => true, 
+        'balance' => $customer['balance'], 
+        'customer_name' => $customer['name'],
+        'unpaid_invoices' => $invoices
+    ]);
+}
+
+function pay_debt($conn) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $customer_id = isset($data['customer_id']) ? (int)$data['customer_id'] : 0;
+    $amount = isset($data['amount']) ? (float)$data['amount'] : 0;
+    $notes = isset($data['notes']) ? $data['notes'] : '';
+
+    if ($customer_id <= 0 || $amount <= 0) {
+        echo json_encode(['success' => false, 'message' => __('invalid_payment_data')]);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        // 1. Record Payment
+        $stmt = $conn->prepare("INSERT INTO payments (customer_id, amount, notes) VALUES (?, ?, ?)");
+        $stmt->bind_param("ids", $customer_id, $amount, $notes);
+        $stmt->execute();
+        $payment_id = $stmt->insert_id;
+        $stmt->close();
+
+        // 2. Update Customer Balance
+        $stmt = $conn->prepare("UPDATE customers SET balance = balance - ? WHERE id = ?");
+        $stmt->bind_param("di", $amount, $customer_id);
+        $stmt->execute();
+        $stmt->close();
+
+        // 3. Update Invoices Status (Auto-Allocation)
+        // Fetch unpaid invoices
+        $stmt = $conn->prepare("SELECT id, total, paid_amount FROM invoices WHERE customer_id = ? AND payment_status IN ('unpaid', 'partial') ORDER BY created_at ASC");
+        $stmt->bind_param("i", $customer_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $remaining_payment = $amount;
+        $updates = [];
+
+        while ($invoice = $result->fetch_assoc()) {
+            if ($remaining_payment <= 0) break;
+
+            $due = $invoice['total'] - $invoice['paid_amount'];
+            $pay_for_this = min($remaining_payment, $due);
+            
+            $new_paid = $invoice['paid_amount'] + $pay_for_this;
+            $new_status = ($new_paid >= $invoice['total'] - 0.01) ? 'paid' : 'partial';
+
+            $updates[] = [
+                'id' => $invoice['id'],
+                'paid_amount' => $new_paid,
+                'status' => $new_status
+            ];
+
+            $remaining_payment -= $pay_for_this;
+        }
+        $stmt->close();
+
+        // Apply invoice updates
+        if (!empty($updates)) {
+            $stmt_upd = $conn->prepare("UPDATE invoices SET paid_amount = ?, payment_status = ? WHERE id = ?");
+            foreach ($updates as $upd) {
+                $stmt_upd->bind_param("dsi", $upd['paid_amount'], $upd['status'], $upd['id']);
+                $stmt_upd->execute();
+            }
+            $stmt_upd->close();
+        }
+
+        $conn->commit();
+        create_notification($conn, sprintf(__('notification_debt_paid'), $amount, $customer_id), "debt_payment");
+        echo json_encode(['success' => true, 'message' => __('payment_recorded_success')]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
+    }
+}
+
+function get_debt_history($conn) {
+    $customer_id = isset($_GET['customer_id']) ? (int)$_GET['customer_id'] : 0;
+    
+    if ($customer_id <= 0) {
+        echo json_encode(['success' => false, 'message' => __('invalid_customer_id')]);
+        return;
+    }
+
+    $stmt = $conn->prepare("SELECT * FROM payments WHERE customer_id = ? ORDER BY payment_date DESC");
+    $stmt->bind_param("i", $customer_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $history = [];
+    while ($row = $result->fetch_assoc()) {
+        $history[] = $row;
+    }
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'data' => $history]);
+}
+
+function get_debt_customers($conn) {
+    // Get customers with positive balance
+    $search = isset($_GET['search']) ? $_GET['search'] : '';
+    $sql = "SELECT * FROM customers WHERE balance > 0";
+    
+    if (!empty($search)) {
+        $sql .= " AND (name LIKE '%$search%' OR phone LIKE '%$search%')";
+    }
+    
+    $sql .= " ORDER BY balance DESC";
+    
+    $result = $conn->query($sql);
+    $customers = [];
+    $total_debt = 0;
+    
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $customers[] = $row;
+            $total_debt += $row['balance'];
+        }
+    }
+    
+    echo json_encode(['success' => true, 'data' => $customers, 'total_debt' => $total_debt]);
 }
 
 if (ob_get_length()) ob_end_flush();

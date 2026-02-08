@@ -1338,6 +1338,19 @@ html:not(.dark) .text-red-500 {
                 <p id="payment-total-amount" class="text-white text-4xl font-bold text-center">0.00 <?php echo $currency; ?></p>
             </div>
 
+            <!-- Payment Method Toggle -->
+            <div class="flex justify-center mb-6">
+                <div class="bg-dark/50 p-1 rounded-xl flex border border-white/10 w-full">
+                    <button id="pm-cash" class="flex-1 px-4 py-2 rounded-lg font-bold text-sm transition-all bg-primary text-white shadow-lg">
+                        <span class="material-icons-round text-sm align-middle mr-1">payments</span>
+                        نقدي (Cash)
+                    </button>
+                    <button id="pm-credit" class="flex-1 px-4 py-2 rounded-lg font-bold text-sm transition-all text-gray-400 hover:text-white">
+                        <span class="material-icons-round text-sm align-middle mr-1">credit_score</span>
+                        <?php echo __('credit_payment'); ?>
+                    </button>
+                </div>
+            </div>
 
             <div id="cash-payment-details" class="space-y-4">
                 <div>
@@ -2678,7 +2691,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 selectedCustomer = null;
                 
                 // Reset Delivery
-                deliveryToggle.checked = false;
+                if (deliveryToggle) {
+                    deliveryToggle.checked = false;
+                }
                 if (deliveryCityInput) deliveryCityInput.value = '';
                 updateDeliveryState();
                 
@@ -2726,12 +2741,61 @@ document.addEventListener('DOMContentLoaded', function () {
         const confirmPaymentBtn = document.getElementById('confirm-payment-btn');
         const cancelPaymentBtn = document.getElementById('cancel-payment-btn');
         const closePaymentModalBtn = document.getElementById('close-payment-modal');
+        
+        // Payment Method Toggle
+        const pmCashBtn = document.getElementById('pm-cash');
+        const pmCreditBtn = document.getElementById('pm-credit');
+        let currentPaymentMethod = 'cash';
 
         const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
         const tax = taxEnabled ? subtotal * taxRate : 0;
-        const total = subtotal + tax + deliveryCost;
+        
+        // Calculate total with discount
+        let currentDiscountAmount = 0;
+        if (discountPercent > 0) {
+            currentDiscountAmount = subtotal * (discountPercent / 100);
+        }
+        
+        const total = subtotal + tax + deliveryCost - currentDiscountAmount;
 
         paymentTotalAmount.textContent = `${total.toFixed(2)} ${currency}`;
+
+        // Toggle Logic
+        function setPaymentMethod(method) {
+            currentPaymentMethod = method;
+            if (method === 'cash') {
+                pmCashBtn.classList.remove('text-gray-400', 'hover:text-white');
+                pmCashBtn.classList.add('bg-primary', 'text-white', 'shadow-lg');
+                
+                pmCreditBtn.classList.add('text-gray-400', 'hover:text-white');
+                pmCreditBtn.classList.remove('bg-primary', 'text-white', 'shadow-lg');
+                
+                document.querySelector('label[for="amount-received"]').textContent = window.__('received_amount_label');
+                amountReceivedInput.placeholder = window.__('enter_amount_placeholder');
+                
+                // Reset amount to empty or previous logic
+                // amountReceivedInput.value = ''; 
+                
+                // Show confirm button as "Pay"
+                confirmPaymentBtn.innerHTML = `<span class="material-icons-round">check_circle</span> ${window.__('confirm_payment')}`;
+            } else {
+                // Credit
+                pmCashBtn.classList.add('text-gray-400', 'hover:text-white');
+                pmCashBtn.classList.remove('bg-primary', 'text-white', 'shadow-lg');
+                
+                pmCreditBtn.classList.remove('text-gray-400', 'hover:text-white');
+                pmCreditBtn.classList.add('bg-primary', 'text-white', 'shadow-lg');
+                
+                document.querySelector('label[for="amount-received"]').textContent = window.__('paid_amount') || 'المبلغ المدفوع (مقدم)';
+                amountReceivedInput.placeholder = '0.00 (يمكن تركه فارغاً)';
+                
+                confirmPaymentBtn.innerHTML = `<span class="material-icons-round">credit_score</span> ${window.__('confirm_credit_sale')}`;
+            }
+            calculateChange();
+        }
+
+        pmCashBtn.onclick = () => setPaymentMethod('cash');
+        pmCreditBtn.onclick = () => setPaymentMethod('credit');
 
         // معالجة input المبلغ المستلم - السماح بالأرقام والنقاط فقط
         amountReceivedInput.addEventListener('input', (e) => {
@@ -2748,11 +2812,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const calculateChange = () => {
             const received = parseFloat(amountReceivedInput.value) || 0;
-            const change = received - total;
-            if (change >= 0) {
-                changeDueDisplay.textContent = `${change.toFixed(2)} ${currency}`;
+            const changeLabel = document.querySelector('#cash-payment-details p.text-sm.text-gray-400');
+            
+            if (currentPaymentMethod === 'cash') {
+                if (changeLabel) changeLabel.textContent = window.__('remaining_amount_label');
+                const change = received - total;
+                if (change >= 0) {
+                    changeDueDisplay.textContent = `${change.toFixed(2)} ${currency}`;
+                    changeDueDisplay.className = 'text-2xl font-bold text-accent';
+                } else {
+                    changeDueDisplay.textContent = '0.00 '  + currency;
+                    changeDueDisplay.className = 'text-2xl font-bold text-gray-500';
+                }
             } else {
-                changeDueDisplay.textContent = '0.00 '  + currency;
+                // Credit: Display Remaining Debt
+                if (changeLabel) changeLabel.textContent = window.__('remaining_debt');
+                const debt = total - received;
+                if (debt > 0) {
+                    changeDueDisplay.textContent = `${debt.toFixed(2)} ${currency}`;
+                    changeDueDisplay.className = 'text-2xl font-bold text-red-500';
+                } else {
+                    changeDueDisplay.textContent = '0.00 ' + currency; // Fully paid
+                    changeDueDisplay.className = 'text-2xl font-bold text-green-500';
+                }
             }
         };
 
@@ -2764,22 +2846,40 @@ document.addEventListener('DOMContentLoaded', function () {
         closePaymentModalBtn.addEventListener('click', closeModal);
 
         confirmPaymentBtn.onclick = () => {
-            const paymentMethod = 'cash';
             const amountReceived = parseFloat(amountReceivedInput.value) || 0;
 
-            if (paymentMethod === 'cash' && amountReceived < total) {
+            if (currentPaymentMethod === 'cash' && amountReceived < total) {
                 showToast(window.__('payment_less_total'), false);
                 return;
             }
 
+            if (currentPaymentMethod === 'credit') {
+                if (!selectedCustomer) {
+                    showToast(window.__('customer_required_for_credit'), false);
+                    // Optionally open customer modal here
+                    return;
+                }
+                
+                // If paid amount >= total, it's basically paid, but user selected Credit explicitly
+                // Backend handles status update.
+            }
+
             closeModal();
+            
+            // Calculate change/debt for local display if needed
+            let change = 0;
+            if (currentPaymentMethod === 'cash') change = amountReceived - total;
+            else change = 0; // For credit, "change due" isn't returned to customer usually unless overpaid
+
             processCheckout({
-                paymentMethod: paymentMethod,
+                paymentMethod: currentPaymentMethod,
                 amountReceived: amountReceived,
-                changeDue: amountReceived - total
+                changeDue: change
             });
         };
         
+        // Reset state
+        setPaymentMethod('cash');
         amountReceivedInput.value = '';
         calculateChange();
 

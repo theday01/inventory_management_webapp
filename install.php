@@ -75,6 +75,7 @@ $sql_customers = "CREATE TABLE IF NOT EXISTS customers (
     phone VARCHAR(20),
     address TEXT,
     city VARCHAR(100) DEFAULT NULL,
+    balance DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
@@ -103,6 +104,8 @@ $sql_invoices = "CREATE TABLE IF NOT EXISTS invoices (
     change_due DECIMAL(10, 2) DEFAULT 0.00,
     is_holiday BOOLEAN DEFAULT FALSE,
     holiday_name VARCHAR(255) DEFAULT NULL,
+    payment_status ENUM('paid', 'unpaid', 'partial') NOT NULL DEFAULT 'paid',
+    paid_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
@@ -198,6 +201,16 @@ $sql_expenses = "CREATE TABLE IF NOT EXISTS expenses (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
+$sql_payments = "CREATE TABLE IF NOT EXISTS payments (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT(6) UNSIGNED NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
 // UPDATED: business_days table with nullable user_id and better foreign key constraint
 $sql_business_days = "CREATE TABLE IF NOT EXISTS business_days (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -229,7 +242,8 @@ $tables = [
     'holidays' => $sql_holidays,
     'expenses' => $sql_expenses,
     'refunds' => $sql_refunds,
-    'business_days' => $sql_business_days
+    'business_days' => $sql_business_days,
+    'payments' => $sql_payments
 ];
 
 foreach ($tables as $name => $sql) {
