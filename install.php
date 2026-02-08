@@ -404,96 +404,11 @@ echo "✅ Successfully configured $settings_success settings.";
 echo "</div>";
 
 // ======================================
-// ADD DEFAULT CATEGORIES
+// ADD DEFAULT CATEGORIES (REMOVED)
 // ======================================
-echo "<h3>Adding Default Categories...</h3>";
-
-$check_categories = $conn->query("SELECT COUNT(*) as count FROM categories");
-$category_count = $check_categories->fetch_assoc()['count'];
-
-if ($category_count == 0) {
-    $default_categories = [
-        [
-            "category" => "بقالة / سوبرماركت",
-            "description" => "سلع غذائية ومستلزمات منزلية تُباع بالوحدة أو بالوزن",
-            "custom_fields" => "باركود, الماركة, الوزن/الكمية, وحدة القياس, حجم العبوة, تاريخ الانتهاء, تاريخ الانتاج, شهادة حلال, المورد, سعر الشراء, نسبة الضريبة, كمية المخزون, حد إعادة الطلب, موقع التخزين"
-        ],
-        [
-            "category" => "مخبز / معجنات",
-            "description" => "مخبوزات طازجة ومجمدة",
-            "custom_fields" => "تاريخ الخَبز, تاريخ الانتهاء, الوزن, حجم الحصة, المكونات, مجمَّد (نعم/لا), خاضع للضريبة, مورد, درجة حفظ (حرارة)"
-        ],
-        [
-            "category" => "ملحمة / محل سمك",
-            "description" => "لحوم وأسماك طازجة أو مجمدة تُباع بالقطع أو بالوزن",
-            "custom_fields" => "نوع القطعة, الوزن, طازج أم مجمَّد, المصدر/المنشأ, تاريخ الصيد/التعبئة, تاريخ الانتهاء, مورد, درجة حفظ"
-        ],
-        [
-            "category" => "حلويات / شوكولاتة",
-            "description" => "حلويات معبأة ومنتجات شوكولاتة",
-            "custom_fields" => "نسبة الكاكاو, معلومات الحساسية, الوزن, عدد القطع, تاريخ الانتهاء, المكونات, سعرات لكل حصة"
-        ],
-        [
-            "category" => "منتجات ألبان",
-            "description" => "حليب، أجبان، زبادي ومنتجات مشتقة",
-            "custom_fields" => "نسبة الدسم, مبستر (نعم/لا), تاريخ الانتهاء, حجم العبوة, درجة الحفظ, خالي من اللاكتوز (نعم/لا), الماركة, مورد"
-        ],
-        [
-            "category" => "ملابس جاهزة (رجال، نساء، أطفال، رضع)",
-            "description" => "ملابس جاهزة للبيع بالتجزئة",
-            "custom_fields" => "مقاس, لون, خامة/مادة, مخصص للجنس (رجالي/نسائي/أطفال/رضع), الماركة, رمز الصنف (SKU), الموسم, قابل للإرجاع (نعم/لا), تعليمات الغسيل, كمية المخزون, الفئة العمرية"
-        ],
-        [
-            "category" => "أحذية وشنط",
-            "description" => "أحذية وحقائب وإكسسوارات جلدية/نسيجية",
-            "custom_fields" => "مقاس_EU, مقاس_US, لون, مادة, مخصص للجنس, الماركة, SKU, مقاوم للماء (نعم/لا), كمية المخزون"
-        ],
-        [
-            "category" => "إلكترونيات (هواتف، تلفزيون، أجهزة صوت)",
-            "description" => "أجهزة إلكترونية استهلاكية وإلكترونيات شخصية",
-            "custom_fields" => "الماركة, الموديل, رقم_القطعة/سيريال, IMEI (للهواتف), سعة_تخزين_GB, ذاكرة_RAM_GB, لون, ضمان_شهور, البطارية_مشمولة (نعم/لا), مواصفات_طاقة, نظام_تشغيل"
-        ]
-    ];
-
-    $stmt_category = $conn->prepare("INSERT INTO categories (name, description) VALUES (?, ?)");
-    $stmt_field = $conn->prepare("INSERT INTO category_fields (category_id, field_name, field_type) VALUES (?, ?, ?)");
-
-    $total_categories = 0;
-    $total_fields = 0;
-
-    foreach ($default_categories as $category) {
-        $stmt_category->bind_param("ss", $category['category'], $category['description']);
-        if ($stmt_category->execute()) {
-            $category_id = $stmt_category->insert_id;
-            $total_categories++;
-            
-            if (!empty($category['custom_fields'])) {
-                $fields = explode(',', $category['custom_fields']);
-                foreach ($fields as $field) {
-                    $field = trim($field);
-                    if (!empty($field)) {
-                        $field_type = 'text';
-                        $stmt_field->bind_param("iss", $category_id, $field, $field_type);
-                        if ($stmt_field->execute()) {
-                            $total_fields++;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    $stmt_category->close();
-    $stmt_field->close();
-
-    echo "<div style='background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 10px 0;'>";
-    echo "✅ تم إضافة <strong>$total_categories</strong> فئة تجارية مع <strong>$total_fields</strong> حقل مخصص بنجاح!";
-    echo "</div>";
-} else {
-    echo "<div style='background: #fff3cd; padding: 15px; border: 1px solid #ffeeba; border-radius: 5px; margin: 10px 0;'>";
-    echo "ℹ️ توجد بالفعل فئات في النظام ($category_count فئة). لم يتم إضافة الفئات الافتراضية.";
-    echo "</div>";
-}
+// echo "<h3>Adding Default Categories...</h3>";
+// Default categories installation removed as per user request.
+// Categories should be created manually.
 
 // ======================================
 // ADD DEFAULT HOLIDAYS
@@ -550,7 +465,6 @@ echo "<h3>What's Next?</h3>";
 echo "<ul>";
 echo "<li>✓ Database and tables created successfully</li>";
 echo "<li>✓ System settings configured</li>";
-echo "<li>✓ Default categories added</li>";
 echo "<li>✓ Business days system ready (supports nullable user_id)</li>";
 echo "</ul>";
 echo "<hr>";
