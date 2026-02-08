@@ -1215,6 +1215,10 @@ return [
     'cd_discount' => 'Remise',
     'cd_delivery' => 'Livraison',
     'cd_tax' => 'TVA',
+    'customer_screen_mode_label' => 'Mode Écran Client',
+    'customer_screen_mode_desc' => 'Choisissez entre l\'interface complète ou le total uniquement (pour petits écrans)',
+    'cs_mode_standard' => 'Standard (Interface complète)',
+    'cs_mode_simple' => 'Simple (Total uniquement)',
 
     // Virtual Keyboard
     'virtual_keyboard_title' => 'Clavier Virtuel',

@@ -1215,6 +1215,10 @@ return [
     'cd_discount' => 'الخصم',
     'cd_delivery' => 'التوصيل',
     'cd_tax' => 'الضريبة',
+    'customer_screen_mode_label' => 'نمط شاشة العميل',
+    'customer_screen_mode_desc' => 'اختر بين الواجهة الكاملة أو عرض المجموع فقط (للشاشات الصغيرة)',
+    'cs_mode_standard' => 'قياسي (واجهة كاملة)',
+    'cs_mode_simple' => 'بسيط (المجموع فقط)',
 
     // Virtual Keyboard
     'virtual_keyboard_title' => 'لوحة المفاتيح الافتراضية',

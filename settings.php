@@ -134,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
         'day_end_time' => !empty($_POST['day_end_time']) ? date('H:i', strtotime($_POST['day_end_time'])) : '00:00',
         'end_day_reminder_enabled' => isset($_POST['end_day_reminder_enabled']) ? '1' : '0',
         'keyboard_enabled' => isset($_POST['keyboard_enabled']) ? '1' : '0',
+        'customer_screen_mode' => $_POST['customer_screen_mode'] ?? 'standard',
     ];
 
     if (isset($_FILES['shopLogoFile']) && $_FILES['shopLogoFile']['error'] === UPLOAD_ERR_OK) {
@@ -745,6 +746,23 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <div class="relative inline-block w-10 align-middle select-none">
                                     <input type="checkbox" name="keyboard_enabled" id="toggle-keyboard" value="1" class="toggle-checkbox" <?php echo $isAdmin ? 'onchange="this.form.submit()"' : ''; ?> <?php echo (isset($settings['keyboard_enabled']) && $settings['keyboard_enabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
                                     <label for="toggle-keyboard" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                </div>
+                            </div>
+
+                            <!-- Customer Screen Mode -->
+                            <div class="col-span-2 flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-icons-round text-gray-400">monitor</span>
+                                    <div>
+                                        <h4 class="font-bold text-white text-sm"><?php echo __('customer_screen_mode_label'); ?></h4>
+                                        <p class="text-[10px] text-gray-400"><?php echo __('customer_screen_mode_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="relative w-64">
+                                    <select name="customer_screen_mode" class="w-full bg-dark/50 border border-white/10 text-white px-4 py-2 rounded-xl focus:outline-none focus:border-primary/50 transition-all text-sm" <?php echo $disabledAttr; ?>>
+                                        <option value="standard" <?php echo ($settings['customer_screen_mode'] ?? 'standard') == 'standard' ? 'selected' : ''; ?>><?php echo __('cs_mode_standard'); ?></option>
+                                        <option value="simple" <?php echo ($settings['customer_screen_mode'] ?? 'standard') == 'simple' ? 'selected' : ''; ?>><?php echo __('cs_mode_simple'); ?></option>
+                                    </select>
                                 </div>
                             </div>
                         </div>

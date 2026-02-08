@@ -16,6 +16,10 @@ $shopLogoUrl = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
 $result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'");
 $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'MAD';
 
+// Get Screen Mode
+$result = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'customer_screen_mode'");
+$screenMode = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting_value'] : 'standard';
+
 $page_title = __('customer_display_title') ?? 'شاشة العميل';
 $dir = get_dir();
 ?>
@@ -119,6 +123,44 @@ $dir = get_dir();
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col relative selection:bg-primary selection:text-white">
+
+<?php if ($screenMode === 'simple'): ?>
+    <!-- ================= SIMPLE MODE (Arduino/Small Screen) ================= -->
+    <div class="flex-1 flex flex-col items-center justify-center relative bg-black">
+        
+        <!-- Idle State -->
+        <div id="simple-idle" class="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 z-10">
+            <?php if (!empty($shopLogoUrl)): ?>
+                <img src="<?php echo htmlspecialchars($shopLogoUrl); ?>" class="w-32 h-32 mb-6 object-contain opacity-50">
+            <?php endif; ?>
+            <h1 class="text-4xl font-bold text-gray-500 tracking-wider"><?php echo __('welcome_message'); ?></h1>
+        </div>
+
+        <!-- Active State (Total) -->
+        <div id="simple-active" class="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 opacity-0 z-20 bg-black">
+            <div class="text-gray-400 text-2xl mb-2 font-bold uppercase tracking-[0.2em]"><?php echo __('total_amount'); ?></div>
+            <div class="flex items-baseline gap-2">
+                <span id="simple-total" class="text-[15vw] font-mono font-bold text-green-500 leading-none">0.00</span>
+                <span class="text-4xl text-gray-500 font-bold"><?php echo $currency; ?></span>
+            </div>
+            <div class="mt-4 px-6 py-2 bg-gray-900 rounded-full border border-gray-800">
+                <span id="simple-item-count" class="text-xl text-gray-300 font-mono">0 Items</span>
+            </div>
+        </div>
+
+        <!-- Success State -->
+        <div id="simple-success" class="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 opacity-0 z-30 bg-green-900/20 backdrop-blur-md">
+            <div class="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center mb-6 animate-bounce">
+                <span class="material-icons-round text-5xl text-black">check</span>
+            </div>
+            <h2 class="text-5xl font-bold text-white mb-4 text-center"><?php echo __('cd_transaction_success'); ?></h2>
+            <div class="text-3xl text-green-400 font-mono" id="simple-change-display"></div>
+        </div>
+
+    </div>
+
+<?php else: ?>
+    <!-- ================= STANDARD MODE (Full UI) ================= -->
 
     <!-- Background Elements -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -304,23 +346,18 @@ $dir = get_dir();
             </div>
         </div>
     </div>
+<?php endif; ?>
 
     <script>
         // Configuration
         const currency = '<?php echo $currency; ?>';
         const defaultLogo = 'src/img/default-product.png'; 
-        
-        // DOM Elements
-        const welcomeScreen = document.getElementById('welcome-screen');
-        const mainInterface = document.getElementById('main-interface');
-        const successOverlay = document.getElementById('success-overlay');
-        const cartContainer = document.getElementById('cart-items-container');
+        const mode = '<?php echo $screenMode; ?>';
         
         // Broadcast Channel
         const channel = new BroadcastChannel('pos_display');
 
         // State
-        let currentCart = [];
         let idleTimer = null;
         let isTransactionSuccess = false;
 
@@ -335,17 +372,60 @@ $dir = get_dir();
                 .replace(/'/g, "&#039;");
         }
 
-        // --- Clock Functionality ---
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clock-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            document.getElementById('clock-date').textContent = now.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'short' });
+        function formatMoney(amount) {
+            return parseFloat(amount).toFixed(2);
         }
-        setInterval(updateClock, 1000);
-        updateClock();
 
         // --- View Management ---
-        function setView(view) {
+        function setView(view, data = null) {
+            if (mode === 'simple') {
+                updateSimpleView(view, data);
+            } else {
+                updateStandardView(view, data);
+            }
+        }
+
+        // ================= SIMPLE MODE LOGIC =================
+        function updateSimpleView(view, data) {
+            const idle = document.getElementById('simple-idle');
+            const active = document.getElementById('simple-active');
+            const success = document.getElementById('simple-success');
+
+            if (view === 'welcome') {
+                idle.classList.remove('opacity-0', 'hidden');
+                active.classList.add('opacity-0');
+                success.classList.add('opacity-0');
+                setTimeout(() => {
+                    active.classList.add('hidden');
+                    success.classList.add('hidden');
+                }, 500);
+            } else if (view === 'cart') {
+                idle.classList.add('opacity-0');
+                success.classList.add('opacity-0');
+                setTimeout(() => {
+                    idle.classList.add('hidden');
+                    success.classList.add('hidden');
+                    active.classList.remove('hidden');
+                    setTimeout(() => active.classList.remove('opacity-0'), 10);
+                }, 300);
+            } else if (view === 'success') {
+                active.classList.add('opacity-0');
+                idle.classList.add('opacity-0');
+                success.classList.remove('hidden');
+                setTimeout(() => {
+                    success.classList.remove('opacity-0');
+                    active.classList.add('hidden');
+                    idle.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // ================= STANDARD MODE LOGIC =================
+        function updateStandardView(view, data) {
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const mainInterface = document.getElementById('main-interface');
+            const successOverlay = document.getElementById('success-overlay');
+
             if (view === 'welcome') {
                 welcomeScreen.classList.remove('opacity-0', 'hidden');
                 mainInterface.classList.add('opacity-0', 'scale-95', 'hidden');
@@ -358,7 +438,6 @@ $dir = get_dir();
                 successOverlay.classList.add('hidden', 'opacity-0');
             } else if (view === 'success') {
                 successOverlay.classList.remove('hidden');
-                // Small delay to allow display:block to apply before opacity transition
                 setTimeout(() => {
                     successOverlay.classList.remove('opacity-0');
                     document.getElementById('success-content').classList.remove('scale-90');
@@ -367,87 +446,82 @@ $dir = get_dir();
             }
         }
 
-        // --- Format Currency ---
-        function formatMoney(amount) {
-            return parseFloat(amount).toFixed(2);
-        }
-
-        // --- Update Display Logic ---
+        // --- Data Update Logic ---
         function updateDisplay(data) {
             const cart = data.cart || [];
             const totals = data.totals || {};
 
             // If empty, show welcome screen
             if (cart.length === 0) {
-                if (isTransactionSuccess) return; // Don't interrupt success screen
+                if (isTransactionSuccess) return; 
                 setView('welcome');
                 return;
             }
 
-            // New items added, cancel success screen
             isTransactionSuccess = false;
             setView('cart');
 
-            // --- Render Items ---
-            cartContainer.innerHTML = '';
-            
-            // Reverse loop to show newest on top
-            [...cart].reverse().forEach((item, index) => {
-                const total = item.price * item.quantity;
-                const isNew = index === 0; 
-                const safeName = escapeHtml(item.name);
-                const safeBarcode = escapeHtml(item.barcode);
+            // Logic separation based on mode
+            if (mode === 'simple') {
+                document.getElementById('simple-total').textContent = formatMoney(totals.total);
+                document.getElementById('simple-item-count').textContent = cart.length + ' Items';
+            } else {
+                // Standard: Update List & Details
+                const cartContainer = document.getElementById('cart-items-container');
+                cartContainer.innerHTML = '';
+                
+                [...cart].reverse().forEach((item, index) => {
+                    const total = item.price * item.quantity;
+                    const isNew = index === 0; 
+                    const safeName = escapeHtml(item.name);
+                    const safeBarcode = escapeHtml(item.barcode);
+                    const imgUrl = item.image ? item.image : defaultLogo;
 
-                const div = document.createElement('div');
-                // Adjusted grid/flex for responsive layout
-                div.className = `item-row flex lg:grid lg:grid-cols-12 gap-3 lg:gap-4 items-center p-3 lg:p-4 rounded-xl border border-white/5 bg-white/5 ${isNew ? 'animate-slide-in' : ''}`;
-                
-                const imgUrl = item.image ? item.image : defaultLogo;
-                
-                div.innerHTML = `
-                    <div class="flex-1 lg:col-span-6 flex items-center gap-3 lg:gap-4 overflow-hidden">
-                        <div class="w-10 h-10 lg:w-14 lg:h-14 rounded-lg bg-white p-1 shrink-0 overflow-hidden">
-                            <img src="${imgUrl}" class="w-full h-full object-contain" onerror="this.src='${defaultLogo}'">
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <h3 class="font-bold text-sm lg:text-lg text-white truncate leading-tight">${safeName}</h3>
-                            <div class="flex items-center gap-2 lg:hidden mt-1">
-                                <span class="text-xs font-mono text-gray-400">${formatMoney(item.price)}</span>
-                                <span class="text-[10px] text-gray-600">x</span>
-                                <span class="text-xs font-bold text-white bg-white/10 px-1.5 rounded">${item.quantity}</span>
+                    const div = document.createElement('div');
+                    div.className = `item-row flex lg:grid lg:grid-cols-12 gap-3 lg:gap-4 items-center p-3 lg:p-4 rounded-xl border border-white/5 bg-white/5 ${isNew ? 'animate-slide-in' : ''}`;
+                    
+                    div.innerHTML = `
+                        <div class="flex-1 lg:col-span-6 flex items-center gap-3 lg:gap-4 overflow-hidden">
+                            <div class="w-10 h-10 lg:w-14 lg:h-14 rounded-lg bg-white p-1 shrink-0 overflow-hidden">
+                                <img src="${imgUrl}" class="w-full h-full object-contain" onerror="this.src='${defaultLogo}'">
                             </div>
-                            ${safeBarcode ? `<span class="hidden lg:block text-xs font-mono text-gray-500">${safeBarcode}</span>` : ''}
+                            <div class="min-w-0 flex-1">
+                                <h3 class="font-bold text-sm lg:text-lg text-white truncate leading-tight">${safeName}</h3>
+                                <div class="flex items-center gap-2 lg:hidden mt-1">
+                                    <span class="text-xs font-mono text-gray-400">${formatMoney(item.price)}</span>
+                                    <span class="text-[10px] text-gray-600">x</span>
+                                    <span class="text-xs font-bold text-white bg-white/10 px-1.5 rounded">${item.quantity}</span>
+                                </div>
+                                ${safeBarcode ? `<span class="hidden lg:block text-xs font-mono text-gray-500">${safeBarcode}</span>` : ''}
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="hidden lg:block lg:col-span-2 text-center font-mono text-lg text-gray-300">
-                        ${formatMoney(item.price)}
-                    </div>
-                    
-                    <div class="hidden lg:block lg:col-span-2 text-center">
-                        <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-dark text-white font-bold border border-white/10 shadow-inner">
-                            ${item.quantity}
-                        </span>
-                    </div>
-                    
-                    <div class="shrink-0 lg:col-span-2 text-end">
-                        <span class="font-bold text-base lg:text-xl text-primary font-mono">${formatMoney(total)}</span>
-                        <span class="text-[10px] lg:text-xs text-gray-500 ml-0.5 lg:ml-1">${currency}</span>
-                    </div>
-                `;
-                cartContainer.appendChild(div);
-            });
+                        
+                        <div class="hidden lg:block lg:col-span-2 text-center font-mono text-lg text-gray-300">
+                            ${formatMoney(item.price)}
+                        </div>
+                        
+                        <div class="hidden lg:block lg:col-span-2 text-center">
+                            <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-dark text-white font-bold border border-white/10 shadow-inner">
+                                ${item.quantity}
+                            </span>
+                        </div>
+                        
+                        <div class="shrink-0 lg:col-span-2 text-end">
+                            <span class="font-bold text-base lg:text-xl text-primary font-mono">${formatMoney(total)}</span>
+                            <span class="text-[10px] lg:text-xs text-gray-500 ml-0.5 lg:ml-1">${currency}</span>
+                        </div>
+                    `;
+                    cartContainer.appendChild(div);
+                });
 
-            document.getElementById('items-count').textContent = cart.length + ' Items';
+                document.getElementById('items-count').textContent = cart.length + ' Items';
+                document.getElementById('display-subtotal').textContent = formatMoney(totals.subtotal);
+                document.getElementById('display-total').textContent = formatMoney(totals.total);
 
-            // --- Render Totals ---
-            document.getElementById('display-subtotal').textContent = formatMoney(totals.subtotal);
-            document.getElementById('display-total').textContent = formatMoney(totals.total);
-
-            // Conditional Rows
-            toggleRow('row-tax', totals.tax, 'display-tax');
-            toggleRow('row-discount', totals.discount, 'display-discount', true);
-            toggleRow('row-delivery', totals.delivery, 'display-delivery');
+                toggleRow('row-tax', totals.tax, 'display-tax');
+                toggleRow('row-discount', totals.discount, 'display-discount', true);
+                toggleRow('row-delivery', totals.delivery, 'display-delivery');
+            }
         }
 
         function toggleRow(rowId, amount, displayId, isNegative = false) {
@@ -466,19 +540,26 @@ $dir = get_dir();
             isTransactionSuccess = true;
             const total = parseFloat(data.totals?.total || 0);
             const change = parseFloat(data.change_due || 0);
-            
-            // Assume paid is total + change
             const paid = total + change;
 
-            document.getElementById('success-change').textContent = formatMoney(change);
-            if (data.totals && data.totals.total) {
-                document.getElementById('success-total').textContent = formatMoney(data.totals.total);
-                document.getElementById('success-paid').textContent = formatMoney(paid);
+            if (mode === 'simple') {
+                const displayChange = document.getElementById('simple-change-display');
+                if (change > 0) {
+                    displayChange.textContent = "<?php echo __('cd_change_due'); ?>: " + formatMoney(change) + ' ' + currency;
+                } else {
+                    displayChange.textContent = "<?php echo __('cd_transaction_success'); ?>";
+                }
+                setView('success');
+            } else {
+                document.getElementById('success-change').textContent = formatMoney(change);
+                if (data.totals && data.totals.total) {
+                    document.getElementById('success-total').textContent = formatMoney(data.totals.total);
+                    document.getElementById('success-paid').textContent = formatMoney(paid);
+                }
+                setView('success');
             }
-            
-            setView('success');
 
-            // Auto revert to welcome after 15 seconds
+            // Auto revert
             clearTimeout(idleTimer);
             idleTimer = setTimeout(() => {
                 isTransactionSuccess = false;
@@ -486,20 +567,23 @@ $dir = get_dir();
             }, 15000);
         }
 
+        // --- Clock (Standard Mode Only) ---
+        if (mode === 'standard') {
+            function updateClock() {
+                const now = new Date();
+                document.getElementById('clock-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                document.getElementById('clock-date').textContent = now.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'short' });
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+        }
+
         // --- Event Listener ---
         channel.onmessage = (event) => {
             const data = event.data;
-            console.log('Received:', data.action, data);
-
             if (data.action === 'update_cart') {
                 updateDisplay(data);
             } else if (data.action === 'checkout_complete') {
-                // If we get checkout_complete, we should show the success screen.
-                // Note: processCheckout in pos.php broadcasts 'checkout_complete' with { change_due: ... }
-                // but it might NOT pass the full `totals` object if it wasn't explicitly added in pos.php call.
-                // Let's re-check pos.php logic.
-                // In pos.php: broadcastCartUpdate('checkout_complete', { change_due: paymentData.changeDue });
-                // broadcastCartUpdate adds `totals` to the payload automatically. So we are safe.
                 showSuccess(data);
             } else if (data.action === 'clear_cart') {
                 setView('welcome');
