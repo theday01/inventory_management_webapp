@@ -1269,6 +1269,7 @@ return [
     'best_month' => 'Meilleur mois',
     'worst_month' => 'Pire mois',
     'smart_recommendations' => 'Recommandations intelligentes',
+    'financial_performance_analysis' => 'Analyse de la performance financière (Revenus vs Dépenses vs Bénéfice)',
     'top_products_annual' => 'Meilleurs produits (Annuel)',
     'quantity_sold' => 'Quantité vendue',
     'annual_tips_desc' => 'Analyse complète et détaillée de la performance annuelle avec des conseils intelligents.',

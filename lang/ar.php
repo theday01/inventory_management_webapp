@@ -1269,6 +1269,7 @@ return [
     'best_month' => 'أفضل شهر',
     'worst_month' => 'أسوأ شهر',
     'smart_recommendations' => 'توصيات ذكية',
+    'financial_performance_analysis' => 'تحليل الأداء المالي (الإيرادات vs المصاريف vs الربح)',
     'top_products_annual' => 'أفضل المنتجات (سنوي)',
     'quantity_sold' => 'الكمية المباعة',
     'annual_tips_desc' => 'تحليل شامل ومفصل لأداء السنة مع نصائح ذكية لتحسين العمل.',

@@ -153,45 +153,105 @@ class AnnualAnalyzer {
         $startDate = "{$this->year}-01-01 00:00:00";
         $endDate = "{$this->year}-12-31 23:59:59";
 
+        // Initialize Data
+        $monthlyData = [];
+        for($i=1; $i<=12; $i++) {
+            $monthlyData[$i] = [
+                'revenue' => 0,
+                'expenses' => 0,
+                'profit' => 0,
+                'cogs' => 0,
+                'refunds' => 0
+            ];
+        }
+
+        // 1. Revenue
         $sql = "SELECT 
                     MONTH(created_at) as month, 
                     SUM(total) as revenue 
                 FROM invoices 
                 WHERE created_at BETWEEN ? AND ? 
-                GROUP BY MONTH(created_at) 
-                ORDER BY MONTH(created_at)";
+                GROUP BY MONTH(created_at)";
         
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("ss", $startDate, $endDate);
         $stmt->execute();
         $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $monthlyData[$row['month']]['revenue'] = (float)$row['revenue'];
+        }
+        $stmt->close();
 
-        $months = [];
+        // 2. Refunds
+        $sqlRefunds = "SELECT MONTH(created_at) as month, SUM(amount) as refund FROM refunds WHERE created_at BETWEEN ? AND ? GROUP BY MONTH(created_at)";
+        $stmt = $this->conn->prepare($sqlRefunds);
+        $stmt->bind_param("ss", $startDate, $endDate);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $monthlyData[$row['month']]['refunds'] = (float)$row['refund'];
+        }
+        $stmt->close();
+
+        // 3. Expenses (Using expense_date)
+        // Ensure full day coverage for DATETIME columns
+        $dStart = "{$this->year}-01-01 00:00:00";
+        $dEnd = "{$this->year}-12-31 23:59:59";
+        $sqlExp = "SELECT MONTH(expense_date) as month, SUM(amount) as expense FROM expenses WHERE expense_date BETWEEN ? AND ? GROUP BY MONTH(expense_date)";
+        $stmt = $this->conn->prepare($sqlExp);
+        $stmt->bind_param("ss", $dStart, $dEnd);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $monthlyData[$row['month']]['expenses'] = (float)$row['expense'];
+        }
+        $stmt->close();
+
+        // 4. COGS
+        $sqlCOGS = "SELECT MONTH(i.created_at) as month, SUM(ii.quantity * ii.cost_price) as cogs
+                    FROM invoice_items ii
+                    JOIN invoices i ON ii.invoice_id = i.id
+                    WHERE i.created_at BETWEEN ? AND ?
+                    GROUP BY MONTH(i.created_at)";
+        $stmt = $this->conn->prepare($sqlCOGS);
+        $stmt->bind_param("ss", $startDate, $endDate);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $monthlyData[$row['month']]['cogs'] = (float)$row['cogs'];
+        }
+        $stmt->close();
+
+        // 5. Calculate Profit & Best/Worst
         $bestMonth = ['month' => 0, 'revenue' => 0];
         $worstMonth = ['month' => 0, 'revenue' => PHP_FLOAT_MAX];
 
-        while ($row = $result->fetch_assoc()) {
-            $rev = (float)$row['revenue'];
-            $months[$row['month']] = $rev;
-            
-            if ($rev > $bestMonth['revenue']) {
-                $bestMonth = ['month' => $row['month'], 'revenue' => $rev];
+        foreach ($monthlyData as $m => &$data) {
+            $netRevenue = $data['revenue'] - $data['refunds'];
+            $profit = $netRevenue - $data['cogs'] - $data['expenses'];
+            $data['profit'] = $profit;
+
+            // Update Best/Worst (based on Revenue for now, or could be Profit)
+            // Let's stick to Revenue as per previous logic
+            if ($data['revenue'] > $bestMonth['revenue']) {
+                $bestMonth = ['month' => $m, 'revenue' => $data['revenue']];
             }
-            if ($rev < $worstMonth['revenue'] && $rev > 0) {
-                $worstMonth = ['month' => $row['month'], 'revenue' => $rev];
+            if ($data['revenue'] < $worstMonth['revenue'] && $data['revenue'] > 0) {
+                $worstMonth = ['month' => $m, 'revenue' => $data['revenue']];
             }
-        }
-        
-        // Fill missing months with 0
-        for($i=1; $i<=12; $i++) {
-            if(!isset($months[$i])) $months[$i] = 0;
         }
 
-        // If no sales at all
         if ($worstMonth['revenue'] == PHP_FLOAT_MAX) $worstMonth['revenue'] = 0;
 
+        // Restore backward compatibility for 'data' (Revenue only)
+        $simpleData = [];
+        foreach($monthlyData as $m => $d) {
+            $simpleData[$m] = $d['revenue'];
+        }
+
         return [
-            'data' => $months,
+            'data' => $simpleData, // For backward compatibility
+            'breakdown' => $monthlyData, // Full data for chart
             'best_month' => $bestMonth,
             'worst_month' => $worstMonth
         ];

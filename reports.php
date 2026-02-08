@@ -1544,6 +1544,17 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                     </div>
                 </div>
 
+                <!-- Annual Comparison Chart -->
+                <div class="glass-card p-6">
+                    <h4 class="text-white font-bold mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
+                        <span class="material-icons-round text-blue-500">bar_chart</span>
+                        <?php echo __('financial_performance_analysis'); ?>
+                    </h4>
+                    <div class="relative h-80 w-full">
+                        <canvas id="annualComparisonChart"></canvas>
+                    </div>
+                </div>
+
                 <!-- Detailed Advice -->
                 <div class="glass-card p-6">
                     <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
@@ -2932,6 +2943,122 @@ $top_debtors_result = $conn->query($sql_top_debtors);
             tr.appendChild(tdRev);
             
             tbody.appendChild(tr);
+        });
+
+        // 6. Annual Comparison Chart
+        const ctxAnnual = document.getElementById('annualComparisonChart').getContext('2d');
+        
+        if (window.annualChartInstance) {
+            window.annualChartInstance.destroy();
+        }
+
+        const monthsLabels = [];
+        const revData = [];
+        const expData = [];
+        const profitData = [];
+        
+        for (let i = 1; i <= 12; i++) {
+            monthsLabels.push(getMonthName(i));
+            // Use breakdown if available, fallback to 0
+            const mData = (data.monthly.breakdown && data.monthly.breakdown[i]) ? data.monthly.breakdown[i] : {revenue:0, expenses:0, profit:0};
+            revData.push(mData.revenue || 0);
+            expData.push(mData.expenses || 0);
+            profitData.push(mData.profit || 0);
+        }
+
+        window.annualChartInstance = new Chart(ctxAnnual, {
+            type: 'line',
+            data: {
+                labels: monthsLabels,
+                datasets: [
+                    {
+                        label: '<?php echo __('total_revenue'); ?>',
+                        data: revData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)', // Blue transparent
+                        borderColor: '#3B82F6',
+                        borderWidth: 6, // Thicker line
+                        pointRadius: 0, // No points for base line to reduce clutter
+                        pointHoverRadius: 6,
+                        tension: 0.4,
+                        fill: true,
+                        order: 2
+                    },
+                    {
+                        label: '<?php echo __('expenses'); ?>',
+                        data: expData,
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)', // Red transparent
+                        borderColor: '#EF4444',
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.4,
+                        fill: true,
+                        order: 3
+                    },
+                    {
+                        label: '<?php echo __('net_profit'); ?>',
+                        data: profitData,
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)', // Green transparent
+                        borderColor: '#10B981', 
+                        borderWidth: 3, // Thinner than revenue
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.4,
+                        fill: true,
+                        order: 1 // Drawn on top
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        labels: { 
+                            color: '#9CA3AF', 
+                            font: { family: 'Tajawal', size: 12 },
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(255,255,255,0.2)',
+                        borderWidth: 1,
+                        titleFont: { family: 'Tajawal', size: 14, weight: 'bold' },
+                        bodyFont: { family: 'Tajawal', size: 12 },
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += formatNumber(context.parsed.y) + ' <?php echo $currency; ?>';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                        ticks: { color: '#9CA3AF', font: { family: 'Tajawal', size: 11 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9CA3AF', font: { family: 'Tajawal', size: 11 } }
+                    }
+                }
+            }
         });
     }
 </script>
