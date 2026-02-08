@@ -831,6 +831,7 @@ return [
     'home_city_tip' => 'Le tarif "En ville" sera appliqué pour toute commande expédiée vers cette ville, et le tarif "Hors ville" pour les autres villes.',
     'inside_city_cost_label' => 'Coût de livraison en ville',
     'outside_city_cost_label' => 'Coût de livraison hors ville',
+    'enable_delivery_label' => 'Activer l\'option de livraison dans le point de vente',
     
     // Settings - Rental Tab
     'rental_management_title' => 'Gestion du loyer',
@@ -871,6 +872,7 @@ return [
     'enable_tax_label' => 'Activer la taxe',
     'tax_name_label' => 'Nom de la taxe',
     'tax_rate_label' => 'Taux de taxe (%)',
+    'enable_discount_label' => 'Activer l\'option de remise dans le point de vente',
     
     // Settings - Print Tab
     'print_settings_title' => 'Paramètres d\'impression',
