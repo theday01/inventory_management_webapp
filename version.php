@@ -33,6 +33,7 @@ if ($conn) {
         $mysqlVersion = $verRes->fetch_assoc()['ver'];
     }
 }
+
 ?>
 
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark">
@@ -56,10 +57,7 @@ if ($conn) {
             <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-3xl p-8 glass-panel text-center relative overflow-hidden group">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-purple-600"></div>
                 
-                <div class="mb-4 relative inline-block">
-                    <div class="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
-                    <img src="src/img/logo.png" onerror="this.src='https://ui-avatars.com/api/?name=Smart+Shop&background=0D8ABC&color=fff&size=128'" class="w-20 h-20 rounded-2xl relative z-10 shadow-2xl mx-auto mb-4" alt="Logo">
-                </div>
+                <div class="h-6"></div>
 
                 <h1 class="text-3xl font-bold text-white mb-2">Smart Shop <span class="text-primary text-sm px-2 py-0.5 bg-primary/10 rounded-lg border border-primary/20"><?php echo __('smart_shop_title_sub'); ?></span></h1>
                 
@@ -69,10 +67,10 @@ if ($conn) {
                         <?php echo __('stable'); ?>
                     </span>
                     <span class="px-3 py-1 rounded-full bg-white/5 text-gray-400 text-xs font-bold border border-white/10 font-mono">
-                        Build: <?php echo $buildNumber; ?>
+                        <?php echo __('build_label'); ?>: <?php echo $buildNumber; ?>
                     </span>
                     <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">
-                        <?php echo __('operational_env'); ?>: Production
+                        <?php echo __('env_label'); ?>: <?php echo __('env_production'); ?>
                     </span>
                 </div>
 
@@ -177,14 +175,14 @@ if ($conn) {
 
                     <!-- Connection Info -->
                     <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 glass-panel">
-                        <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider"><?php echo __('operational_env'); ?></h3>
+                        <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider"><?php echo __('env_label'); ?></h3>
                         <div class="grid grid-cols-2 gap-4">
                             <div class="bg-black/20 p-3 rounded-xl text-center">
-                                <p class="text-[10px] text-gray-500 mb-1">Server IP</p>
+                                <p class="text-[10px] text-gray-500 mb-1"><?php echo __('server_ip_label'); ?></p>
                                 <p class="text-white font-mono text-xs"><?php echo $serverIP; ?></p>
                             </div>
                             <div class="bg-black/20 p-3 rounded-xl text-center">
-                                <p class="text-[10px] text-gray-500 mb-1">Client IP</p>
+                                <p class="text-[10px] text-gray-500 mb-1"><?php echo __('client_ip_label'); ?></p>
                                 <p class="text-white font-mono text-xs"><?php echo $clientIP; ?></p>
                             </div>
                         </div>
@@ -238,18 +236,98 @@ if ($conn) {
                     <!-- Version 2.4.0 -->
                     <div class="relative opacity-60 hover:opacity-100 transition-opacity">
                         <div class="absolute -right-[39px] top-1 w-5 h-5 rounded-full bg-gray-600 border-4 border-dark-surface"></div>
-                        <h4 class="text-gray-300 font-bold text-lg mb-3">v2.4.0</h4>
+                        <div class="flex items-center gap-3 mb-3">
+                            <h4 class="text-gray-300 font-bold text-lg"><?php echo __('v2_4_0_title'); ?> (v2.4.0)</h4>
+                            <span class="text-xs text-gray-500">2024-06-15</span>
+                        </div>
                         <ul class="space-y-2 pl-2">
                             <li class="flex items-start gap-2 text-sm text-gray-400">
                                 <span class="material-icons-round text-gray-500 text-sm mt-0.5">check</span>
-                                <span>Optimization of database queries for faster loading.</span>
+                                <span><?php echo __('v2_4_0_desc1'); ?></span>
                             </li>
                             <li class="flex items-start gap-2 text-sm text-gray-400">
                                 <span class="material-icons-round text-gray-500 text-sm mt-0.5">check</span>
-                                <span>Fixed mobile responsiveness issues in Sidebar.</span>
+                                <span><?php echo __('v2_4_0_desc2'); ?></span>
                             </li>
                         </ul>
                     </div>
+
+                    <!-- Version 2.3.0 -->
+                    <div class="relative opacity-60 hover:opacity-100 transition-opacity">
+                        <div class="absolute -right-[39px] top-1 w-5 h-5 rounded-full bg-gray-600 border-4 border-dark-surface"></div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <h4 class="text-gray-300 font-bold text-lg"><?php echo __('v2_3_0_title'); ?> (v2.3.0)</h4>
+                            <span class="text-xs text-gray-500">2024-01-10</span>
+                        </div>
+                        <ul class="space-y-2 pl-2">
+                            <li class="flex items-start gap-2 text-sm text-gray-400">
+                                <span class="material-icons-round text-gray-500 text-sm mt-0.5">check</span>
+                                <span><?php echo __('v2_3_0_desc1'); ?></span>
+                            </li>
+                            <li class="flex items-start gap-2 text-sm text-gray-400">
+                                <span class="material-icons-round text-gray-500 text-sm mt-0.5">check</span>
+                                <span><?php echo __('v2_3_0_desc2'); ?></span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Version 2.0.0 -->
+                    <div class="relative opacity-50 hover:opacity-100 transition-opacity">
+                        <div class="absolute -right-[39px] top-1 w-5 h-5 rounded-full bg-gray-700 border-4 border-dark-surface"></div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <h4 class="text-gray-400 font-bold text-lg"><?php echo __('v2_0_0_title'); ?> (v2.0.0)</h4>
+                            <span class="text-xs text-gray-600">2023-05-20</span>
+                        </div>
+                        <ul class="space-y-2 pl-2">
+                            <li class="flex items-start gap-2 text-sm text-gray-500">
+                                <span class="material-icons-round text-gray-600 text-sm mt-0.5">star</span>
+                                <span><?php echo __('v2_0_0_desc1'); ?></span>
+                            </li>
+                            <li class="flex items-start gap-2 text-sm text-gray-500">
+                                <span class="material-icons-round text-gray-600 text-sm mt-0.5">translate</span>
+                                <span><?php echo __('v2_0_0_desc2'); ?></span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Version 1.5.0 -->
+                    <div class="relative opacity-50 hover:opacity-100 transition-opacity">
+                        <div class="absolute -right-[39px] top-1 w-5 h-5 rounded-full bg-gray-700 border-4 border-dark-surface"></div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <h4 class="text-gray-400 font-bold text-lg"><?php echo __('v1_5_0_title'); ?> (v1.5.0)</h4>
+                            <span class="text-xs text-gray-600">2022-11-05</span>
+                        </div>
+                        <ul class="space-y-2 pl-2">
+                            <li class="flex items-start gap-2 text-sm text-gray-500">
+                                <span class="material-icons-round text-gray-600 text-sm mt-0.5">trending_up</span>
+                                <span><?php echo __('v1_5_0_desc1'); ?></span>
+                            </li>
+                            <li class="flex items-start gap-2 text-sm text-gray-500">
+                                <span class="material-icons-round text-gray-600 text-sm mt-0.5">inventory_2</span>
+                                <span><?php echo __('v1_5_0_desc2'); ?></span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Version 1.0.0 -->
+                    <div class="relative opacity-40 hover:opacity-100 transition-opacity">
+                        <div class="absolute -right-[39px] top-1 w-5 h-5 rounded-full bg-gray-800 border-4 border-dark-surface"></div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <h4 class="text-gray-500 font-bold text-lg"><?php echo __('v1_0_0_title'); ?> (v1.0.0)</h4>
+                            <span class="text-xs text-gray-600">2022-01-01</span>
+                        </div>
+                        <ul class="space-y-2 pl-2">
+                            <li class="flex items-start gap-2 text-sm text-gray-500">
+                                <span class="material-icons-round text-gray-600 text-sm mt-0.5">rocket_launch</span>
+                                <span><?php echo __('v1_0_0_desc1'); ?></span>
+                            </li>
+                            <li class="flex items-start gap-2 text-sm text-gray-500">
+                                <span class="material-icons-round text-gray-600 text-sm mt-0.5">check</span>
+                                <span><?php echo __('v1_0_0_desc2'); ?></span>
+                            </li>
+                        </ul>
+                    </div>
+
                 </div>
             </div>
 
@@ -259,15 +337,26 @@ if ($conn) {
                     <?php echo __('license_agreement_link'); ?>
                 </a>
                 <a href="contact.php" class="text-sm text-gray-400 hover:text-white transition-colors border-b border-transparent hover:border-primary pb-0.5 flex items-center gap-1">
-                    <span class="material-icons-round text-xs">support</span>
+                    <span class="material-icons-round text-xs">support_agent</span>
                     <?php echo __('contact_link'); ?>
                 </a>
             </div>
             
             <div class="text-center text-xs text-gray-600 pb-8" dir="ltr">
-                &copy; <?php echo date('Y'); ?> Eagle Shadow Technology. All Rights Reserved.
+                <?php echo sprintf(__('copyright_footer'), date('Y')); ?>
             </div>
 
+            <!-- Developer Logo -->
+                <div class="mt-8 text-center">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 inline-block">
+                        <a href="https://eagleshadow.technology" target="_blank" class="block">
+                            <img src="src/support/logo.png" alt="<?= __('developer_logo_alt') ?>" class="h-25 w-auto mx-auto mb-4 opacity-80 hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                        </a>
+                        <p class="text-sm text-gray-400"><?= __('developed_by') ?></p>
+                        <p class="text-white font-semibold">EagleShadow Technology</p>
+                    </div>
+                </div>
+                
         </div>
     </div>
 </main>

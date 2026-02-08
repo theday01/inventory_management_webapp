@@ -77,18 +77,10 @@ require_once 'src/sidebar.php';
                             <p><?php echo __('license_privacy_text'); ?></p>
                         </section>
 
-                        <!-- 5. Warranty Disclaimer -->
-                        <section>
-                            <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                                <span class="text-primary">5.</span> <?php echo __('license_disclaimer_title'); ?>
-                            </h3>
-                            <p class="uppercase text-xs tracking-wider bg-red-500/10 p-2 rounded border border-red-500/20 text-red-200"><?php echo __('license_disclaimer_text'); ?></p>
-                        </section>
-
                         <!-- 6. Limitation of Liability -->
                         <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                                <span class="text-primary">6.</span> <?php echo __('license_liability_title'); ?>
+                                <span class="text-primary">5.</span> <?php echo __('license_liability_title'); ?>
                             </h3>
                             <p><?php echo __('license_liability_text'); ?></p>
                         </section>
@@ -96,7 +88,7 @@ require_once 'src/sidebar.php';
                         <!-- 7. Termination -->
                          <section>
                             <h3 class="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                                <span class="text-primary">7.</span> <?php echo __('license_termination_title'); ?>
+                                <span class="text-primary">6.</span> <?php echo __('license_termination_title'); ?>
                             </h3>
                             <p><?php echo __('license_termination_text'); ?></p>
                         </section>
@@ -118,6 +110,17 @@ require_once 'src/sidebar.php';
                             <span class="material-icons-round text-sm">print</span>
                             <?php echo __('print_document'); ?>
                         </button>
+                    </div>
+                </div>
+
+                <!-- Developer Logo -->
+                <div class="mt-8 text-center">
+                    <div class="bg-dark-surface/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 inline-block">
+                        <a href="https://eagleshadow.technology" target="_blank" class="block">
+                            <img src="src/support/logo.png" alt="<?= __('developer_logo_alt') ?>" class="h-25 w-auto mx-auto mb-4 opacity-80 hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                        </a>
+                        <p class="text-sm text-gray-400"><?= __('developed_by') ?></p>
+                        <p class="text-white font-semibold">EagleShadow Technology</p>
                     </div>
                 </div>
 

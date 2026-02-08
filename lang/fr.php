@@ -1104,6 +1104,37 @@ return [
     'changelog_4' => 'Ajout du mode sombre (Dark Mode) pour tout le système.',
     'changelog_5' => 'Support multi-devises et factures fiscales.',
 
+    'system_data_title' => 'Données Système',
+    'technical_data_title' => 'Données Techniques',
+    'build_label' => 'Build',
+    'env_label' => 'Env. Opérationnel',
+    'env_production' => 'Production',
+    'server_ip_label' => 'IP Serveur',
+    'client_ip_label' => 'IP Client',
+    'copyright_footer' => 'Tous droits réservés © %s Eagle Shadow Technology',
+    'version_history' => 'Historique des versions',
+
+    // Historical Versions
+    'v2_4_0_title' => 'Mise à jour Performance & Interface',
+    'v2_4_0_desc1' => 'Optimisation des requêtes de base de données.',
+    'v2_4_0_desc2' => 'Correction des problèmes de responsivité mobile.',
+
+    'v2_3_0_title' => 'Nouveau Tableau de Bord',
+    'v2_3_0_desc1' => 'Lancement du nouveau tableau de bord avec graphiques interactifs.',
+    'v2_3_0_desc2' => 'Ajout de la fonctionnalité d\'export Excel.',
+
+    'v2_0_0_title' => 'Version Majeure 2.0',
+    'v2_0_0_desc1' => 'Refonte complète de l\'interface utilisateur.',
+    'v2_0_0_desc2' => 'Support multilingue (Arabe & Français).',
+
+    'v1_5_0_title' => 'Mise à jour Ventes & Stock',
+    'v1_5_0_desc1' => 'Ajout du système de gestion des dépenses.',
+    'v1_5_0_desc2' => 'Amélioration des alertes de stock faible.',
+
+    'v1_0_0_title' => 'Lancement Officiel',
+    'v1_0_0_desc1' => 'Lancement officiel du système.',
+    'v1_0_0_desc2' => 'Fonctionnalités de base POS et gestion produits.',
+
     // License Page
     'license_page_title' => 'Contrat de licence',
     'license_header' => 'Contrat de licence',
@@ -1124,10 +1155,7 @@ return [
     
     'license_privacy_title' => 'Données et confidentialité',
     'license_privacy_text' => 'Vous êtes le seul propriétaire des données que vous saisissez dans le système. Vous assumez l\'entière responsabilité de l\'exactitude des données, de leur intégrité et de la réalisation de sauvegardes périodiques. Le Concédant n\'assume aucune responsabilité pour la perte de données résultant d\'une mauvaise utilisation, de pannes techniques ou de virus.',
-    
-    'license_disclaimer_title' => 'Exclusion de garantie',
-    'license_disclaimer_text' => 'Le logiciel est fourni "TEL QUEL" (As Is) sans aucune garantie d\'aucune sorte, expresse ou implicite. Le Concédant ne garantit pas que le logiciel fonctionnera sans interruption, qu\'il est exempt d\'erreurs ou que tous les défauts seront corrigés.',
-    
+        
     'license_liability_title' => 'Limitation de responsabilité',
     'license_liability_text' => 'Dans toute la mesure permise par la loi applicable, le Concédant ne pourra en aucun cas être tenu responsable des dommages spéciaux, accessoires, indirects ou consécutifs (y compris, mais sans s\'y limiter, les dommages résultant d\'une perte de bénéfices, d\'une interruption d\'activité ou d\'une perte d\'informations commerciales) découlant de l\'utilisation ou de l\'impossibilité d\'utiliser le logiciel.',
     
