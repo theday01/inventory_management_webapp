@@ -711,7 +711,7 @@ $top_debtors_result = $conn->query($sql_top_debtors);
     input[type="date"]::-webkit-calendar-picker-indicator,
     input[type="time"]::-webkit-calendar-picker-indicator,
     input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-        filter: invert(1) brightness(1.1);
+        filter: brightness(0) invert(1);
         cursor: pointer;
     }
 
@@ -777,8 +777,8 @@ $top_debtors_result = $conn->query($sql_top_debtors);
             <div id="real-date-time" class="text-gray-400 font-mono text-lg font-bold self-end md:self-auto" dir="ltr"></div>
         </div>
 
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 tab-specific" id="header-controls-dashboard">
-            <div class="flex items-center justify-between w-full md:w-auto">
+        <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 tab-specific" id="header-controls-dashboard">
+            <div class="flex items-center justify-between w-full xl:w-auto shrink-0">
                 <div>
                     <h2 class="text-2xl font-bold text-white flex items-center gap-2">
                         <span class="material-icons-round text-pink-500">analytics</span>
@@ -787,8 +787,8 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                     <p class="text-sm text-gray-400 mt-1">
                         <?php echo __('viewing_data_from'); ?> <span class="text-white font-bold"><?php echo $start_date; ?></span> <?php echo __('to'); ?> <span class="text-white font-bold"><?php echo $end_date; ?></span>
                     </p>
-                    <p class="text-xs text-yellow-500/80 mt-1 flex items-center gap-1">
-                        <span class="material-icons-round text-[14px]">info</span>
+                    <p class="text-xs text-yellow-500/80 mt-1 flex items-center gap-1 max-w-xl">
+                        <span class="material-icons-round text-[14px] shrink-0">info</span>
                         <?php echo __('cash_basis_notice'); ?>
                     </p>
                 </div>
@@ -797,37 +797,38 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                 </button>
             </div>
 
-            <div id="dashboard-filters-content" class="hidden md:flex flex-col xl:flex-row items-center gap-4 w-full md:w-auto transition-all duration-300">
+            <div id="dashboard-filters-content" class="hidden md:flex flex-col 2xl:flex-row flex-wrap items-center gap-4 w-full md:w-auto transition-all duration-300">
             
             <div class="flex flex-wrap items-center gap-4 justify-center md:justify-start flex-1">
                 <?php if ($is_day_active): ?>
-                    <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm whitespace-nowrap text-center sm:text-start">
+                    <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm whitespace-nowrap text-center sm:text-start shrink-0">
                         <?php echo __('active_business_day'); ?>
                     </div>
                 <?php endif; ?>
                 
-                <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg justify-center sm:justify-start">
-                    <div class="flex flex-wrap justify-center gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
-                        <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>"><?php echo __('today'); ?></button>
-                        <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>"><?php echo __('yesterday'); ?></button>
-                        <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>"><?php echo __('7_days'); ?></button>
-                        <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '30days' ? 'active' : ''; ?>"><?php echo __('30_days'); ?></button>
-                        <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>"><?php echo __('month'); ?></button>
+                <form method="GET" class="flex flex-col xl:flex-row items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg w-full md:w-auto">
+                    <div class="flex flex-wrap justify-center gap-1 bg-dark-surface rounded-lg p-1 border border-white/5 shrink-0 w-full xl:w-auto">
+                        <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all flex-1 xl:flex-none <?php echo $range == 'today' ? 'active' : ''; ?>"><?php echo __('today'); ?></button>
+                        <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all flex-1 xl:flex-none <?php echo $range == 'yesterday' ? 'active' : ''; ?>"><?php echo __('yesterday'); ?></button>
+                        <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all flex-1 xl:flex-none <?php echo $range == '7days' ? 'active' : ''; ?>"><?php echo __('7_days'); ?></button>
+                        <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all flex-1 xl:flex-none <?php echo $range == '30days' ? 'active' : ''; ?>"><?php echo __('30_days'); ?></button>
+                        <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all flex-1 xl:flex-none <?php echo $range == 'this_month' ? 'active' : ''; ?>"><?php echo __('month'); ?></button>
                     </div>
                     
-                    <div class="h-8 w-px bg-white/10 hidden sm:block"></div>
+                    <div class="hidden xl:block h-8 w-px bg-white/10 mx-1"></div>
+                    <div class="block xl:hidden w-full h-px bg-white/10 my-1"></div>
 
-                    <div class="flex flex-wrap justify-center items-center gap-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-400 text-xs"><?php echo __('from'); ?></span>
-                            <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                    <div class="flex flex-wrap justify-center items-center gap-2 w-full xl:w-auto">
+                        <div class="flex items-center gap-2 bg-dark-surface/50 rounded-lg p-1 px-2 border border-white/5">
+                            <span class="text-gray-400 text-[10px] uppercase font-bold"><?php echo __('from'); ?></span>
+                            <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-transparent text-white text-xs focus:outline-none w-24 sm:w-auto">
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-400 text-xs"><?php echo __('to'); ?></span>
-                            <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                        <div class="flex items-center gap-2 bg-dark-surface/50 rounded-lg p-1 px-2 border border-white/5">
+                            <span class="text-gray-400 text-[10px] uppercase font-bold"><?php echo __('to'); ?></span>
+                            <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-transparent text-white text-xs focus:outline-none w-24 sm:w-auto">
                         </div>
-                        <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
-                            <span class="material-icons-round text-sm block">filter_alt</span>
+                        <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-2 rounded-lg transition-colors shadow-md flex items-center justify-center">
+                            <span class="material-icons-round text-sm">filter_alt</span>
                         </button>
                     </div>
                 </form>
