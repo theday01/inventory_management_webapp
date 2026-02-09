@@ -1463,4 +1463,11 @@ return [
     'invalid_payment_data' => 'Données de paiement invalides',
     'debt_amount' => 'Montant dette',
     'cash_basis_notice' => 'Remarque : Les revenus sont calculés sur la base des montants effectivement reçus (Espèces + Dettes recouvrées) et non sur le total des factures.',
+    'analyzing_performance' => 'Analyse des performances de votre magasin...',
+    'please_wait_analysis' => 'Nous traitons actuellement toutes les ventes de l\'année pour vous fournir les meilleurs conseils. Cela peut prendre quelques secondes.',
+    'analyzing_step_1' => 'Calcul des revenus...',
+    'analyzing_step_2' => 'Vérification des marges...',
+    'analyzing_step_3' => 'Analyse du comportement client...',
+    'analyzing_step_4' => 'Préparation des recommandations...',
+    'analyzing_done' => 'Analyse terminée !',
 ];

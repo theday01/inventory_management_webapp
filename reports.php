@@ -745,6 +745,14 @@ $top_debtors_result = $conn->query($sql_top_debtors);
         border-color: #3b82f6 !important;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
+    
+    @keyframes loadingBar {
+        0% { transform: translateX(-50%); }
+        100% { transform: translateX(0%); }
+    }
+    .animate-loadingBar {
+        animation: loadingBar 1.5s infinite linear;
+    }
 </style>
 
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark transition-all duration-300">
@@ -789,41 +797,48 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                 </button>
             </div>
 
-            <div id="dashboard-filters-content" class="hidden md:flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto transition-all duration-300">
-            <?php if ($is_day_active): ?>
-                <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm text-center sm:text-start">
-                    <?php echo __('active_business_day'); ?>
-                </div>
-            <?php endif; ?>
-            <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg justify-center sm:justify-start">
-                <div class="flex flex-wrap justify-center gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
-                    <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>"><?php echo __('today'); ?></button>
-                    <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>"><?php echo __('yesterday'); ?></button>
-                    <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>"><?php echo __('7_days'); ?></button>
-                    <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '30days' ? 'active' : ''; ?>"><?php echo __('30_days'); ?></button>
-                    <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>"><?php echo __('month'); ?></button>
-                </div>
+            <div id="dashboard-filters-content" class="hidden md:flex flex-col xl:flex-row items-center gap-4 w-full md:w-auto transition-all duration-300">
+            
+            <div class="flex flex-wrap items-center gap-4 justify-center md:justify-start flex-1">
+                <?php if ($is_day_active): ?>
+                    <div class="bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm whitespace-nowrap text-center sm:text-start">
+                        <?php echo __('active_business_day'); ?>
+                    </div>
+                <?php endif; ?>
                 
-                <div class="h-8 w-px bg-white/10 hidden sm:block"></div>
+                <form method="GET" class="flex flex-wrap items-center gap-3 bg-dark/50 p-2 rounded-xl border border-white/5 shadow-lg justify-center sm:justify-start">
+                    <div class="flex flex-wrap justify-center gap-1 bg-dark-surface rounded-lg p-1 border border-white/5">
+                        <button type="submit" name="range" value="today" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'today' ? 'active' : ''; ?>"><?php echo __('today'); ?></button>
+                        <button type="submit" name="range" value="yesterday" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'yesterday' ? 'active' : ''; ?>"><?php echo __('yesterday'); ?></button>
+                        <button type="submit" name="range" value="7days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '7days' ? 'active' : ''; ?>"><?php echo __('7_days'); ?></button>
+                        <button type="submit" name="range" value="30days" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == '30days' ? 'active' : ''; ?>"><?php echo __('30_days'); ?></button>
+                        <button type="submit" name="range" value="this_month" class="date-btn px-3 py-1.5 rounded-md text-xs font-bold text-gray-400 hover:text-white transition-all <?php echo $range == 'this_month' ? 'active' : ''; ?>"><?php echo __('month'); ?></button>
+                    </div>
+                    
+                    <div class="h-8 w-px bg-white/10 hidden sm:block"></div>
 
-                <div class="flex flex-wrap justify-center items-center gap-2">
-                    <div class="flex items-center gap-2">
-                        <span class="text-gray-400 text-xs"><?php echo __('from'); ?></span>
-                        <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                    <div class="flex flex-wrap justify-center items-center gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 text-xs"><?php echo __('from'); ?></span>
+                            <input type="date" name="start_date" value="<?php echo $start_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 text-xs"><?php echo __('to'); ?></span>
+                            <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
+                        </div>
+                        <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
+                            <span class="material-icons-round text-sm block">filter_alt</span>
+                        </button>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-gray-400 text-xs"><?php echo __('to'); ?></span>
-                        <input type="date" name="end_date" value="<?php echo $end_date; ?>" class="bg-dark border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary">
-                    </div>
-                    <button type="submit" name="range" value="custom" class="bg-primary hover:bg-primary-hover text-white p-1.5 rounded-lg transition-colors shadow-md">
-                        <span class="material-icons-round text-sm block">filter_alt</span>
-                    </button>
-                </div>
-            </form>
-            <button id="view-summary-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                <?php echo __('view_period_summary'); ?>
-            </button>
-            <div id="business-day-controls"></div>
+                </form>
+            </div>
+
+            <div class="flex items-center gap-3 shrink-0 flex-wrap justify-center">
+                <button id="view-summary-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded whitespace-nowrap shadow-lg shadow-blue-500/20">
+                    <?php echo __('view_period_summary'); ?>
+                </button>
+                <div id="business-day-controls"></div>
+            </div>
             </div>
         </div>
     </header>
@@ -1480,11 +1495,44 @@ $top_debtors_result = $conn->query($sql_top_debtors);
             </div>
 
             <!-- Initial State / Loading -->
-            <div id="annual-loading" class="hidden text-center py-20">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4"></div>
-                <p class="text-gray-400"><?php echo __('processing_data'); ?></p>
+            <div id="annual-loading" class="hidden flex flex-col items-center justify-center py-24 text-center animate-fadeIn">
+                <!-- Visual Spinner/Icon -->
+                <div class="relative w-32 h-32 mb-8">
+                    <!-- Outer Ring -->
+                    <div class="absolute inset-0 border-4 border-gray-700/30 rounded-full"></div>
+                    <!-- Inner Spinning Ring -->
+                    <div class="absolute inset-0 border-4 border-primary rounded-full animate-spin border-t-transparent" style="animation-duration: 1.5s;"></div>
+                    <!-- Pulse Effect -->
+                    <div class="absolute inset-4 bg-primary/10 rounded-full animate-pulse"></div>
+                    <!-- Icon -->
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="material-icons-round text-5xl text-primary animate-bounce">insights</span>
+                    </div>
+                </div>
+                
+                <!-- Title -->
+                <h3 class="text-2xl font-bold text-white mb-3 tracking-wide"><?php echo __('analyzing_performance'); ?></h3>
+                
+                <!-- Description -->
+                <p class="text-gray-400 max-w-lg mx-auto mb-8 text-sm leading-relaxed"><?php echo __('please_wait_analysis'); ?></p>
+                
+                <!-- Progress Steps Container -->
+                <div class="w-full max-w-md bg-dark-surface border border-white/5 rounded-xl p-4 relative overflow-hidden shadow-2xl">
+                    <!-- Progress Bar -->
+                    <div class="absolute top-0 left-0 h-1 bg-gradient-to-r from-primary via-accent to-primary w-[200%] animate-loadingBar"></div>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                            <span class="material-icons-round text-primary text-sm animate-spin">sync</span>
+                        </div>
+                        <div class="flex-1 text-start overflow-hidden">
+                            <p id="analysis-step-text" class="text-white font-mono text-sm transition-all duration-300 truncate"><?php echo __('analyzing_step_1'); ?></p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
+        
             <!-- Results Container -->
             <div id="annual-results" class="hidden space-y-6">
                 
@@ -2877,17 +2925,50 @@ $top_debtors_result = $conn->query($sql_top_debtors);
         }
     }
 
+    let analysisInterval;
+
     async function loadAnnualAnalysis() {
         const year = document.getElementById('annual-year-select').value;
         const resultsDiv = document.getElementById('annual-results');
         const loadingDiv = document.getElementById('annual-loading');
-        
+        const stepText = document.getElementById('analysis-step-text');
+
         resultsDiv.classList.add('hidden');
         loadingDiv.classList.remove('hidden');
 
+        const steps = [
+            '<?php echo __('analyzing_step_1'); ?>',
+            '<?php echo __('analyzing_step_2'); ?>',
+            '<?php echo __('analyzing_step_3'); ?>',
+            '<?php echo __('analyzing_step_4'); ?>'
+        ];
+        let stepIndex = 0;
+        stepText.textContent = steps[0];
+        
+        // Start rotation
+        if (analysisInterval) clearInterval(analysisInterval);
+        analysisInterval = setInterval(() => {
+            stepIndex = (stepIndex + 1) % steps.length;
+            stepText.style.opacity = '0';
+            setTimeout(() => {
+                stepText.textContent = steps[stepIndex];
+                stepText.style.opacity = '1';
+            }, 300);
+        }, 2000);
+
         try {
-            const response = await fetch(`api.php?action=get_annual_tips&year=${year}`);
+            // Minimum loading time for UX (2 seconds)
+            const minTime = new Promise(resolve => setTimeout(resolve, 2000));
+            const fetchPromise = fetch(`api.php?action=get_annual_tips&year=${year}`);
+            
+            const [response] = await Promise.all([fetchPromise, minTime]);
             const result = await response.json();
+
+            clearInterval(analysisInterval);
+            stepText.textContent = '<?php echo __('analyzing_done'); ?>';
+            
+            // Brief pause to show "Done"
+            await new Promise(r => setTimeout(r, 600));
 
             loadingDiv.classList.add('hidden');
 
@@ -2896,15 +2977,16 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                 resultsDiv.classList.remove('hidden');
             } else {
                 Swal.fire({
-                    title: 'خطأ',
+                    title: '<?php echo __('error'); ?>',
                     text: result.message,
                     icon: 'error'
                 });
             }
         } catch (error) {
+            clearInterval(analysisInterval);
             loadingDiv.classList.add('hidden');
             console.error('Analysis error:', error);
-            Swal.fire('خطأ', 'حدث خطأ في الاتصال', 'error');
+            Swal.fire('<?php echo __('error'); ?>', '<?php echo __('server_connection_error'); ?>', 'error');
         }
     }
 
