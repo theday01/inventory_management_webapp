@@ -905,14 +905,24 @@ function end_day($conn) {
         $day_id = intval($day['id']);
         $start_time = $day['start_time'];
 
-        // 1. Calculate Total Sales (Revenue)
-        $stmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales, COALESCE(SUM(delivery_cost), 0) as total_delivery FROM invoices WHERE created_at >= ?");
+        // 1. Calculate Total Sales (Revenue - Cash Basis)
+        // Cash from Invoices (Initial Payment)
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(LEAST(amount_received, total)), 0) as cash_sales, COALESCE(SUM(delivery_cost), 0) as total_delivery FROM invoices WHERE created_at >= ?");
         $stmt->bind_param("s", $start_time);
         $stmt->execute();
         $res = $stmt->get_result()->fetch_assoc();
-        $total_sales = floatval($res['total_sales']);
+        $cash_sales = floatval($res['cash_sales']);
         $total_delivery = floatval($res['total_delivery']);
         $stmt->close();
+
+        // Cash from Debt Collection (Payments)
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as debt_collected FROM payments WHERE payment_date >= ?");
+        $stmt->bind_param("s", $start_time);
+        $stmt->execute();
+        $debt_collected = floatval($stmt->get_result()->fetch_assoc()['debt_collected']);
+        $stmt->close();
+
+        $total_sales = $cash_sales + $debt_collected;
         
         // 2. Calculate Total Refunds (Cash Out)
         $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_refunds FROM refunds WHERE created_at >= ?");

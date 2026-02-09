@@ -178,10 +178,11 @@ $sql_end = $end_date . " 23:59:59";
 // 1. Key Metrics
 
 // 1.1 Invoice Level Metrics
+// CASH BASIS: Revenue = Initial Cash (LEAST(amount_received, total)) + Debt Collection (payments)
 $sql_invoices_metrics = "
     SELECT 
         COUNT(id) as total_orders,
-        COALESCE(SUM(total), 0) as total_revenue,
+        COALESCE(SUM(LEAST(amount_received, total)), 0) as initial_cash_revenue,
         COALESCE(SUM(delivery_cost), 0) as total_delivery,
         MAX(total) as max_order_value
     FROM invoices 
@@ -218,7 +219,18 @@ $total_other_costs = $total_general_expenses + $total_rent;
 $total_orders = $metrics_result['total_orders'];
 $total_items_sold = $metrics_result['total_items_sold'] ?? 0;
 $max_order_value = $metrics_result['max_order_value'] ?? 0;
-$total_gross_revenue = $metrics_result['total_revenue'];
+
+// Debt Collected (from Payments)
+$sql_debt_collected = "
+    SELECT COALESCE(SUM(amount), 0) as debt_collected
+    FROM payments
+    WHERE payment_date BETWEEN '$sql_start' AND '$sql_end'
+";
+$debt_collected_res = $conn->query($sql_debt_collected)->fetch_assoc();
+$total_debt_collected = $debt_collected_res['debt_collected'];
+
+// Total Revenue = Initial Cash + Debt Collected
+$total_gross_revenue = $metrics_result['initial_cash_revenue'] + $total_debt_collected;
 $total_net_revenue = $total_gross_revenue - $total_refunds; // Net Revenue = Sales - Refunds
 $total_revenue = $total_net_revenue; // Alias for backward compatibility in this file
 
