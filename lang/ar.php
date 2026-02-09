@@ -290,7 +290,7 @@ return [
     // POS Full Translation
     'pos_title' => 'نقطة البيع',
     'start_business_day_notification' => 'يجب بدء يوم عمل جديد لتتمكن من تسجيل المبيعات.',
-    'start_business_day_btn' => 'بدء يوم عمل الآن',
+    'start_business_day_btn' => 'بدء يوم عمل',
     'go_to_reports' => 'أو اذهب إلى صفحة التقارير',
     'holiday_notification' => 'اليوم عطلة رسمية: <span id="holiday-name" class="font-bold"></span>. يمكنك الاستمرار في تسجيل المبيعات بشكل عادي.',
     'delivery_type' => 'نوع التوصيل',
@@ -1462,4 +1462,5 @@ return [
     'new_balance' => 'الرصيد الجديد',
     'invalid_payment_data' => 'بيانات الدفع غير صالحة',
     'debt_amount' => 'قيمة الدين',
+    'cash_basis_notice' => 'ملاحظة: يتم احتساب الإيرادات بناءً على المبالغ المستلمة فعلياً (النقد + الديون المحصلة) وليس إجمالي الفواتير.',
 ];

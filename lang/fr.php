@@ -1462,4 +1462,5 @@ return [
     'new_balance' => 'Nouveau solde',
     'invalid_payment_data' => 'Données de paiement invalides',
     'debt_amount' => 'Montant dette',
+    'cash_basis_notice' => 'Remarque : Les revenus sont calculés sur la base des montants effectivement reçus (Espèces + Dettes recouvrées) et non sur le total des factures.',
 ];

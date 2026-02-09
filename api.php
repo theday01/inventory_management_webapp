@@ -626,22 +626,30 @@ function get_period_summary($conn) {
         $sql_end = $end_date . " 23:59:59";
 
         // 1. Total Sales (Cash vs Credit)
+        // STRICT CASH BASIS:
+        // - Initial Cash = LEAST(amount_received, total)
+        // - Debt Collected = Sum(payments.amount)
+        // - Total Revenue = Initial Cash + Debt Collected
+        
         $stmt = $conn->prepare("
             SELECT 
-                COALESCE(SUM(total), 0) as total_sales, 
+                COALESCE(SUM(total), 0) as invoiced_sales, 
                 COALESCE(SUM(delivery_cost), 0) as total_delivery,
-                COALESCE(SUM(paid_amount), 0) as cash_sales,
-                COALESCE(SUM(total - paid_amount), 0) as credit_sales
+                COALESCE(SUM(LEAST(amount_received, total)), 0) as initial_cash_sales,
+                COALESCE(SUM(total - paid_amount), 0) as outstanding_credit
             FROM invoices 
             WHERE created_at BETWEEN ? AND ?
         ");
         $stmt->bind_param("ss", $sql_start, $sql_end);
         $stmt->execute();
         $res = $stmt->get_result()->fetch_assoc();
-        $total_sales = floatval($res['total_sales']);
+        
+        $invoiced_sales = floatval($res['invoiced_sales']);
         $total_delivery = floatval($res['total_delivery']);
-        $cash_sales = floatval($res['cash_sales']);
-        $credit_sales = floatval($res['credit_sales']);
+        $initial_cash_sales = floatval($res['initial_cash_sales']);
+        $outstanding_credit = floatval($res['outstanding_credit']);
+        // For display compatibility, 'credit_sales' usually means unpaid amount
+        $credit_sales = $outstanding_credit; 
         $stmt->close();
 
         // 1.1 Debt Collected (from Payments table)
@@ -650,6 +658,9 @@ function get_period_summary($conn) {
         $stmt->execute();
         $debt_collected = floatval($stmt->get_result()->fetch_assoc()['debt_collected']);
         $stmt->close();
+        
+        // REVENUE CALCULATION
+        $total_revenue = $initial_cash_sales + $debt_collected;
 
         // 2. Total Refunds
         $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total_refunds FROM refunds WHERE created_at BETWEEN ? AND ?");
@@ -704,11 +715,13 @@ function get_period_summary($conn) {
         $stmt->close();
 
         // 6. Closing Balance (Cash Flow)
-        $closing_balance = $opening_balance + $total_sales - $total_refunds - $drawer_expenses;
+        // Correct Formula: Opening + (Total Cash In) - (Total Cash Out)
+        // Total Cash In = Total Revenue (Initial + Debt)
+        $closing_balance = $opening_balance + $total_revenue - $total_refunds - $drawer_expenses;
 
         // 7. Net Profit
-        // Profit = (Sales - Refunds) - COGS - Expenses
-        $net_revenue = $total_sales - $total_refunds;
+        // Profit (Cash Basis) = (Total Revenue - Refunds) - COGS - Expenses
+        $net_revenue = $total_revenue - $total_refunds;
         $total_profit = $net_revenue - $total_cogs - $total_other_costs;
 
         // Holiday stats
@@ -758,8 +771,9 @@ function get_period_summary($conn) {
         $stmt->close();
 
         $summary = [
-            'total_sales' => $total_sales,
-            'cash_sales' => $cash_sales,
+            'total_sales' => $total_revenue, // Used as main revenue figure
+            'invoiced_amount' => $invoiced_sales, // Kept for reference
+            'cash_sales' => $initial_cash_sales,
             'credit_sales' => $credit_sales,
             'debt_collected' => $debt_collected,
             'total_refunds' => $total_refunds,
@@ -3194,16 +3208,24 @@ function getDashboardStats($conn) {
         $yesterday = date('Y-m-d', strtotime('-1 day'));
         
         // Use calendar day for today stats, not business day
-        // 1. Invoice Level Stats
+        // 1. Invoice Level Stats (Cash Basis: Initial Cash Sales + Debt Collection)
+        // Initial Cash Sales = LEAST(amount_received, total) for invoices created today
         $invRes = $conn->query("
             SELECT 
                 COUNT(id) as total_orders,
-                COALESCE(SUM(total), 0) as revenue,
+                COALESCE(SUM(LEAST(amount_received, total)), 0) as initial_cash_revenue,
                 COALESCE(SUM(delivery_cost), 0) as total_delivery
             FROM invoices 
             WHERE DATE(created_at) = '$today'
         ");
-        $invData = $invRes ? $invRes->fetch_assoc() : ['total_orders' => 0, 'revenue' => 0, 'total_delivery' => 0];
+        $invData = $invRes ? $invRes->fetch_assoc() : ['total_orders' => 0, 'initial_cash_revenue' => 0, 'total_delivery' => 0];
+
+        // Debt Collection from Payments table for today
+        $debtRes = $conn->query("SELECT COALESCE(SUM(amount), 0) as debt_collected FROM payments WHERE DATE(payment_date) = '$today'");
+        $debtCollected = $debtRes ? $debtRes->fetch_assoc()['debt_collected'] : 0;
+
+        // Total Cash Revenue
+        $totalRevenue = floatval($invData['initial_cash_revenue']) + floatval($debtCollected);
 
         // 2. Item Level Stats (COGS)
         $itemRes = $conn->query("
@@ -3238,7 +3260,7 @@ function getDashboardStats($conn) {
 
         $totalOtherCosts = floatval($todayExpenses) + floatval($todayRent);
 
-        $stats['todayRevenue'] = floatval($todayData['revenue']);
+        $stats['todayRevenue'] = $totalRevenue;
         $stats['todayCost'] = floatval($todayData['total_cogs']) + floatval($todayData['total_delivery']) + $totalOtherCosts;
         $stats['todayProfit'] = $stats['todayRevenue'] - $stats['todayCost'];
         
@@ -3297,13 +3319,13 @@ function getSalesChart($conn) {
             $where_clause = "created_at >= '" . $current_day['start_time'] . "'";
         }
         
+        // 1. Initial Cash Sales
         $sql = "SELECT DATE(created_at) as date, 
                        COUNT(*) as orders, 
-                       COALESCE(SUM(total), 0) as revenue
+                       COALESCE(SUM(LEAST(amount_received, total)), 0) as initial_cash
                 FROM invoices
                 WHERE {$where_clause}
-                GROUP BY DATE(created_at)
-                ORDER BY date ASC";
+                GROUP BY DATE(created_at)";
         
         $stmt = $conn->prepare($sql);
         if (!$current_day) {
@@ -3311,14 +3333,41 @@ function getSalesChart($conn) {
         }
         $stmt->execute();
         $result = $stmt->get_result();
-        $data = [];
         
+        $chartData = [];
         if ($result && $result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
-                $data[] = $row;
+                $date = $row['date'];
+                $chartData[$date] = [
+                    'date' => $date, 
+                    'orders' => intval($row['orders']), 
+                    'revenue' => floatval($row['initial_cash'])
+                ];
             }
         }
         $stmt->close();
+
+        // 2. Debt Repayments
+        $pay_where = $current_day ? "payment_date >= '" . $current_day['start_time'] . "'" : "payment_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
+        $sql2 = "SELECT DATE(payment_date) as date, COALESCE(SUM(amount), 0) as debt_cash FROM payments WHERE {$pay_where} GROUP BY DATE(payment_date)";
+        
+        $stmt2 = $conn->prepare($sql2);
+        if (!$current_day) {
+            $stmt2->bind_param("i", $days);
+        }
+        $stmt2->execute();
+        $res2 = $stmt2->get_result();
+        while ($row = $res2->fetch_assoc()) {
+            $date = $row['date'];
+            if (!isset($chartData[$date])) {
+                $chartData[$date] = ['date' => $date, 'orders' => 0, 'revenue' => 0];
+            }
+            $chartData[$date]['revenue'] += floatval($row['debt_cash']);
+        }
+        $stmt2->close();
+
+        ksort($chartData);
+        $data = array_values($chartData);
         
         echo json_encode(['success' => true, 'data' => $data]);
     } catch (Exception $e) {

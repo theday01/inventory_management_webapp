@@ -23,7 +23,7 @@ add_test_reports.php
 add_test_notif.php
 add_expenses_data.php
 add_test_data_full.php
-
+add_tst_products.php
 with_catg_install.php
 
 

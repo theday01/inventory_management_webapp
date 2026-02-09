@@ -767,6 +767,10 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                     <p class="text-sm text-gray-400 mt-1">
                         <?php echo __('viewing_data_from'); ?> <span class="text-white font-bold"><?php echo $start_date; ?></span> <?php echo __('to'); ?> <span class="text-white font-bold"><?php echo $end_date; ?></span>
                     </p>
+                    <p class="text-xs text-yellow-500/80 mt-1 flex items-center gap-1">
+                        <span class="material-icons-round text-[14px]">info</span>
+                        <?php echo __('cash_basis_notice'); ?>
+                    </p>
                 </div>
                 <button id="toggle-dashboard-filters" class="md:hidden p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white border border-white/10 transition-colors">
                     <span class="material-icons-round">filter_list</span>
@@ -2113,6 +2117,7 @@ $top_debtors_result = $conn->query($sql_top_debtors);
                                         </div>
                                     ` : ''}
                                 </div>
+                                <p class="text-xs text-yellow-500/80 mt-2 text-center">${window.__('cash_basis_notice')}</p>
                                 ${invoicesHtml}
                             </div>
                         `;

@@ -61,10 +61,12 @@ class AnnualAnalyzer {
         $startDate = "{$this->year}-01-01 00:00:00";
         $endDate = "{$this->year}-12-31 23:59:59";
 
-        // Revenue & Orders
+        // Revenue & Orders (Cash Basis)
+        // 1. Initial Cash from Invoices
         $sql = "SELECT 
                     COUNT(DISTINCT i.id) as total_orders,
-                    COALESCE(SUM(i.total), 0) as total_revenue,
+                    COALESCE(SUM(LEAST(i.amount_received, i.total)), 0) as initial_cash_revenue,
+                    COALESCE(SUM(i.total), 0) as total_invoiced,
                     COALESCE(SUM(i.delivery_cost), 0) as total_delivery,
                     COUNT(DISTINCT i.customer_id) as total_customers
                 FROM invoices i
@@ -74,6 +76,15 @@ class AnnualAnalyzer {
         $stmt->bind_param("ss", $startDate, $endDate);
         $stmt->execute();
         $result = $stmt->get_result()->fetch_assoc();
+
+        // 2. Debt Collection
+        $sqlDebt = "SELECT COALESCE(SUM(amount), 0) as debt_collected FROM payments WHERE payment_date BETWEEN ? AND ?";
+        $stmtDebt = $this->conn->prepare($sqlDebt);
+        $stmtDebt->bind_param("ss", $startDate, $endDate);
+        $stmtDebt->execute();
+        $debtCollected = $stmtDebt->get_result()->fetch_assoc()['debt_collected'];
+
+        $totalRevenue = floatval($result['initial_cash_revenue']) + floatval($debtCollected);
         
         // Refunds
         $sqlRefunds = "SELECT COALESCE(SUM(amount), 0) as total_refunds FROM refunds WHERE created_at BETWEEN ? AND ?";
@@ -102,13 +113,14 @@ class AnnualAnalyzer {
         $expenses = $stmtExp->get_result()->fetch_assoc()['total_expenses'];
 
         // Calculations
-        $netRevenue = $result['total_revenue'] - $refunds;
+        $netRevenue = $totalRevenue - $refunds;
         $grossProfit = $netRevenue - $cogs - $expenses; // Profit after COGS and Expenses (Operating Profit)
         
         return [
             'total_orders' => (int)$result['total_orders'],
             'total_revenue' => (float)$netRevenue, // Net Revenue
-            'gross_revenue' => (float)$result['total_revenue'],
+            'gross_revenue' => (float)$totalRevenue, // Gross Cash Revenue
+            'invoiced_revenue' => (float)$result['total_invoiced'], // For ref
             'total_refunds' => (float)$refunds,
             'total_cogs' => (float)$cogs,
             'total_expenses' => (float)$expenses,
@@ -165,10 +177,11 @@ class AnnualAnalyzer {
             ];
         }
 
-        // 1. Revenue
+        // 1. Revenue (Cash Basis)
+        // 1a. Initial Cash
         $sql = "SELECT 
                     MONTH(created_at) as month, 
-                    SUM(total) as revenue 
+                    SUM(LEAST(amount_received, total)) as initial_cash 
                 FROM invoices 
                 WHERE created_at BETWEEN ? AND ? 
                 GROUP BY MONTH(created_at)";
@@ -178,7 +191,24 @@ class AnnualAnalyzer {
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
-            $monthlyData[$row['month']]['revenue'] = (float)$row['revenue'];
+            $monthlyData[$row['month']]['revenue'] += (float)$row['initial_cash'];
+        }
+        $stmt->close();
+
+        // 1b. Debt Collection
+        $sqlDebt = "SELECT 
+                        MONTH(payment_date) as month, 
+                        SUM(amount) as debt_collected 
+                    FROM payments 
+                    WHERE payment_date BETWEEN ? AND ? 
+                    GROUP BY MONTH(payment_date)";
+        
+        $stmt = $this->conn->prepare($sqlDebt);
+        $stmt->bind_param("ss", $startDate, $endDate);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $monthlyData[$row['month']]['revenue'] += (float)$row['debt_collected'];
         }
         $stmt->close();
 
