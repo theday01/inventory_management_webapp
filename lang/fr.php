@@ -1470,4 +1470,11 @@ return [
     'analyzing_step_3' => 'Analyse du comportement client...',
     'analyzing_step_4' => 'Préparation des recommandations...',
     'analyzing_done' => 'Analyse terminée !',
+
+    // Upcoming Features
+    'coming_soon_title' => 'Fonctionnalités à venir',
+    'coming_soon_desc' => 'Nous travaillons actuellement sur de nouvelles fonctionnalités intéressantes qui seront bientôt disponibles.',
+    'next_release' => 'Bientôt',
+    'feature_delivery_system' => 'Système de livraison et suivi en ligne',
+    'feature_delivery_desc' => 'Un système intégré reliant le commerçant, le livreur et le client avec suivi des commandes en temps réel.',
 ];

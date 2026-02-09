@@ -1153,7 +1153,7 @@ return [
     'add_new_user' => 'إضافة مستخدم جديد',
     'role_admin' => 'مدير عام (Admin)',
     'role_manager' => 'مدير (Manager)',
-    'role_cashier' => 'كاشير (Cashier)',
+    'role_cashier' => 'أمين الصندوق (Cashier)',
     'role_user' => 'مستخدم (User)',
     'roles_guide_title' => 'دليل الأدوار والصلاحيات',
     'role_admin_desc' => 'تحكم كامل في النظام',
@@ -1471,4 +1471,11 @@ return [
     'analyzing_step_3' => 'تحليل سلوك العملاء...',
     'analyzing_step_4' => 'إعداد التوصيات الذكية...',
     'analyzing_done' => 'اكتمل التحليل!',
+
+    // Upcoming Features
+    'coming_soon_title' => 'ميزات الإصدار القادم',
+    'coming_soon_desc' => 'نعمل حالياً على تطوير ميزات جديدة ومثيرة ستكون متاحة قريباً.',
+    'next_release' => 'قريباً',
+    'feature_delivery_system' => 'نظام التوصيل وتتبع الطلبات أونلاين',
+    'feature_delivery_desc' => 'نظام متكامل يربط بين صاحب المتجر، وكيل التوصيل، والزبون مع إمكانية تتبع الطلبات بشكل مباشر.',
 ];

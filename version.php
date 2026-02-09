@@ -198,6 +198,37 @@ if ($conn) {
                 </h3>
                 
                 <div class="relative border-r border-white/10 mr-3 space-y-8 pr-8">
+                    <!-- Upcoming Features -->
+                    <div class="relative mb-12">
+                        <div class="absolute -right-[39px] top-1 w-5 h-5 rounded-full bg-purple-500 border-4 border-dark-surface shadow-lg shadow-purple-500/50 animate-pulse"></div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <h4 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
+                                <?php echo __('coming_soon_title'); ?>
+                            </h4>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/20">
+                                <?php echo __('next_release'); ?>
+                            </span>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl p-5 border border-purple-500/20 relative overflow-hidden group hover:border-purple-500/40 transition-colors">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
+                            
+                            <p class="text-sm text-gray-300 mb-4 relative z-10 italic">
+                                <?php echo __('coming_soon_desc'); ?>
+                            </p>
+                            
+                            <ul class="space-y-3 relative z-10">
+                                <li class="flex items-start gap-3 bg-dark-surface/50 p-3 rounded-lg border border-white/5">
+                                    <span class="material-icons-round text-purple-400 mt-0.5">local_shipping</span>
+                                    <div>
+                                        <h5 class="text-white font-bold text-sm mb-1"><?php echo __('feature_delivery_system'); ?></h5>
+                                        <p class="text-xs text-gray-400 leading-relaxed"><?php echo __('feature_delivery_desc'); ?></p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
                     <!-- Version 2.5.0 -->
                     <div class="relative">
                         <div class="absolute -right-[39px] top-1 w-5 h-5 rounded-full bg-primary border-4 border-dark-surface shadow-lg shadow-primary/20"></div>
