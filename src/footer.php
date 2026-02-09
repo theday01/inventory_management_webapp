@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let start = val.length;
         let end = val.length;
 
+        let supportsSelection = false;
         try {
             // Safely attempt to get selection range (throws on type='number' in some browsers)
             start = activeInput.selectionStart;
@@ -170,11 +171,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (start === null) {
                 start = val.length;
                 end = val.length;
+            } else {
+                supportsSelection = true;
             }
         } catch (e) {
             // Fallback for inputs that don't support selection
             start = val.length;
             end = val.length;
+            supportsSelection = false;
         }
 
         // Keep focus
@@ -184,15 +188,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (action === 'backspace') {
                 if (start === end && start > 0) {
                     activeInput.value = val.slice(0, start - 1) + val.slice(end);
-                    activeInput.setSelectionRange(start - 1, start - 1);
+                    if (supportsSelection) activeInput.setSelectionRange(start - 1, start - 1);
                 } else if (start !== end) {
                     activeInput.value = val.slice(0, start) + val.slice(end);
-                    activeInput.setSelectionRange(start, start);
+                    if (supportsSelection) activeInput.setSelectionRange(start, start);
                 }
             } else if (action === 'enter') {
                 if (activeInput.tagName === 'TEXTAREA') {
                     activeInput.value = val.slice(0, start) + '\n' + val.slice(end);
-                    activeInput.setSelectionRange(start + 1, start + 1);
+                    if (supportsSelection) activeInput.setSelectionRange(start + 1, start + 1);
                 } else {
                      activeInput.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Enter', bubbles: true}));
                      // Also try to blur or submit
@@ -200,10 +204,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else if (action === 'space') {
                 activeInput.value = val.slice(0, start) + ' ' + val.slice(end);
-                activeInput.setSelectionRange(start + 1, start + 1);
+                if (supportsSelection) activeInput.setSelectionRange(start + 1, start + 1);
             } else if (char) {
                 activeInput.value = val.slice(0, start) + char + val.slice(end);
-                activeInput.setSelectionRange(start + 1, start + 1);
+                if (supportsSelection) activeInput.setSelectionRange(start + 1, start + 1);
             }
         } catch(e) {
             // Fallback for inputs that don't support selectionStart (like type='number')
@@ -223,6 +227,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function showKeyboard(input) {
         if (!input || input.readOnly || input.disabled) return;
         activeInput = input;
+        
+        if (input.type === 'number' || input.type === 'tel') {
+             renderKeys('num');
+        } else {
+             if (currentLayout === 'num') {
+                 renderKeys('ar');
+             }
+        }
+        
         kbContainer.classList.add('active');
         document.getElementById('kb-show-btn').classList.add('hidden');
         
