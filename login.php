@@ -196,6 +196,15 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
             <p class="text-sm md:text-base text-gray-400"><?php echo __('login_subtitle'); ?></p>
         </div>
 
+        <div class="mb-6 bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-4 text-center">
+            <p class="text-yellow-200 font-bold mb-2 text-sm"><?php echo (get_locale() == 'ar') ? 'بيانات الدخول للتجربة' : 'Demo Credentials'; ?></p>
+            <div dir="ltr" class="flex justify-center gap-4 text-sm text-yellow-100 bg-black/20 py-2 rounded-lg">
+                <span>User: <strong class="text-white select-all">admin</strong></span>
+                <span class="w-px bg-white/20"></span>
+                <span>Pass: <strong class="text-white select-all">123456</strong></span>
+            </div>
+        </div>
+
         <form action="login.php" method="POST" class="space-y-6">
             <?php 
             if(!empty($login_err)){

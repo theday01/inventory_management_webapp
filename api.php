@@ -9,9 +9,13 @@ require_once __DIR__ . '/src/AnnualAnalyzer.php';
 ob_start();
 
 // إخفاء رسائل الأخطاء من الظهور في JSON
+// error_reporting(E_ALL);
+// ini_set('display_errors', 0);
+// ini_set('log_errors', 1);
+
+// DEBUG: Enable errors temporarily to see them in Network Tab response
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
+ini_set('display_errors', 1);
 
 // التأكد من عدم وجود BOM في بداية الملف
 if (ob_get_length()) ob_clean();
@@ -38,9 +42,11 @@ switch ($action) {
         addCategory($conn);
         break;
     case 'updateCategory':
+        checkDemoMode();
         updateCategory($conn);
         break;
     case 'deleteCategory':
+        checkDemoMode();
         deleteCategory($conn);
         break;
     case 'getProducts':
@@ -53,12 +59,15 @@ switch ($action) {
         addProduct($conn);
         break;
     case 'updateProduct':
+        checkDemoMode();
         updateProduct($conn);
         break;
     case 'bulkAddProducts':
+        checkDemoMode();
         bulkAddProducts($conn);
         break;
     case 'importProducts':
+        checkDemoMode();
         importProducts($conn);
         break;
     case 'getProductDetails':
@@ -83,6 +92,7 @@ switch ($action) {
         getLowStockProducts($conn);
         break;
     case 'updateCustomer':
+        checkDemoMode();
         updateCustomer($conn);
         break;
     case 'exportCustomersExcel':
@@ -101,6 +111,7 @@ switch ($action) {
         getDeliverySettings($conn);
         break;
     case 'updateDeliverySettings':
+        checkDemoMode();
         updateDeliverySettings($conn);
         break;
     case 'getDashboardStats':
@@ -125,18 +136,22 @@ switch ($action) {
         checkout($conn);
         break;
     case 'bulkUpdateProducts':
+        checkDemoMode();
         bulkUpdateProducts($conn);
         break;
     case 'bulkDeleteProducts':
+        checkDemoMode();
         bulkDeleteProducts($conn);
         break;
     case 'getRemovedProducts':
         getRemovedProducts($conn);
         break;
     case 'restoreProducts':
+        checkDemoMode();
         restoreProducts($conn);
         break;
     case 'permanentlyDeleteProducts':
+        checkDemoMode();
         permanentlyDeleteProducts($conn);
         break;
     case 'getInventoryStats':
@@ -154,18 +169,23 @@ switch ($action) {
         getHolidays($conn);
         break;
     case 'addHoliday':
+        checkDemoMode();
         addHoliday($conn);
         break;
     case 'updateHoliday':
+        checkDemoMode();
         updateHoliday($conn);
         break;
     case 'deleteHoliday':
+        checkDemoMode();
         deleteHoliday($conn);
         break;
     case 'toggleHolidayActive':
+        checkDemoMode();
         toggleHolidayActive($conn);
         break;
     case 'syncMoroccanHolidays':
+        checkDemoMode();
         syncMoroccanHolidays($conn);
         break;
     case 'cleanOldNotifications':
@@ -190,6 +210,7 @@ switch ($action) {
         echo json_encode(['success' => true]);
         break;
     case 'markRentalPaidThisMonth':
+        checkDemoMode();
         markRentalPaidThisMonth($conn);
         break;
     case 'getRentalPayments':
@@ -220,18 +241,23 @@ switch ($action) {
         get_invoice_details($conn);
         break;
     case 'updateShopLogo':
+        checkDemoMode();
         updateShopLogo($conn);
         break;
     case 'updateShopFavicon':
+        checkDemoMode();
         updateShopFavicon($conn);
         break;
     case 'deleteShopLogo':
+        checkDemoMode();
         deleteShopLogo($conn);
         break;
     case 'update_first_login':
+        checkDemoMode();
         updateFirstLogin($conn);
         break;
     case 'updateSetting':
+        checkDemoMode();
         updateSetting($conn);
         break;
     case 'send_contact_message':
@@ -244,12 +270,15 @@ switch ($action) {
         getExpenses($conn);
         break;
     case 'addExpense':
+        // Allowing adding expenses in demo
         addExpense($conn);
         break;
     case 'deleteExpense':
+        checkDemoMode();
         deleteExpense($conn);
         break;
     case 'refund_invoice':
+        checkDemoMode();
         refundInvoice($conn);
         break;
     case 'getRefunds':
@@ -263,18 +292,21 @@ switch ($action) {
         break;
     // Backup Actions
     case 'createBackup':
+        checkDemoMode();
         createBackup($conn);
         break;
     case 'getBackups':
         getBackups($conn);
         break;
     case 'deleteBackup':
+        checkDemoMode();
         deleteBackup($conn);
         break;
     case 'downloadBackup':
         downloadBackup($conn);
         break;
     case 'restoreBackup':
+        checkDemoMode();
         restoreBackup($conn);
         break;
     case 'getRestoreProgress':
@@ -405,6 +437,12 @@ function sendJsonResponse($data) {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data);
     exit;
+}
+
+function checkDemoMode() {
+    if (defined('DEMO_MODE') && DEMO_MODE) {
+        sendJsonResponse(['success' => false, 'message' => __('demo_mode_restriction')]);
+    }
 }
 
 

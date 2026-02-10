@@ -626,6 +626,12 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
 
 <body class="font-sans min-h-screen <?php echo $isDark ? 'bg-dark text-white' : 'bg-gray-100 text-gray-900'; ?>">
 
+    <?php if (defined('DEMO_MODE') && DEMO_MODE): ?>
+    <div class="bg-yellow-500 text-black text-center py-2 font-bold z-50 relative">
+        🚧 <?php echo __('demo_mode_active'); ?> - <?php echo __('demo_mode_desc'); ?> 🚧
+    </div>
+    <?php endif; ?>
+
     <!-- نظام الرسائل الموحد -->
     <div id="toast-notification"
         class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none">
