@@ -467,13 +467,6 @@ echo "✅ Successfully configured $settings_success settings.";
 echo "</div>";
 
 // ======================================
-// ADD DEFAULT CATEGORIES (REMOVED)
-// ======================================
-// echo "<h3>Adding Default Categories...</h3>";
-// Default categories installation removed as per user request.
-// Categories should be created manually.
-
-// ======================================
 // ADD DEFAULT HOLIDAYS
 // ======================================
 echo "<h3>Adding Default Holidays...</h3>";
@@ -519,6 +512,164 @@ if ($holiday_count == 0) {
 }
 
 // ======================================
+// SEEDING EXPERIMENTAL DATA (DEMO)
+// ======================================
+echo "<h3>🌱 Seeding Experimental Data...</h3>";
+echo "<div style='background: #e2e3e5; padding: 15px; border: 1px solid #d6d8db; border-radius: 5px; margin: 10px 0;'>";
+
+// 1. Categories
+$demo_categories = ['General', 'Electronics', 'Clothing', 'Groceries', 'Services'];
+foreach ($demo_categories as $cat) {
+    $conn->query("INSERT IGNORE INTO categories (name) VALUES ('$cat')");
+}
+echo "<div>✓ Categories seeded.</div>";
+
+// 2. Users (4 Users)
+$password_hash = password_hash('123456', PASSWORD_DEFAULT);
+$demo_users = [
+    ['admin', 'Admin User', 'admin'],
+    ['manager', 'Sara Manager', 'admin'],
+    ['ahmed', 'Ahmed Cashier', 'cashier'],
+    ['khalid', 'Khalid Stock', 'cashier']
+];
+
+foreach ($demo_users as $u) {
+    $stmt = $conn->prepare("INSERT IGNORE INTO users (username, password, role, first_login) VALUES (?, ?, ?, 1)");
+    $stmt->bind_param("sss", $u[0], $password_hash, $u[2]);
+    $stmt->execute();
+}
+echo "<div>✓ Users seeded (admin, manager, ahmed, khalid) with password '123456'.</div>";
+
+// 3. Customers
+$demo_customers = [
+    ['Walk-in Customer', '0000000000', 0],
+    ['Mohamed Ali', '0611223344', 0],
+    ['Fatima Zahra', '0622334455', 0],
+    ['Youssef Hassan', '0633445566', 0],
+    ['Amine Tazi', '0644556677', 0]
+];
+foreach ($demo_customers as $c) {
+    $stmt = $conn->prepare("INSERT IGNORE INTO customers (name, phone, balance) VALUES (?, ?, ?)");
+    $stmt->bind_param("ssd", $c[0], $c[1], $c[2]);
+    $stmt->execute();
+}
+echo "<div>✓ Customers seeded.</div>";
+
+// 4. Products
+// Get Category IDs
+$cat_ids = [];
+$res = $conn->query("SELECT id, name FROM categories");
+while($row = $res->fetch_assoc()) $cat_ids[$row['name']] = $row['id'];
+
+$demo_products = [
+    ['Samsung Galaxy S24', 12000, 10000, 10, 'Electronics'],
+    ['iPhone 15 Pro', 14000, 12000, 15, 'Electronics'],
+    ['MacBook Air', 11000, 9500, 5, 'Electronics'],
+    ['USB Cable', 50, 20, 100, 'Electronics'],
+    ['Charger 20W', 150, 80, 50, 'Electronics'],
+    ['T-Shirt Cotton', 100, 50, 200, 'Clothing'],
+    ['Jeans Slim Fit', 250, 120, 100, 'Clothing'],
+    ['Running Sneakers', 400, 250, 30, 'Clothing'],
+    ['Fresh Milk 1L', 10, 8, 50, 'Groceries'],
+    ['Whole Wheat Bread', 5, 2, 100, 'Groceries'],
+    ['Cheddar Cheese', 30, 20, 40, 'Groceries'],
+    ['Coffee Beans 1kg', 150, 100, 20, 'Groceries'],
+    ['Computer Repair', 200, 0, 999, 'Services'],
+    ['Delivery Fee', 30, 0, 999, 'Services'],
+    ['Wireless Headphones', 300, 150, 25, 'Electronics'],
+    ['Gaming Mouse', 80, 40, 40, 'Electronics'],
+    ['Mechanical Keyboard', 400, 250, 15, 'Electronics'],
+    ['Winter Jacket', 500, 300, 20, 'Clothing'],
+    ['Mineral Water', 5, 2, 200, 'Groceries'],
+    ['Chocolate Bar', 15, 10, 100, 'Groceries']
+];
+
+foreach ($demo_products as $p) {
+    $cat_id = $cat_ids[$p[4]] ?? $cat_ids['General'] ?? 1;
+    $stmt = $conn->prepare("INSERT IGNORE INTO products (name, price, cost_price, quantity, category_id) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sddii", $p[0], $p[1], $p[2], $p[3], $cat_id);
+    $stmt->execute();
+}
+echo "<div>✓ Products seeded.</div>";
+
+// 5. Generate Sales History (Last 30 Days)
+// Only if invoices table is empty to avoid duplication on re-runs
+$check_inv = $conn->query("SELECT COUNT(*) as cnt FROM invoices");
+$inv_count = $check_inv->fetch_assoc()['cnt'];
+
+if ($inv_count == 0) {
+    echo "<div>⏳ Generating sales history for the last 30 days...</div>";
+    
+    // Get Product IDs
+    $prod_ids = [];
+    $res = $conn->query("SELECT id, price, cost_price FROM products");
+    while($row = $res->fetch_assoc()) $prod_ids[] = $row;
+    
+    // Get Customer IDs
+    $cust_ids = [];
+    $res = $conn->query("SELECT id FROM customers");
+    while($row = $res->fetch_assoc()) $cust_ids[] = $row['id'];
+
+    for ($i = 30; $i >= 0; $i--) {
+        $date = date('Y-m-d H:i:s', strtotime("-$i days " . rand(9, 20) . ":" . rand(0, 59) . ":00"));
+        
+        // 2 to 6 invoices per day
+        $num_invoices = rand(2, 6);
+        
+        for ($j = 0; $j < $num_invoices; $j++) {
+            $customer_id = $cust_ids[array_rand($cust_ids)];
+            $is_cash = (rand(0, 10) > 2); // 80% Cash, 20% Credit
+            $payment_method = $is_cash ? 'cash' : 'credit';
+            $status = $is_cash ? 'paid' : 'unpaid';
+            
+            // 1 to 4 items per invoice
+            $num_items = rand(1, 4);
+            $total = 0;
+            $items_data = [];
+            
+            for ($k = 0; $k < $num_items; $k++) {
+                $prod = $prod_ids[array_rand($prod_ids)];
+                $qty = rand(1, 3);
+                $line_total = $prod['price'] * $qty;
+                $total += $line_total;
+                $items_data[] = ['id' => $prod['id'], 'qty' => $qty, 'price' => $prod['price'], 'cost' => $prod['cost_price']];
+            }
+            
+            $paid_amount = $is_cash ? $total : 0;
+            
+            // Insert Invoice
+            $stmt = $conn->prepare("INSERT INTO invoices (customer_id, total, payment_method, payment_status, paid_amount, amount_received, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("idssdss", $customer_id, $total, $payment_method, $status, $paid_amount, $paid_amount, $date);
+            $stmt->execute();
+            $invoice_id = $conn->insert_id;
+            
+            // Insert Invoice Items
+            foreach ($items_data as $item) {
+                $stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, product_id, quantity, price, cost_price) VALUES (?, ?, ?, ?, ?)");
+                $stmt->bind_param("iiddd", $invoice_id, $item['id'], $item['qty'], $item['price'], $item['cost']);
+                $stmt->execute();
+            }
+            
+            // Update Customer Balance if Credit
+            if (!$is_cash) {
+                $conn->query("UPDATE customers SET balance = balance + $total WHERE id = $customer_id");
+            }
+        }
+        
+        // Random Expense every ~5 days
+        if ($i % 5 == 0) {
+            $exp_amount = rand(50, 200);
+            $conn->query("INSERT INTO expenses (title, amount, expense_date, category) VALUES ('Miscellaneous', $exp_amount, '$date', 'general')");
+        }
+    }
+    echo "<div>✓ Sales history generated successfully.</div>";
+} else {
+    echo "<div>ℹ️ Invoices already exist. Skipping history generation.</div>";
+}
+
+echo "</div>";
+
+// ======================================
 // FINAL SUMMARY
 // ======================================
 echo "<br><div style='background: #d1ecf1; padding: 20px; border: 2px solid #bee5eb; border-radius: 5px; margin: 20px 0;'>";
@@ -528,7 +679,8 @@ echo "<h3>What's Next?</h3>";
 echo "<ul>";
 echo "<li>✓ Database and tables created successfully</li>";
 echo "<li>✓ System settings configured</li>";
-echo "<li>✓ Business days system ready (supports nullable user_id)</li>";
+echo "<li>✓ Business days system ready</li>";
+echo "<li>✓ Experimental data seeded (Users, Products, Sales)</li>";
 echo "</ul>";
 echo "<hr>";
 echo "<p><a href='login.php' style='background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;'>Go to Login Page</a></p>";

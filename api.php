@@ -505,6 +505,12 @@ function start_day($conn) {
             return;
         }
 
+        // Demo Mode Simulation
+        if (defined('DEMO_MODE') && DEMO_MODE) {
+            sendJsonResponse(['success' => true, 'message' => __('business_day_started_success') . ' (Demo Mode)']);
+            return;
+        }
+
         // Get and validate input
         $rawInput = file_get_contents('php://input');
         $data = json_decode($rawInput, true);
@@ -609,6 +615,12 @@ function reopen_day($conn) {
             return;
         }
 
+        // Demo Mode Simulation
+        if (defined('DEMO_MODE') && DEMO_MODE) {
+            sendJsonResponse(['success' => true, 'message' => __('business_day_reopen_success') . ' (Demo Mode)']);
+            return;
+        }
+
         $rawInput = file_get_contents('php://input');
         $data = json_decode($rawInput, true);
         
@@ -655,6 +667,12 @@ function extend_day($conn) {
     try {
         if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
+            return;
+        }
+
+        // Demo Mode Simulation
+        if (defined('DEMO_MODE') && DEMO_MODE) {
+            sendJsonResponse(['success' => true, 'message' => __('business_day_extend_success') . ' (Demo Mode)']);
             return;
         }
 
@@ -967,6 +985,16 @@ function end_day($conn) {
     try {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
+            return;
+        }
+
+        // Demo Mode Simulation
+        if (defined('DEMO_MODE') && DEMO_MODE) {
+            sendJsonResponse([
+                'success' => true, 
+                'message' => __('business_day_ended_success') . ' (Demo Mode)',
+                'data' => ['summary' => []] // Empty summary for demo
+            ]);
             return;
         }
 
@@ -2721,6 +2749,16 @@ function addCustomer($conn) {
         return;
     }
 
+    // Demo Mode Simulation
+    if (defined('DEMO_MODE') && DEMO_MODE) {
+        sendJsonResponse([
+            'success' => true,
+            'message' => __('customer_added_success') . ' (Demo Mode)',
+            'id' => rand(1000, 9999) // Fake ID
+        ]);
+        return;
+    }
+
     $phone = isset($data['phone']) ? $data['phone'] : null;
     $email = isset($data['email']) ? $data['email'] : null;
     $address = isset($data['address']) ? $data['address'] : null;
@@ -2948,6 +2986,17 @@ function checkout($conn) {
 
     if (empty($data['items']) || !is_array($data['items'])) {
         sendJsonResponse(['success' => false, 'message' => __('cart_empty')]);
+        return;
+    }
+
+    // Demo Mode Simulation
+    if (defined('DEMO_MODE') && DEMO_MODE) {
+        // Return fake success response
+        sendJsonResponse([
+            'success' => true,
+            'message' => __('invoice_created_success') . ' (Demo Mode)',
+            'invoice_id' => rand(100000, 999999) // Fake ID
+        ]);
         return;
     }
 
@@ -4458,6 +4507,15 @@ function refundInvoice($conn) {
 
     if ($invoice_id <= 0) {
         sendJsonResponse(['success' => false, 'message' => __('invoice_id_invalid')]);
+        return;
+    }
+
+    // Demo Mode Simulation
+    if (defined('DEMO_MODE') && DEMO_MODE) {
+        sendJsonResponse([
+            'success' => true,
+            'message' => __('refund_success') . ' (Demo Mode)'
+        ]);
         return;
     }
 
