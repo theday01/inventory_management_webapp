@@ -22,10 +22,10 @@ if (!defined('DEMO_MODE')) {
 
 // 3. DATABASE CREDENTIALS
 // Default Localhost Settings (XAMPP/WAMP) - used if not overridden in config.php
-if (!isset($servername)) $servername = "sql210.infinityfree.com";
-if (!isset($username))   $username = "if0_38514101";
-if (!isset($password))   $password = "zsMLehRDSMzn";
-if (!isset($dbname))     $dbname = "if0_38514101_shop";
+if (!isset($servername)) $servername = "sql210.byethost24.com";
+if (!isset($username))   $username = "b24_41136349";
+if (!isset($password))   $password = "SHOP123456789SHOP";
+if (!isset($dbname))     $dbname = "b24_41136349_shop";
 
 // =======================================================
 // Connection Logic (Optimized for Shared Hosting / InfinityFree)

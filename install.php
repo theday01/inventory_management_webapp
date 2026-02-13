@@ -5,6 +5,11 @@ $username = "b24_41136349";            // اسم المستخدم من Byet (ي�
 $password = "SHOP123456789SHOP";  // كلمة مرور قاعدة البيانات
 $dbname = "b24_41136349_shop";        // اسم قاعدة البيانات
 
+// 1. CONFIGURATION OVERRIDE (Optional)
+if (file_exists(__DIR__ . '/config.php')) {
+    include __DIR__ . '/config.php';
+}
+
 // Connect to MySQL server without specifying a database
 $conn = new mysqli($servername, $username, $password);
 
@@ -336,6 +341,50 @@ if ($result_holidays_active && $result_holidays_active->num_rows == 0) {
     }
 } else {
     echo "<div style='color: #fff3cd;'>ℹ️ Column 'is_active' already exists in holidays table. Skipping.</div>";
+}
+
+// Add end_time column to business_days if it doesn't exist
+$check_bd_endtime = "SHOW COLUMNS FROM `business_days` LIKE 'end_time'";
+$result_bd_endtime = $conn->query($check_bd_endtime);
+if ($result_bd_endtime && $result_bd_endtime->num_rows == 0) {
+    $alter_bd = "ALTER TABLE business_days ADD COLUMN end_time DATETIME NULL AFTER start_time";
+    if ($conn->query($alter_bd) === TRUE) {
+        echo "<div style='color: green;'>✓ Column 'end_time' successfully added to business_days table.</div>";
+    } else {
+        echo "<div style='color: red;'>✗ Error adding column 'end_time': " . $conn->error . "</div>";
+    }
+} else {
+    echo "<div style='color: #fff3cd;'>ℹ️ Column 'end_time' already exists in business_days table. Skipping.</div>";
+}
+
+// Add closing_balance column to business_days if it doesn't exist
+$check_bd_closing = "SHOW COLUMNS FROM `business_days` LIKE 'closing_balance'";
+$result_bd_closing = $conn->query($check_bd_closing);
+if ($result_bd_closing && $result_bd_closing->num_rows == 0) {
+    $alter_bd_c = "ALTER TABLE business_days ADD COLUMN closing_balance DECIMAL(10, 2) NULL AFTER opening_balance";
+    if ($conn->query($alter_bd_c) === TRUE) {
+        echo "<div style='color: green;'>✓ Column 'closing_balance' successfully added to business_days table.</div>";
+    } else {
+        echo "<div style='color: red;'>✗ Error adding column 'closing_balance': " . $conn->error . "</div>";
+    }
+} else {
+    echo "<div style='color: #fff3cd;'>ℹ️ Column 'closing_balance' already exists in business_days table. Skipping.</div>";
+}
+
+// Add user_id column to business_days if it doesn't exist
+$check_bd_uid = "SHOW COLUMNS FROM `business_days` LIKE 'user_id'";
+$result_bd_uid = $conn->query($check_bd_uid);
+if ($result_bd_uid && $result_bd_uid->num_rows == 0) {
+    $alter_bd_u = "ALTER TABLE business_days ADD COLUMN user_id INT(6) UNSIGNED NULL AFTER closing_balance";
+    if ($conn->query($alter_bd_u) === TRUE) {
+        // Add Foreign Key Constraint
+        $conn->query("ALTER TABLE business_days ADD CONSTRAINT fk_business_days_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        echo "<div style='color: green;'>✓ Column 'user_id' successfully added to business_days table.</div>";
+    } else {
+        echo "<div style='color: red;'>✗ Error adding column 'user_id': " . $conn->error . "</div>";
+    }
+} else {
+    echo "<div style='color: #fff3cd;'>ℹ️ Column 'user_id' already exists in business_days table. Skipping.</div>";
 }
 
 // ======================================
