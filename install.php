@@ -1,9 +1,9 @@
 <?php
 // Database connection details
-$servername = "127.0.0.1";
-$username = "root";
-$password = "";
-$dbname = "smart_shop";
+$servername = "sql210.byethost24.com";  // أو sql001, sql002 حسب استضافتك
+$username = "b24_41136349";            // اسم المستخدم من Byet (يبدأ بـ b00_)
+$password = "SHOP123456789SHOP";  // كلمة مرور قاعدة البيانات
+$dbname = "b24_41136349_shop";        // اسم قاعدة البيانات
 
 // Connect to MySQL server without specifying a database
 $conn = new mysqli($servername, $username, $password);

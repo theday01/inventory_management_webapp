@@ -1,39 +1,82 @@
 <?php
-// إضافة هذه الأسطر في بداية الملف قبل أي كود آخر
-session_start();
-require_once 'db.php';
-require_once __DIR__ . '/src/language.php';
-require_once __DIR__ . '/src/AnnualAnalyzer.php';
+// =======================================================
+// Smart Shop API Endpoint (Optimized for InfinityFree)
+// =======================================================
 
-// منع أي output قبل JSON
+// 1. Initial Setup: Buffer Output
 ob_start();
 
-// إخفاء رسائل الأخطاء من الظهور في JSON
-// error_reporting(E_ALL);
-// ini_set('display_errors', 0);
-// ini_set('log_errors', 1);
+// 2. Define API Context (used by db.php)
+if (!defined('IS_API_REQUEST')) define('IS_API_REQUEST', true);
 
-// DEBUG: Enable errors temporarily to see them in Network Tab response
+// 3. Error Handling (Crucial for JSON responses)
+// Hide errors from output, log them instead
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
-// التأكد من عدم وجود BOM في بداية الملف
-if (ob_get_length()) ob_clean();
+// 4. Session & Database
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// التحقق من تسجيل الدخول
-if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => __('login_required')]);
+// Custom Error Handler to return JSON for fatal errors
+function jsonShutdownHandler() {
+    $error = error_get_last();
+    if ($error && ($error['type'] === E_ERROR || $error['type'] === E_PARSE || $error['type'] === E_CORE_ERROR || $error['type'] === E_COMPILE_ERROR)) {
+        while (ob_get_level()) ob_end_clean();
+        if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+        sendJsonResponse(['success' => false, 'message' => 'Fatal Error: ' . $error['message']]);
+        exit;
+    }
+}
+register_shutdown_function('jsonShutdownHandler');
+
+// Include Database (handles connection errors via IS_API_REQUEST)
+try {
+    require_once 'db.php';
+} catch (Exception $e) {
+    while (ob_get_level()) ob_end_clean();
+    if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+    sendJsonResponse(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
     exit;
 }
 
-header('Content-Type: application/json');
-require_once 'vendor/autoload.php';
+// 5. Dependencies
+require_once __DIR__ . '/src/language.php';
+require_once __DIR__ . '/src/AnnualAnalyzer.php';
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
+// Load Composer dependencies if available (optional for Excel/Import features)
+if (file_exists('vendor/autoload.php')) {
+    require_once 'vendor/autoload.php';
+}
 
+// 6. Response Helper
+function sendJsonResponse($data) {
+    // Clean buffer to remove any warnings/HTML/BOM from InfinityFree
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    
+    // Ensure content type
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    
+    // Output JSON and exit
+    echo json_encode($data);
+    exit;
+}
+
+// 7. Check Authentication
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    sendJsonResponse(['success' => false, 'message' => __('login_required')]);
+}
+
+// 8. Main Logic
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
+// From here, we append the original logic
 switch ($action) {
     case 'getCategories':
         getCategories($conn);
@@ -190,7 +233,7 @@ switch ($action) {
         break;
     case 'cleanOldNotifications':
         cleanOldNotifications($conn);
-        echo json_encode(['success' => true]);
+        sendJsonResponse(['success' => true]);
         break;
     // --- أضف هذه الحالات الجديدة ---
     case 'markAllNotificationsRead':
@@ -207,7 +250,7 @@ switch ($action) {
         break;
     case 'checkExpiringProducts':
         checkExpiringProducts($conn);
-        echo json_encode(['success' => true]);
+        sendJsonResponse(['success' => true]);
         break;
     case 'markRentalPaidThisMonth':
         checkDemoMode();
@@ -326,7 +369,7 @@ switch ($action) {
         get_debt_customers($conn);
         break;
     default:
-        echo json_encode(['success' => false, 'message' => __('invalid_data')]);
+        sendJsonResponse(['success' => false, 'message' => __('invalid_data')]);
         break;
 }
 
@@ -408,9 +451,9 @@ function get_holiday_status($conn) {
     $today = date('Y-m-d');
     $holidayName = isHoliday($conn, $today);
     if ($holidayName) {
-        echo json_encode(['success' => true, 'is_holiday' => true, 'holiday_name' => $holidayName]);
+        sendJsonResponse(['success' => true, 'is_holiday' => true, 'holiday_name' => $holidayName]);
     } else {
-        echo json_encode(['success' => true, 'is_holiday' => false]);
+        sendJsonResponse(['success' => true, 'is_holiday' => false]);
     }
 }
 
@@ -422,22 +465,12 @@ function get_business_day_status($conn) {
     $stmt->close();
 
     if ($day) {
-        echo json_encode(['success' => true, 'data' => ['status' => 'open', 'day' => $day]]);
+        sendJsonResponse(['success' => true, 'data' => ['status' => 'open', 'day' => $day]]);
     } else {
-        echo json_encode(['success' => true, 'data' => ['status' => 'closed']]);
+        sendJsonResponse(['success' => true, 'data' => ['status' => 'closed']]);
     }
 }
 
-function sendJsonResponse($data) {
-    // Clear any previous output
-    if (ob_get_level()) {
-        ob_clean();
-    }
-    
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($data);
-    exit;
-}
 
 function checkDemoMode() {
     if (defined('DEMO_MODE') && DEMO_MODE) {
@@ -1109,7 +1142,7 @@ function createFavicon($source, $destination) {
 function updateShopFavicon($conn) {
     // فقط المدير يمكنه تغيير الفافيكون
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
@@ -1122,7 +1155,7 @@ function updateShopFavicon($conn) {
             $uploadDir = __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'uploads';
             if (!is_dir($uploadDir)) {
                 if (!@mkdir($uploadDir, 0755, true)) {
-                    echo json_encode(['success' => false, 'message' => __('upload_dir_fail')]);
+                    sendJsonResponse(['success' => false, 'message' => __('upload_dir_fail')]);
                     return;
                 }
             }
@@ -1151,9 +1184,9 @@ function updateShopFavicon($conn) {
                     $stmt = $conn->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('shopFavicon', ?) ON DUPLICATE KEY UPDATE setting_value = ?");
                     $stmt->bind_param("ss", $destUrl, $destUrl);
                     if ($stmt->execute()) {
-                        echo json_encode(['success' => true, 'message' => __('action_success'), 'faviconUrl' => $destUrl]);
+                        sendJsonResponse(['success' => true, 'message' => __('action_success'), 'faviconUrl' => $destUrl]);
                     } else {
-                        echo json_encode(['success' => false, 'message' => __('db_update_fail')]);
+                        sendJsonResponse(['success' => false, 'message' => __('db_update_fail')]);
                     }
                     $stmt->close();
                     return;
@@ -1166,26 +1199,26 @@ function updateShopFavicon($conn) {
                 $stmt->bind_param("ss", $destUrl, $destUrl);
                 
                 if ($stmt->execute()) {
-                    echo json_encode(['success' => true, 'message' => __('action_success'), 'faviconUrl' => $destUrl]);
+                    sendJsonResponse(['success' => true, 'message' => __('action_success'), 'faviconUrl' => $destUrl]);
                 } else {
-                    echo json_encode(['success' => false, 'message' => __('db_update_fail')]);
+                    sendJsonResponse(['success' => false, 'message' => __('db_update_fail')]);
                 }
                 $stmt->close();
             } else {
-                echo json_encode(['success' => false, 'message' => __('image_process_fail')]);
+                sendJsonResponse(['success' => false, 'message' => __('image_process_fail')]);
             }
         } else {
-            echo json_encode(['success' => false, 'message' => __('invalid_file_type')]);
+            sendJsonResponse(['success' => false, 'message' => __('invalid_file_type')]);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => __('no_file_uploaded')]);
+        sendJsonResponse(['success' => false, 'message' => __('no_file_uploaded')]);
     }
 }
 
 function updateShopLogo($conn) {
     // فقط المدير يمكنه تغيير الشعار
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
@@ -1198,7 +1231,7 @@ function updateShopLogo($conn) {
             $uploadDir = __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'uploads';
             if (!is_dir($uploadDir)) {
                 if (!@mkdir($uploadDir, 0755, true)) {
-                    echo json_encode(['success' => false, 'message' => __('upload_dir_fail')]);
+                    sendJsonResponse(['success' => false, 'message' => __('upload_dir_fail')]);
                     return;
                 }
             }
@@ -1236,20 +1269,20 @@ function updateShopLogo($conn) {
                         $stmtFavicon->close();
                     }
 
-                    echo json_encode(['success' => true, 'message' => __('logo_update_success'), 'logoUrl' => $destUrl]);
+                    sendJsonResponse(['success' => true, 'message' => __('logo_update_success'), 'logoUrl' => $destUrl]);
                 } else {
-                    echo json_encode(['success' => false, 'message' => __('db_update_fail')]);
+                    sendJsonResponse(['success' => false, 'message' => __('db_update_fail')]);
                 }
                 $stmt->close();
 
             } else {
-                echo json_encode(['success' => false, 'message' => __('file_move_fail')]);
+                sendJsonResponse(['success' => false, 'message' => __('file_move_fail')]);
             }
         } else {
-            echo json_encode(['success' => false, 'message' => __('invalid_file_type')]);
+            sendJsonResponse(['success' => false, 'message' => __('invalid_file_type')]);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => __('no_file_uploaded')]);
+        sendJsonResponse(['success' => false, 'message' => __('no_file_uploaded')]);
     }
 }
 
@@ -1279,12 +1312,12 @@ function uploadImage($conn) {
     if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
         $imagePath = handle_image_upload($conn, $_FILES['image']);
         if ($imagePath) {
-            echo json_encode(['success' => true, 'filePath' => $imagePath]);
+            sendJsonResponse(['success' => true, 'filePath' => $imagePath]);
         } else {
-            echo json_encode(['success' => false, 'message' => __('image_upload_fail')]);
+            sendJsonResponse(['success' => false, 'message' => __('image_upload_fail')]);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => __('no_image_sent')]);
+        sendJsonResponse(['success' => false, 'message' => __('no_image_sent')]);
     }
 }
 
@@ -1370,7 +1403,7 @@ function getRemovedProducts($conn) {
     }
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $products, 'total_products' => $total_products]);
+    sendJsonResponse(['success' => true, 'data' => $products, 'total_products' => $total_products]);
 }
 
 function restoreProducts($conn) {
@@ -1379,7 +1412,7 @@ function restoreProducts($conn) {
         $product_ids = $data['product_ids'] ?? [];
 
         if (empty($product_ids)) {
-            echo json_encode(['success' => false, 'message' => __('no_products_selected')]);
+            sendJsonResponse(['success' => false, 'message' => __('no_products_selected')]);
             return;
         }
 
@@ -1415,10 +1448,10 @@ function restoreProducts($conn) {
         if ($restored_count > 0) {
             create_notification($conn, sprintf(__('notification_products_restored'), $restored_count), "product_restore");
         }
-        echo json_encode(['success' => true, 'message' => sprintf(__('products_restored_success'), $restored_count)]);
+        sendJsonResponse(['success' => true, 'message' => sprintf(__('products_restored_success'), $restored_count)]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('product_restore_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('product_restore_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -1428,7 +1461,7 @@ function permanentlyDeleteProducts($conn) {
         $product_ids = $data['product_ids'] ?? [];
 
         if (empty($product_ids)) {
-            echo json_encode(['success' => false, 'message' => __('no_products_selected_delete')]);
+            sendJsonResponse(['success' => false, 'message' => __('no_products_selected_delete')]);
             return;
         }
         $product_ids = array_map('intval', $product_ids);
@@ -1444,9 +1477,9 @@ function permanentlyDeleteProducts($conn) {
         $deleted_count = $delete_stmt->affected_rows;
         $delete_stmt->close();
         
-        echo json_encode(['success' => true, 'message' => sprintf(__('products_deleted_permanently'), $deleted_count)]);
+        sendJsonResponse(['success' => true, 'message' => sprintf(__('products_deleted_permanently'), $deleted_count)]);
      } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('permanent_delete_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('permanent_delete_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -1472,7 +1505,7 @@ function getInventoryStats($conn) {
     $stats['low_stock'] = $result->fetch_assoc()['low_stock'] ?? 0;
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $stats]);
+    sendJsonResponse(['success' => true, 'data' => $stats]);
 }
 
 function getUploadedImages($conn) {
@@ -1481,7 +1514,7 @@ function getUploadedImages($conn) {
     while ($row = $result->fetch_assoc()) {
         $images[] = $row;
     }
-    echo json_encode(['success' => true, 'data' => $images]);
+    sendJsonResponse(['success' => true, 'data' => $images]);
 }
 
 function bulkUpdateProducts($conn) {
@@ -1489,7 +1522,7 @@ function bulkUpdateProducts($conn) {
     $product_ids = $data['product_ids'] ?? [];
 
     if (empty($product_ids)) {
-        echo json_encode(['success' => false, 'message' => __('no_products_selected')]);
+        sendJsonResponse(['success' => false, 'message' => __('no_products_selected')]);
         return;
     }
 
@@ -1514,7 +1547,7 @@ function bulkUpdateProducts($conn) {
     }
 
     if (empty($updates)) {
-        echo json_encode(['success' => false, 'message' => __('no_changes_to_apply')]);
+        sendJsonResponse(['success' => false, 'message' => __('no_changes_to_apply')]);
         return;
     }
 
@@ -1535,21 +1568,21 @@ function bulkUpdateProducts($conn) {
             $msg = "تم تعديل " . implode(' و ', $changed) . " لعدد " . count($product_ids) . " منتج";
             create_notification($conn, $msg, "stock_update");
         }
-        echo json_encode(['success' => true, 'message' => __('bulk_update_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('bulk_update_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('bulk_update_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('bulk_update_fail')]);
     }
     $stmt->close();
 }
 
 function toggleHolidayActive($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['id'])) {
-        echo json_encode(['success' => false, 'message' => __('holiday_id_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('holiday_id_required')]);
         return;
     }
     
@@ -1559,9 +1592,9 @@ function toggleHolidayActive($conn) {
     $stmt->bind_param("ii", $isActive, $data['id']);
     
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => __('action_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('action_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('update_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('update_fail')]);
     }
     $stmt->close();
 }
@@ -1572,7 +1605,7 @@ function bulkDeleteProducts($conn) {
         $product_ids = $data['product_ids'] ?? [];
 
         if (empty($product_ids)) {
-            echo json_encode(['success' => false, 'message' => __('no_products_selected')]);
+            sendJsonResponse(['success' => false, 'message' => __('no_products_selected')]);
             return;
         }
 
@@ -1580,7 +1613,7 @@ function bulkDeleteProducts($conn) {
         $product_ids = array_filter($product_ids, function($id) { return $id > 0; });
 
         if (empty($product_ids)) {
-            echo json_encode(['success' => false, 'message' => __('bulk_delete_invalid_ids')]);
+            sendJsonResponse(['success' => false, 'message' => __('bulk_delete_invalid_ids')]);
             return;
         }
 
@@ -1672,11 +1705,11 @@ function bulkDeleteProducts($conn) {
             ];
         }
         
-        echo json_encode($response);
+        sendJsonResponse($response);
         
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode([
+        sendJsonResponse([
             'success' => false, 
             'message' => __('bulk_delete_fail') . ': ' . $e->getMessage()
         ]);
@@ -1772,7 +1805,7 @@ function getProducts($conn) {
     }
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $products, 'total_products' => $total_products]);
+    sendJsonResponse(['success' => true, 'data' => $products, 'total_products' => $total_products]);
 }
 
 function exportProductsExcel($conn) {
@@ -1936,7 +1969,7 @@ function addProduct($conn) {
 
     if (!empty($data['image_path'])) {
         if (!is_valid_image_path($data['image_path'])) {
-            echo json_encode(['success' => false, 'message' => __('product_image_invalid')]);
+            sendJsonResponse(['success' => false, 'message' => __('product_image_invalid')]);
             return;
         }
         $imagePath = $data['image_path'];
@@ -1968,10 +2001,10 @@ function addProduct($conn) {
 
         $conn->commit();
         create_notification($conn, __('notification_product_added') . ": " . $data['name'], "product_add");
-        echo json_encode(['success' => true, 'message' => __('product_added_success'), 'id' => $productId]);
+        sendJsonResponse(['success' => true, 'message' => __('product_added_success'), 'id' => $productId]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('product_add_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('product_add_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -1980,14 +2013,14 @@ function updateProduct($conn) {
     $productId = isset($data['id']) ? (int)$data['id'] : 0;
 
     if ($productId === 0) {
-        echo json_encode(['success' => false, 'message' => __('product_id_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('product_id_required')]);
         return;
     }
 
     $imagePath = null;
     if (!empty($data['image_path'])) {
         if (!is_valid_image_path($data['image_path'])) {
-            echo json_encode(['success' => false, 'message' => __('product_image_invalid')]);
+            sendJsonResponse(['success' => false, 'message' => __('product_image_invalid')]);
             return;
         }
         $imagePath = $data['image_path'];
@@ -2047,10 +2080,10 @@ function updateProduct($conn) {
 
         $conn->commit();
         create_notification($conn, __('notification_product_updated') . ": " . $data['name'], "product_update");
-        echo json_encode(['success' => true, 'message' => __('product_updated_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('product_updated_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('product_update_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('product_update_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2059,7 +2092,7 @@ function bulkAddProducts($conn) {
     $products = $data['products'] ?? [];
 
     if (empty($products)) {
-        echo json_encode(['success' => false, 'message' => __('no_products_sent')]);
+        sendJsonResponse(['success' => false, 'message' => __('no_products_sent')]);
         return;
     }
 
@@ -2098,16 +2131,16 @@ function bulkAddProducts($conn) {
         $conn->commit();
         
         create_notification($conn, sprintf(__('notification_bulk_products_added'), count($products)), "product_add");
-        echo json_encode(['success' => true, 'message' => __('bulk_add_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('bulk_add_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('bulk_add_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('bulk_add_fail') . ': ' . $e->getMessage()]);
     }
 }
 
 function importProducts($conn) {
     if (!isset($_FILES['excel_file']) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK) {
-        echo json_encode(['success' => false, 'message' => __('import_no_file')]);
+        sendJsonResponse(['success' => false, 'message' => __('import_no_file')]);
         return;
     }
 
@@ -2116,17 +2149,26 @@ function importProducts($conn) {
     $isPreview = isset($_POST['preview']) && $_POST['preview'] === 'true';
 
     try {
-        $spreadsheet = IOFactory::load($file);
+        // Check if PhpSpreadsheet is available
+        if (!class_exists('PhpOffice\PhpSpreadsheet\IOFactory')) {
+            sendJsonResponse([
+                'success' => false, 
+                'message' => 'PhpSpreadsheet library not available. Please install Composer dependencies.'
+            ]);
+            return;
+        }
+        
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
         $worksheet = $spreadsheet->getActiveSheet();
         $rows = $worksheet->toArray();
 
         if (empty($rows)) {
-            echo json_encode(['success' => false, 'message' => __('import_empty_file')]);
+            sendJsonResponse(['success' => false, 'message' => __('import_empty_file')]);
             return;
         }
 
         if (count($rows) < 2) {
-            echo json_encode(['success' => false, 'message' => __('import_headers_only')]);
+            sendJsonResponse(['success' => false, 'message' => __('import_headers_only')]);
             return;
         }
 
@@ -2158,7 +2200,7 @@ function importProducts($conn) {
 
         // Check required columns
         if ($columnMap['name'] === false || $columnMap['price'] === false || $columnMap['quantity'] === false) {
-            echo json_encode(['success' => false, 'message' => sprintf(__('import_missing_columns'), implode(', ', $headers))]);
+            sendJsonResponse(['success' => false, 'message' => sprintf(__('import_missing_columns'), implode(', ', $headers))]);
             return;
         }
 
@@ -2233,7 +2275,7 @@ function importProducts($conn) {
         }
 
         if ($isPreview) {
-            echo json_encode([
+            sendJsonResponse([
                 'success' => true,
                 'data' => [
                     'total_rows' => count($dataRows),
@@ -2296,7 +2338,7 @@ function importProducts($conn) {
             $message .= sprintf(__('import_skipped_errors'), count($errors));
         }
 
-        echo json_encode([
+        sendJsonResponse([
             'success' => true, 
             'message' => $message,
             'data' => [
@@ -2310,7 +2352,7 @@ function importProducts($conn) {
         if ($conn->connect_errno === 0) {
             $conn->rollback();
         }
-        echo json_encode(['success' => false, 'message' => __('import_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('import_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2318,7 +2360,7 @@ function getProductDetails($conn) {
     $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
     if ($product_id === 0) {
-        echo json_encode(['success' => false, 'message' => __('invalid_product_id')]);
+        sendJsonResponse(['success' => false, 'message' => __('invalid_product_id')]);
         return;
     }
 
@@ -2330,7 +2372,7 @@ function getProductDetails($conn) {
     $stmt->close();
 
     if (!$product) {
-        echo json_encode(['success' => false, 'message' => __('product_not_found')]);
+        sendJsonResponse(['success' => false, 'message' => __('product_not_found')]);
         return;
     }
 
@@ -2348,7 +2390,7 @@ function getProductDetails($conn) {
     $stmt->close();
     $product['custom_fields'] = $fields;
 
-    echo json_encode(['success' => true, 'data' => $product]);
+    sendJsonResponse(['success' => true, 'data' => $product]);
 }
 
 function swapQwertyAzerty($str) {
@@ -2394,7 +2436,7 @@ function getProductByBarcode($conn) {
     $barcode = isset($_GET['barcode']) ? trim($_GET['barcode']) : '';
 
     if (empty($barcode)) {
-        echo json_encode(['success' => false, 'message' => __('barcode_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('barcode_required')]);
         return;
     }
 
@@ -2483,9 +2525,9 @@ function getProductByBarcode($conn) {
     }
 
     if ($product) {
-        echo json_encode(['success' => true, 'data' => $product]);
+        sendJsonResponse(['success' => true, 'data' => $product]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('product_not_found')]);
+        sendJsonResponse(['success' => false, 'message' => __('product_not_found')]);
     }
 }
 
@@ -2493,7 +2535,7 @@ function getCategoryFields($conn) {
     $category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 
     if ($category_id === 0) {
-        echo json_encode(['success' => false, 'message' => __('category_id_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('category_id_required')]);
         return;
     }
 
@@ -2507,7 +2549,7 @@ function getCategoryFields($conn) {
     }
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $fields]);
+    sendJsonResponse(['success' => true, 'data' => $fields]);
 }
 
 function getCategories($conn) {
@@ -2527,14 +2569,14 @@ function getCategories($conn) {
         }
     }
 
-    echo json_encode(['success' => true, 'data' => $categories]);
+    sendJsonResponse(['success' => true, 'data' => $categories]);
 }
 
 function addCategory($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => __('category_name_required_msg')]);
+        sendJsonResponse(['success' => false, 'message' => __('category_name_required_msg')]);
         return;
     }
 
@@ -2560,10 +2602,10 @@ function addCategory($conn) {
         }
 
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => __('category_added_success'), 'id' => $categoryId]);
+        sendJsonResponse(['success' => true, 'message' => __('category_added_success'), 'id' => $categoryId]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('category_add_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('category_add_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2571,7 +2613,7 @@ function updateCategory($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['id']) || empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => __('category_name_required_msg')]);
+        sendJsonResponse(['success' => false, 'message' => __('category_name_required_msg')]);
         return;
     }
 
@@ -2601,10 +2643,10 @@ function updateCategory($conn) {
         }
 
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => __('category_updated_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('category_updated_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('category_update_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('category_update_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -2612,7 +2654,7 @@ function deleteCategory($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['id'])) {
-        echo json_encode(['success' => false, 'message' => __('category_id_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('category_id_required')]);
         return;
     }
 
@@ -2620,9 +2662,9 @@ function deleteCategory($conn) {
     $stmt->bind_param("i", $data['id']);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => __('category_deleted_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('category_deleted_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('category_delete_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('category_delete_fail')]);
     }
 
     $stmt->close();
@@ -2655,14 +2697,14 @@ function getCustomers($conn) {
     }
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $customers, 'total_customers' => $total_customers]);
+    sendJsonResponse(['success' => true, 'data' => $customers, 'total_customers' => $total_customers]);
 }
 
 function addCustomer($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => __('customer_name_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('customer_name_required')]);
         return;
     }
 
@@ -2676,9 +2718,9 @@ function addCustomer($conn) {
 
     if ($stmt->execute()) {
         $customerId = $stmt->insert_id;
-        echo json_encode(['success' => true, 'message' => __('customer_added_success'), 'id' => $customerId]);
+        sendJsonResponse(['success' => true, 'message' => __('customer_added_success'), 'id' => $customerId]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('customer_add_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('customer_add_fail')]);
     }
 
     $stmt->close();
@@ -2688,7 +2730,7 @@ function getCustomerDetails($conn) {
     $customer_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
     if ($customer_id === 0) {
-        echo json_encode(['success' => false, 'message' => __('invalid_customer_id')]);
+        sendJsonResponse(['success' => false, 'message' => __('invalid_customer_id')]);
         return;
     }
 
@@ -2700,18 +2742,18 @@ function getCustomerDetails($conn) {
     $stmt->close();
 
     if (!$customer) {
-        echo json_encode(['success' => false, 'message' => __('customer_not_found')]);
+        sendJsonResponse(['success' => false, 'message' => __('customer_not_found')]);
         return;
     }
 
-    echo json_encode(['success' => true, 'data' => $customer]);
+    sendJsonResponse(['success' => true, 'data' => $customer]);
 }
 
 function updateCustomer($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['id']) || empty($data['name'])) {
-        echo json_encode(['success' => false, 'message' => __('customer_id_name_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('customer_id_name_required')]);
         return;
     }
 
@@ -2724,9 +2766,9 @@ function updateCustomer($conn) {
     $stmt->bind_param("sssssi", $data['name'], $phone, $email, $address, $city, $data['id']);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => __('customer_updated_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('customer_updated_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('customer_update_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('customer_update_fail')]);
     }
 
     $stmt->close();
@@ -2884,7 +2926,7 @@ function checkout($conn) {
     $day_stmt = $conn->prepare("SELECT id FROM business_days WHERE end_time IS NULL");
     $day_stmt->execute();
     if ($day_stmt->get_result()->num_rows == 0) {
-        echo json_encode(['success' => false, 'message' => __('business_day_start_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('business_day_start_required')]);
         return;
     }
     $day_stmt->close();
@@ -2892,7 +2934,7 @@ function checkout($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['items']) || !is_array($data['items'])) {
-        echo json_encode(['success' => false, 'message' => __('cart_empty')]);
+        sendJsonResponse(['success' => false, 'message' => __('cart_empty')]);
         return;
     }
 
@@ -3020,10 +3062,10 @@ function checkout($conn) {
 
         $conn->commit();
         create_notification($conn, __('notification_invoice_created') . ": " . $barcode, "new_sale");
-        echo json_encode(['success' => true, 'message' => __('invoice_created_success'), 'invoice_id' => $invoiceId]);
+        sendJsonResponse(['success' => true, 'message' => __('invoice_created_success'), 'invoice_id' => $invoiceId]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('invoice_creation_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('invoice_creation_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3035,7 +3077,7 @@ function getInvoice($conn) {
     $invoice_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
     if ($invoice_id === 0) {
-        echo json_encode(['success' => false, 'message' => __('invoice_id_invalid')]);
+        sendJsonResponse(['success' => false, 'message' => __('invoice_id_invalid')]);
         return;
     }
 
@@ -3050,7 +3092,7 @@ function getInvoice($conn) {
     $stmt->close();
 
     if (!$invoice) {
-        echo json_encode(['success' => false, 'message' => __('invoice_not_found')]);
+        sendJsonResponse(['success' => false, 'message' => __('invoice_not_found')]);
         return;
     }
 
@@ -3070,7 +3112,7 @@ function getInvoice($conn) {
     
     $invoice['items'] = $items;
 
-    echo json_encode(['success' => true, 'data' => $invoice]);
+    sendJsonResponse(['success' => true, 'data' => $invoice]);
 }
 
 function getInvoices($conn) {
@@ -3130,7 +3172,7 @@ function getInvoices($conn) {
     }
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $invoices, 'total_invoices' => $total_invoices]);
+    sendJsonResponse(['success' => true, 'data' => $invoices, 'total_invoices' => $total_invoices]);
 }
 
 function getDeliverySettings($conn) {
@@ -3148,14 +3190,14 @@ function getDeliverySettings($conn) {
         }
     }
     
-    echo json_encode(['success' => true, 'data' => $settings]);
+    sendJsonResponse(['success' => true, 'data' => $settings]);
 }
 
 function updateDeliverySettings($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (!isset($data['deliveryInsideCity']) || !isset($data['deliveryOutsideCity'])) {
-        echo json_encode(['success' => false, 'message' => __('values_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('values_required')]);
         return;
     }
     
@@ -3178,10 +3220,10 @@ function updateDeliverySettings($conn) {
         $conn->commit();
         
         create_notification($conn, sprintf(__('notification_delivery_settings_updated'), $data['deliveryInsideCity'], $data['deliveryOutsideCity']), "settings_update");
-        echo json_encode(['success' => true, 'message' => __('delivery_settings_update_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('delivery_settings_update_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('settings_update_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('settings_update_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3227,7 +3269,7 @@ function getLowStockProducts($conn) {
         $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_stock_check_notification', '" . time() . "') ON DUPLICATE KEY UPDATE setting_value = '" . time() . "'");
     }
 
-    echo json_encode([
+    sendJsonResponse([
         'success' => true,
         'data' => $products,
         'outOfStock' => array_values($outOfStock),
@@ -3346,9 +3388,9 @@ function getDashboardStats($conn) {
         $result = $conn->query("SELECT COUNT(*) as count FROM customers WHERE DATE_FORMAT(created_at, '%Y-%m') = '$thisMonth'");
         $stats['newCustomersThisMonth'] = $result ? $result->fetch_assoc()['count'] : 0;
         
-        echo json_encode(['success' => true, 'data' => $stats]);
+        sendJsonResponse(['success' => true, 'data' => $stats]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('fetch_stats_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('fetch_stats_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3417,9 +3459,9 @@ function getSalesChart($conn) {
         ksort($chartData);
         $data = array_values($chartData);
         
-        echo json_encode(['success' => true, 'data' => $data]);
+        sendJsonResponse(['success' => true, 'data' => $data]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('fetch_sales_data_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('fetch_sales_data_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3465,9 +3507,9 @@ function getTopProducts($conn) {
         }
         $stmt->close();
         
-        echo json_encode(['success' => true, 'data' => $products]);
+        sendJsonResponse(['success' => true, 'data' => $products]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('fetch_top_products_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('fetch_top_products_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3513,9 +3555,9 @@ function getCategorySales($conn) {
         }
         $stmt->close();
         
-        echo json_encode(['success' => true, 'data' => $categories]);
+        sendJsonResponse(['success' => true, 'data' => $categories]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('fetch_category_sales_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('fetch_category_sales_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3551,9 +3593,9 @@ function getRecentInvoices($conn) {
         }
         $stmt->close();
         
-        echo json_encode(['success' => true, 'data' => $invoices]);
+        sendJsonResponse(['success' => true, 'data' => $invoices]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('fetch_recent_invoices_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('fetch_recent_invoices_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3599,9 +3641,9 @@ function getTopCustomers($conn) {
         }
         $stmt->close();
         
-        echo json_encode(['success' => true, 'data' => $customers]);
+        sendJsonResponse(['success' => true, 'data' => $customers]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('fetch_top_customers_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('fetch_top_customers_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -3623,57 +3665,57 @@ function getHolidays($conn) {
         $holidays[] = $row;
     }
     $stmt->close();
-    echo json_encode(['success' => true, 'data' => $holidays]);
+    sendJsonResponse(['success' => true, 'data' => $holidays]);
 }
 
 function addHoliday($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['name']) || empty($data['date'])) {
-        echo json_encode(['success' => false, 'message' => __('name_date_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('name_date_required')]);
         return;
     }
     $stmt = $conn->prepare("INSERT INTO holidays (name, date) VALUES (?, ?)");
     $stmt->bind_param("ss", $data['name'], $data['date']);
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => __('holiday_added_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('holiday_added_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('holiday_add_fail') . ': ' . $conn->error]);
+        sendJsonResponse(['success' => false, 'message' => __('holiday_add_fail') . ': ' . $conn->error]);
     }
     $stmt->close();
 }
 
 function updateHoliday($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['id']) || empty($data['name']) || empty($data['date'])) {
-        echo json_encode(['success' => false, 'message' => __('all_fields_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('all_fields_required')]);
         return;
     }
     $stmt = $conn->prepare("UPDATE holidays SET name = ?, date = ? WHERE id = ?");
     $stmt->bind_param("ssi", $data['name'], $data['date'], $data['id']);
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => __('holiday_updated_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('holiday_updated_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('update_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('update_fail')]);
     }
     $stmt->close();
 }
 
 function deleteHoliday($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['id'])) {
-        echo json_encode(['success' => false, 'message' => __('holiday_id_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('holiday_id_required')]);
         return;
     }
     
@@ -3694,16 +3736,16 @@ function deleteHoliday($conn) {
             $updateStmt->execute();
             $updateStmt->close();
         }
-        echo json_encode(['success' => true, 'message' => __('holiday_deleted_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('holiday_deleted_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('delete_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('delete_fail')]);
     }
     $stmt->close();
 }
 
 function syncMoroccanHolidays($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
@@ -3714,9 +3756,9 @@ function syncMoroccanHolidays($conn) {
     if ($results['success']) {
         $today = date('Y-m-d H:i');
         $conn->query("INSERT INTO settings (setting_name, setting_value) VALUES ('last_holiday_sync_date', '$today') ON DUPLICATE KEY UPDATE setting_value = '$today'");
-        echo json_encode(['success' => true, 'message' => __('holidays_synced_success'), 'count' => $results['count']]);
+        sendJsonResponse(['success' => true, 'message' => __('holidays_synced_success'), 'count' => $results['count']]);
     } else {
-        echo json_encode(['success' => false, 'message' => $results['message']]);
+        sendJsonResponse(['success' => false, 'message' => $results['message']]);
     }
 }
 
@@ -3897,7 +3939,7 @@ function getNotifications($conn) {
     }
     $stmt->close();
 
-    echo json_encode([
+    sendJsonResponse([
         'success' => true, 
         'data' => $notifications,
         'unread_count' => $unread_count,
@@ -3926,13 +3968,13 @@ function markNotificationRead($conn) {
         $stmt = $conn->prepare("UPDATE notifications SET status = 'read' WHERE id = ?");
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
-            echo json_encode(['success' => true]);
+            sendJsonResponse(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'message' => __('update_fail')]);
+            sendJsonResponse(['success' => false, 'message' => __('update_fail')]);
         }
         $stmt->close();
     } else {
-        echo json_encode(['success' => false, 'message' => __('invalid_id')]);
+        sendJsonResponse(['success' => false, 'message' => __('invalid_id')]);
     }
 }
 
@@ -3944,21 +3986,21 @@ function deleteNotification($conn) {
         $stmt = $conn->prepare("DELETE FROM notifications WHERE id = ?");
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
-            echo json_encode(['success' => true]);
+            sendJsonResponse(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'message' => __('delete_fail')]);
+            sendJsonResponse(['success' => false, 'message' => __('delete_fail')]);
         }
         $stmt->close();
     } else {
-        echo json_encode(['success' => false, 'message' => __('invalid_id')]);
+        sendJsonResponse(['success' => false, 'message' => __('invalid_id')]);
     }
 }
 
 function markAllNotificationsRead($conn) {
     if ($conn->query("UPDATE notifications SET status = 'read' WHERE status = 'unread'")) {
-        echo json_encode(['success' => true]);
+        sendJsonResponse(['success' => true]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('update_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('update_fail')]);
     }
 }
 
@@ -4014,18 +4056,18 @@ function checkRentalDue($conn) {
         }
         
         if (!isset($settings['rentalEnabled']) || $settings['rentalEnabled'] != '1') {
-            echo json_encode(['success' => true, 'message' => __('rental_disabled')]);
+            sendJsonResponse(['success' => true, 'message' => __('rental_disabled')]);
             return;
         }
         
         $currentMonth = date('Y-m');
         if (isset($settings['rentalPaidMonth']) && $settings['rentalPaidMonth'] === $currentMonth) {
-            echo json_encode(['success' => true, 'notification_sent' => false, 'message' => __('rental_paid_this_month'), 'paid_this_month' => true]);
+            sendJsonResponse(['success' => true, 'notification_sent' => false, 'message' => __('rental_paid_this_month'), 'paid_this_month' => true]);
             return;
         }
         
         if (!isset($settings['rentalPaymentDate']) || !isset($settings['rentalType'])) {
-            echo json_encode(['success' => false, 'message' => __('rental_settings_incomplete')]);
+            sendJsonResponse(['success' => false, 'message' => __('rental_settings_incomplete')]);
             return;
         }
         
@@ -4039,7 +4081,7 @@ function checkRentalDue($conn) {
         $todayDate = date('Y-m-d');
         
         if ($lastNotificationDate === $todayDate) {
-            echo json_encode(['success' => true, 'message' => __('already_notified_today')]);
+            sendJsonResponse(['success' => true, 'message' => __('already_notified_today')]);
             return;
         }
         
@@ -4105,14 +4147,14 @@ function checkRentalDue($conn) {
             
             $conn->query("UPDATE settings SET setting_value = '{$currentTime}' WHERE setting_name = 'rentalLastNotification'");
             
-            echo json_encode([
+            sendJsonResponse([
                 'success' => true, 
                 'notification_sent' => true,
                 'days_until_due' => $daysUntilDue,
                 'message' => $notificationMessage
             ]);
         } else {
-            echo json_encode([
+            sendJsonResponse([
                 'success' => true, 
                 'notification_sent' => false,
                 'days_until_due' => $daysUntilDue,
@@ -4121,7 +4163,7 @@ function checkRentalDue($conn) {
         }
         
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('error_checking_rental') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error_checking_rental') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -4134,7 +4176,7 @@ function markRentalPaidThisMonth($conn) {
             $settings[$row['setting_name']] = $row['setting_value'];
         }
         if (!isset($settings['rentalPaymentDate']) || !isset($settings['rentalType'])) {
-            echo json_encode(['success' => false, 'message' => __('rental_settings_incomplete')]);
+            sendJsonResponse(['success' => false, 'message' => __('rental_settings_incomplete')]);
             return;
         }
         $currentMonth = date('Y-m');
@@ -4162,10 +4204,10 @@ function markRentalPaidThisMonth($conn) {
         create_notification($conn, "✅ " . __('rental_paid_success') . ". الموعد القادم: " . date('Y/m/d', strtotime($nextPaymentDate)), "rental_paid");
         $conn->commit();
         
-        echo json_encode(['success' => true, 'message' => __('rental_paid_success'), 'next_payment_date' => $nextPaymentDate, 'paid_month' => $currentMonth]);
+        sendJsonResponse(['success' => true, 'message' => __('rental_paid_success'), 'next_payment_date' => $nextPaymentDate, 'paid_month' => $currentMonth]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('payment_record_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('payment_record_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -4207,7 +4249,7 @@ function getRentalPayments($conn) {
         }
         $stmt->close();
         
-        echo json_encode([
+        sendJsonResponse([
             'success' => true,
             'data' => $rows,
             'pagination' => [
@@ -4218,7 +4260,7 @@ function getRentalPayments($conn) {
             ]
         ]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('fetch_payments_error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('fetch_payments_error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -4236,7 +4278,7 @@ function calculateNextPaymentDate($currentDate, $rentalType) {
 
 function getExpenses($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -4257,7 +4299,7 @@ function getExpenses($conn) {
     $countRes = $conn->query("SELECT COUNT(*) as total FROM expenses");
     $total = $countRes->fetch_assoc()['total'];
 
-    echo json_encode([
+    sendJsonResponse([
         'success' => true,
         'data' => $expenses,
         'pagination' => [
@@ -4271,13 +4313,13 @@ function getExpenses($conn) {
 
 function addExpense($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['title']) || empty($data['amount']) || empty($data['expense_date'])) {
-        echo json_encode(['success' => false, 'message' => __('all_fields_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('all_fields_required')]);
         return;
     }
 
@@ -4292,31 +4334,31 @@ function addExpense($conn) {
         $msg = sprintf(__('notification_expense_added'), $data['title'], $data['amount']);
         if ($paid_from_drawer) $msg .= " " . __('deducted_from_drawer');
         create_notification($conn, $msg, "expense_add");
-        echo json_encode(['success' => true, 'message' => __('expense_added_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('expense_added_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('expense_add_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('expense_add_fail')]);
     }
     $stmt->close();
 }
 
 function deleteExpense($conn) {
     if ($_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
     $data = json_decode(file_get_contents('php://input'), true);
     if (empty($data['id'])) {
-        echo json_encode(['success' => false, 'message' => __('expense_id_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('expense_id_required')]);
         return;
     }
 
     $stmt = $conn->prepare("DELETE FROM expenses WHERE id = ?");
     $stmt->bind_param("i", $data['id']);
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => __('expense_deleted_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('expense_deleted_success')]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('delete_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('delete_fail')]);
     }
     $stmt->close();
 }
@@ -4326,9 +4368,9 @@ function updateFirstLogin($conn) {
     $stmt = $conn->prepare("UPDATE users SET first_login = TRUE WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     if ($stmt->execute()) {
-        echo json_encode(['success' => true]);
+        sendJsonResponse(['success' => true]);
     } else {
-        echo json_encode(['success' => false, 'message' => __('update_fail')]);
+        sendJsonResponse(['success' => false, 'message' => __('update_fail')]);
     }
     $stmt->close();
 }
@@ -4337,7 +4379,7 @@ function updateSetting($conn) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (!isset($data['settings']) || !is_array($data['settings'])) {
-        echo json_encode(['success' => false, 'message' => __('values_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('values_required')]);
         return;
     }
     
@@ -4357,10 +4399,10 @@ function updateSetting($conn) {
         $stmt->close();
         $conn->commit();
         
-        echo json_encode(['success' => true, 'message' => __('settings_updated_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('settings_updated_success')]);
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('settings_update_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('settings_update_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -4374,7 +4416,7 @@ function send_contact_message($conn) {
     $message = filter_var(trim($data['message'] ?? ''), FILTER_SANITIZE_STRING);
 
     if (empty($name) || empty($email) || empty($subject) || empty($message)) {
-        echo json_encode(['success' => false, 'message' => __('fill_all_fields_correctly')]);
+        sendJsonResponse(['success' => false, 'message' => __('fill_all_fields_correctly')]);
         return;
     }
 
@@ -4387,13 +4429,13 @@ function send_contact_message($conn) {
     // mail($to, $subject, $full_message, $headers); // This would be the actual send function
 
     // For this simulation, we'll just return a success message
-    echo json_encode(['success' => true, 'message' => __('contact_message_sent')]);
+    sendJsonResponse(['success' => true, 'message' => __('contact_message_sent')]);
 }
 
 function refundInvoice($conn) {
     // Only admin can refund
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('admin_only')]);
+        sendJsonResponse(['success' => false, 'message' => __('admin_only')]);
         return;
     }
 
@@ -4402,7 +4444,7 @@ function refundInvoice($conn) {
     $reason = isset($data['reason']) ? $data['reason'] : '';
 
     if ($invoice_id <= 0) {
-        echo json_encode(['success' => false, 'message' => __('invoice_id_invalid')]);
+        sendJsonResponse(['success' => false, 'message' => __('invoice_id_invalid')]);
         return;
     }
 
@@ -4461,11 +4503,11 @@ function refundInvoice($conn) {
         $conn->commit();
         create_notification($conn, sprintf(__('notification_invoice_refunded'), $invoice_id, $total_amount), "refund");
         
-        echo json_encode(['success' => true, 'message' => __('refund_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('refund_success')]);
 
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('refund_fail') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('refund_fail') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -4527,7 +4569,7 @@ function getRefunds($conn) {
     }
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $refunds, 'total_refunds' => $total_refunds]);
+    sendJsonResponse(['success' => true, 'data' => $refunds, 'total_refunds' => $total_refunds]);
 }
 
 function get_annual_tips($conn) {
@@ -4541,9 +4583,9 @@ function get_annual_tips($conn) {
         $analyzer = new AnnualAnalyzer($conn, $year, $currency);
         $result = $analyzer->getAnalysis();
         
-        echo json_encode(['success' => true, 'data' => $result]);
+        sendJsonResponse(['success' => true, 'data' => $result]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -4562,9 +4604,9 @@ function get_available_years($conn) {
             }
         }
         
-        echo json_encode(['success' => true, 'data' => $years]);
+        sendJsonResponse(['success' => true, 'data' => $years]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -4671,21 +4713,21 @@ function checkAutoBackup($conn) {
 function createBackup($conn) {
     // Permission check
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     
     $result = performDatabaseBackup($conn);
     if ($result['success']) {
-        echo json_encode(['success' => true, 'message' => __('backup_created_success'), 'filename' => $result['filename']]);
+        sendJsonResponse(['success' => true, 'message' => __('backup_created_success'), 'filename' => $result['filename']]);
     } else {
-        echo json_encode(['success' => false, 'message' => $result['message']]);
+        sendJsonResponse(['success' => false, 'message' => $result['message']]);
     }
 }
 
 function getBackups($conn) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     
@@ -4711,12 +4753,12 @@ function getBackups($conn) {
         return strtotime($b['date']) - strtotime($a['date']);
     });
     
-    echo json_encode(['success' => true, 'data' => $files]);
+    sendJsonResponse(['success' => true, 'data' => $files]);
 }
 
 function deleteBackup($conn) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     
@@ -4724,7 +4766,7 @@ function deleteBackup($conn) {
     $filename = basename($data['filename'] ?? '');
     
     if (empty($filename)) {
-        echo json_encode(['success' => false, 'message' => __('filename_required')]);
+        sendJsonResponse(['success' => false, 'message' => __('filename_required')]);
         return;
     }
     
@@ -4732,18 +4774,18 @@ function deleteBackup($conn) {
     
     if (file_exists($filepath) && strpos($filename, '.sql') !== false) {
         if (unlink($filepath)) {
-            echo json_encode(['success' => true, 'message' => __('backup_deleted_success')]);
+            sendJsonResponse(['success' => true, 'message' => __('backup_deleted_success')]);
         } else {
-            echo json_encode(['success' => false, 'message' => __('delete_fail')]);
+            sendJsonResponse(['success' => false, 'message' => __('delete_fail')]);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => __('file_not_found')]);
+        sendJsonResponse(['success' => false, 'message' => __('file_not_found')]);
     }
 }
 
 function downloadBackup($conn) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
     
@@ -4751,7 +4793,7 @@ function downloadBackup($conn) {
     $filepath = __DIR__ . '/backups/' . $filename;
     
     if (empty($filename) || !file_exists($filepath) || strpos($filename, '.sql') === false) {
-        echo json_encode(['success' => false, 'message' => __('file_not_found')]);
+        sendJsonResponse(['success' => false, 'message' => __('file_not_found')]);
         return;
     }
     
@@ -4772,7 +4814,7 @@ function downloadBackup($conn) {
 
 function restoreBackup($conn) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
@@ -4784,12 +4826,12 @@ function restoreBackup($conn) {
         $file = $_FILES['backup_file'];
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         if (strtolower($ext) !== 'sql') {
-            echo json_encode(['success' => false, 'message' => __('sql_file_required')]);
+            sendJsonResponse(['success' => false, 'message' => __('sql_file_required')]);
             return;
         }
         $filename = 'restore_' . date('Y-m-d_H-i-s') . '_' . basename($file['name']);
         if (!move_uploaded_file($file['tmp_name'], $backupDir . $filename)) {
-            echo json_encode(['success' => false, 'message' => __('file_upload_fail')]);
+            sendJsonResponse(['success' => false, 'message' => __('file_upload_fail')]);
             return;
         }
     } 
@@ -4800,13 +4842,13 @@ function restoreBackup($conn) {
     }
 
     if (empty($filename)) {
-        echo json_encode(['success' => false, 'message' => __('no_file_selected')]);
+        sendJsonResponse(['success' => false, 'message' => __('no_file_selected')]);
         return;
     }
 
     $filepath = $backupDir . basename($filename);
     if (!file_exists($filepath)) {
-        echo json_encode(['success' => false, 'message' => __('backup_file_not_found')]);
+        sendJsonResponse(['success' => false, 'message' => __('backup_file_not_found')]);
         return;
     }
 
@@ -4872,11 +4914,11 @@ function restoreBackup($conn) {
         
         // Re-open session to send response (optional, but good practice)
         session_start();
-        echo json_encode(['success' => true, 'message' => __('backup_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('backup_success')]);
 
     } catch (Exception $e) {
         file_put_contents($progressFile, json_encode(['percent' => 100, 'status' => __('error_occurred')]));
-        echo json_encode(['success' => false, 'message' => __('backup_failed') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('backup_failed') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -4886,15 +4928,15 @@ function getRestoreProgress() {
     
     if (file_exists($progressFile)) {
         $data = json_decode(file_get_contents($progressFile), true);
-        echo json_encode(['success' => true, 'percent' => $data['percent'], 'status' => $data['status']]);
+        sendJsonResponse(['success' => true, 'percent' => $data['percent'], 'status' => $data['status']]);
     } else {
-        echo json_encode(['success' => true, 'percent' => 0, 'status' => __('waiting')]);
+        sendJsonResponse(['success' => true, 'percent' => 0, 'status' => __('waiting')]);
     }
 }
 
 function deleteShopLogo($conn) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        echo json_encode(['success' => false, 'message' => __('access_denied')]);
+        sendJsonResponse(['success' => false, 'message' => __('access_denied')]);
         return;
     }
 
@@ -4934,7 +4976,7 @@ function deleteShopLogo($conn) {
     $stmt->execute();
     $stmt->close();
 
-    echo json_encode(['success' => true, 'message' => __('logo_deleted_success')]);
+    sendJsonResponse(['success' => true, 'message' => __('logo_deleted_success')]);
 }
 
 // ==========================================
@@ -4944,7 +4986,7 @@ function deleteShopLogo($conn) {
 function get_customer_debt($conn) {
     $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
     if ($id <= 0) {
-        echo json_encode(['success' => false, 'message' => __('invalid_customer_id')]);
+        sendJsonResponse(['success' => false, 'message' => __('invalid_customer_id')]);
         return;
     }
 
@@ -4956,7 +4998,7 @@ function get_customer_debt($conn) {
     $stmt->close();
 
     if (!$customer) {
-        echo json_encode(['success' => false, 'message' => __('customer_not_found')]);
+        sendJsonResponse(['success' => false, 'message' => __('customer_not_found')]);
         return;
     }
 
@@ -4974,7 +5016,7 @@ function get_customer_debt($conn) {
     }
     $stmt->close();
 
-    echo json_encode([
+    sendJsonResponse([
         'success' => true, 
         'balance' => $customer['balance'], 
         'customer_name' => $customer['name'],
@@ -4989,7 +5031,7 @@ function pay_debt($conn) {
     $notes = isset($data['notes']) ? $data['notes'] : '';
 
     if ($customer_id <= 0 || $amount <= 0) {
-        echo json_encode(['success' => false, 'message' => __('invalid_payment_data')]);
+        sendJsonResponse(['success' => false, 'message' => __('invalid_payment_data')]);
         return;
     }
 
@@ -5050,11 +5092,11 @@ function pay_debt($conn) {
 
         $conn->commit();
         create_notification($conn, sprintf(__('notification_debt_paid'), $amount, $customer_id), "debt_payment");
-        echo json_encode(['success' => true, 'message' => __('payment_recorded_success')]);
+        sendJsonResponse(['success' => true, 'message' => __('payment_recorded_success')]);
 
     } catch (Exception $e) {
         $conn->rollback();
-        echo json_encode(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
+        sendJsonResponse(['success' => false, 'message' => __('error') . ': ' . $e->getMessage()]);
     }
 }
 
@@ -5062,7 +5104,7 @@ function get_debt_history($conn) {
     $customer_id = isset($_GET['customer_id']) ? (int)$_GET['customer_id'] : 0;
     
     if ($customer_id <= 0) {
-        echo json_encode(['success' => false, 'message' => __('invalid_customer_id')]);
+        sendJsonResponse(['success' => false, 'message' => __('invalid_customer_id')]);
         return;
     }
 
@@ -5076,7 +5118,7 @@ function get_debt_history($conn) {
     }
     $stmt->close();
 
-    echo json_encode(['success' => true, 'data' => $history]);
+    sendJsonResponse(['success' => true, 'data' => $history]);
 }
 
 function get_debt_customers($conn) {
@@ -5101,7 +5143,7 @@ function get_debt_customers($conn) {
         }
     }
     
-    echo json_encode(['success' => true, 'data' => $customers, 'total_debt' => $total_debt]);
+    sendJsonResponse(['success' => true, 'data' => $customers, 'total_debt' => $total_debt]);
 }
 
 if (ob_get_length()) ob_end_flush();

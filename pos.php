@@ -1960,6 +1960,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     option.textContent = category.name;
                     categoryFilter.appendChild(option);
                 });
+            } else {
+                console.error('Server error loading categories:', result.message);
             }
         } catch (error) {
             console.error('خطأ في تحميل الفئات:', error);
@@ -1978,6 +1980,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 allProducts = result.data;
                 displayProducts(result.data);
                 renderPagination(result.total_products);
+            } else {
+                showToast(result.message || window.__('loading_error'), false);
             }
         } catch (error) {
             console.error('خطأ في تحميل المنتجات:', error);
