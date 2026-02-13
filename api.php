@@ -300,7 +300,20 @@ switch ($action) {
         updateFirstLogin($conn);
         break;
     case 'updateSetting':
-        checkDemoMode();
+        // Check if only updating system_language
+        $rawInput = file_get_contents('php://input');
+        $inputData = json_decode($rawInput, true);
+        $isLanguageOnly = false;
+        
+        if (isset($inputData['settings']) && count($inputData['settings']) === 1) {
+            if ($inputData['settings'][0]['name'] === 'system_language') {
+                $isLanguageOnly = true;
+            }
+        }
+        
+        if (!$isLanguageOnly) {
+            checkDemoMode();
+        }
         updateSetting($conn);
         break;
     case 'send_contact_message':

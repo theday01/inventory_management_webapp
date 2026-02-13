@@ -212,14 +212,14 @@ if ($result) {
 }
 
 // Disabled attributes
-$disabledAttr = $isAdmin ? '' : 'disabled';
-$readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
+$disabledAttr = 'disabled';
+$readonlyClass = 'opacity-60 cursor-not-allowed pointer-events-none';
 ?>
 
 <main class="flex-1 flex flex-col relative overflow-hidden bg-dark">
     <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <form method="POST" action="settings.php" enctype="multipart/form-data" class="flex-1 flex flex-col overflow-hidden" <?php echo $isAdmin ? '' : 'onsubmit="return false;"'; ?>>
+    <form method="POST" action="settings.php" enctype="multipart/form-data" class="flex-1 flex flex-col overflow-hidden" onsubmit="return false;">
         
         <header class="h-20 bg-dark-surface/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 lg:px-8 relative z-10 shrink-0">
             <div class="flex items-center gap-4">
@@ -301,7 +301,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         </button>
                                     </div>
                                 </div>
-                                <input type="file" name="shopLogoFile" id="shopLogoFile" accept="image/png,image/jpeg" class="absolute inset-0 opacity-0 cursor-pointer <?php echo $isAdmin ? '' : 'pointer-events-none'; ?>" title="">
+                                <input type="file" name="shopLogoFile" id="shopLogoFile" accept="image/png,image/jpeg" class="absolute inset-0 opacity-0 cursor-not-allowed pointer-events-none" title="">
                             </div>
 
                             <!-- Favicon Section -->
@@ -422,12 +422,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                             class="toggle-checkbox"
                                             <?php echo (isset($settings['enable_delivery']) && $settings['enable_delivery'] == '1') ? 'checked' : ''; ?>
                                             <?php echo $disabledAttr; ?> />
-                                        <label for="toggle-delivery" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                        <label for="toggle-delivery" class="toggle-label block overflow-hidden h-6 rounded-full cursor-not-allowed pointer-events-none"></label>
                                     </div>
                                 </div>
                                 <?php if ($isAdmin): ?>
-                                    <button type="button" onclick="resetDeliveryPrices()" 
-                                        class="w-full sm:w-auto text-xs flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                                    <button type="button" disabled 
+                                        class="w-full sm:w-auto text-xs flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 transition-all opacity-50 cursor-not-allowed">
                                         <span class="material-icons-round text-sm">restart_alt</span>
                                         <span><?php echo __('reset_btn'); ?></span>
                                     </button>
@@ -493,12 +493,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <?php echo (isset($settings['rentalEnabled']) && $settings['rentalEnabled'] == '1') ? 'checked' : ''; ?>
                                         <?php echo $disabledAttr; ?>
                                         onchange="toggleRentalSettings(this)" />
-                                    <label for="toggle-rental" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                    <label for="toggle-rental" class="toggle-label block overflow-hidden h-6 rounded-full cursor-not-allowed pointer-events-none"></label>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="rental-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['rentalEnabled']) || $settings['rentalEnabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
+                        <div id="rental-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['rentalEnabled']) || $settings['rentalEnabled'] == '0') ? '' : ''; ?>">
                             
                             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
                                 <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -627,7 +627,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         class="toggle-checkbox"
                                         <?php echo (isset($settings['enable_discount']) && $settings['enable_discount'] == '1') ? 'checked' : ''; ?>
                                         <?php echo $disabledAttr; ?> />
-                                    <label for="toggle-discount" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                    <label for="toggle-discount" class="toggle-label block overflow-hidden h-6 rounded-full cursor-not-allowed pointer-events-none"></label>
                                 </div>
                             </div>
                         </div>
@@ -670,11 +670,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <span class="text-sm text-gray-400"><?php echo __('enable_tax_label'); ?></span>
                                 <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                     <input type="checkbox" name="taxEnabled" id="toggle-tax" value="1" class="toggle-checkbox" <?php echo (isset($settings['taxEnabled']) && $settings['taxEnabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> onchange="toggleTaxSettings(this)" />
-                                    <label for="toggle-tax" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                    <label for="toggle-tax" class="toggle-label block overflow-hidden h-6 rounded-full cursor-not-allowed pointer-events-none"></label>
                                 </div>
                             </div>
                         </div>
-                        <div id="tax-settings-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/5 rounded-2xl border border-white/5 transition-all duration-300 <?php echo (!isset($settings['taxEnabled']) || $settings['taxEnabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
+                        <div id="tax-settings-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/5 rounded-2xl border border-white/5 transition-all duration-300 <?php echo (!isset($settings['taxEnabled']) || $settings['taxEnabled'] == '0') ? '' : ''; ?>">
                             <div><label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('tax_name_label'); ?></label><input type="text" name="taxLabel" value="<?php echo htmlspecialchars($settings['taxLabel'] ?? 'TVA'); ?>" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
                             <div><label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('tax_rate_label'); ?></label><input type="number" name="taxRate" value="<?php echo htmlspecialchars($settings['taxRate'] ?? '20'); ?>" step="0.01" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
                         </div>
@@ -716,8 +716,8 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     </div>
                                 </div>
                                 <div class="relative inline-block w-10 align-middle select-none">
-                                    <input type="checkbox" name="darkMode" id="toggle-dark" value="1" class="toggle-checkbox" <?php echo $isAdmin ? 'onchange="this.form.submit()"' : ''; ?> <?php echo (isset($settings['darkMode']) && $settings['darkMode'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
-                                    <label for="toggle-dark" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                    <input type="checkbox" name="darkMode" id="toggle-dark" value="1" class="toggle-checkbox"  <?php echo (isset($settings['darkMode']) && $settings['darkMode'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
+                                    <label for="toggle-dark" class="toggle-label block overflow-hidden h-5 rounded-full cursor-not-allowed pointer-events-none"></label>
                                 </div>
                             </div>
                              <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
@@ -730,7 +730,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 </div>
                                 <div class="relative inline-block w-10 align-middle select-none">
                                     <input type="checkbox" name="soundNotifications" id="toggle-sound" value="1" class="toggle-checkbox" <?php echo (isset($settings['soundNotifications']) && $settings['soundNotifications'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
-                                    <label for="toggle-sound" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                    <label for="toggle-sound" class="toggle-label block overflow-hidden h-5 rounded-full cursor-not-allowed pointer-events-none"></label>
                                 </div>
                             </div>
 
@@ -744,8 +744,8 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     </div>
                                 </div>
                                 <div class="relative inline-block w-10 align-middle select-none">
-                                    <input type="checkbox" name="keyboard_enabled" id="toggle-keyboard" value="1" class="toggle-checkbox" <?php echo $isAdmin ? 'onchange="this.form.submit()"' : ''; ?> <?php echo (isset($settings['keyboard_enabled']) && $settings['keyboard_enabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
-                                    <label for="toggle-keyboard" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                    <input type="checkbox" name="keyboard_enabled" id="toggle-keyboard" value="1" class="toggle-checkbox"  <?php echo (isset($settings['keyboard_enabled']) && $settings['keyboard_enabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> />
+                                    <label for="toggle-keyboard" class="toggle-label block overflow-hidden h-5 rounded-full cursor-not-allowed pointer-events-none"></label>
                                 </div>
                             </div>
 
@@ -792,17 +792,17 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                             <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="material-icons-round text-primary">update</span><?php echo __('auto_stock_check_title'); ?></h3>
                              <div class="relative inline-block w-10 align-middle select-none">
                                 <input type="checkbox" name="stockAlertsEnabled" id="toggle-stock-alerts" value="1" class="toggle-checkbox" <?php echo (isset($settings['stockAlertsEnabled']) && $settings['stockAlertsEnabled'] == '1') ? 'checked' : ''; ?> <?php echo $disabledAttr; ?> onchange="handleStockAlertToggle(this)" />
-                                <label for="toggle-stock-alerts" class="toggle-label block overflow-hidden h-5 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                <label for="toggle-stock-alerts" class="toggle-label block overflow-hidden h-5 rounded-full cursor-not-allowed pointer-events-none"></label>
                             </div>
                         </div>
                          <div id="stock-alerts-settings" class="<?php echo (!isset($settings['stockAlertsEnabled']) || $settings['stockAlertsEnabled'] == '0') ? 'opacity-50 pointer-events-none' : ''; ?>">
                             <div class="flex items-end gap-4">
                                 <div class="flex-1"><label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('check_interval_label'); ?></label><input type="number" name="stockAlertInterval" value="<?php echo htmlspecialchars($settings['stockAlertInterval'] ?? '20'); ?>" min="1" max="1440" step="1" class="w-full bg-dark/50 border border-white/10 text-white text-right px-4 py-3 rounded-xl" <?php echo $disabledAttr; ?>></div>
-                                 <button type="button" onclick="openStockGuideModal()" class="px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-primary text-sm font-bold flex items-center gap-2 transition-all"><span class="material-icons-round text-sm">help_outline</span><?php echo __('how_to_choose_btn'); ?></button>
+                                 <button type="button" disabled class="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-primary text-sm font-bold flex items-center gap-2 transition-all opacity-50 cursor-not-allowed"><span class="material-icons-round text-sm">help_outline</span><?php echo __('how_to_choose_btn'); ?></button>
                             </div>
                         </div>
                          <div class="mt-6 pt-6 border-t border-white/5">
-                             <button type="button" id="enable-windows-notifications" onclick="enableStockNotifications()" class="w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/50 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"><span class="material-icons-round text-sm">notifications_active</span><span><?php echo __('enable_windows_notifications_btn'); ?></span></button>
+                             <button type="button" disabled id="enable-windows-notifications" class="w-full bg-primary/10 text-primary border border-primary/20 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 opacity-50 cursor-not-allowed"><span class="material-icons-round text-sm">notifications_active</span><span><?php echo __('enable_windows_notifications_btn'); ?></span></button>
                         </div>
                      </div>
 
@@ -819,11 +819,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '1') ? 'checked' : ''; ?>
                                     <?php echo $disabledAttr; ?>
                                     onchange="toggleEndDaySettings(this)" />
-                                <label for="toggle-end-day-reminder" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                <label for="toggle-end-day-reminder" class="toggle-label block overflow-hidden h-6 rounded-full cursor-not-allowed pointer-events-none"></label>
                             </div>
                         </div>
 
-                        <div id="end-day-settings-content" class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-300 <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
+                        <div id="end-day-settings-content" class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-300 <?php echo (($settings['end_day_reminder_enabled'] ?? '1') == '0') ? '' : ''; ?>">
                             <div>
                                 <label class="block text-sm font-medium text-gray-400 mb-2"><?php echo __('day_start_time_label'); ?></label>
                                 <div class="relative">
@@ -941,12 +941,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <?php echo (isset($settings['work_days_enabled']) && $settings['work_days_enabled'] == '1') ? 'checked' : ''; ?>
                                         <?php echo $disabledAttr; ?>
                                         onchange="toggleWorkDaysSettings(this)" />
-                                    <label for="toggle-work-days" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                    <label for="toggle-work-days" class="toggle-label block overflow-hidden h-6 rounded-full cursor-not-allowed pointer-events-none"></label>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="work-days-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['work_days_enabled']) || $settings['work_days_enabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
+                        <div id="work-days-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['work_days_enabled']) || $settings['work_days_enabled'] == '0') ? '' : ''; ?>">
                             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                                 <?php
                                 $days = ['monday' => __('day_monday'), 'tuesday' => __('day_tuesday'), 'wednesday' => __('day_wednesday'), 'thursday' => __('day_thursday'), 'friday' => __('day_friday'), 'saturday' => __('day_saturday'), 'sunday' => __('day_sunday')];
@@ -954,7 +954,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 foreach ($days as $en => $ar) {
                                     $checked = in_array($en, $work_days) ? 'checked' : '';
                                     echo "
-                                    <label class='flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-3 cursor-pointer hover:bg-white/10 transition-colors'>
+                                    <label class='flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-3 cursor-not-allowed pointer-events-none hover:bg-white/10 transition-colors'>
                                         <input type='checkbox' name='work_days[]' value='$en' $checked class='form-checkbox h-5 w-5 text-primary bg-dark border-white/20 rounded focus:ring-primary/50' $disabledAttr>
                                         <span class='text-white font-bold text-sm'>$ar</span>
                                     </label>
@@ -992,12 +992,12 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <?php echo (isset($settings['holidays_enabled']) && $settings['holidays_enabled'] == '1') ? 'checked' : ''; ?>
                                         <?php echo $disabledAttr; ?>
                                         onchange="toggleHolidaysSettings(this)" />
-                                    <label for="toggle-holidays" class="toggle-label block overflow-hidden h-6 rounded-full <?php echo $isAdmin ? 'cursor-pointer' : 'cursor-not-allowed'; ?>"></label>
+                                    <label for="toggle-holidays" class="toggle-label block overflow-hidden h-6 rounded-full cursor-not-allowed pointer-events-none"></label>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="holidays-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['holidays_enabled']) || $settings['holidays_enabled'] == '0') ? 'opacity-50 pointer-events-none filter blur-sm' : ''; ?>">
+                        <div id="holidays-settings-content" class="transition-all duration-300 <?php echo (!isset($settings['holidays_enabled']) || $settings['holidays_enabled'] == '0') ? '' : ''; ?>">
                             
                         <div class="mb-6">
                             <p class="text-xs text-gray-500 mb-4"><?php echo __('holidays_subtitle'); ?></p>
@@ -1011,11 +1011,11 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 </div>
                                 <?php if ($isAdmin): ?>
                                 <div id="holiday-action-buttons" class="flex items-center gap-3">
-                                    <button type="button" onclick="syncMoroccanHolidays()" id="sync-holidays-btn" class="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                                    <button type="button" disabled id="sync-holidays-btn" class="bg-blue-600/10 text-blue-400 border border-blue-600/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 opacity-50 cursor-not-allowed">
                                         <span class="material-icons-round text-sm">sync</span>
                                         <span id="sync-btn-text"><?php echo __('update_holidays_now_btn'); ?></span>
                                     </button>
-                                    <button type="button" onclick="openHolidayModal()" class="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                                    <button type="button" disabled class="bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 opacity-50 cursor-not-allowed">
                                         <span class="material-icons-round text-sm">add</span>
                                         <?php echo __('add_custom_holiday_btn'); ?>
                                     </button>
@@ -1082,7 +1082,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 <span class="material-icons-round text-primary">backup</span>
                                 <?php echo __('backup_title'); ?>
                             </h3>
-                            <button type="button" onclick="createBackup()" id="btn-create-backup" class="w-full sm:w-auto bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+                            <button type="button" disabled id="btn-create-backup" class="w-full sm:w-auto bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 opacity-50 cursor-not-allowed">
                                 <span class="material-icons-round text-lg">add_circle</span>
                                 <span><?php echo __('create_backup_btn'); ?></span>
                             </button>
@@ -1097,7 +1097,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                 </h4>
                                 <div class="flex gap-2 w-full sm:w-auto">
                                     <input type="file" id="restore-file-input" accept=".sql" class="hidden" onchange="handleRestoreUpload(this)">
-                                    <button type="button" onclick="document.getElementById('restore-file-input').click()" class="w-full sm:w-auto bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
+                                    <button type="button" disabled class="w-full sm:w-auto bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
                                         <span class="material-icons-round text-sm">upload_file</span>
                                         <?php echo __('upload_restore_btn'); ?>
                                     </button>
@@ -1129,7 +1129,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                         <label class="text-sm text-gray-300"><?php echo __('enable_auto_backup_label'); ?></label>
                                         <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
                                             <input type="checkbox" id="backup_enabled" class="toggle-checkbox" <?php echo ($settings['backup_enabled'] ?? '0') === '1' ? 'checked' : ''; ?> />
-                                            <label for="backup_enabled" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"></label>
+                                            <label for="backup_enabled" class="toggle-label block overflow-hidden h-6 rounded-full cursor-not-allowed pointer-events-none"></label>
                                         </div>
                                     </div>
                                     <label class="block text-xs font-bold text-gray-400 mb-2 mt-4"><?php echo __('backup_frequency_label'); ?></label>
@@ -1140,7 +1140,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     </select>
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <button type="button" onclick="saveBackupSettings()" id="btn-save-backup-settings" class="w-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                                    <button type="button" disabled id="btn-save-backup-settings" class="w-full bg-white/5 text-gray-300 border border-white/10 px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
                                         <span class="material-icons-round text-sm">save</span>
                                         <span><?php echo __('save_schedule_btn'); ?></span>
                                     </button>
@@ -1211,7 +1211,7 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </div>
 
                         <div class="text-center">
-                            <button type="button" onclick="openResetModal()" class="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-3 mx-auto">
+                            <button type="button" disabled class="bg-red-500 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-red-500/20 transition-all flex items-center gap-3 mx-auto opacity-50 cursor-not-allowed">
                                 <span class="material-icons-round">restart_alt</span>
                                 <?php echo __('reset_system_btn'); ?>
                             </button>
@@ -1324,14 +1324,14 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                         </td>
                         <td class="px-2 py-2 md:px-6 md:py-4 text-center block md:table-cell flex justify-between items-center md:block md:justify-center">
                             <span class="md:hidden text-gray-400 font-bold">${window.__('actions')}</span>
-                            <div class="flex justify-center gap-2">
-                                <a href="api.php?action=downloadBackup&filename=${b.name}" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20" title="${window.__('download_pdf')}">
+                            <div class="flex justify-center gap-2 opacity-50 cursor-not-allowed pointer-events-none">
+                                <a href="#" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors" title="${window.__('download_pdf')}">
                                     <span class="material-icons-round text-sm">download</span>
                                 </a>
-                                <button type="button" onclick="restoreFromList('${b.name}')" class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg transition-colors hover:bg-indigo-500/20" title="${window.__('restore_backup_title')}">
+                                <button type="button" disabled class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg transition-colors" title="${window.__('restore_backup_title')}">
                                     <span class="material-icons-round text-sm">settings_backup_restore</span>
                                 </button>
-                                <button type="button" onclick="deleteBackup('${b.name}')" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20" title="${window.__('delete')}">
+                                <button type="button" disabled class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors" title="${window.__('delete')}">
                                     <span class="material-icons-round text-sm">delete</span>
                                 </button>
                             </div>
@@ -1550,16 +1550,16 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
                                     class="toggle-checkbox" 
                                     ${isChecked} 
                                     onchange="toggleHolidayStatus(${h.id}, this)">
-                                <label for="holiday-toggle-${h.id}" class="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer"></label>
+                                <label for="holiday-toggle-${h.id}" class="toggle-label block overflow-hidden h-5 rounded-full cursor-not-allowed pointer-events-none"></label>
                             </div>
                         </td>
                         <td class="px-2 py-2 md:px-6 md:py-4 text-center block md:table-cell flex justify-between items-center md:block md:justify-center">
                             <span class="md:hidden text-gray-400 font-bold">${window.__('actions')}</span>
-                            <div class="flex gap-2 justify-end md:justify-center">
-                                <button type="button" onclick="openHolidayModal(${h.id}, '${h.name}', '${h.date}')" class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors hover:bg-blue-500/20">
+                            <div class="flex gap-2 justify-end md:justify-center opacity-50 cursor-not-allowed pointer-events-none">
+                                <button type="button" disabled class="p-2 bg-blue-500/10 text-blue-400 rounded-lg transition-colors">
                                     <span class="material-icons-round text-sm">edit</span>
                                 </button>
-                                <button type="button" onclick="deleteHoliday(${h.id})" class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors hover:bg-red-500/20">
+                                <button type="button" disabled class="p-2 bg-red-500/10 text-red-400 rounded-lg transition-colors">
                                     <span class="material-icons-round text-sm">delete</span>
                                 </button>
                             </div>
@@ -1768,12 +1768,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const content = document.getElementById('rental-settings-content');
         if (!checkbox.checked) {
             if (await showConfirmModal(window.__('confirm_action'), '⚠️ ' + window.__('are_you_sure'))) {
-                content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+                // Removed blur classes
             } else {
                 checkbox.checked = true;
             }
-        } else {
-            content.classList.remove('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
         }
     }
 
@@ -1781,12 +1779,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const content = document.getElementById('tax-settings-container');
         if (!checkbox.checked) {
             if (await showConfirmModal(window.__('confirm_action'), '⚠️ ' + window.__('are_you_sure'))) {
-                content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+                // Removed blur classes
             } else {
                 checkbox.checked = true;
             }
-        } else {
-            content.classList.remove('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
         }
     }
 
@@ -1794,12 +1790,10 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const content = document.getElementById('holidays-settings-content');
         if (!checkbox.checked) {
             if (await showConfirmModal(window.__('confirm_action'), '⚠️ ' + window.__('are_you_sure'))) {
-                content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+                // Removed blur classes
             } else {
                 checkbox.checked = true;
             }
-        } else {
-            content.classList.remove('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
         }
     }
 
@@ -1807,21 +1801,17 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         const content = document.getElementById('work-days-settings-content');
         if (!checkbox.checked) {
             if (await showConfirmModal(window.__('confirm_action'), '⚠️ ' + window.__('are_you_sure'))) {
-                content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+                // Removed blur classes
             } else {
                 checkbox.checked = true;
             }
-        } else {
-            content.classList.remove('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
         }
     }
 
     async function toggleEndDaySettings(checkbox) {
         const content = document.getElementById('end-day-settings-content');
         if (!checkbox.checked) {
-            content.classList.add('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
-        } else {
-            content.classList.remove('opacity-50', 'pointer-events-none', 'filter', 'blur-sm');
+            // Removed blur classes
         }
     }
 
@@ -2180,8 +2170,9 @@ $readonlyClass = $isAdmin ? '' : 'opacity-60 cursor-not-allowed';
         function enableSave() {
             if (!hasChanges) {
                 hasChanges = true;
-                saveBtn.disabled = false;
-                saveBtn.className = "bg-primary hover:bg-primary-hover text-white px-4 md:px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer";
+                // Keep save button disabled regardless of changes
+                saveBtn.disabled = true;
+                // saveBtn.className = "bg-primary hover:bg-primary-hover text-white px-4 md:px-8 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 flex items-center gap-2 cursor-not-allowed pointer-events-none";
                 alertDiv.classList.remove('hidden');
             }
         }

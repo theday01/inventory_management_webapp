@@ -800,7 +800,7 @@ return [
     // Settings Page
     'settings_page_title' => 'Paramètres du système',
     'settings_subtitle' => 'Contrôle complet et facile des paramètres du magasin et de la marque',
-    'unsaved_changes_warning' => 'Attention : Vous avez des modifications non enregistrées - Enregistrez pour appliquer',
+    'unsaved_changes_warning' => 'Attention : Vous avez des modifications non enregistrées - Enregistrez pour appliquer (Dans le système complet, vous pourrez enregistrer et modifier tous les axes du système)',
     'read_only_mode' => 'Mode lecture seule',
     'save_changes_btn' => 'Enregistrer les modifications',
     'editing_not_allowed' => 'Modification non autorisée',
