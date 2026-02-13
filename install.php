@@ -667,6 +667,81 @@ if ($inv_count == 0) {
     echo "<div>ℹ️ Invoices already exist. Skipping history generation.</div>";
 }
 
+// 6. Removed Products (for removed_products.php)
+$check_removed = $conn->query("SELECT COUNT(*) as cnt FROM removed_products");
+$removed_count = ($check_removed && $check_removed->num_rows > 0) ? $check_removed->fetch_assoc()['cnt'] : 0;
+
+if ($removed_count == 0) {
+    echo "<div>⏳ Seeding removed products...</div>";
+    
+    // Ensure we have valid category IDs, fallback to 1 if not found
+    $cat_gen = $cat_ids['General'] ?? 1;
+    $cat_elec = $cat_ids['Electronics'] ?? 1;
+    $cat_cloth = $cat_ids['Clothing'] ?? 1;
+    $cat_groc = $cat_ids['Groceries'] ?? 1;
+
+    $removed_items = [
+        [9001, 'Old Nokia Phone', 200.00, 1, $cat_elec, 'src/img/default-product.png'],
+        [9002, 'Broken Charger', 20.00, 5, $cat_elec, 'src/img/default-product.png'],
+        [9003, 'Expired Milk', 10.00, 10, $cat_groc, 'src/img/default-product.png'],
+        [9004, 'Torn Shirt', 50.00, 2, $cat_cloth, 'src/img/default-product.png'],
+        [9005, 'Damaged Headphones', 150.00, 1, $cat_elec, 'src/img/default-product.png']
+    ];
+
+    $stmt = $conn->prepare("INSERT IGNORE INTO removed_products (id, name, price, quantity, category_id, image, removed_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+    foreach ($removed_items as $item) {
+        $stmt->bind_param("isdiis", $item[0], $item[1], $item[2], $item[3], $item[4], $item[5]);
+        $stmt->execute();
+    }
+    echo "<div>✓ Removed products seeded.</div>";
+}
+
+// 7. Notifications (for notifications.php)
+$check_notif = $conn->query("SELECT COUNT(*) as cnt FROM notifications");
+$notif_count = ($check_notif && $check_notif->num_rows > 0) ? $check_notif->fetch_assoc()['cnt'] : 0;
+
+if ($notif_count == 0) {
+    echo "<div>⏳ Seeding notifications...</div>";
+    $notifications = [
+        ['System installed successfully.', 'info', 'unread'],
+        ['Welcome to your new POS system!', 'success', 'unread'],
+        ['Low stock alert: Samsung Galaxy S24 (Only 2 left)', 'alert', 'unread'],
+        ['New update available: v2.5.0', 'info', 'read'],
+        ['Daily backup completed successfully.', 'success', 'read']
+    ];
+
+    $stmt = $conn->prepare("INSERT INTO notifications (message, type, status, created_at) VALUES (?, ?, ?, NOW())");
+    foreach ($notifications as $notif) {
+        $stmt->bind_param("sss", $notif[0], $notif[1], $notif[2]);
+        $stmt->execute();
+    }
+    echo "<div>✓ Notifications seeded.</div>";
+}
+
+// 8. Refunds (for refunds.php)
+$check_refunds = $conn->query("SELECT COUNT(*) as cnt FROM refunds");
+$refunds_count = ($check_refunds && $check_refunds->num_rows > 0) ? $check_refunds->fetch_assoc()['cnt'] : 0;
+
+if ($refunds_count == 0) {
+    // Get some random invoices to refund
+    $inv_res = $conn->query("SELECT id, total FROM invoices ORDER BY RAND() LIMIT 3");
+    if ($inv_res && $inv_res->num_rows > 0) {
+        echo "<div>⏳ Seeding refunds...</div>";
+        $stmt = $conn->prepare("INSERT INTO refunds (invoice_id, amount, items_json, reason, created_at) VALUES (?, ?, ?, ?, NOW())");
+        while ($inv = $inv_res->fetch_assoc()) {
+            $invoice_id = $inv['id'];
+            $amount = $inv['total'] / 2; // Refund half the amount
+            $reason = 'Customer returned item';
+            // Simple JSON structure for items
+            $items_json = json_encode([['name' => 'Demo Refunded Item', 'qty' => 1, 'price' => $amount]]);
+            
+            $stmt->bind_param("idss", $invoice_id, $amount, $items_json, $reason);
+            $stmt->execute();
+        }
+        echo "<div>✓ Refunds seeded.</div>";
+    }
+}
+
 echo "</div>";
 
 // ======================================
