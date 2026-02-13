@@ -311,7 +311,7 @@ require_once 'src/sidebar.php';
                             <span class="material-icons-round text-primary">group</span>
                             <?php echo __('users_list'); ?> (<?php echo count($users); ?>)
                         </h3>
-                        <button id="addUserBtn" class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
+                        <button id="addUserBtn" disabled class="bg-primary/50 text-white/50 px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 cursor-not-allowed shadow-none transition-all">
                             <span class="material-icons-round text-sm">add</span>
                             <?php echo __('add_new_user'); ?>
                         </button>
@@ -347,13 +347,11 @@ require_once 'src/sidebar.php';
                                         </td>
                                         <td class="p-4 text-sm text-center">
                                             <div class="flex items-center justify-center gap-2">
-                                                <button onclick="openEditModal(<?php echo $user['id']; ?>, '<?php echo $user['username']; ?>', '<?php echo $user['role']; ?>', <?php echo $admin_count; ?>)" 
-                                                    class="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="<?php echo __('edit'); ?>">
+                                                <button disabled class="p-2 text-gray-400 opacity-50 cursor-not-allowed rounded-lg transition-all" title="<?php echo __('edit'); ?>">
                                                     <span class="material-icons-round text-lg">edit</span>
                                                 </button>
                                                 <?php if ($user['id'] != $_SESSION['id']): ?>
-                                                    <button onclick="confirmDelete(<?php echo $user['id']; ?>, '<?php echo $user['username']; ?>')" 
-                                                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="<?php echo __('delete'); ?>">
+                                                    <button disabled class="p-2 text-gray-400 opacity-50 cursor-not-allowed rounded-lg transition-all" title="<?php echo __('delete'); ?>">
                                                         <span class="material-icons-round text-lg">delete</span>
                                                     </button>
                                                 <?php endif; ?>

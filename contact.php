@@ -85,7 +85,7 @@ require_once 'src/sidebar.php';
                         </div>
                         
                         <div class="flex justify-end">
-                            <button type="submit" id="submit-btn" class="bg-primary hover:bg-primary-hover text-white font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-all duration-300 transform hover:-translate-y-1 shadow-lg shadow-primary/20">
+                            <button disabled type="button" id="submit-btn" class="bg-primary/50 text-white/50 font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-all duration-300 shadow-none cursor-not-allowed">
                                 <span id="submit-text"><?= __('send_message_btn') ?></span>
                                 <span id="submit-spinner" class="material-icons-round animate-spin hidden">sync</span>
                             </button>
