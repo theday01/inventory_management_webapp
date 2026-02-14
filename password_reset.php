@@ -108,8 +108,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         }
     }
     elseif ($action == 'reset_password') {
-        $user_id = $_POST['user_id'];
-        $new_password = $_POST['new_password'];
+        if (defined('DEMO_MODE') && DEMO_MODE) {
+            $error = "هاته الخاصية غير متاحة في العرض التجريبي";
+        } else {
+            $user_id = $_POST['user_id'];
+            $new_password = $_POST['new_password'];
         $confirm_password = $_POST['confirm_password'];
 
         if (empty($new_password) || empty($confirm_password)) {
@@ -139,6 +142,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
                 $error = "حدث خطأ أثناء تحديث كلمة المرور";
             }
             $stmt_update->close();
+        }
         }
     }
 }
@@ -209,6 +213,21 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
 </div>
 
 <script>
+    const isDemo = <?php echo (defined('DEMO_MODE') && DEMO_MODE) ? 'true' : 'false'; ?>;
+    const demoRestrictionMsg = "هاته الخاصية غير متاحة في العرض التجريبي";
+
+    function checkDemo(e) {
+        if (isDemo) {
+            if (e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+            showToast(demoRestrictionMsg, false);
+            return true;
+        }
+        return false;
+    }
+
     function showToast(message, isSuccess) {
         // Smart detection for error messages if isSuccess is not explicitly provided
         if (typeof isSuccess === 'undefined') {
@@ -387,8 +406,8 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
                     </div>
                 </div>
 
-                <button type="submit"
-                    class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/25 text-sm font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:-translate-y-0.5">
+                <button type="submit" onclick="return !checkDemo(event)"
+                    class="<?php echo (defined('DEMO_MODE') && DEMO_MODE) ? 'opacity-50 cursor-not-allowed ' : ''; ?>w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/25 text-sm font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:-translate-y-0.5">
                     تحديث كلمة المرور
                 </button>
 

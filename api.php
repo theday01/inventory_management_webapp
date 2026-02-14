@@ -471,6 +471,20 @@ function get_holiday_status($conn) {
 }
 
 function get_business_day_status($conn) {
+    // Demo Mode Simulation
+    if (defined('DEMO_MODE') && DEMO_MODE) {
+        if (isset($_SESSION['demo_day_open']) && $_SESSION['demo_day_open']) {
+            $day = [
+                'id' => 999,
+                'start_time' => $_SESSION['demo_day_start_time'] ?? date('Y-m-d H:i:s'),
+                'opening_balance' => $_SESSION['demo_opening_balance'] ?? 0,
+                'user_id' => $_SESSION['id'] ?? 1
+            ];
+            sendJsonResponse(['success' => true, 'data' => ['status' => 'open', 'day' => $day]]);
+            return;
+        }
+    }
+
     $stmt = $conn->prepare("SELECT * FROM business_days WHERE end_time IS NULL ORDER BY start_time DESC LIMIT 1");
     $stmt->execute();
     $result = $stmt->get_result();
@@ -505,15 +519,18 @@ function start_day($conn) {
             return;
         }
 
-        // Demo Mode Simulation
-        if (defined('DEMO_MODE') && DEMO_MODE) {
-            sendJsonResponse(['success' => true, 'message' => __('business_day_started_success') . ' (Demo Mode)']);
-            return;
-        }
-
         // Get and validate input
         $rawInput = file_get_contents('php://input');
         $data = json_decode($rawInput, true);
+
+        // Demo Mode Simulation
+        if (defined('DEMO_MODE') && DEMO_MODE) {
+            $_SESSION['demo_day_open'] = true;
+            $_SESSION['demo_day_start_time'] = date('Y-m-d H:i:s');
+            $_SESSION['demo_opening_balance'] = isset($data['opening_balance']) ? floatval($data['opening_balance']) : 0;
+            sendJsonResponse(['success' => true, 'message' => 'تم بدء اليوم بنجاح']);
+            return;
+        }
         
         if (json_last_error() !== JSON_ERROR_NONE) {
             sendJsonResponse(['success' => false, 'message' => __('invalid_data')]);
@@ -617,7 +634,8 @@ function reopen_day($conn) {
 
         // Demo Mode Simulation
         if (defined('DEMO_MODE') && DEMO_MODE) {
-            sendJsonResponse(['success' => true, 'message' => __('business_day_reopen_success') . ' (Demo Mode)']);
+            $_SESSION['demo_day_open'] = true;
+            sendJsonResponse(['success' => true, 'message' => 'تم إعادة فتح اليوم بنجاح']);
             return;
         }
 
@@ -672,7 +690,7 @@ function extend_day($conn) {
 
         // Demo Mode Simulation
         if (defined('DEMO_MODE') && DEMO_MODE) {
-            sendJsonResponse(['success' => true, 'message' => __('business_day_extend_success') . ' (Demo Mode)']);
+            sendJsonResponse(['success' => true, 'message' => 'تم تمديد اليوم بنجاح']);
             return;
         }
 
@@ -990,9 +1008,10 @@ function end_day($conn) {
 
         // Demo Mode Simulation
         if (defined('DEMO_MODE') && DEMO_MODE) {
+            unset($_SESSION['demo_day_open']);
             sendJsonResponse([
                 'success' => true, 
-                'message' => __('business_day_ended_success') . ' (Demo Mode)',
+                'message' => 'تم إغلاق اليوم بنجاح',
                 'data' => ['summary' => []] // Empty summary for demo
             ]);
             return;
@@ -2753,7 +2772,7 @@ function addCustomer($conn) {
     if (defined('DEMO_MODE') && DEMO_MODE) {
         sendJsonResponse([
             'success' => true,
-            'message' => __('customer_added_success') . ' (Demo Mode)',
+            'message' => 'تم إضافة العميل بنجاح',
             'id' => rand(1000, 9999) // Fake ID
         ]);
         return;
@@ -2974,13 +2993,17 @@ function exportCustomersExcel($conn) {
 }
 
 function checkout($conn) {
-    $day_stmt = $conn->prepare("SELECT id FROM business_days WHERE end_time IS NULL");
-    $day_stmt->execute();
-    if ($day_stmt->get_result()->num_rows == 0) {
-        sendJsonResponse(['success' => false, 'message' => __('business_day_start_required')]);
-        return;
+    $isDemoOpen = (defined('DEMO_MODE') && DEMO_MODE && isset($_SESSION['demo_day_open']) && $_SESSION['demo_day_open']);
+
+    if (!$isDemoOpen) {
+        $day_stmt = $conn->prepare("SELECT id FROM business_days WHERE end_time IS NULL");
+        $day_stmt->execute();
+        if ($day_stmt->get_result()->num_rows == 0) {
+            sendJsonResponse(['success' => false, 'message' => __('business_day_start_required')]);
+            return;
+        }
+        $day_stmt->close();
     }
-    $day_stmt->close();
 
     $data = json_decode(file_get_contents('php://input'), true);
 
@@ -2994,7 +3017,7 @@ function checkout($conn) {
         // Return fake success response
         sendJsonResponse([
             'success' => true,
-            'message' => __('invoice_created_success') . ' (Demo Mode)',
+            'message' => 'تمت عملية البيع بنجاح',
             'invoice_id' => rand(100000, 999999) // Fake ID
         ]);
         return;
@@ -4514,7 +4537,7 @@ function refundInvoice($conn) {
     if (defined('DEMO_MODE') && DEMO_MODE) {
         sendJsonResponse([
             'success' => true,
-            'message' => 'هاته النسخة تجريبية ولا يمكن تعديل على اي شيء حاليا الا في النسخة الكاملة'
+            'message' => 'تم استرجاع الفاتورة بنجاح'
         ]);
         return;
     }
