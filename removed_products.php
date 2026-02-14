@@ -121,6 +121,21 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
 </main>
 
 <script>
+    const isDemo = <?php echo (defined('DEMO_MODE') && DEMO_MODE) ? 'true' : 'false'; ?>;
+    const demoRestrictionMsg = <?php echo json_encode(__('demo_mode_restriction')); ?>;
+
+    function checkDemo(e) {
+        if (isDemo) {
+            if (e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+            showToast(demoRestrictionMsg, false);
+            return true;
+        }
+        return false;
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const productsTableBody = document.getElementById('products-table-body');
         const searchInput = document.getElementById('product-search-input');
@@ -205,6 +220,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     expiring.push({ name: product.name, remainingMs });
                 }
 
+                const disabledClass = isDemo ? 'opacity-50 cursor-not-allowed' : '';
+                
                 productRow.innerHTML = `
                     <td class="p-4 md:px-4 md:py-4 block md:table-cell flex justify-between items-center border-b border-white/5 md:border-0 last:border-0">
                         <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('select')}</span>
@@ -240,8 +257,8 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
                     <td class="p-4 md:px-4 md:py-4 text-sm block md:table-cell flex justify-between items-center md:justify-start border-b border-white/5 md:border-0 last:border-0 gap-2">
                         <span class="text-gray-400 text-xs font-bold md:hidden uppercase tracking-wider">${window.__('actions')}</span>
                         <div class="flex gap-2">
-                            <button class="restore-product-btn p-2 md:p-1.5 text-gray-400 hover:text-green-500 transition-colors bg-white/5 md:bg-transparent rounded-lg md:rounded-none" data-id="${product.id}" title="${__('restore_product_tooltip')}"><span class="material-icons-round text-lg">restore_from_trash</span></button>
-                            <button class="delete-product-btn p-2 md:p-1.5 text-gray-400 hover:text-red-500 transition-colors bg-white/5 md:bg-transparent rounded-lg md:rounded-none" data-id="${product.id}" title="${__('permanent_delete_tooltip')}"><span class="material-icons-round text-lg">delete_forever</span></button>
+                            <button class="restore-product-btn p-2 md:p-1.5 text-gray-400 hover:text-green-500 transition-colors bg-white/5 md:bg-transparent rounded-lg md:rounded-none ${disabledClass}" data-id="${product.id}" title="${__('restore_product_tooltip')}"><span class="material-icons-round text-lg">restore_from_trash</span></button>
+                            <button class="delete-product-btn p-2 md:p-1.5 text-gray-400 hover:text-red-500 transition-colors bg-white/5 md:bg-transparent rounded-lg md:rounded-none ${disabledClass}" data-id="${product.id}" title="${__('permanent_delete_tooltip')}"><span class="material-icons-round text-lg">delete_forever</span></button>
                         </div>
                     </td>
                 `;
@@ -317,10 +334,12 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
         // Event listeners for single-product actions
         productsTableBody.addEventListener('click', e => {
             if (e.target.closest('.restore-product-btn')) {
+                if (checkDemo(e)) return;
                 const id = e.target.closest('.restore-product-btn').dataset.id;
                 restoreProducts([id]);
             }
             if (e.target.closest('.delete-product-btn')) {
+                if (checkDemo(e)) return;
                 const id = e.target.closest('.delete-product-btn').dataset.id;
                 permanentlyDeleteProducts([id]);
             }
@@ -335,14 +354,29 @@ $currency = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['setting
             if (e.target.classList.contains('product-checkbox')) updateBulkActionsBar();
         });
 
-        document.getElementById('bulk-restore-btn').addEventListener('click', () => {
-            const selectedIds = getSelectedProductIds();
-            if (selectedIds.length > 0) restoreProducts(selectedIds);
-        });
-        document.getElementById('bulk-delete-btn').addEventListener('click', () => {
-            const selectedIds = getSelectedProductIds();
-            if (selectedIds.length > 0) permanentlyDeleteProducts(selectedIds);
-        });
+        const bulkRestoreBtn = document.getElementById('bulk-restore-btn');
+        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+
+        if (isDemo) {
+            if (bulkRestoreBtn) bulkRestoreBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            if (bulkDeleteBtn) bulkDeleteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        if (bulkRestoreBtn) {
+            bulkRestoreBtn.addEventListener('click', (e) => {
+                if (checkDemo(e)) return;
+                const selectedIds = getSelectedProductIds();
+                if (selectedIds.length > 0) restoreProducts(selectedIds);
+            });
+        }
+
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.addEventListener('click', (e) => {
+                if (checkDemo(e)) return;
+                const selectedIds = getSelectedProductIds();
+                if (selectedIds.length > 0) permanentlyDeleteProducts(selectedIds);
+            });
+        }
 
         function getSelectedProductIds() {
             return Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.id);

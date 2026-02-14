@@ -152,6 +152,23 @@ require_once 'db.php';
 </div>
 
 <script>
+    const isDemo = <?php echo (defined('DEMO_MODE') && DEMO_MODE) ? 'true' : 'false'; ?>;
+    const demoRestrictionMsg = <?php echo json_encode(__('demo_mode_restriction')); ?>;
+
+    function checkDemo(e) {
+        if (isDemo) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (typeof showToast === 'function') {
+                showToast(demoRestrictionMsg, false);
+            } else {
+                alert(demoRestrictionMsg);
+            }
+            return true;
+        }
+        return false;
+    }
+
     // Constants
     const currency = '<?php $res = $conn->query("SELECT setting_value FROM settings WHERE setting_name = 'currency'"); echo ($res && $res->num_rows > 0) ? $res->fetch_assoc()['setting_value'] : 'MAD'; ?>';
 
@@ -262,6 +279,13 @@ require_once 'db.php';
     document.getElementById('close-pay-modal').addEventListener('click', () => {
         payModal.classList.add('hidden');
     });
+
+    if (isDemo) {
+        if (confirmPayBtn) {
+            confirmPayBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            confirmPayBtn.addEventListener('click', checkDemo, true);
+        }
+    }
 
     confirmPayBtn.addEventListener('click', async () => {
         const id = payCustomerIdInput.value;

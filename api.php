@@ -4514,7 +4514,7 @@ function refundInvoice($conn) {
     if (defined('DEMO_MODE') && DEMO_MODE) {
         sendJsonResponse([
             'success' => true,
-            'message' => __('refund_success') . ' (Demo Mode)'
+            'message' => 'هاته النسخة تجريبية ولا يمكن تعديل على اي شيء حاليا الا في النسخة الكاملة'
         ]);
         return;
     }

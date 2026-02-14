@@ -731,7 +731,42 @@ $critical_alert = $quantity_settings['critical_quantity_alert'] ?? 5;
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <script>
+    const isDemo = <?php echo (defined('DEMO_MODE') && DEMO_MODE) ? 'true' : 'false'; ?>;
+    const demoRestrictionMsg = <?php echo json_encode(__('demo_mode_restriction')); ?>;
+
+    function checkDemo(e) {
+        if (isDemo) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            showToast(demoRestrictionMsg, false);
+            return true;
+        }
+        return false;
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+        // Apply Demo Mode Restrictions
+        if (isDemo) {
+            const demoButtons = [
+                '#product-form button[type="submit"]',
+                '#bulk-add-form button[type="submit"]',
+                '#category-form button[type="submit"]',
+                '#import-excel-form button[type="submit"]',
+                '#export-current-page',
+                '#export-all-products',
+                '#export-stock-report',
+                '#bulk-edit-form button[type="submit"]'
+            ];
+
+            demoButtons.forEach(selector => {
+                const btn = document.querySelector(selector);
+                if (btn) {
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    btn.addEventListener('click', checkDemo, true); // Capture phase to ensure it runs first
+                }
+            });
+        }
+
         // Toggle Header Actions on Mobile
         const toggleHeaderActionsBtn = document.getElementById('toggle-header-actions');
         const headerActionsContent = document.getElementById('header-actions-content');

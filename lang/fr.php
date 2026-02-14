@@ -1,6 +1,9 @@
 <?php
 return [
     // General
+    'demo_mode_active' => 'Mode démo activé',
+    'demo_mode_desc' => 'Certaines fonctionnalités (comme la suppression ou les paramètres) peuvent être désactivées.',
+    'demo_mode_restriction' => 'Désolé, cette fonctionnalité n\'est pas disponible dans la version de démonstration.',
     'login_title' => 'Connexion',
     'welcome_back' => 'Bon retour 👋',
     'login_subtitle' => 'Connectez-vous pour gérer votre magasin',

@@ -306,6 +306,19 @@ require_once 'db.php';
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
+    const isDemo = <?php echo (defined('DEMO_MODE') && DEMO_MODE) ? 'true' : 'false'; ?>;
+    const demoRestrictionMsg = <?php echo json_encode(__('demo_mode_restriction')); ?>;
+
+    function checkDemo(e) {
+        if (isDemo) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            showToast(demoRestrictionMsg, false);
+            return true;
+        }
+        return false;
+    }
+
     // Utility function to show toast notifications
     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
@@ -353,6 +366,23 @@ require_once 'db.php';
     }
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Apply Demo Mode Restrictions
+    if (isDemo) {
+        const demoButtons = [
+            '#customer-form button[type="submit"]',
+            '#export-current-page',
+            '#export-all-data'
+        ];
+
+        demoButtons.forEach(selector => {
+            const btn = document.querySelector(selector);
+            if (btn) {
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.addEventListener('click', checkDemo, true); // Capture phase to ensure it runs first
+            }
+        });
+    }
+
     const addCustomerBtn = document.getElementById('add-customer-btn');
     const customerModal = document.getElementById('customer-modal');
     const closeCustomerModalBtn = document.getElementById('close-customer-modal');
