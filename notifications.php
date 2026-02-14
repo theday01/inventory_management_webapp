@@ -93,6 +93,27 @@ require_once 'src/sidebar.php';
     </header>
 
     <div class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10">
+        <!-- Info Banner -->
+        <div class="relative w-full bg-dark-surface/60 border border-blue-500/20 rounded-2xl p-6 mb-8 overflow-hidden group hover:border-blue-500/40 transition-all duration-300">
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
+            
+            <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-5">
+                <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/20 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-blue-500/5">
+                    <span class="material-icons-round text-blue-400 text-2xl">info</span>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                        <?= __('notifications_page_title') ?>
+                        <span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold border border-blue-500/20 uppercase tracking-wider">Info</span>
+                    </h3>
+                    <p class="text-gray-400 text-sm leading-relaxed max-w-3xl group-hover:text-gray-300 transition-colors">
+                        <?= __('notifications_page_info') ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <div id="loading-screen" class="flex flex-col items-center justify-center h-full min-h-[300px]">
             <div class="relative w-16 h-16">
                 <div class="absolute w-full h-full rounded-full border-4 border-white/5"></div>

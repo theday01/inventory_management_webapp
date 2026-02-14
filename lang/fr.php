@@ -1175,6 +1175,7 @@ return [
 
     // Notifications Page
     'notifications_page_title' => 'Notifications',
+    'notifications_page_info' => 'Ici s\'affichent toutes les notifications importantes liées au système et aux clients.',
     'notifications_auto_delete_msg' => 'Les notifications sont supprimées automatiquement après 30 jours',
     'filter_all' => 'Tout',
     'filter_unread' => 'Non lu',

@@ -1127,6 +1127,7 @@ return [
 
     // Notifications Page
     'notifications_page_title' => 'الإشعارات',
+    'notifications_page_info' => 'هنا تظهر كافة التنبيهات والرسائل الهامة المتعلقة بالنظام، الإعدادات، والعملاء، لتبقيك على اطلاع دائم بكل ما يحدث في متجرك.',
     'notifications_auto_delete_msg' => 'يتم حذف الإشعارات تلقائياً بعد 30 يوماً',
     'filter_all' => 'الكل',
     'filter_unread' => 'غير مقروء',
