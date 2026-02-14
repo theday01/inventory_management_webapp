@@ -627,8 +627,12 @@ $shopFavicon = ($result && $result->num_rows > 0) ? $result->fetch_assoc()['sett
 <body class="font-sans min-h-screen <?php echo $isDark ? 'bg-dark text-white' : 'bg-gray-100 text-gray-900'; ?>">
 
     <?php if (defined('DEMO_MODE') && DEMO_MODE): ?>
-    <div class="bg-yellow-500 text-black text-center py-2 font-bold z-50 relative">
-        🚧 <?php echo __('demo_mode_active'); ?> - <?php echo __('demo_mode_desc'); ?> 🚧
+    <div class="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-center py-3 font-bold z-50 relative shadow-lg flex items-center justify-center gap-2 border-b border-white/20">
+        <span class="material-icons-round text-xl animate-pulse">warning</span>
+        <span>
+            <span class="underline underline-offset-4 decoration-white/50"><?php echo __('demo_mode_active'); ?>:</span> 
+            <span class="font-medium opacity-95"><?php echo __('demo_mode_desc'); ?></span>
+        </span>
     </div>
     <?php endif; ?>
 

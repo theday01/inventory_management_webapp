@@ -1,8 +1,8 @@
 <?php
 return [
     // General
-    'demo_mode_active' => 'Mode démo activé',
-    'demo_mode_desc' => 'Certaines fonctionnalités (comme la suppression ou les paramètres) peuvent être désactivées.',
+    'demo_mode_active' => 'Mode Démo',
+    'demo_mode_desc' => 'Version de démonstration uniquement. La sauvegarde et l\'édition sont désactivées pour préserver les données, dans la version complète, vous aurez un accès complet',
     'demo_mode_restriction' => 'Désolé, cette fonctionnalité n\'est pas disponible dans la version de démonstration.',
     'login_title' => 'Connexion',
     'welcome_back' => 'Bon retour 👋',
@@ -1480,4 +1480,9 @@ return [
     'next_release' => 'Bientôt',
     'feature_delivery_system' => 'Système de livraison et suivi en ligne',
     'feature_delivery_desc' => 'Un système intégré reliant le commerçant, le livreur et le client avec suivi des commandes en temps réel.',
+
+    // Feedback Widget
+    'feedback_widget_title' => 'Une idée ou une suggestion ?',
+    'feedback_widget_desc' => 'Nous sommes là pour concrétiser vos idées. Contactez-nous pour toute amélioration ou fonctionnalité souhaitée !',
+    'feedback_widget_btn' => 'Contactez-nous maintenant',
 ];
