@@ -1,0 +1,67 @@
+# =======================================================
+# Smart Shop Security Configuration
+# =======================================================
+
+# 1. Disable Directory Browsing
+# -------------------------------------------------------
+Options -Indexes
+
+# 2. Block Access to Sensitive Files
+# -------------------------------------------------------
+<FilesMatch "\.(htaccess|htpasswd|ini|phps|fla|psd|log|sh|bak|swp|git|env|json|sql|xml|csv)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Specifically block config and database files
+<FilesMatch "^(config\.php|db\.php|install\.php|create_admin\.php)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# 3. Security Headers
+# -------------------------------------------------------
+<IfModule mod_headers.c>
+    # Prevent Clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # Prevent MIME Sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Enable XSS Protection
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# 4. Protect Against SQL Injection & XSS via Query Strings
+# -------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Block common SQL injection patterns in query string
+    RewriteCond %{QUERY_STRING} (declare|drop|insert|delete|update|select|create|alter|truncate|union|benchmark|exec) [NC]
+    RewriteRule .* - [F,L]
+    
+    # Block script tags (XSS)
+    RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} (<|%3C)([^e]*e)+mbed.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} (<|%3C)([^o]*o)+bject.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} (<|%3C)([^i]*i)+frame.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} base64_encode.*\(.*\) [NC,OR]
+    RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+    RewriteRule .* - [F,L]
+
+    # 5. Disable PHP Execution in Uploads Directory
+    # -------------------------------------------------------
+    # Block direct access to PHP files in upload directories
+    RewriteRule ^src/uploads/.*\.(php|php5|phtml)$ - [F,L]
+    RewriteRule ^src/img/uploads/.*\.(php|php5|phtml)$ - [F,L]
+
+    # 6. Basic Bot Protection
+    # -------------------------------------------------------
+    RewriteCond %{HTTP_USER_AGENT} (libwww-perl|wget|python|nikto|curl|scan|java|winhttp|clshttp|loader) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
